@@ -8,6 +8,9 @@ class ASRTTSProvider:
     ASRTTSProvider is a singleton class that manages the Text-to-Speech (TTS) state.
     Thread-safe implementation ensures consistent state across multiple threads.
     """
+
+    _is_tts_active: bool
+
     def __init__(self):
         self._lock = threading.Lock()
         self._is_tts_active = False
