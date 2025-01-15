@@ -36,8 +36,8 @@ class ASRTTSProvider:
 
     def start_tts(self) -> None:
         """Activate the TTS system."""
-        self.is_tts_active = True
+        self._is_tts_active = True
 
     def stop_tts(self) -> None:
         """Deactivate the TTS system."""
-        self.is_tts_active = False
+        self._is_tts_active = False
