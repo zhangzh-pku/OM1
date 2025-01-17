@@ -1,10 +1,10 @@
 # OpenMind OS (omOS)
 
-OpenMind OS is an agent runtime system that enables the creation and execution of embodied AI agents with modular capabilities like movement, speech, and perception.
+OpenMind OS is an agent runtime system that enables the creation and execution of digital and physical embodied AI agents with modular capabilities like movement, speech, and perception. A key benefit of using omOS is the ease of deploying consistent digital personas across virtual and physical environments. 
 
 ## Quick Start
 
-0. Install the Rust python package manager ``uv`:
+0. Install the Rust python package manager `uv`:
 
 ```bash
 # for linux
@@ -55,11 +55,11 @@ The main entry point is `src/run.py` which provides the following commands:
 
 ### Adding New Modules
 
-Modules are the core capabilities of an agent. For example, for a robots, these capabilities are actions such as movement and speech. Each module consists of:
+Modules are the core capabilities of an agent. For example, for a robot, these capabilities are actions such as movement and speech. Each module consists of:
 
 1. Interface (`interface.py`): Defines input/output types.
 2. Implementation (`impl/`): Business logic, if any. Otherwise, use passthrough.
-3. Connector (`connector/`): Code that connects `omOS` to specific virtual enviromments, specific hardware, and/or middleware (e.g. `ROS2`, `Zenoh`, or `CycloneDDS`)
+3. Connector (`connector/`): Code that connects `omOS` to specific virtual or physical environments, typically through middleware (e.g. custom APIs, `ROS2`, `Zenoh`, or `CycloneDDS`)
 
 Example module structure:
 
@@ -70,12 +70,14 @@ modules/
     ├── impl/
     │   └── passthrough.py
     └── connector/
-        ├── ros2.py      # Maps omOS to other system
+        ├── ros2.py      # Maps omOS data/commands to other ROS2
         ├── zenoh.py
         └── unitree_LL.py
 ```
 
-In genereral, each robot with have specific capabilties, and therefore, each module will be hardware specific. So if you are adding support for the Unitree G1 Humanoid, you could hane the module `move_unitree_g1`, and select that module in a `unitree_g1.json`, for example. 
+In general, each robot will have specific capabilities, and therefore, each module will be hardware specific. 
+
+*Example*: if you are adding support for the Unitree G1 Humanoid version 13.2b, which supports a new movement subtype such as `dance_2`, you could name the updated module `move_unitree_g1_13_2b` and select that module in your `unitree_g1.json` configuration file. 
 
 ### Configuration
 
@@ -83,7 +85,9 @@ Agents are configured via JSON files in the `config/` directory. Key configurati
 
 ```json
 {
-  "hertz": 0.5, // Agent tick rate
+  "hertz": 0.5, // Agent base tick rate, that can be overridden to respond 
+                // quickly to changing environments via event triggered 
+                // callbacks through real time middleware
   "name": "agent_name", // Unique identifier
   "system_prompt": "...", // Agent personality/behavior
   "agent_inputs": [
@@ -113,11 +117,11 @@ Agents are configured via JSON files in the `config/` directory. Key configurati
 2. The Fuser combines inputs into a prompt
 3. The LLM generates commands based on the prompt
 4. The ModuleOrchestrator executes commands through modules
-5. Connectors map omOS data/commands to external data busses and data distribtuion systems such as custom APIs, `ROS2`, `Zenoh`, or `CycloneDDS`. 
+5. Connectors map omOS data/commands to external data buses and data distribution systems such as custom APIs, `ROS2`, `Zenoh`, or `CycloneDDS`. 
 
 ### Core operating principle of the system
 
-The system is not event or callback driven, but is based on a loop that runs at a fixed frequency of `self.config.hertz`. This loop looks for the most recent data from various sources, fuses the data into a prompt, sends that promprt to one or more LLMS, and then sends the LLM responses to virtual or physical robots.
+The system is not event or callback driven, but is based on a loop that runs at a fixed frequency of `self.config.hertz`. This loop looks for the most recent data from various sources, fuses the data into a prompt, sends that prompt to one or more LLMs, and then sends the LLM responses to virtual or physical robots.
 
 
 ```python
