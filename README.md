@@ -20,11 +20,17 @@ cp .env.example .env
 # Edit .env with your API keys (e.g. OPENAI_API_KEY)
 ```
 
+NOTE: you need an OpenAI api key.
+
 3. Run an agent:
+
+NOTE: `uv` does many things in the background, such as setting up a good venv and downloading any dependencies if needed. Please add new dependencies to `pyproject.toml`.
 
 ```bash
 uv run src/run.py spot
 ```
+
+NOTE: If you are running complex models, or need to download dependencies, there may be a delay before the agent starts. 
 
 ## CLI Commands
 
