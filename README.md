@@ -4,6 +4,15 @@ OpenMind OS is an agent runtime system that enables the creation and execution o
 
 ## Quick Start
 
+0. Install the Rust python package manager ``uv`:
+
+```bash
+# for linux
+curl -LsSf https://astral.sh/uv/install.sh | sh
+# for mac
+brew install uv
+```
+
 1. Set up environment variables:
 
 ```bash
@@ -39,30 +48,34 @@ The main entry point is `src/run.py` which provides the following commands:
 │   ├── fuser/            # Input fusion logic
 │   ├── input/            # Input plugins (e.g. VLM, audio)
 │   ├── llm/              # LLM integration
-│   ├── modules/          # Agent capabilities
+│   ├── modules/          # Agent outputs/actions/capabilities
 │   ├── runtime/          # Core runtime system
 │   └── run.py            # CLI entry point
 ```
 
 ### Adding New Modules
 
-Modules are the core capabilities of an agent. Each module consists of:
+Modules are the core capabilities of an agent. For example, for a robots, these capabilities are actions such as movement and speech. Each module consists of:
 
-1. Interface (`interface.py`): Defines input/output types
-2. Implementation (`impl/`): Business logic
-3. Mutation (`mutation/`): Side effects (e.g. ROS2 commands)
+1. Interface (`interface.py`): Defines input/output types.
+2. Implementation (`impl/`): Business logic, if any. Otherwise, use passthrough.
+3. Connector (`connector/`): Code that connects `omOS` to specific virtual enviromments, specific hardware, and/or middleware (e.g. `ROS2`, `Zenoh`, or `CycloneDDS`)
 
 Example module structure:
 
 ```
 modules/
-└── move/
+└── move_{unique_hardware_id}/
     ├── interface.py      # Defines MoveInput/Output
     ├── impl/
     │   └── passthrough.py
-    └── mutation/
-        └── ros2.py
+    └── connector/
+        ├── ros2.py      # Maps omOS to other system
+        ├── zenoh.py
+        └── unitree_LL.py
 ```
+
+In genereral, each robot with have specific capabilties, and therefore, each module will be hardware specific. So if you are adding support for the Unitree G1 Humanoid, you could hane the module `move_unitree_g1`, and select that module in a `unitree_g1.json`, for example. 
 
 ### Configuration
 
@@ -100,7 +113,34 @@ Agents are configured via JSON files in the `config/` directory. Key configurati
 2. The Fuser combines inputs into a prompt
 3. The LLM generates commands based on the prompt
 4. The ModuleOrchestrator executes commands through modules
-5. Mutations handle side effects (e.g. ROS2 commands)
+5. Connectors map omOS data/commands to external data busses and data distribtuion systems such as custom APIs, `ROS2`, `Zenoh`, or `CycloneDDS`. 
+
+### Core operating principle of the system
+
+The system is not event or callback driven, but is based on a loop that runs at a fixed frequency of `self.config.hertz`. This loop looks for the most recent data from various sources, fuses the data into a prompt, sends that promprt to one or more LLMS, and then sends the LLM responses to virtual or physical robots.
+
+
+```python
+# cortex.py
+    async def _run_cortex_loop(self) -> None:
+        while True:
+            await asyncio.sleep(1 / self.config.hertz)
+            await self._tick()
+
+    async def _tick(self) -> None:
+        finished_promises, _ = await self.module_orchestrator.flush_promises()
+        prompt = self.fuser.fuse(self.config.agent_inputs, finished_promises)
+        if prompt is None:
+            logging.warning("No prompt to fuse")
+            return
+        output = await self.config.cortex_llm.ask(prompt)
+        if output is None:
+            logging.warning("No output from LLM")
+            return
+
+        logging.debug("I'm thinking... ", output)
+        await self.module_orchestrator.promise(output.commands)
+```
 
 ### Development Tips
 
