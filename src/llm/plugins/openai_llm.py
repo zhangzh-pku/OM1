@@ -6,6 +6,8 @@ from pydantic import BaseModel
 
 from llm import LLM
 
+import logging
+
 
 R = T.TypeVar("R", bound=BaseModel)
 
@@ -17,15 +19,16 @@ class OpenAILLM(LLM[R]):
 
     async def ask(self, prompt: str) -> R | None:
         try:
+            logging.info(f"LLM input: {prompt}")
             parsed_response = await self._client.beta.chat.completions.parse(
                 model="gpt-4o",
                 messages=[{"role": "user", "content": prompt}],
                 response_format=self._output_model,
             )
             message_content = parsed_response.choices[0].message.content
-
             try:
                 parsed_response = self._output_model.model_validate_json(message_content)
+                logging.info(f"LLM output: {parsed_response}")
                 return parsed_response
             except Exception as e:
                 logging.error(f"Error parsing response: {e}")

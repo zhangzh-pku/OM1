@@ -13,3 +13,6 @@ wheels/
 .env
 
 .vscode/
+
+# Mac specific lint
+.DS_Store

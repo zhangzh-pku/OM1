@@ -1,5 +1,5 @@
 [project]
-name = "om2"
+name = "omOS"
 version = "0.1.0"
 description = "Add your description here"
 readme = "README.md"
@@ -9,4 +9,7 @@ dependencies = [
     "pillow>=11.1.0",
     "python-dotenv>=1.0.1",
     "typer>=0.15.1",
+    "opencv-python",
+    "deepface",
+    "tf_keras"
 ]
