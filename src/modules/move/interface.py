@@ -2,7 +2,6 @@ from dataclasses import dataclass
 from enum import Enum
 from modules.base import Interface
 
-
 class MovementAction(str, Enum):
     STAND_UP = "stand up"
     LAY_DOWN = "lay down"
@@ -19,18 +18,16 @@ class MovementAction(str, Enum):
     TURN_LEFT = "turn left"
     TURN_RIGHT = "turn right"
 
-
 @dataclass
 class MoveInput:
     action: MovementAction
 
-
 @dataclass
 class MoveInterface(Interface[MoveInput, MoveInput]):
     """
-    A movement action to be performed by the embodied agent.
+    A movement to be performed by the agent.
 
-    Effect: Performs a given movement action.
+    Effect: Allows the agent to move.
     """
 
     input: MoveInput

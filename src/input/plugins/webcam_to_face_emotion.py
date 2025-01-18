@@ -1,6 +1,5 @@
 import asyncio
 import random
-from PIL import Image
 import logging
 
 from input.base.loop import LoopInput
@@ -14,9 +13,9 @@ https://github.com/manish-9245/Facial-Emotion-Recognition-using-OpenCV-and-Deepf
 Thank you @manish-9245
 """
 
-class FaceEmotionCapture(LoopInput[Image.Image]):
+class FaceEmotionCapture(LoopInput[cv2.typing.MatLike]):
     """
-    Takes data from a webcam and returns a label of the person's emotions
+    Uses a webcam and returns a label of the person's emotions
     """
 
     def __init__(self):
@@ -26,7 +25,7 @@ class FaceEmotionCapture(LoopInput[Image.Image]):
         self.cap = cv2.VideoCapture(0)
         self.emotion = ""
 
-    async def _poll(self) -> Image.Image:
+    async def _poll(self) -> cv2.typing.MatLike:
         await asyncio.sleep(0.2)
         
         # Capture a frame every 200 ms
@@ -34,7 +33,7 @@ class FaceEmotionCapture(LoopInput[Image.Image]):
 
         return frame
 
-    async def _raw_to_text(self, raw_input: Image.Image) -> str:
+    async def _raw_to_text(self, raw_input: cv2.typing.MatLike) -> str:
         
         frame = raw_input
 
@@ -57,12 +56,12 @@ class FaceEmotionCapture(LoopInput[Image.Image]):
             # Determine the dominant emotion
             self.emotion = result[0]['dominant_emotion']
 
-            # Draw rectangle around face and label with predicted emotion
-            cv2.rectangle(frame, (x, y), (x + w, y + h), (0, 0, 255), 2)
-            cv2.putText(frame, self.emotion, (x, y - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.9, (0, 0, 255), 2)
+            # # Draw rectangle around face and label with predicted emotion
+            # cv2.rectangle(frame, (x, y), (x + w, y + h), (0, 0, 255), 2)
+            # cv2.putText(frame, self.emotion, (x, y - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.9, (0, 0, 255), 2)
 
-        # Display the resulting frame
-        cv2.imshow('Real-time Emotion Detection', frame)
+        # # Display the resulting frame
+        # cv2.imshow('Real-time Emotion Detection', frame)
 
         message = f"I see a person that is {self.emotion}"
 
@@ -70,10 +69,6 @@ class FaceEmotionCapture(LoopInput[Image.Image]):
         
         return message
         
-#     # Press 'q' to exit
-#     if cv2.waitKey(1) & 0xFF == ord('q'):
-#         break
-
 # # Release the capture and close all windows
 # cap.release()
 # cv2.destroyAllWindows()

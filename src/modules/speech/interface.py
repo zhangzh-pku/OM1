@@ -10,7 +10,7 @@ class SpeechInput:
 @dataclass
 class Speech(Interface[SpeechInput, SpeechInput]):
     """
-    A speech action to be performed by the embodied agent.
+    Words to be spoken by the agent.
 
     Effect: Allows the agent to speak.
     """

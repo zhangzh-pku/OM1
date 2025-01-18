@@ -3,9 +3,10 @@ import logging
 from modules.base import ModuleMutation
 from modules.move.interface import MoveInput
 
-
 class MoveRos2Mutation(ModuleMutation[MoveInput]):
     async def mutate(self, output_interface: MoveInput) -> None:
+
+        # define/clarify the datatype
         new_msg = {"thought": "", "vx": 0.0, "vy": 0.0, "vyaw": 0.0}
 
         if output_interface.action == "stand up":
@@ -43,6 +44,7 @@ class MoveRos2Mutation(ModuleMutation[MoveInput]):
             new_msg["thought"] = "move"
             new_msg["vyaw"] = -0.4
         else:
-            raise ValueError(f"Unknown move type: {output_interface.action}")
+            logging.info(f"Unknown move type: {output_interface.action}")
+            # raise ValueError(f"Unknown move type: {output_interface.action}")
 
-        logging.info(f"MoveRos2Mutation: {new_msg}")
+        logging.info(f"SendThisToROS2: {new_msg}")
