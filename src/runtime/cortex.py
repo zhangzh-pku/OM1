@@ -10,8 +10,9 @@ from providers.sleep_ticker_provider import SleepTickerProvider
 
 class CortexRuntime:
     """
-    The CortexRuntime is the main entry point for the OM2 agent.
-    It is responsible for running the agent, orchestrating communication between the memory, fuser, actions, and managing the inputs and outputs.
+    The CortexRuntime is the main entry point for the omOS agent.
+    It is responsible for running the agent, orchestrating communication 
+    between the memory, fuser, actions, and managing the inputs and outputs.
     """
 
     config: RuntimeConfig
