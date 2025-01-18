@@ -4,6 +4,7 @@ from input.base import AgentInput
 from modules import describe_module
 from runtime.config import RuntimeConfig
 
+import logging
 
 class Fuser:
     """
@@ -18,7 +19,13 @@ class Fuser:
     ) -> str | None:
         """Combine all inputs, memories, and configurations into a single prompt"""
         system_prompt = self.config.system_prompt
+
+        # for input in inputs:
+        #     message = input.formatted_latest_buffer() 
+        #     logging.info(f"InputMessage: {message}")
+
         input_strings = [input.formatted_latest_buffer() for input in inputs]
+        logging.info(f"InputMessageArray: {input_strings}")
         inputs_fused = " ".join([s for s in input_strings if s is not None])
         modules_fused = "\n\n\n".join(
             [describe_module(module.name) for module in self.config.modules]

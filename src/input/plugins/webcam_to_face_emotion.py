@@ -2,6 +2,8 @@ import asyncio
 import random
 import logging
 
+from typing import Dict, Optional
+
 from input.base.loop import LoopInput
 
 import cv2
@@ -24,6 +26,7 @@ class FaceEmotionCapture(LoopInput[cv2.typing.MatLike]):
         # Start capturing video
         self.cap = cv2.VideoCapture(0)
         self.emotion = ""
+        self.messages: list[str] = []
 
     async def _poll(self) -> cv2.typing.MatLike:
         await asyncio.sleep(0.2)
@@ -63,12 +66,53 @@ class FaceEmotionCapture(LoopInput[cv2.typing.MatLike]):
         # # Display the resulting frame
         # cv2.imshow('Real-time Emotion Detection', frame)
 
-        message = f"I see a person that is {self.emotion}"
+        message = f"I see a person. Their emotion is {self.emotion}."
 
-        logging.info(f"FaceEmotionCapture: {self.emotion}")
+        logging.debug(f"FaceEmotionCapture: {message}")
         
         return message
         
-# # Release the capture and close all windows
-# cap.release()
-# cv2.destroyAllWindows()
+    async def raw_to_text(self, raw_input):
+        """
+        Convert raw input to processed text and manage buffer.
+
+        Parameters
+        ----------
+        raw_input : Optional[str]
+            Raw input to be processed
+        """
+        text = await self._raw_to_text(raw_input)
+        if text is None:
+            if len(self.messages) == 0:
+                return None
+            # else:
+            #     # Skip sleep if there's already a message in the buffer
+            #     self.global_sleep_ticker_provider.skip_sleep = True
+
+        if text is not None:
+            if len(self.messages) == 0:
+                self.messages.append(text)
+            # else:
+            # here is where you can implement joining older messages
+            #     self.buffer[-1] = f"{self.buffer[-1]} {text}"
+
+    def formatted_latest_buffer(self) -> Optional[str]:
+        """
+        Format and clear the latest buffer contents.
+
+        Returns
+        -------
+        Optional[str]
+            Formatted string of buffer contents or None if buffer is empty
+        """
+        if len(self.messages) == 0:
+            return None
+
+        result = f"""
+        {self.__class__.__name__} INPUT
+        // START
+        {self.messages[-1]}
+        // END
+        """
+        self.messages = []
+        return result

@@ -15,12 +15,11 @@ brew install uv
 
 1. Set up environment variables:
 
+Edit .env with your API keys (e.g. OPENAI_API_KEY). NOTE: an OpenAI api key is required.
+
 ```bash
 cp .env.example .env
-# Edit .env with your API keys (e.g. OPENAI_API_KEY)
 ```
-
-NOTE: an OpenAI api key is required.
 
 3. Run an agent:
 
@@ -30,7 +29,7 @@ NOTE: `uv` does many things in the background, such as setting up a good `venv` 
 uv run src/run.py spot
 ```
 
-NOTE: If you are running complex models, or need to download dependencies, there may be a delay before the agent starts. 
+NOTE: If you are running complex models, or need to download dependencies, there may be a delay before the agent starts.
 
 ## CLI Commands
 

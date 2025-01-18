@@ -2,13 +2,12 @@ import typing as T
 
 R = T.TypeVar("R")
 
+import logging
 
 class AgentInput(T.Generic[R]):
     """
     Base class for all agent inputs.
     """
-
-    buffer: list[str] = []
 
     async def listen(self) -> T.AsyncIterator[R]:
         """
@@ -21,30 +20,19 @@ class AgentInput(T.Generic[R]):
         """
         Convert raw input to text for the fuser
         """
-        text = await self._raw_to_text(raw_input)
-        self.buffer.append(text)
-        return text
+        raise NotImplementedError
 
     def formatted_latest_buffer(self) -> str | None:
         """
         Return the latest buffer formatted as a prompt string
         """
-        if len(self.buffer) == 0:
-            return None
-        return f"""
-                {self.__class__.__name__} INPUT
-                // START
-                {self.buffer[-1]}
-                // END
-                """
+        raise NotImplementedError
 
     def latest_buffer(self) -> str | None:
         """
         Return the latest buffer string
         """
-        if len(self.buffer) == 0:
-            return None
-        return self.buffer[-1]
+        raise NotImplementedError
 
     async def _listen_loop(self) -> T.AsyncIterator[R]:
         """
