@@ -11,6 +11,14 @@ cp .env.example .env
 # Edit .env with your API keys (e.g. OPENAI_API_KEY)
 ```
 
+and download modules. To install `omOS-modules`, please clone the omOS-modules repo. It can live anywhere in your filesystem. Activate the `uv` environment and install the modules via 
+
+```bash
+uv pip install -e dir
+```
+
+At that point, `uv` invoked elsewhere, such as in `omOS`, will be able to find those modules. 
+
 3. Run an agent:
 
 ```bash
