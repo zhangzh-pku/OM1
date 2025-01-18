@@ -53,5 +53,5 @@ class CortexRuntime:
             logging.warning("No output from LLM")
             return
 
-        logging.debug("I'm thinking... ", output)
+        logging.debug(f"Pushing output to execution: {output}")
         await self.module_orchestrator.promise(output.commands)
