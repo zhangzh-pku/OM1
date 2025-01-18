@@ -2,7 +2,7 @@ import json
 import asyncio
 from queue import Queue, Empty
 import logging
-from typing import Dict, Optional
+from typing import Dict, Optional, List
 
 from providers.asr_provider import ASRProvider
 from providers.sleep_ticker_provider import SleepTickerProvider
@@ -28,6 +28,9 @@ class ASRInput(LoopInput[str]):
     """
     def __init__(self):
         super().__init__()
+
+        # Buffer for storing the final output
+        self.buffer: List[str] = []
 
         # Buffer for storing messages
         self.message_buffer: Queue[str] = Queue()
