@@ -2,7 +2,7 @@ from enum import Enum
 import typing as T
 import importlib
 
-from modules.base import Interface, Module, ModuleImpl, ModuleMutation
+from modules.base import Interface, Module, ModuleImpl, ModuleConnector
 
 
 def describe_module(module_name: str) -> str:
@@ -48,28 +48,28 @@ def load_module(module_config: dict[str, str]) -> Module:
     impl = importlib.import_module(
         f"modules.{module_config['name']}.impl.{module_config['impl']}"
     )
-    mutation = importlib.import_module(
-        f"modules.{module_config['name']}.mutation.{module_config['mutation']}"
+    connector = importlib.import_module(
+        f"modules.{module_config['name']}.connector.{module_config['connector']}"
     )
     impl_class = None
-    mutation_class = None
+    connector_class = None
     for _, obj in impl.__dict__.items():
         if isinstance(obj, type) and issubclass(obj, ModuleImpl):
             impl_class = obj
-    for _, obj in mutation.__dict__.items():
-        if isinstance(obj, type) and issubclass(obj, ModuleMutation):
-            mutation_class = obj
+    for _, obj in connector.__dict__.items():
+        if isinstance(obj, type) and issubclass(obj, ModuleConnector):
+            connector_class = obj
     if impl_class is None:
         raise ValueError(
             f"No implementation found for module {module_config['name']} impl {module_config['impl']}"
         )
-    if mutation_class is None:
+    if connector_class is None:
         raise ValueError(
-            f"No mutation found for module {module_config['name']} mutation {module_config['mutation']}"
+            f"No connector found for module {module_config['name']} connector {module_config['connector']}"
         )
     return Module(
         name=module_config["name"],
         interface=interface,
         impl=impl_class(),
-        mutation=mutation_class(),
+        connector=connector_class(),
     )

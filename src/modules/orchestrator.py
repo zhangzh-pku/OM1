@@ -54,5 +54,5 @@ class ModuleOrchestrator:
         )
         module_response = await module.impl.execute(input_interface)
         logging.debug(f"Module {module.name} returned {module_response}")
-        await module.mutation.mutate(module_response)
+        await module.connector.connect(module_response)
         return module_response
