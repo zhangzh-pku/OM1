@@ -17,17 +17,17 @@
     {
       "name": "move",
       "impl": "passthrough",
-      "mutation": "ros2"
+      "connector": "ros2"
     },
     {
       "name": "speech",
       "impl": "passthrough",
-      "mutation": "ros2"
+      "connector": "ros2"
     },
     {
       "name": "face",
       "impl": "passthrough",
-      "mutation": "ros2"
+      "connector": "ros2"
     }
   ]
 }

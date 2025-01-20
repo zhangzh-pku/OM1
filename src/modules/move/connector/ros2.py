@@ -1,10 +1,10 @@
 import logging
 
-from modules.base import ModuleMutation
+from modules.base import ModuleConnector
 from modules.move.interface import MoveInput
 
-class MoveRos2Mutation(ModuleMutation[MoveInput]):
-    async def mutate(self, output_interface: MoveInput) -> None:
+class MoveRos2Connector(ModuleConnector[MoveInput]):
+    async def connect(self, output_interface: MoveInput) -> None:
 
         # define/clarify the datatype
         new_msg = {"thought": "", "vx": 0.0, "vy": 0.0, "vyaw": 0.0}

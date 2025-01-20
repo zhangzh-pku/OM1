@@ -22,9 +22,9 @@ class ModuleImpl(ABC, T.Generic[IT, OT]):
         pass
 
 
-class ModuleMutation(ABC, T.Generic[OT]):
+class ModuleConnector(ABC, T.Generic[OT]):
     @abstractmethod
-    async def mutate(self, input_protocol: OT) -> None:
+    async def connect(self, input_protocol: OT) -> None:
         pass
 
 
@@ -33,4 +33,4 @@ class Module:
     name: str
     interface: T.Type[Interface]
     impl: ModuleImpl
-    mutation: ModuleMutation
+    connector: ModuleConnector

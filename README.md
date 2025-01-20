@@ -4,7 +4,7 @@ OpenMind OS is an agent runtime system that enables the creation and execution o
 
 ## Quick Start
 
-0. Install the Rust python package manager `uv`:
+1. Install the Rust python package manager `uv`:
 
 ```bash
 # for linux
@@ -13,9 +13,9 @@ curl -LsSf https://astral.sh/uv/install.sh | sh
 brew install uv
 ```
 
-1. Set up environment variables:
+2. Set up environment variables:
 
-Edit .env with your API keys (e.g. OPENAI_API_KEY). NOTE: an OpenAI api key is required.
+Edit `.env` with your API keys (e.g. OPENAI_API_KEY). NOTE: an OpenAI api key is required.
 
 ```bash
 cp .env.example .env
@@ -23,11 +23,11 @@ cp .env.example .env
 
 3. Run an agent:
 
-NOTE: `uv` does many things in the background, such as setting up a good `venv` and downloading any dependencies if needed. Please add new dependencies to `pyproject.toml`.
-
 ```bash
 uv run src/run.py spot
 ```
+
+NOTE: `uv` does many things in the background, such as setting up a good `venv` and downloading any dependencies if needed. Please add new dependencies to `pyproject.toml`.
 
 NOTE: If you are running complex models, or need to download dependencies, there may be a delay before the agent starts.
 
@@ -110,7 +110,7 @@ Agents are configured via JSON files in the `config/` directory. Key configurati
     {
       "name": "move", // Module name
       "impl": "passthrough", // Implementation to use
-      "mutation": "ros2" // Mutation handler
+      "connector": "ros2" // Connector handler
     }
   ]
 }

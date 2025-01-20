@@ -1,10 +1,10 @@
 import logging
 
-from modules.base import ModuleMutation
+from modules.base import ModuleConnector
 from modules.face.interface import FaceInput
 
-class FaceRos2Mutation(ModuleMutation[FaceInput]):
-    async def mutate(self, output_interface: FaceInput) -> None:
+class FaceRos2Connector(ModuleConnector[FaceInput]):
+    async def connect(self, output_interface: FaceInput) -> None:
 
         # define/clarify the datatype
         new_msg = {"face": ""}
