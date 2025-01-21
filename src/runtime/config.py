@@ -2,13 +2,16 @@ import os
 import json
 from dataclasses import dataclass
 
-from input import load_input
-from input.base import AgentInput
+from inputs import load_input
+from actions import load_action
+from simulators import load_simulator
+
+from inputs.base import AgentInput
+from actions.base import AgentAction
+from simulators.base import Simulator
+
 from llm import LLM, load_llm
 from llm.output_model import CortexOutputModel
-from modules.base import Module
-from modules import load_module
-
 
 @dataclass
 class RuntimeConfig:
@@ -17,7 +20,8 @@ class RuntimeConfig:
     system_prompt: str
     agent_inputs: list[AgentInput]
     cortex_llm: LLM[CortexOutputModel]
-    modules: list[Module]
+    agent_actions: list[AgentAction]
+    simulators: list[Simulator]
 
 
 def load_config(config_name: str) -> RuntimeConfig:
@@ -32,9 +36,14 @@ def load_config(config_name: str) -> RuntimeConfig:
         "agent_inputs": [
             load_input(input["type"])() for input in raw_config["agent_inputs"]
         ],
+        "simulators": [
+            load_simulator(simulator["type"])() for simulator in raw_config["simulators"]
+        ],
         "cortex_llm": load_llm(raw_config["cortex_llm"]["type"])(
             output_model=CortexOutputModel
         ),
-        "modules": [load_module(module) for module in raw_config["modules"]],
+        "agent_actions": [
+            load_action(action) for action in raw_config["agent_actions"]
+        ],
     }
     return RuntimeConfig(**parsed_config)

@@ -53,26 +53,26 @@ The main entry point is `src/run.py` which provides the following commands:
 │   ├── fuser/            # Input fusion logic
 │   ├── input/            # Input plugins (e.g. VLM, audio)
 │   ├── llm/              # LLM integration
-│   ├── modules/          # Agent outputs/actions/capabilities
+│   ├── actions/          # Agent outputs/actions/capabilities
 │   ├── runtime/          # Core runtime system
 │   └── run.py            # CLI entry point
 ```
 
-### Adding New Modules
+### Adding New Actions
 
-Modules are the core capabilities of an agent. For example, for a robot, these capabilities are actions such as movement and speech. Each module consists of:
+Actions are the core capabilities of an agent. For example, for a robot, these capabilities are actions such as movement and speech. Each action consists of:
 
 1. Interface (`interface.py`): Defines input/output types.
-2. Implementation (`impl/`): Business logic, if any. Otherwise, use passthrough.
+2. Implementation (`implementation/`): Business logic, if any. Otherwise, use passthrough.
 3. Connector (`connector/`): Code that connects `omOS` to specific virtual or physical environments, typically through middleware (e.g. custom APIs, `ROS2`, `Zenoh`, or `CycloneDDS`)
 
-Example module structure:
+Example action structure:
 
 ```
-modules/
+actions/
 └── move_{unique_hardware_id}/
     ├── interface.py      # Defines MoveInput/Output
-    ├── impl/
+    ├── implementation/
     │   └── passthrough.py
     └── connector/
         ├── ros2.py      # Maps omOS data/commands to other ROS2
@@ -80,9 +80,9 @@ modules/
         └── unitree_LL.py
 ```
 
-In general, each robot will have specific capabilities, and therefore, each module will be hardware specific. 
+In general, each robot will have specific capabilities, and therefore, each action will be hardware specific. 
 
-*Example*: if you are adding support for the Unitree G1 Humanoid version 13.2b, which supports a new movement subtype such as `dance_2`, you could name the updated module `move_unitree_g1_13_2b` and select that module in your `unitree_g1.json` configuration file. 
+*Example*: if you are adding support for the Unitree G1 Humanoid version 13.2b, which supports a new movement subtype such as `dance_2`, you could name the updated action `move_unitree_g1_13_2b` and select that action in your `unitree_g1.json` configuration file. 
 
 ### Configuration
 
@@ -101,15 +101,20 @@ Agents are configured via JSON files in the `config/` directory. Key configurati
       "type": "VlmInput" // Input plugin to use
     }
   ],
+  "simulators": [
+    {
+      "type": "BasicDog"
+    }
+  ],
   "cortex_llm": {
     // LLM configuration
     "type": "OpenAILLM" // LLM plugin to use
   },
-  "modules": [
+  "agent_actions": [
     // Available capabilities
     {
-      "name": "move", // Module name
-      "impl": "passthrough", // Implementation to use
+      "name": "move", // Action name
+      "implementation": "passthrough", // Implementation to use
       "connector": "ros2" // Connector handler
     }
   ]
@@ -121,7 +126,7 @@ Agents are configured via JSON files in the `config/` directory. Key configurati
 1. Input plugins collect data (vision, audio, etc.)
 2. The Fuser combines inputs into a prompt
 3. The LLM generates commands based on the prompt
-4. The ModuleOrchestrator executes commands through modules
+4. The ActionOrchestrator executes commands through actions
 5. Connectors map omOS data/commands to external data buses and data distribution systems such as custom APIs, `ROS2`, `Zenoh`, or `CycloneDDS`. 
 
 ### Core operating principle of the system
@@ -137,7 +142,7 @@ The system is not event or callback driven, but is based on a loop that runs at 
             await self._tick()
 
     async def _tick(self) -> None:
-        finished_promises, _ = await self.module_orchestrator.flush_promises()
+        finished_promises, _ = await self.action_orchestrator.flush_promises()
         prompt = self.fuser.fuse(self.config.agent_inputs, finished_promises)
         if prompt is None:
             logging.warning("No prompt to fuse")
@@ -148,7 +153,7 @@ The system is not event or callback driven, but is based on a loop that runs at 
             return
 
         logging.debug("I'm thinking... ", output)
-        await self.module_orchestrator.promise(output.commands)
+        await self.action_orchestrator.promise(output.commands)
 ```
 
 ### Development Tips
@@ -156,7 +161,7 @@ The system is not event or callback driven, but is based on a loop that runs at 
 1. Use `--debug` flag for detailed logging
 2. Add new input plugins in `src/input/plugins/`
 3. Add new LLM integrations in `src/llm/plugins/`
-4. Test modules with the `passthrough` implementation first
+4. Test actions with the `passthrough` implementation first
 5. Use type hints and docstrings for better code maintainability
 
 ## Environment Variables

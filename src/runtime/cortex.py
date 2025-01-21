@@ -2,8 +2,10 @@ import asyncio
 import logging
 
 from fuser import Fuser
-from input.orchestrator import InputOrchestrator
-from modules.orchestrator import ModuleOrchestrator
+from inputs.orchestrator import InputOrchestrator
+from actions.orchestrator import ActionOrchestrator
+from simulators.orchestrator import SimulatorOrchestrator
+
 from runtime.config import RuntimeConfig
 from providers.sleep_ticker_provider import SleepTickerProvider
 
@@ -17,13 +19,15 @@ class CortexRuntime:
 
     config: RuntimeConfig
     fuser: Fuser
-    module_orchestrator: ModuleOrchestrator
+    action_orchestrator: ActionOrchestrator
+    simulator_orchestrator: SimulatorOrchestrator
     sleep_ticker_provider: SleepTickerProvider
 
     def __init__(self, config: RuntimeConfig):
         self.config = config
         self.fuser = Fuser(config)
-        self.module_orchestrator = ModuleOrchestrator(config)
+        self.action_orchestrator = ActionOrchestrator(config)
+        self.simulator_orchestrator = SimulatorOrchestrator(config)
         self.sleep_ticker_provider = SleepTickerProvider()
 
     async def run(self) -> None:
@@ -44,15 +48,29 @@ class CortexRuntime:
             self.sleep_ticker_provider.skip_sleep = False
 
     async def _tick(self) -> None:
-        finished_promises, _ = await self.module_orchestrator.flush_promises()
-        prompt = self.fuser.fuse(self.config.agent_inputs, finished_promises)
+        # collect all the latest inputs
+        finished_promises, _ = await self.action_orchestrator.flush_promises()
+        
+        # combine those inputs into a suitable prompt
+        [prompt, full_inputs_with_ts]= self.fuser.fuse(self.config.agent_inputs, finished_promises)
         if prompt is None:
             logging.warning("No prompt to fuse")
             return
-        output = await self.config.cortex_llm.ask(prompt)
-        if output is None:
+        
+        # if there is a prompt, send to the AIs
+        payload = await self.config.cortex_llm.ask(prompt, full_inputs_with_ts)
+        if payload is None:
             logging.warning("No output from LLM")
             return
 
-        logging.debug("I'm thinking... ", output)
-        await self.module_orchestrator.promise(output.commands)
+        logging.debug(f"LLM returned this: {payload}")
+        
+        # take all the commands and send them to the correct actions to 
+        # trigger actions
+
+        # this should have more stuff in it
+        logging.info(f"Send full payload to simulator: {payload}")
+        await self.simulator_orchestrator.promise(payload)
+        # we have all the data here needed for debug and simulation purposes
+
+        # await self.action_orchestrator.promise(payload.commands)

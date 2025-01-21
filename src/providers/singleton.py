@@ -5,7 +5,7 @@ def singleton(cls):
     """
     A thread-safe singleton decorator that ensures only one instance of a class exists.
 
-    This decorator implements the singleton pattern with thread safety using a lock.
+    This decorator implementationements the singleton pattern with thread safety using a lock.
     Multiple threads attempting to create an instance will be synchronized to prevent
     race conditions.
 
@@ -23,7 +23,7 @@ def singleton(cls):
         Returns the singleton instance of the decorated class.
 
         If the instance doesn't exist, creates it with the provided arguments.
-        Thread-safe implementation using a lock.
+        Thread-safe implementationementation using a lock.
 
         Args:
             *args: Positional arguments to pass to the class constructor.

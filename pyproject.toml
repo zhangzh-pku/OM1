@@ -11,5 +11,6 @@ dependencies = [
     "typer>=0.15.1",
     "opencv-python",
     "deepface",
-    "tf_keras"
+    "tf_keras",
+    "pygame"
 ]

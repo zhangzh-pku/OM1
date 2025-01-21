@@ -33,11 +33,11 @@ def load_llm(llm_name: str) -> T.Type[LLM]:
     plugins_dir = os.path.join(os.path.dirname(__file__), "plugins")
     plugin_files = [f[:-3] for f in os.listdir(plugins_dir) if f.endswith(".py")]
 
-    # Import all plugin modules and find LLM subclasses
+    # Import all plugin actions and find LLM subclasses
     llm_classes = {}
     for plugin in plugin_files:
-        module = importlib.import_module(f"llm.plugins.{plugin}")
-        for name, obj in inspect.getmembers(module):
+        action = importlib.import_module(f"llm.plugins.{plugin}")
+        for name, obj in inspect.getmembers(action):
             if inspect.isclass(obj) and issubclass(obj, LLM) and obj != LLM:
                 llm_classes[name] = obj
 

@@ -13,7 +13,7 @@ class ASRProvider:
     """
     Audio Speech Recognition Provider that handles audio streaming and websocket communication.
 
-    This class implements a singleton pattern to manage audio input streaming and websocket
+    This class implementationements a singleton pattern to manage audio input streaming and websocket
     communication for speech recognition services. It runs in a separate thread to handle
     continuous audio processing.
 
