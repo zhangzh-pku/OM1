@@ -11,7 +11,6 @@ from runtime.config import RuntimeConfig
 class SimulatorOrchestrator:
     """
     Manages data flow to one or more simulators.
-
     Note: It is important that the simulators do not block the event loop.
     """
 
@@ -43,16 +42,8 @@ class SimulatorOrchestrator:
             self.promise_queue.append(simulator_response)
 
     async def _promise_simulator(self, simulator: Simulator, llm: LLM_full) -> T.Any:
-    #         prompt: str = Field(..., description="The complete input to the LLM or multiagent system")
-    # inputs: str = Field(..., description="The time varying inputs to the LLM or multiagent system")
-    # commands: list[Command] = Field(..., description="List of commands to execute")
         logging.debug(
             f"Calling simulator {simulator.name} with input {llm.prompt}"
         )
-        # input_interface = T.get_type_hints(simulator.interface)["input"](
-        #     **{arg.name: arg.value for arg in in_out.arguments}
-        # )
         simulator.print_raw(llm)
-        # logging.debug(f"Simulator {simulator.name} returned {simulator_response}")
-        # await simulator.connector.connect(simulator_response)
-        return None #simulator_response
+        return None

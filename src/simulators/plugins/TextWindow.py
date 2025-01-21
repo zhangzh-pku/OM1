@@ -2,6 +2,7 @@ import asyncio
 import random
 import logging
 import pygame
+import re
 
 from llm.output_model import LLM_full
 from typing import Dict, Optional
@@ -33,17 +34,32 @@ class TextWindow:
  
         self.font = pygame.font.Font('freesansbold.ttf', 14)
 
-    def input_clean(self, input) -> str:
+    def input_clean(self, input, earliest_time) -> str:
         st = input
         st = st.strip()
-        st = st.replace("INPUT\n        // START\n        ", "")
-        st = st.replace("::", " ")
-        st = st.replace("\n        // END", "")
-        return st
+        st = st.replace("\n", "")
+        st = re.sub(r"\s+", " ", st) # replace runs whitespace
+        st = st.replace("INPUT // START ", "")
+        st = st.replace(" // END", "")
+
+        sts = st.split("::")
+        time = float(sts[0])
+        time_rezero = time - earliest_time
+        time_st = f"{time_rezero:.3f}::{sts[-1]}"
+
+        return time_st
+
+    def get_earliest_time(self, input_list: list[str]) -> float:
+        times = []
+        for input in input_list:
+            times.append(float(input.split("::")[0]))
+        return min(times)
 
     def print_raw(self, llm: LLM_full) -> None:
-        logging.info(f"SimText input: {llm.prompt}")
-        logging.info(f"SimText input list: {llm.input_list}")
+        logging.debug(f"SimText input: {llm.prompt}")
+        logging.debug(f"SimText input list: {llm.input_list}")
+
+        earliest_time = self.get_earliest_time(llm.input_list)
 
         # make the background white
         self.display_surface.fill(self.white)
@@ -53,22 +69,23 @@ class TextWindow:
 
         y = 15
         for input in llm.input_list:
-            inp = self.input_clean(input)
+            inp = self.input_clean(input, earliest_time)
             logging.info(f"SimText display: {inp}")
             self.text = self.font.render(inp, True, self.black, self.white)
             self.textRect = self.text.get_rect()
-            # self.textRect.left = (20, y)
             self.textRect.topleft = (20, y)
             y += 20
             self.display_surface.blit(self.text, self.textRect)
         
-        self.text = self.font.render(f"LLM_begin: {llm.time_submit}", True, self.black, self.white)
+        dft = f"{float(llm.time_fuse) - earliest_time:.3f}"
+        self.text = self.font.render(f"Fuse_time: {dft}", True, self.black, self.white)
         self.textRect = self.text.get_rect()
         self.textRect.topleft = (20, y)
         y += 20
         self.display_surface.blit(self.text, self.textRect)
 
-        self.text = self.font.render(f"LLM_done: {llm.time_done}", True, self.black, self.white)
+        dst = f"{float(llm.time_submit) - earliest_time:.3f}"
+        self.text = self.font.render(f"LLM_begin: {dst}", True, self.black, self.white)
         self.textRect = self.text.get_rect()
         self.textRect.topleft = (20, y)
         y += 20
@@ -82,9 +99,11 @@ class TextWindow:
         y += 20
         self.display_surface.blit(self.text, self.textRect)
 
+        dtt = f"{float(llm.time_done) - earliest_time:.3f}"
+        self.text = self.font.render(f"LLM_done: {dtt}", True, self.black, self.white)
+        self.textRect = self.text.get_rect()
+        self.textRect.topleft = (20, y)
+        y += 20
+        self.display_surface.blit(self.text, self.textRect)
+
         pygame.display.update()
-
-
-
-
-

@@ -21,7 +21,11 @@ class OpenAILLM(LLM[R]):
 
     async def ask(self, prompt: str, inputs: list[str]) -> R | None:
         try:
-            logging.info(f"OpenAILLM prompt: {prompt}")
+            sts = prompt.split("::")
+            time_fuse = sts[0]
+            # chop off the timestamp
+            prompt = sts[-1]
+            logging.debug(f"OpenAILLM prompt: {prompt}")
             time_submit = f"{time.time():.3f}"
             parsed_response = await self._client.beta.chat.completions.parse(
                 model="gpt-4o",
@@ -32,11 +36,11 @@ class OpenAILLM(LLM[R]):
 
             try:
                 parsed_response = self._output_model.model_validate_json(message_content)
-                logging.info(f"OpenAILLM response: {parsed_response}")
+                logging.debug(f"OpenAILLM response: {parsed_response}")
                 
                 time_done = f"{time.time():.3f}"
-                payload = LLM_full(prompt, inputs, parsed_response, time_submit, time_done)
-                logging.info(f"OpenAILLM payload: {payload}")
+                payload = LLM_full(prompt, inputs, parsed_response, time_fuse, time_submit, time_done)
+                logging.debug(f"OpenAILLM payload: {payload}")
 
                 return payload
             except Exception as e:

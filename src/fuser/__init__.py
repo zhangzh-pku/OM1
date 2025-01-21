@@ -3,6 +3,7 @@ import typing as T
 from inputs.base import AgentInput
 from actions import describe_action
 from runtime.config import RuntimeConfig
+import time
 
 import logging
 
@@ -33,7 +34,7 @@ class Fuser:
             text = input_raw.split("::")[-1]
             input_strings.append(text)
 
-        logging.info(f"InputMessageArray: {input_strings}")
+        logging.debug(f"InputMessageArray: {input_strings}")
         inputs_fused = " ".join([s for s in input_strings if s is not None])
         # descriptions of various possible actions
         actions_fused = "\n\n\n".join(
@@ -45,5 +46,5 @@ class Fuser:
         # (2) all the inputs (vision, sound, etc.)
         # (3) a (typically) fixed list of available actions
         # (4) a (typically) fixed system prompt requesting commands to be generated
-        fused_prompt = f"{system_prompt}\n\n{inputs_fused}\n\nAVAILABLE MODULES:\n{actions_fused}\n\n{question_prompt}"
+        fused_prompt = f"{time.time():.3f}::{system_prompt}\n\n{inputs_fused}\n\nAVAILABLE MODULES:\n{actions_fused}\n\n{question_prompt}"
         return [fused_prompt, input_strings_full]

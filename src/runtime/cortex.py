@@ -67,9 +67,6 @@ class CortexRuntime:
         
         # take all the commands and send them to the correct actions to 
         # trigger actions
-
-        # this should have more stuff in it
-        logging.info(f"Send full payload to simulator: {payload}")
         await self.simulator_orchestrator.promise(payload)
         # we have all the data here needed for debug and simulation purposes
 

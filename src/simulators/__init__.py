@@ -32,7 +32,7 @@ def load_simulator(sim_name: str) -> T.Type[Simulator]:
             ):
                 simulator_classes[name] = obj
 
-    logging.info(f"Simulator classes: {simulator_classes}")
+    logging.debug(f"Simulator classes: {simulator_classes}")
 
     # Find requested simulator class
     if sim_name not in simulator_classes:
