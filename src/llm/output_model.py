@@ -27,4 +27,5 @@ class LLM_full:
     prompt: str
     input_list: list[str]
     commands: list[Command]
-    timestamp: str # ms resolution timestamp
+    time_submit: str # ms resolution timestamp
+    time_done: str

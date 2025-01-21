@@ -45,10 +45,10 @@ class TextWindow:
         logging.info(f"SimText input: {llm.prompt}")
         logging.info(f"SimText input list: {llm.input_list}")
 
-        # completely fill the surface object with white color
+        # make the background white
         self.display_surface.fill(self.white)
 
-        # clean up inputs
+        # clean up inputs - remove formatting strings
         inputs = llm.input_list
 
         y = 15
@@ -62,4 +62,29 @@ class TextWindow:
             y += 20
             self.display_surface.blit(self.text, self.textRect)
         
+        self.text = self.font.render(f"LLM_begin: {llm.time_submit}", True, self.black, self.white)
+        self.textRect = self.text.get_rect()
+        self.textRect.topleft = (20, y)
+        y += 20
+        self.display_surface.blit(self.text, self.textRect)
+
+        self.text = self.font.render(f"LLM_done: {llm.time_done}", True, self.black, self.white)
+        self.textRect = self.text.get_rect()
+        self.textRect.topleft = (20, y)
+        y += 20
+        self.display_surface.blit(self.text, self.textRect)
+
+        processing_time_s = float(llm.time_done) - float(llm.time_submit)
+        dt = f"{processing_time_s:.3f}"
+        self.text = self.font.render(f"LLM_proc time: {dt}", True, self.black, self.white)
+        self.textRect = self.text.get_rect()
+        self.textRect.topleft = (20, y)
+        y += 20
+        self.display_surface.blit(self.text, self.textRect)
+
         pygame.display.update()
+
+
+
+
+
