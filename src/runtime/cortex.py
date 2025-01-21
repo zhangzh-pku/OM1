@@ -68,6 +68,6 @@ class CortexRuntime:
         # take all the commands and send them to the correct actions to 
         # trigger actions
         await self.simulator_orchestrator.promise(payload)
-        # we have all the data here needed for debug and simulation purposes
 
-        # await self.action_orchestrator.promise(payload.commands)
+        #logging.debug(f"Pushing output to execution: {output}")
+        #await self.module_orchestrator.promise(output.commands)
