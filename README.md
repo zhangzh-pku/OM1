@@ -1,6 +1,6 @@
 # OpenMind OS (omOS)
 
-OpenMind OS is an agent runtime system that enables the creation and execution of digital and physical embodied AI agents with modular capabilities like movement, speech, and perception. A key benefit of using omOS is the ease of deploying consistent digital personas across virtual and physical environments. 
+OpenMind OS is an agent runtime system that enables the creation and execution of digital and physical embodied AI agents with modular capabilities like movement, speech, and perception. A key benefit of using omOS is the ease of deploying consistent digital personas across virtual and physical environments.
 
 ## Quick Start
 
@@ -21,7 +21,7 @@ Edit `.env` with your API keys (e.g. OPENAI_API_KEY). NOTE: an OpenAI api key is
 cp .env.example .env
 ```
 
-3. Run an agent:
+2. Run an agent:
 
 ```bash
 uv run src/run.py spot
@@ -80,9 +80,9 @@ modules/
         └── unitree_LL.py
 ```
 
-In general, each robot will have specific capabilities, and therefore, each module will be hardware specific. 
+In general, each robot will have specific capabilities, and therefore, each module will be hardware specific.
 
-*Example*: if you are adding support for the Unitree G1 Humanoid version 13.2b, which supports a new movement subtype such as `dance_2`, you could name the updated module `move_unitree_g1_13_2b` and select that module in your `unitree_g1.json` configuration file. 
+*Example*: if you are adding support for the Unitree G1 Humanoid version 13.2b, which supports a new movement subtype such as `dance_2`, you could name the updated module `move_unitree_g1_13_2b` and select that module in your `unitree_g1.json` configuration file.
 
 ### Configuration
 
@@ -90,8 +90,8 @@ Agents are configured via JSON files in the `config/` directory. Key configurati
 
 ```json
 {
-  "hertz": 0.5, // Agent base tick rate, that can be overridden to respond 
-                // quickly to changing environments via event triggered 
+  "hertz": 0.5, // Agent base tick rate, that can be overridden to respond
+                // quickly to changing environments via event triggered
                 // callbacks through real time middleware
   "name": "agent_name", // Unique identifier
   "system_prompt": "...", // Agent personality/behavior
@@ -122,7 +122,7 @@ Agents are configured via JSON files in the `config/` directory. Key configurati
 2. The Fuser combines inputs into a prompt
 3. The LLM generates commands based on the prompt
 4. The ModuleOrchestrator executes commands through modules
-5. Connectors map omOS data/commands to external data buses and data distribution systems such as custom APIs, `ROS2`, `Zenoh`, or `CycloneDDS`. 
+5. Connectors map omOS data/commands to external data buses and data distribution systems such as custom APIs, `ROS2`, `Zenoh`, or `CycloneDDS`.
 
 ### Core operating principle of the system
 
