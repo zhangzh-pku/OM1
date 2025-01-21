@@ -23,7 +23,7 @@ def singleton(cls):
         Returns the singleton instance of the decorated class.
 
         If the instance doesn't exist, creates it with the provided arguments.
-        Thread-safe implementationementation using a lock.
+        Thread-safe implementation using a lock.
 
         Args:
             *args: Positional arguments to pass to the class constructor.

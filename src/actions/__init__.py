@@ -61,7 +61,7 @@ def load_action(action_config: dict[str, str]) -> AgentAction:
             connector_class = obj
     if implementation_class is None:
         raise ValueError(
-            f"No implementationementation found for action {action_config['name']} implementation {action_config['implementation']}"
+            f"No implementation found for action {action_config['name']} implementation {action_config['implementation']}"
         )
     if connector_class is None:
         raise ValueError(
