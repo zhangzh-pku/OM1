@@ -18,9 +18,10 @@ class TextWindow:
         self.white = (255, 255, 255)
         self.green = (0, 255, 0)
         self.blue = (0, 0, 128)
+        self.black = (0, 0, 0)
          
         # assigning values to X and Y variable
-        self.X = 400
+        self.X = 800
         self.Y = 400
  
         # create the display surface object
@@ -30,77 +31,35 @@ class TextWindow:
         # set the pygame window name
         pygame.display.set_caption('DogText')
  
-        # create a font object.
-        # 1st parameter is the font file
-        # which is present in pygame.
-        # 2nd parameter is size of the font
-        self.font = pygame.font.Font('freesansbold.ttf', 32)
+        self.font = pygame.font.Font('freesansbold.ttf', 14)
+
+    def input_clean(self, input) -> str:
+        st = input
+        st = st.strip()
+        st = st.replace("INPUT\n        // START\n        ", "")
+        st = st.replace("::", " ")
+        st = st.replace("\n        // END", "")
+        return st
 
     def print_raw(self, llm: LLM_full) -> None:
         logging.info(f"SimText input: {llm.prompt}")
         logging.info(f"SimText input list: {llm.input_list}")
+
         # completely fill the surface object with white color
         self.display_surface.fill(self.white)
-         
-        # copying the text surface object
-        # to the display surface object
-        # at the center coordinate.
-        self.display_surface.blit(self.text, self.textRect)
+
+        # clean up inputs
+        inputs = llm.input_list
+
+        y = 15
+        for input in llm.input_list:
+            inp = self.input_clean(input)
+            logging.info(f"SimText display: {inp}")
+            self.text = self.font.render(inp, True, self.black, self.white)
+            self.textRect = self.text.get_rect()
+            # self.textRect.left = (20, y)
+            self.textRect.topleft = (20, y)
+            y += 20
+            self.display_surface.blit(self.text, self.textRect)
+        
         pygame.display.update()
-
-
-
-
-#         @dataclass
-# class LLM_full:
-#     """Class for a complete input / output cycle with timestamps."""
-#     prompt: str
-#     input_list: list[str]
-#     commands: list[Command]
-#     timestamp: str # ms resolution timestamp
-
-# import pygame module in this program
-# import pygame
- 
-
- 
-# # create a text surface object,
-# # on which text is drawn on it.
-# text = font.render('GeeksForGeeks', True, green, blue)
- 
-# # create a rectangular object for the
-# # text surface object
-# textRect = text.get_rect()
- 
-# # set the center of the rectangular object.
-# textRect.center = (X // 2, Y // 2)
- 
-# # infinite loop
-# while True:
- 
-#     # completely fill the surface object
-#     # with white color
-#     display_surface.fill(white)
- 
-#     # copying the text surface object
-#     # to the display surface object
-#     # at the center coordinate.
-#     display_surface.blit(text, textRect)
- 
-#     # iterate over the list of Event objects
-#     # that was returned by pygame.event.get() method.
-#     for event in pygame.event.get():
- 
-#         # if event object type is QUIT
-#         # then quitting the pygame
-#         # and program both.
-#         if event.type == pygame.QUIT:
- 
-#             # deactivates the pygame library
-#             pygame.quit()
- 
-#             # quit the program.
-#             quit()
- 
-#         # Draws the surface object to the screen.
-#         pygame.display.update()

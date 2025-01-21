@@ -30,8 +30,7 @@ class VlmInput(LoopInput[Image.Image]):
         # but for simplementationicity let's not bother with the random image, 
         # but just create a string that changes
         num = random.randint(0, 100)
-        message = f"I see {num} people. Also, I see a rocket."
-        message = f"{time.time():.3f}::{message}"
+        message = f"{time.time():.3f}::I see {num} people. Also, I see a rocket."
         logging.debug(f"VlmInput: {message}")
         return message
 
@@ -71,11 +70,17 @@ class VlmInput(LoopInput[Image.Image]):
         if len(self.messages) == 0:
             return None
 
-        result = f"""
+        message = self.messages[-1]
+        part = message.split("::")
+        ts = part[0]
+        ms = part[-1]
+
+        result = f"""{ts}::
         {self.__class__.__name__} INPUT
         // START
-        {self.messages[-1]}
+        {ms}
         // END
         """
+
         self.messages = []
         return result

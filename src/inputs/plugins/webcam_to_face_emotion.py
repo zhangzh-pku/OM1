@@ -67,9 +67,7 @@ class FaceEmotionCapture(LoopInput[cv2.typing.MatLike]):
         # # Display the resulting frame
         # cv2.imshow('Real-time Emotion Detection', frame)
 
-        message = f"I see a person. Their emotion is {self.emotion}."
-        message = f"{time.time():.3f}::{message}"
-
+        message = f"{time.time():.3f}::I see a person. Their emotion is {self.emotion}."
         logging.debug(f"FaceEmotionCapture: {message}")
         
         return message
@@ -110,11 +108,17 @@ class FaceEmotionCapture(LoopInput[cv2.typing.MatLike]):
         if len(self.messages) == 0:
             return None
 
-        result = f"""
+        message = self.messages[-1]
+        part = message.split("::")
+        ts = part[0]
+        ms = part[-1]
+
+        result = f"""{ts}::
         {self.__class__.__name__} INPUT
         // START
-        {self.messages[-1]}
+        {ms}
         // END
         """
+
         self.messages = []
         return result
