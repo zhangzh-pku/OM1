@@ -3,7 +3,7 @@ from actions.base import ActionImplementation
 from actions.speech.interface import SpeechInput
 
 
-class SpeechPassthroughImpl(ActionImplementation[SpeechInput, SpeechInput]):
+class SpeechPassthroughImplementation(ActionImplementation[SpeechInput, SpeechInput]):
     """
     A passthrough implementation of the speech action. Output is the same as the input.
     """

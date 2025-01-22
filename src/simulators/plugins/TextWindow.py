@@ -52,7 +52,8 @@ class TextWindow:
     def get_earliest_time(self, input_list: list[str]) -> float:
         times = []
         for input in input_list:
-            times.append(float(input.split("::")[0]))
+            if input is not None and "::" in input:
+                times.append(float(input.split("::")[0]))
         return min(times)
 
     def print_raw(self, llm: LLM_full) -> None:

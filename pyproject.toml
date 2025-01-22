@@ -13,7 +13,8 @@ dependencies = [
     "opencv-python",
     "deepface",
     "tf_keras",
-    "pygame"
+    "pygame",
+    "web3"
 ]
 
 [tool.uv.sources]

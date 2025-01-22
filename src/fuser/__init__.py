@@ -31,8 +31,9 @@ class Fuser:
             input_raw = input.formatted_latest_buffer()
             # remove the timestamp at the front
             input_strings_full.append(input_raw)
-            text = input_raw.split("::")[-1]
-            input_strings.append(text)
+            if input_raw is not None and "::" in input_raw:
+                input_raw = input_raw.split("::")[-1]
+            input_strings.append(input_raw)
 
         logging.debug(f"InputMessageArray: {input_strings}")
         inputs_fused = " ".join([s for s in input_strings if s is not None])

@@ -7,7 +7,7 @@ from typing import Dict, Optional, List
 from providers.asr_provider import ASRProvider
 from providers.sleep_ticker_provider import SleepTickerProvider
 
-from input.base.loop import LoopInput
+from inputs.base.loop import LoopInput
 
 class ASRInput(LoopInput[str]):
     """Automatic Speech Recognition (ASR) input handler.
