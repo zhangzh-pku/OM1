@@ -36,6 +36,7 @@ class ActionOrchestrator:
         # loop through commands and send the correct 
         # command to the correct action
         for command in commands:
+            logging.info(f"Sending command: {command}")
             action = next(
                 (m for m in self._config.agent_actions if m.name == command.name), None
             )

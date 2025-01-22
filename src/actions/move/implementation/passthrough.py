@@ -3,7 +3,7 @@ from actions.base import ActionImplementation
 from actions.move.interface import MoveInput
 
 
-class MovePassthroughImpl(ActionImplementation[MoveInput, MoveInput]):
+class MovePassthroughImplementation(ActionImplementation[MoveInput, MoveInput]):
     """
     A passthrough implementation of the move action. Output is the same as the input.
     """

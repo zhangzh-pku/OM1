@@ -4,7 +4,7 @@ import logging
 import pygame
 import re
 
-from llm.output_model import LLM_full
+from llm.output_model import LLM_full, Command
 from typing import Dict, Optional
 
 class TextWindow:
@@ -38,7 +38,7 @@ class TextWindow:
         st = input
         st = st.strip()
         st = st.replace("\n", "")
-        st = re.sub(r"\s+", " ", st) # replace runs whitespace
+        st = re.sub(r"\s+", " ", st) # replace runs of whitespace
         st = st.replace("INPUT // START ", "")
         st = st.replace(" // END", "")
 
@@ -58,6 +58,7 @@ class TextWindow:
     def print_raw(self, llm: LLM_full) -> None:
         logging.debug(f"SimText input: {llm.prompt}")
         logging.debug(f"SimText input list: {llm.input_list}")
+        logging.debug(f"SimText input list: {llm.commands.commands}")
 
         earliest_time = self.get_earliest_time(llm.input_list)
 
@@ -105,5 +106,15 @@ class TextWindow:
         self.textRect.topleft = (20, y)
         y += 20
         self.display_surface.blit(self.text, self.textRect)
+
+        for command in llm.commands.commands:
+            action_type = command.name
+            action_spec = command.arguments[0].value
+            action = action_type + "::" + action_spec
+            self.text = self.font.render(action, True, self.black, self.white)
+            self.textRect = self.text.get_rect()
+            self.textRect.topleft = (20, y)
+            y += 20
+            self.display_surface.blit(self.text, self.textRect)
 
         pygame.display.update()

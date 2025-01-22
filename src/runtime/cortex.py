@@ -69,5 +69,7 @@ class CortexRuntime:
         # trigger actions
         await self.simulator_orchestrator.promise(payload)
 
+
+
         #logging.debug(f"Pushing output to execution: {output}")
-        #await self.module_orchestrator.promise(output.commands)
+        await self.action_orchestrator.promise(payload.commands.commands)
