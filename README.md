@@ -21,7 +21,9 @@ Edit `.env` with your API keys (e.g. OPENAI_API_KEY). NOTE: an OpenAI api key is
 cp .env.example .env
 ```
 
-3. Run an agent:
+3. Run an Hello World agent
+
+This very basic agent uses webcam data to estimate your emotion, generates a fake VLM caption, and sends those two inputs to central LLM. The LLM then returns `movement`, `speach`, and `face` commands, which are displayed in a small `pygame` window. This is windows also shows basic timing debug information so you can see how long each step takes.   
 
 ```bash
 uv run src/run.py spot
@@ -30,6 +32,8 @@ uv run src/run.py spot
 NOTE: `uv` does many things in the background, such as setting up a good `venv` and downloading any dependencies if needed. Please add new dependencies to `pyproject.toml`.
 
 NOTE: If you are running complex models, or need to download dependencies, there may be a delay before the agent starts.
+
+NOTE: There should be a `pygame` window that pops up when you run `uv run src/run.py spot`. Sometimes the `pygame` window is hidden behind all other open windows - use "show all windows" to find it. 
 
 ## CLI Commands
 
