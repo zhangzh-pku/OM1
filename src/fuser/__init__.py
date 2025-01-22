@@ -29,6 +29,7 @@ class Fuser:
 
         input_strings = [input.formatted_latest_buffer() for input in inputs]
         logging.debug(f"InputMessageArray: {input_strings}")
+        
         inputs_fused = " ".join([s for s in input_strings if s is not None])
         # descriptions of various possible actions
         actions_fused = "\n\n\n".join(

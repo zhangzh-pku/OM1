@@ -12,7 +12,7 @@ class FaceInput:
     action: FaceAction
 
 @dataclass
-class FaceInterface(Interface[FaceInput, FaceInput]):
+class Face(Interface[FaceInput, FaceInput]):
     """
     A facial expression to be performed by the agent.
 

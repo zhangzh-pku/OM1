@@ -63,8 +63,6 @@ class CortexRuntime:
             logging.warning("No output from LLM")
             return
 
-        logging.debug(f"LLM returned this: {output}")
-
         # Trigger the simulators
         await self.simulator_orchestrator.promise(output.commands)
         # Trigger the actions
