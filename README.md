@@ -1,6 +1,6 @@
 # OpenMind OS (omOS)
 
-OpenMind OS is an agent runtime system that enables the creation and execution of digital and physical embodied AI agents with modular capabilities like movement, speech, and perception. A key benefit of using omOS is the ease of deploying consistent digital personas across virtual and physical environments. 
+OpenMind OS is an agent runtime system that enables the creation and execution of digital and physical embodied AI agents with modular capabilities like movement, speech, and perception. A key benefit of using omOS is the ease of deploying consistent digital personas across virtual and physical environments.
 
 ## Quick Start
 
@@ -23,7 +23,8 @@ cp .env.example .env
 
 3. Run an Hello World agent
 
-This very basic agent uses webcam data to estimate your emotion, generates a fake VLM caption, and sends those two inputs to central LLM. The LLM then returns `movement`, `speach`, and `face` commands, which are displayed in a small `pygame` window. This is windows also shows basic timing debug information so you can see how long each step takes.   
+This very basic agent uses webcam data to estimate your emotion, generates a fake VLM caption, and sends those two inputs to central LLM. The LLM then returns `movement`, `speech`, and `face` commands, which are displayed in a small `pygame` window. This is windows also shows basic timing debug information so you can see how long each step takes.   
+
 
 ```bash
 uv run src/run.py spot
@@ -88,14 +89,15 @@ In general, each robot will have specific capabilities, and therefore, each acti
 
 *Example*: if you are adding support for the Unitree G1 Humanoid version 13.2b, which supports a new movement subtype such as `dance_2`, you could name the updated action `move_unitree_g1_13_2b` and select that action in your `unitree_g1.json` configuration file. 
 
+
 ### Configuration
 
 Agents are configured via JSON files in the `config/` directory. Key configuration elements:
 
 ```json
 {
-  "hertz": 0.5, // Agent base tick rate, that can be overridden to respond 
-                // quickly to changing environments via event triggered 
+  "hertz": 0.5, // Agent base tick rate, that can be overridden to respond
+                // quickly to changing environments via event triggered
                 // callbacks through real time middleware
   "name": "agent_name", // Unique identifier
   "system_prompt": "...", // Agent personality/behavior
