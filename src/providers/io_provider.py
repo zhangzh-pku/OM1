@@ -1,7 +1,13 @@
 import threading
+from dataclasses import dataclass
 from typing import Dict, Optional
 
 from .singleton import singleton
+
+@dataclass
+class Input:
+    input: str
+    timestamp: Optional[float]
 
 @singleton
 class IOProvider:
@@ -18,18 +24,15 @@ class IOProvider:
 
     # I want to combine timestamp to input if it is not None
     @property
-    def inputs(self) -> Dict[str, Dict[str, str]]:
+    def inputs(self) -> Dict[str, Input]:
         with self._lock:
             result = {}
             for name, value in self._inputs.items():
                 timestamp = self._input_timestamps.get(name)
                 if timestamp is not None:
-                    result[name] = {
-                        "input": value,
-                        "timestamp": timestamp
-                    }
+                    result[name] = Input(input=value, timestamp=timestamp)
                 else:
-                    result[name] = value
+                    result[name] = Input(input=value)
             return result
 
     def add_input(self, key: str, value: str, timestamp: Optional[float]) -> None:

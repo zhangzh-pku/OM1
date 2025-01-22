@@ -57,7 +57,7 @@ class TextWindow:
     def get_earliest_time(self) -> float:
         earliest_time = float("inf")
         for value in self.io_provider.inputs.values():
-            timestamp = value["timestamp"]
+            timestamp = value.timestamp
             if timestamp < earliest_time:
                 earliest_time = timestamp
         return earliest_time
@@ -71,7 +71,7 @@ class TextWindow:
 
         y = 15
         for action, values in self.io_provider.inputs.items():
-            inp = f"{(values["timestamp"] - earliest_time):.3f}:: {action} :: {values["input"]}"
+            inp = f"{(values.timestamp - earliest_time):.3f}:: {action} :: {values.input}"
             self.text = self.font.render(inp, True, self.black, self.white)
             self.textRect = self.text.get_rect()
             self.textRect.topleft = (20, y)
