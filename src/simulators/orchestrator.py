@@ -3,7 +3,6 @@ import logging
 import typing as T
 
 from llm.output_model import Command
-from llm.output_model import LLM_full
 from simulators.base import Simulator
 from runtime.config import RuntimeConfig
 
@@ -23,7 +22,7 @@ class SimulatorOrchestrator:
 
     async def flush_promises(self) -> tuple[list[T.Any], list[asyncio.Task[T.Any]]]:
         """
-        Flushes the promise queue and returns the completed promises 
+        Flushes the promise queue and returns the completed promises
         and the pending promises.
         """
         done_promises = []
@@ -34,16 +33,16 @@ class SimulatorOrchestrator:
         self.promise_queue = [p for p in self.promise_queue if p not in done_promises]
         return done_promises, self.promise_queue
 
-    async def promise(self, llm: LLM_full) -> None:
-        # loop through simulators and send each one of them 
+    async def promise(self, commands: T.List[Command]) -> None:
+        # loop through simulators and send each one of them
         # the current LLM_full
         for simulator in self._config.simulators:
-            simulator_response = asyncio.create_task(self._promise_simulator(simulator, llm))
+            simulator_response = asyncio.create_task(self._promise_simulator(simulator, commands))
             self.promise_queue.append(simulator_response)
 
-    async def _promise_simulator(self, simulator: Simulator, llm: LLM_full) -> T.Any:
+    async def _promise_simulator(self, simulator: Simulator, commands: T.List[Command]) -> T.Any:
         logging.debug(
-            f"Calling simulator {simulator.name} with input {llm.prompt}"
+            f"Calling simulator {simulator.name} with commands {commands}"
         )
-        simulator.print_raw(llm)
+        simulator.run(commands)
         return None

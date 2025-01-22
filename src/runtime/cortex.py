@@ -13,7 +13,7 @@ from providers.sleep_ticker_provider import SleepTickerProvider
 class CortexRuntime:
     """
     The CortexRuntime is the main entry point for the omOS agent.
-    It is responsible for running the agent, orchestrating communication 
+    It is responsible for running the agent, orchestrating communication
     between the memory, fuser, actions, and managing the inputs and outputs.
     """
 
@@ -50,26 +50,22 @@ class CortexRuntime:
     async def _tick(self) -> None:
         # collect all the latest inputs
         finished_promises, _ = await self.action_orchestrator.flush_promises()
-        
+
         # combine those inputs into a suitable prompt
-        [prompt, full_inputs_with_ts]= self.fuser.fuse(self.config.agent_inputs, finished_promises)
+        prompt = self.fuser.fuse(self.config.agent_inputs, finished_promises)
         if prompt is None:
             logging.warning("No prompt to fuse")
             return
-        
+
         # if there is a prompt, send to the AIs
-        payload = await self.config.cortex_llm.ask(prompt, full_inputs_with_ts)
-        if payload is None:
+        output = await self.config.cortex_llm.ask(prompt)
+        if output is None:
             logging.warning("No output from LLM")
             return
 
-        logging.debug(f"LLM returned this: {payload}")
-        
-        # take all the commands and send them to the correct actions to 
-        # trigger actions
-        await self.simulator_orchestrator.promise(payload)
+        logging.debug(f"LLM returned this: {output}")
 
-
-
-        #logging.debug(f"Pushing output to execution: {output}")
-        await self.action_orchestrator.promise(payload.commands.commands)
+        # Trigger the simulators
+        await self.simulator_orchestrator.promise(output.commands)
+        # Trigger the actions
+        await self.action_orchestrator.promise(output.commands)

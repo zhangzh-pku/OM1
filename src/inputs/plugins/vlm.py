@@ -1,19 +1,31 @@
 import asyncio
 import random
 from PIL import Image
-import logging
+from dataclasses import dataclass
 import time
 
 from inputs.base.loop import LoopInput
 
-from typing import Dict, Optional
+from providers.io_provider import IOProvider
+
+from typing import Optional
+
+@dataclass
+class Message:
+    timestamp: float
+    message: str
+
 
 class VlmInput(LoopInput[Image.Image]):
     """
     Input from a VLM
     """
     def __init__(self):
-        self.messages: list[str] = []
+        # Track IO
+        self.io_provider = IOProvider()
+
+        # Messages buffer
+        self.messages: list[Message] = []
 
     async def _poll(self) -> Image.Image:
         await asyncio.sleep(0.5)
@@ -25,16 +37,16 @@ class VlmInput(LoopInput[Image.Image]):
         )
         return img
 
-    async def _raw_to_text(self, raw_input: Image.Image) -> str:
+    async def _raw_to_text(self, raw_input: Image.Image) -> Message:
         # now you can use the `raw_input` variable for something, it is of Type Image
-        # but for simplementationicity let's not bother with the random image, 
+        # but for simplementationicity let's not bother with the random image,
         # but just create a string that changes
         num = random.randint(0, 100)
-        message = f"{time.time():.3f}::I see {num} people. Also, I see a rocket."
-        logging.debug(f"VlmInput: {message}")
-        return message
+        message = f"I see {num} people. Also, I see a rocket."
 
-    async def raw_to_text(self, raw_input):
+        return Message(timestamp=time.time(), message=message)
+
+    async def raw_to_text(self, raw_input: Image.Image):
         """
         Convert raw input to processed text and manage buffer.
 
@@ -43,20 +55,10 @@ class VlmInput(LoopInput[Image.Image]):
         raw_input : Optional[str]
             Raw input to be processed
         """
-        text = await self._raw_to_text(raw_input)
-        if text is None:
-            if len(self.messages) == 0:
-                return None
-            # else:
-            #     # Skip sleep if there's already a message in the buffer
-            #     self.global_sleep_ticker_provider.skip_sleep = True
+        pending_message = await self._raw_to_text(raw_input)
 
-        if text is not None:
-            # if len(self.messages) == 0:
-            self.messages.append(text)
-            # else:
-            # here is where you can implementationement joining older messages
-            #     self.buffer[-1] = f"{self.buffer[-1]} {text}"
+        if pending_message is not None:
+            self.messages.append(pending_message)
 
     def formatted_latest_buffer(self) -> Optional[str]:
         """
@@ -70,17 +72,16 @@ class VlmInput(LoopInput[Image.Image]):
         if len(self.messages) == 0:
             return None
 
-        message = self.messages[-1]
-        part = message.split("::")
-        ts = part[0]
-        ms = part[-1]
+        latest_message = self.messages[-1]
 
-        result = f"""{ts}::
+        result = f"""
         {self.__class__.__name__} INPUT
         // START
-        {ms}
+        {latest_message.timestamp:.3f}
         // END
         """
 
+        self.io_provider.add_input(self.__class__.__name__, latest_message.message, latest_message.timestamp)
         self.messages = []
+
         return result

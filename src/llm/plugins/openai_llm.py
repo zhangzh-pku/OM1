@@ -1,48 +1,39 @@
 import openai
 import logging
 import typing as T
-from dataclasses import dataclass
 import time
 
 from pydantic import BaseModel
 
 from llm import LLM
 
-from llm.output_model import Command
-from llm.output_model import LLM_full
-    
-R = T.TypeVar("R")
+import logging
+
+
+R = T.TypeVar("R", bound=BaseModel)
+
 
 class OpenAILLM(LLM[R]):
-
     def __init__(self, output_model: T.Type[R]):
         self._client = openai.AsyncClient()
         super().__init__(output_model)
 
-    async def ask(self, prompt: str, inputs: list[str]) -> R | None:
+    async def ask(self, prompt: str) -> R | None:
         try:
-            sts = prompt.split("::")
-            time_fuse = sts[0]
-            # chop off the timestamp
-            prompt = sts[-1]
-            logging.debug(f"OpenAILLM prompt: {prompt}")
-            time_submit = f"{time.time():.3f}"
+            logging.debug(f"LLM input: {prompt}")
+            self.io_provider.llm_start_time = time.time()
+            self.io_provider.set_llm_prompt(prompt)
             parsed_response = await self._client.beta.chat.completions.parse(
                 model="gpt-4o",
                 messages=[{"role": "user", "content": prompt}],
                 response_format=self._output_model,
             )
             message_content = parsed_response.choices[0].message.content
-
+            self.io_provider.llm_end_time = time.time()
             try:
                 parsed_response = self._output_model.model_validate_json(message_content)
-                logging.debug(f"OpenAILLM response: {parsed_response}")
-                
-                time_done = f"{time.time():.3f}"
-                payload = LLM_full(prompt, inputs, parsed_response, time_fuse, time_submit, time_done)
-                logging.debug(f"OpenAILLM payload: {payload}")
-
-                return payload
+                logging.debug(f"LLM output: {parsed_response}")
+                return parsed_response
             except Exception as e:
                 logging.error(f"Error parsing response: {e}")
                 return None

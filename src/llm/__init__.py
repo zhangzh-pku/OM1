@@ -3,6 +3,8 @@ import importlib
 import inspect
 import typing as T
 
+from providers.io_provider import IOProvider
+
 R = T.TypeVar("R")
 
 
@@ -13,8 +15,9 @@ class LLM(T.Generic[R]):
 
     def __init__(self, output_model: T.Type[R]):
         self._output_model = output_model
+        self.io_provider = IOProvider()
 
-    async def ask(self, prompt: str) -> R:
+    async def ask(self, prompt: str, inputs: list[str]) -> R:
         """Ask the LLM a question"""
         raise NotImplementedError
 

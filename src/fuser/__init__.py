@@ -1,9 +1,11 @@
 import typing as T
+import time
 
 from inputs.base import AgentInput
 from actions import describe_action
 from runtime.config import RuntimeConfig
-import time
+
+from providers.io_provider import IOProvider
 
 import logging
 
@@ -14,26 +16,18 @@ class Fuser:
 
     def __init__(self, config: RuntimeConfig):
         self.config = config
+        self.io_provider = IOProvider()
 
     def fuse(
         self, inputs: list[AgentInput], finished_promises: list[T.Any]
-    ) -> str | None:
+    ) -> str:
+        # Record the timestamp of the input
+        self.io_provider.fuser_start_time = time.time()
+
         """Combine all inputs, memories, and configurations into a single prompt"""
         system_prompt = self.config.system_prompt
 
-        # for input in inputs:
-        #     message = input.formatted_latest_buffer() 
-        #     logging.info(f"InputMessage: {message}")
-
-        input_strings = []
-        input_strings_full = []
-        for input in inputs:
-            input_raw = input.formatted_latest_buffer()
-            # remove the timestamp at the front
-            input_strings_full.append(input_raw)
-            text = input_raw.split("::")[-1]
-            input_strings.append(text)
-
+        input_strings = [input.formatted_latest_buffer() for input in inputs]
         logging.debug(f"InputMessageArray: {input_strings}")
         inputs_fused = " ".join([s for s in input_strings if s is not None])
         # descriptions of various possible actions
@@ -46,5 +40,9 @@ class Fuser:
         # (2) all the inputs (vision, sound, etc.)
         # (3) a (typically) fixed list of available actions
         # (4) a (typically) fixed system prompt requesting commands to be generated
-        fused_prompt = f"{time.time():.3f}::{system_prompt}\n\n{inputs_fused}\n\nAVAILABLE MODULES:\n{actions_fused}\n\n{question_prompt}"
-        return [fused_prompt, input_strings_full]
+        fused_prompt = f"{system_prompt}\n\n{inputs_fused}\n\nAVAILABLE MODULES:\n{actions_fused}\n\n{question_prompt}"
+
+        # Record the timestamp of the output
+        self.io_provider.fuser_end_time = time.time()
+
+        return fused_prompt
