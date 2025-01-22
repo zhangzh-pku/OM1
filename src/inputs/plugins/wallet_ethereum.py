@@ -2,6 +2,8 @@ import asyncio
 import random
 import logging
 import time
+import os
+from web3 import Web3
 
 from typing import Dict, Optional
 
@@ -16,16 +18,46 @@ class WalletEthereum(LoopInput[float]):
         self.ETH_balance = 0
         self.ETH_balance_previous = 0
         self.messages: list[str] = []
+        self.eth_info = ''
 
-        # connect to Ethereum here
-        # ETH api setup
+        self.PROVIDER_URL = "https://eth.llamarpc.com"
+        self.POLL_INTERVAL = 0.5 # seconds between blockchain data updates
+        self.ACCOUNT_ADDRESS = os.environ.get("ETH_ADDRESS","0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045")
+        logging.debug(f"Using {self.ACCOUNT_ADDRESS} as the wallet address")
+
+        # Initialize Web3
+        self.web3 = Web3(Web3.HTTPProvider(self.PROVIDER_URL))
+        if not self.web3.is_connected():
+            raise Exception("Failed to connect to Ethereum")
 
     async def _poll(self) -> [float,float]:
-        await asyncio.sleep(1)
-        
-        # query ETH balance here
-        # faking it for now
-        self.ETH_balance = random.randint(0, 255)
+
+        await asyncio.sleep(self.POLL_INTERVAL)
+
+        try:
+            # Get latest block data
+            block_number = self.web3.eth.block_number
+            
+            # Get account data
+            balance_wei = self.web3.eth.get_balance(self.ACCOUNT_ADDRESS)
+            balance_eth = self.web3.from_wei(balance_wei, 'ether')
+            
+            self.eth_info = {
+                'block_number': int(block_number),
+                'address': str(self.ACCOUNT_ADDRESS), # just to be clear that that's a string
+                'balance': float(balance_eth),
+            }
+            logging.debug(f"Block: {self.eth_info['block_number']}, Account Balance: {self.eth_info['balance']:.3f} ETH")
+            
+        except Exception as e:
+            logging.error(f"Error fetching blockchain data: {e}")
+
+        # randomly simulate ETH inbound transfers for debugging purposes
+        random_add_for_debugging = 0
+        if random.randint(0, 10) > 7:
+            random_add_for_debugging = 1.0
+
+        self.ETH_balance = float(balance_eth) + random_add_for_debugging
         balance_change = self.ETH_balance - self.ETH_balance_previous
         self.ETH_balance_previous = self.ETH_balance
 

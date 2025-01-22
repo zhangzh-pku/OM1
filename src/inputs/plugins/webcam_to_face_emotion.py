@@ -30,7 +30,7 @@ class FaceEmotionCapture(LoopInput[cv2.typing.MatLike]):
         self.messages: list[str] = []
 
     async def _poll(self) -> cv2.typing.MatLike:
-        await asyncio.sleep(0.2)
+        await asyncio.sleep(0.5)
         
         # Capture a frame every 200 ms
         ret, frame = self.cap.read()
