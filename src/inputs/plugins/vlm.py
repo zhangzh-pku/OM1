@@ -52,8 +52,8 @@ class VlmInput(LoopInput[Image.Image]):
             #     self.global_sleep_ticker_provider.skip_sleep = True
 
         if text is not None:
-            if len(self.messages) == 0:
-                self.messages.append(text)
+            # if len(self.messages) == 0:
+            self.messages.append(text)
             # else:
             # here is where you can implementationement joining older messages
             #     self.buffer[-1] = f"{self.buffer[-1]} {text}"
