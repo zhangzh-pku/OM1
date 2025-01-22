@@ -14,12 +14,13 @@ class WalletEthereum(LoopInput[float]):
 
     def __init__(self):
         self.ETH_balance = 0
-        self.ETP_balance_previous = 0
+        self.ETH_balance_previous = 0
+        self.messages: list[str] = []
 
-        # connect to eteruem here
+        # connect to Ethereum here
         # ETH api setup
 
-    async def _poll(self) -> float:
+    async def _poll(self) -> [float,float]:
         await asyncio.sleep(1)
         
         # query ETH balance here
@@ -28,18 +29,19 @@ class WalletEthereum(LoopInput[float]):
         balance_change = self.ETH_balance - self.ETH_balance_previous
         self.ETH_balance_previous = self.ETH_balance
 
-        return balance_change
+        return [self.ETH_balance, balance_change]
 
-    async def _raw_to_text(self, raw_input: float) -> str:
+    async def _raw_to_text(self, raw_input: [float, float]) -> str:
         
-        balance_change = raw_input
+        balance = raw_input[0]
+        balance_change = raw_input[1]
 
         if balance_change > 0:
-            message = f"{time.time():.3f}::You just recieved {balance_change} ETH."
-            logging.debug(f"WalletEthereum: {message}")
+            message = f"{time.time():.3f}::You just received {balance_change:.3f} ETH."
         else:
-            return None
+            message = f"{time.time():.3f}::You have {balance:.3f} ETH."
 
+        logging.info(f"WalletEthereum: {message}")
         return message
         
     async def raw_to_text(self, raw_input):

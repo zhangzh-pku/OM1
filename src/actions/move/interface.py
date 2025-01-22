@@ -23,7 +23,7 @@ class MoveInput:
     action: MovementAction
 
 @dataclass
-class MoveInterface(Interface[MoveInput, MoveInput]):
+class Move(Interface[MoveInput, MoveInput]):
     """
     A movement to be performed by the agent.
 
