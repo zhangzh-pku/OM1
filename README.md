@@ -13,6 +13,12 @@ curl -LsSf https://astral.sh/uv/install.sh | sh
 brew install uv
 ```
 
+If you are on mac, you may need to install `pyaudio` manually:
+
+```bash
+brew install portaudio
+```
+
 2. Set up environment variables:
 
 Edit `.env` with your API keys (e.g. OPENAI_API_KEY). NOTE: an OpenAI api key is required.
