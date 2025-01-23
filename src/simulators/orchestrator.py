@@ -36,7 +36,7 @@ class SimulatorOrchestrator:
 
     async def promise(self, llm: LLM_full) -> None:
         # loop through simulators and send each one of them 
-        # the current LLM_full
+        # the current LLM_full data payload
         for simulator in self._config.simulators:
             simulator_response = asyncio.create_task(self._promise_simulator(simulator, llm))
             self.promise_queue.append(simulator_response)
@@ -45,5 +45,5 @@ class SimulatorOrchestrator:
         logging.debug(
             f"Calling simulator {simulator.name} with input {llm.prompt}"
         )
-        simulator.print_raw(llm)
+        simulator.update(llm)
         return None
