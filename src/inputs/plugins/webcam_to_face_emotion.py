@@ -1,14 +1,20 @@
 import asyncio
-import random
-import logging
 import time
+from dataclasses import dataclass
 
-from typing import Dict, Optional
+from typing import Optional
 
 from inputs.base.loop import LoopInput
 
+from providers.io_provider import IOProvider
+
 import cv2
 from deepface import DeepFace
+
+@dataclass
+class Message:
+    timestamp: float
+    message: str
 
 """
 Code example is from:
@@ -22,23 +28,31 @@ class FaceEmotionCapture(LoopInput[cv2.typing.MatLike]):
     """
 
     def __init__(self):
+        # Track IO
+        self.io_provider = IOProvider()
+
         # Load face cascade classifier
         self.face_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_frontalface_default.xml')
+
         # Start capturing video
         self.cap = cv2.VideoCapture(0)
+
+        # Initialize emotion label
         self.emotion = ""
-        self.messages: list[str] = []
+
+        # Messages buffer
+        self.messages: list[Message] = []
 
     async def _poll(self) -> cv2.typing.MatLike:
         await asyncio.sleep(0.5)
         
-        # Capture a frame every 200 ms
+        # Capture a frame every 500 ms
         ret, frame = self.cap.read()
 
         return frame
 
-    async def _raw_to_text(self, raw_input: cv2.typing.MatLike) -> str:
-        
+    async def _raw_to_text(self, raw_input: cv2.typing.MatLike) -> Message:
+
         frame = raw_input
 
         # Convert frame to grayscale
@@ -60,18 +74,10 @@ class FaceEmotionCapture(LoopInput[cv2.typing.MatLike]):
             # Determine the dominant emotion
             self.emotion = result[0]['dominant_emotion']
 
-            # # Draw rectangle around face and label with predicted emotion
-            # cv2.rectangle(frame, (x, y), (x + w, y + h), (0, 0, 255), 2)
-            # cv2.putText(frame, self.emotion, (x, y - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.9, (0, 0, 255), 2)
+        message = f"I see a person. Their emotion is {self.emotion}."
 
-        # # Display the resulting frame
-        # cv2.imshow('Real-time Emotion Detection', frame)
+        return Message(timestamp=time.time(), message=message)
 
-        message = f"{time.time():.3f}::I see a person. Their emotion is {self.emotion}."
-        logging.debug(f"FaceEmotionCapture: {message}")
-        
-        return message
-        
     async def raw_to_text(self, raw_input):
         """
         Convert raw input to processed text and manage buffer.
@@ -81,20 +87,10 @@ class FaceEmotionCapture(LoopInput[cv2.typing.MatLike]):
         raw_input : Optional[str]
             Raw input to be processed
         """
-        text = await self._raw_to_text(raw_input)
-        if text is None:
-            if len(self.messages) == 0:
-                return None
-            # else:
-            #     # Skip sleep if there's already a message in the buffer
-            #     self.global_sleep_ticker_provider.skip_sleep = True
+        pending_message = await self._raw_to_text(raw_input)
 
-        if text is not None:
-            # if len(self.messages) == 0:
-            self.messages.append(text)
-            # else:
-            # here is where you can implementationement joining older messages
-            #     self.buffer[-1] = f"{self.buffer[-1]} {text}"
+        if pending_message is not None:
+            self.messages.append(pending_message)
 
     def formatted_latest_buffer(self) -> Optional[str]:
         """
@@ -108,17 +104,16 @@ class FaceEmotionCapture(LoopInput[cv2.typing.MatLike]):
         if len(self.messages) == 0:
             return None
 
-        message = self.messages[-1]
-        part = message.split("::")
-        ts = part[0]
-        ms = part[-1]
+        latest_message = self.messages[-1]
 
-        result = f"""{ts}::
+        result = f"""
         {self.__class__.__name__} INPUT
         // START
-        {ms}
+        {latest_message.timestamp:.3f}
         // END
         """
 
+        self.io_provider.add_input(self.__class__.__name__, latest_message.message, latest_message.timestamp)
         self.messages = []
+
         return result
