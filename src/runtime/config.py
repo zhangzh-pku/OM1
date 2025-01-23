@@ -10,7 +10,7 @@ from inputs.base import AgentInput
 from actions.base import AgentAction
 from simulators.base import Simulator
 
-from llm import LLM, load_llm
+from llm import LLM, LLMConfig, load_llm
 from llm.output_model import CortexOutputModel
 
 @dataclass
@@ -40,6 +40,7 @@ def load_config(config_name: str) -> RuntimeConfig:
             load_simulator(simulator["type"])() for simulator in raw_config["simulators"]
         ],
         "cortex_llm": load_llm(raw_config["cortex_llm"]["type"])(
+            config = LLMConfig(**raw_config["cortex_llm"].get("config", {})),
             output_model=CortexOutputModel
         ),
         "agent_actions": [
