@@ -112,7 +112,7 @@ class RacoonSim:
             self.textRect = self.text.get_rect()
             self.textRect.topleft = (20, y)
             y += 20
-            self.display_surface.blit(self.text, self.textRect)
+            self.surface_text.blit(self.text, self.textRect)
 
         dft = f"{self.io_provider.fuser_end_time - earliest_time:.3f}"
         self.text = self.font.render(f"Fuse_time: {dft}", True, self.black, self.white)

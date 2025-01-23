@@ -3,11 +3,20 @@ import random
 import logging
 import time
 import os
+from dataclasses import dataclass
 from web3 import Web3
 
-from typing import Dict, Optional
+from typing import List, Optional
 
 from inputs.base.loop import LoopInput
+
+from providers.io_provider import IOProvider
+
+@dataclass
+class Message:
+    timestamp: float
+    message: str
+
 
 class WalletEthereum(LoopInput[float]):
     """
@@ -15,6 +24,9 @@ class WalletEthereum(LoopInput[float]):
     """
 
     def __init__(self):
+        # Track IO
+        self.io_provider = IOProvider()
+
         self.ETH_balance = 0
         self.ETH_balance_previous = 0
         self.messages: list[str] = []
@@ -30,25 +42,25 @@ class WalletEthereum(LoopInput[float]):
         if not self.web3.is_connected():
             raise Exception("Failed to connect to Ethereum")
 
-    async def _poll(self) -> [float,float]:
+    async def _poll(self) -> List[float]:
 
         await asyncio.sleep(self.POLL_INTERVAL)
 
         try:
             # Get latest block data
             block_number = self.web3.eth.block_number
-            
+
             # Get account data
             balance_wei = self.web3.eth.get_balance(self.ACCOUNT_ADDRESS)
             balance_eth = self.web3.from_wei(balance_wei, 'ether')
-            
+
             self.eth_info = {
                 'block_number': int(block_number),
                 'address': str(self.ACCOUNT_ADDRESS), # just to be clear that that's a string
                 'balance': float(balance_eth),
             }
             logging.debug(f"Block: {self.eth_info['block_number']}, Account Balance: {self.eth_info['balance']:.3f} ETH")
-            
+
         except Exception as e:
             logging.error(f"Error fetching blockchain data: {e}")
 
@@ -63,8 +75,8 @@ class WalletEthereum(LoopInput[float]):
 
         return [self.ETH_balance, balance_change]
 
-    async def _raw_to_text(self, raw_input: [float, float]) -> str:
-        
+    async def _raw_to_text(self, raw_input: List[float]) -> str:
+
         balance = raw_input[0]
         balance_change = raw_input[1]
 
@@ -74,8 +86,8 @@ class WalletEthereum(LoopInput[float]):
             message = f"{time.time():.3f}::You have {balance:.3f} ETH."
 
         logging.info(f"WalletEthereum: {message}")
-        return message
-        
+        return Message(timestamp=time.time(), message=message)
+
     async def raw_to_text(self, raw_input):
         """
         Convert raw input to processed text and manage buffer.
@@ -85,20 +97,10 @@ class WalletEthereum(LoopInput[float]):
         raw_input : Optional[str]
             Raw input to be processed
         """
-        text = await self._raw_to_text(raw_input)
-        if text is None:
-            if len(self.messages) == 0:
-                return None
-            # else:
-            #     # Skip sleep if there's already a message in the buffer
-            #     self.global_sleep_ticker_provider.skip_sleep = True
+        pending_message = await self._raw_to_text(raw_input)
 
-        if text is not None:
-            # if len(self.messages) == 0:
-            self.messages.append(text)
-            # else:
-            # here is where you can implementationement joining older messages
-            #     self.buffer[-1] = f"{self.buffer[-1]} {text}"
+        if pending_message is not None:
+            self.messages.append(pending_message)
 
     def formatted_latest_buffer(self) -> Optional[str]:
         """
@@ -112,17 +114,15 @@ class WalletEthereum(LoopInput[float]):
         if len(self.messages) == 0:
             return None
 
-        message = self.messages[-1]
-        part = message.split("::")
-        ts = part[0]
-        ms = part[-1]
+        latest_message = self.messages[-1]
 
-        result = f"""{ts}::
+        result = f"""
         {self.__class__.__name__} INPUT
         // START
-        {ms}
+        {latest_message.timestamp:.3f}
         // END
         """
 
+        self.io_provider.add_input(self.__class__.__name__, latest_message.message, latest_message.timestamp)
         self.messages = []
         return result
