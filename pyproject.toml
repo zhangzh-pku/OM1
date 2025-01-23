@@ -14,8 +14,12 @@ dependencies = [
     "deepface",
     "tf_keras",
     "pygame",
+    "gif-pygame",
     "web3"
 ]
 
 [tool.uv.sources]
 omos-modules = { git = "https://github.com/OpenmindAGI/omOS-modules", rev = "main" }
+
+
+
