@@ -55,7 +55,6 @@ class FaceEmotionCapture(LoopInput[cv2.typing.MatLike]):
         return frame
 
     async def _raw_to_text(self, raw_input: cv2.typing.MatLike) -> Message:
-
         frame = raw_input
 
         # Convert frame to grayscale

@@ -25,6 +25,7 @@ omos-modules = { git = "https://github.com/OpenmindAGI/omOS-modules", rev = "mai
 dev = [
     "black>=24.10.0",
     "isort>=5.13.2",
+    "pre-commit>=4.1.0",
     "ruff>=0.9.3",
 ]
 

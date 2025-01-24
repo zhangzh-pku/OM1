@@ -13,7 +13,6 @@ class Input:
 
 @singleton
 class IOProvider:
-
     def __init__(self):
         self._lock: threading.Lock = threading.Lock()
         self._inputs: Dict[str, str] = {}

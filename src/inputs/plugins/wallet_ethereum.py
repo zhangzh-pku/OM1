@@ -45,7 +45,6 @@ class WalletEthereum(LoopInput[float]):
             raise Exception("Failed to connect to Ethereum")
 
     async def _poll(self) -> List[float]:
-
         await asyncio.sleep(self.POLL_INTERVAL)
 
         try:
@@ -82,7 +81,6 @@ class WalletEthereum(LoopInput[float]):
         return [self.ETH_balance, balance_change]
 
     async def _raw_to_text(self, raw_input: List[float]) -> str:
-
         balance = raw_input[0]
         balance_change = raw_input[1]
 

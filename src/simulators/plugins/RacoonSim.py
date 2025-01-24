@@ -10,7 +10,6 @@ from providers.io_provider import IOProvider
 
 
 class RacoonSim:
-
     def __init__(self):
         self.messages: list[str] = []
 
@@ -53,7 +52,6 @@ class RacoonSim:
         self.a_s = ""
 
     def _tick(self) -> None:
-
         self.surface_ani.fill(self.lightblue)
 
         if self.a_s == "walk":
@@ -99,7 +97,6 @@ class RacoonSim:
         return earliest_time
 
     def run(self, commands: List[Command]) -> None:
-
         earliest_time = self.get_earliest_time()
 
         # make the background white

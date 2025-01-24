@@ -6,7 +6,6 @@ from actions.move.interface import MoveInput
 
 class MoveRos2Connector(ActionConnector[MoveInput]):
     async def connect(self, output_interface: MoveInput) -> None:
-
         # define/clarify the datatype
         new_msg = {"thought": "", "vx": 0.0, "vy": 0.0, "vyaw": 0.0}
 
