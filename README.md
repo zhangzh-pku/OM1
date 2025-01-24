@@ -115,7 +115,7 @@ Agents are configured via JSON files in the `config/` directory. Key configurati
     "config": {
       "base_url": "...",
       "api_key": "...",
-  	}
+    }
   },
   "simulators": [
     {
@@ -168,7 +168,7 @@ Configuration for the language model (LLM) used by the agent.
   >
   > Openmind OpenAI Proxy endpoint is [https://api.openmind.org/api/core/openai](https://api.openmind.org/api/core/openai)
 
-```
+```json
 "cortex_llm": {
   "type": "OpenAILLM",
   "config": {
