@@ -3,6 +3,7 @@ import logging
 from actions.base import ActionConnector
 from actions.face.interface import FaceInput
 
+
 class FaceRos2Connector(ActionConnector[FaceInput]):
     async def connect(self, output_interface: FaceInput) -> None:
 

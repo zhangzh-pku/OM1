@@ -1,13 +1,12 @@
-import typing as T
+import logging
 import time
+import typing as T
 
-from inputs.base import AgentInput
 from actions import describe_action
+from inputs.base import AgentInput
+from providers.io_provider import IOProvider
 from runtime.config import RuntimeConfig
 
-from providers.io_provider import IOProvider
-
-import logging
 
 class Fuser:
     """
@@ -18,9 +17,7 @@ class Fuser:
         self.config = config
         self.io_provider = IOProvider()
 
-    def fuse(
-        self, inputs: list[AgentInput], finished_promises: list[T.Any]
-    ) -> str:
+    def fuse(self, inputs: list[AgentInput], finished_promises: list[T.Any]) -> str:
         # Record the timestamp of the input
         self.io_provider.fuser_start_time = time.time()
 
@@ -29,7 +26,7 @@ class Fuser:
 
         input_strings = [input.formatted_latest_buffer() for input in inputs]
         logging.debug(f"InputMessageArray: {input_strings}")
-        
+
         inputs_fused = " ".join([s for s in input_strings if s is not None])
         # descriptions of various possible actions
         actions_fused = "\n\n\n".join(

@@ -5,6 +5,7 @@ build/
 dist/
 wheels/
 *.egg-info
+.ruff_cache/
 
 # Virtual environments
 .venv
@@ -12,6 +13,7 @@ wheels/
 # Environment variables
 .env
 
+# IDE
 .vscode/
 
 # Mac specific lint

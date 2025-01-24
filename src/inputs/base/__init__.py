@@ -2,7 +2,6 @@ import typing as T
 
 R = T.TypeVar("R")
 
-import logging
 
 class AgentInput(T.Generic[R]):
     """

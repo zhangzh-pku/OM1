@@ -4,10 +4,12 @@ from typing import Dict, Optional
 
 from .singleton import singleton
 
+
 @dataclass
 class Input:
     input: str
     timestamp: Optional[float]
+
 
 @singleton
 class IOProvider:

@@ -1,11 +1,12 @@
+import logging
 import threading
 import time
-import logging
-from typing import Optional, Callable
+from typing import Callable, Optional
+
+from omOS_speech import AudioOutputStream
 
 from .singleton import singleton
 
-from omOS_speech import AudioOutputStream
 
 @singleton
 class TTSProvider:
@@ -20,6 +21,7 @@ class TTSProvider:
     url : str
         The URL endpoint for the TTS service
     """
+
     def __init__(self, url: str):
         """
         Initialize the TTS provider with given URL.
@@ -85,5 +87,3 @@ class TTSProvider:
         if self._thread:
             self.audio_stream.stop()
             self._thread.join(timeout=5)
-
-

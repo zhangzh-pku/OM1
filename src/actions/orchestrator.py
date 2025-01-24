@@ -1,8 +1,9 @@
 import asyncio
 import logging
 import typing as T
-from llm.output_model import Command
+
 from actions.base import AgentAction
+from llm.output_model import Command
 from runtime.config import RuntimeConfig
 
 
@@ -33,7 +34,7 @@ class ActionOrchestrator:
         return done_promises, self.promise_queue
 
     async def promise(self, commands: list[Command]) -> None:
-        # loop through commands and send the correct 
+        # loop through commands and send the correct
         # command to the correct action
         for command in commands:
             logging.debug(f"Sending command: {command}")

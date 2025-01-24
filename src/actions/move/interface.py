@@ -1,6 +1,8 @@
 from dataclasses import dataclass
 from enum import Enum
+
 from actions.base import Interface
+
 
 class MovementAction(str, Enum):
     STAND_UP = "stand up"
@@ -18,9 +20,11 @@ class MovementAction(str, Enum):
     TURN_LEFT = "turn left"
     TURN_RIGHT = "turn right"
 
+
 @dataclass
 class MoveInput:
     action: MovementAction
+
 
 @dataclass
 class Move(Interface[MoveInput, MoveInput]):

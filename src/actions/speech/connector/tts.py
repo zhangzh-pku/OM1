@@ -1,9 +1,8 @@
 from actions.base import ActionConnector
-
+from actions.speech.interface import SpeechInput
 from providers.asr_provider import ASRProvider
 from providers.tts_provider import TTSProvider
 
-from actions.speech.interface import SpeechInput
 
 class SpeechRos2Connector(ActionConnector[SpeechInput]):
     def __init__(self):

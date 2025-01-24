@@ -1,26 +1,27 @@
 import asyncio
 import time
 from dataclasses import dataclass
-
 from typing import Optional
-
-from inputs.base.loop import LoopInput
-
-from providers.io_provider import IOProvider
 
 import cv2
 from deepface import DeepFace
+
+from inputs.base.loop import LoopInput
+from providers.io_provider import IOProvider
+
 
 @dataclass
 class Message:
     timestamp: float
     message: str
 
+
 """
 Code example is from:
 https://github.com/manish-9245/Facial-Emotion-Recognition-using-OpenCV-and-Deepface
 Thank you @manish-9245
 """
+
 
 class FaceEmotionCapture(LoopInput[cv2.typing.MatLike]):
     """
@@ -32,7 +33,9 @@ class FaceEmotionCapture(LoopInput[cv2.typing.MatLike]):
         self.io_provider = IOProvider()
 
         # Load face cascade classifier
-        self.face_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_frontalface_default.xml')
+        self.face_cascade = cv2.CascadeClassifier(
+            cv2.data.haarcascades + "haarcascade_frontalface_default.xml"
+        )
 
         # Start capturing video
         self.cap = cv2.VideoCapture(0)
@@ -45,7 +48,7 @@ class FaceEmotionCapture(LoopInput[cv2.typing.MatLike]):
 
     async def _poll(self) -> cv2.typing.MatLike:
         await asyncio.sleep(0.5)
-        
+
         # Capture a frame every 500 ms
         ret, frame = self.cap.read()
 
@@ -62,17 +65,21 @@ class FaceEmotionCapture(LoopInput[cv2.typing.MatLike]):
         rgb_frame = cv2.cvtColor(gray_frame, cv2.COLOR_GRAY2RGB)
 
         # Detect faces in the frame
-        faces = self.face_cascade.detectMultiScale(gray_frame, scaleFactor=1.1, minNeighbors=5, minSize=(30, 30))
+        faces = self.face_cascade.detectMultiScale(
+            gray_frame, scaleFactor=1.1, minNeighbors=5, minSize=(30, 30)
+        )
 
-        for (x, y, w, h) in faces:
+        for x, y, w, h in faces:
             # Extract the face ROI (Region of Interest)
-            face_roi = rgb_frame[y:y + h, x:x + w]
+            face_roi = rgb_frame[y : y + h, x : x + w]
 
             # Perform emotion analysis on the face ROI
-            result = DeepFace.analyze(face_roi, actions=['emotion'], enforce_detection=False)
+            result = DeepFace.analyze(
+                face_roi, actions=["emotion"], enforce_detection=False
+            )
 
             # Determine the dominant emotion
-            self.emotion = result[0]['dominant_emotion']
+            self.emotion = result[0]["dominant_emotion"]
 
         message = f"I see a person. Their emotion is {self.emotion}."
 
@@ -113,7 +120,9 @@ class FaceEmotionCapture(LoopInput[cv2.typing.MatLike]):
         // END
         """
 
-        self.io_provider.add_input(self.__class__.__name__, latest_message.message, latest_message.timestamp)
+        self.io_provider.add_input(
+            self.__class__.__name__, latest_message.message, latest_message.timestamp
+        )
         self.messages = []
 
         return result

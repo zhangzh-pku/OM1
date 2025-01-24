@@ -1,16 +1,16 @@
 import asyncio
-import random
 import logging
-import time
 import os
+import random
+import time
 from dataclasses import dataclass
-from web3 import Web3
-
 from typing import List, Optional
 
-from inputs.base.loop import LoopInput
+from web3 import Web3
 
+from inputs.base.loop import LoopInput
 from providers.io_provider import IOProvider
+
 
 @dataclass
 class Message:
@@ -30,11 +30,13 @@ class WalletEthereum(LoopInput[float]):
         self.ETH_balance = 0
         self.ETH_balance_previous = 0
         self.messages: list[str] = []
-        self.eth_info = ''
+        self.eth_info = ""
 
         self.PROVIDER_URL = "https://eth.llamarpc.com"
-        self.POLL_INTERVAL = 0.5 # seconds between blockchain data updates
-        self.ACCOUNT_ADDRESS = os.environ.get("ETH_ADDRESS","0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045")
+        self.POLL_INTERVAL = 0.5  # seconds between blockchain data updates
+        self.ACCOUNT_ADDRESS = os.environ.get(
+            "ETH_ADDRESS", "0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045"
+        )
         logging.debug(f"Using {self.ACCOUNT_ADDRESS} as the wallet address")
 
         # Initialize Web3
@@ -52,14 +54,18 @@ class WalletEthereum(LoopInput[float]):
 
             # Get account data
             balance_wei = self.web3.eth.get_balance(self.ACCOUNT_ADDRESS)
-            balance_eth = self.web3.from_wei(balance_wei, 'ether')
+            balance_eth = self.web3.from_wei(balance_wei, "ether")
 
             self.eth_info = {
-                'block_number': int(block_number),
-                'address': str(self.ACCOUNT_ADDRESS), # just to be clear that that's a string
-                'balance': float(balance_eth),
+                "block_number": int(block_number),
+                "address": str(
+                    self.ACCOUNT_ADDRESS
+                ),  # just to be clear that that's a string
+                "balance": float(balance_eth),
             }
-            logging.debug(f"Block: {self.eth_info['block_number']}, Account Balance: {self.eth_info['balance']:.3f} ETH")
+            logging.debug(
+                f"Block: {self.eth_info['block_number']}, Account Balance: {self.eth_info['balance']:.3f} ETH"
+            )
 
         except Exception as e:
             logging.error(f"Error fetching blockchain data: {e}")
@@ -123,6 +129,8 @@ class WalletEthereum(LoopInput[float]):
         // END
         """
 
-        self.io_provider.add_input(self.__class__.__name__, latest_message.message, latest_message.timestamp)
+        self.io_provider.add_input(
+            self.__class__.__name__, latest_message.message, latest_message.timestamp
+        )
         self.messages = []
         return result
