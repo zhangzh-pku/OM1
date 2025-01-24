@@ -4,14 +4,15 @@ from typing import Dict, Optional
 
 from .singleton import singleton
 
+
 @dataclass
 class Input:
     input: str
     timestamp: Optional[float]
 
+
 @singleton
 class IOProvider:
-
     def __init__(self):
         self._lock: threading.Lock = threading.Lock()
         self._inputs: Dict[str, str] = {}

@@ -19,7 +19,10 @@
     }
   ],
   "cortex_llm": {
-    "type": "OpenAILLM"
+    "type": "OpenAILLM",
+    "config": {
+      "base_url": "https://api.openmind.org/api/core/openai"
+    }
   },
   "agent_actions": [
     {

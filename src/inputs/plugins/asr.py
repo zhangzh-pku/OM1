@@ -1,13 +1,13 @@
-import json
 import asyncio
-from queue import Queue, Empty
+import json
 import logging
-from typing import Dict, Optional, List
+from queue import Empty, Queue
+from typing import Dict, List, Optional
 
+from inputs.base.loop import LoopInput
 from providers.asr_provider import ASRProvider
 from providers.sleep_ticker_provider import SleepTickerProvider
 
-from inputs.base.loop import LoopInput
 
 class ASRInput(LoopInput[str]):
     """Automatic Speech Recognition (ASR) input handler.
@@ -26,6 +26,7 @@ class ASRInput(LoopInput[str]):
     buffer : List[str]
         Internal buffer for storing processed messages
     """
+
     def __init__(self):
         super().__init__()
 

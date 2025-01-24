@@ -1,12 +1,13 @@
+import logging
 import threading
 import time
-import logging
-from typing import Optional, Callable
-
-from .singleton import singleton
+from typing import Callable, Optional
 
 from omOS_speech import AudioInputStream
 from omOS_utils import ws
+
+from .singleton import singleton
+
 
 @singleton
 class ASRProvider:
@@ -22,6 +23,7 @@ class ASRProvider:
     ws_url : str
         The websocket URL for the ASR service connection.
     """
+
     def __init__(self, ws_url: str):
         """
         Initialize the ASR Provider.
@@ -33,7 +35,9 @@ class ASRProvider:
         """
         self.running: bool = False
         self.ws_client: ws.Client = ws.Client(url=ws_url)
-        self.audio_stream: AudioInputStream = AudioInputStream(audio_data_callback=self.ws_client.send_message)
+        self.audio_stream: AudioInputStream = AudioInputStream(
+            audio_data_callback=self.ws_client.send_message
+        )
         self._thread: Optional[threading.Thread] = None
 
     def register_message_callback(self, message_callback: Optional[Callable]):

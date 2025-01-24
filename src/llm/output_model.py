@@ -1,5 +1,5 @@
 from pydantic import BaseModel, Field
-from dataclasses import dataclass
+
 
 class CommandArgument(BaseModel):
     name: str = Field(..., description="The name of the argument")
@@ -17,4 +17,5 @@ class CortexOutputModel(BaseModel):
     """
     Output model for the Cortex LLM
     """
+
     commands: list[Command] = Field(..., description="List of commands to execute")

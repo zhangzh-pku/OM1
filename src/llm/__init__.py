@@ -1,11 +1,18 @@
-import os
 import importlib
 import inspect
+import os
 import typing as T
+
+from pydantic import BaseModel
 
 from providers.io_provider import IOProvider
 
 R = T.TypeVar("R")
+
+
+class LLMConfig(BaseModel):
+    base_url: T.Optional[str] = None
+    api_key: T.Optional[str] = None
 
 
 class LLM(T.Generic[R]):
@@ -13,8 +20,14 @@ class LLM(T.Generic[R]):
     LLM interface
     """
 
-    def __init__(self, output_model: T.Type[R]):
+    def __init__(self, output_model: T.Type[R], config: T.Optional[LLMConfig]):
+        # Set up the LLM configuration
+        self._conifg = config
+
+        # Set up the output model
         self._output_model = output_model
+
+        # Set up the IO provider
         self.io_provider = IOProvider()
 
     async def ask(self, prompt: str, inputs: list[str]) -> R:

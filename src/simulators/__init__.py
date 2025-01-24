@@ -1,8 +1,8 @@
-import os
 import importlib
 import inspect
-import typing as T
 import logging
+import os
+import typing as T
 
 from simulators.base import Simulator
 
@@ -26,10 +26,7 @@ def load_simulator(sim_name: str) -> T.Type[Simulator]:
     for plugin in plugin_files:
         simulator = importlib.import_module(f"simulators.plugins.{plugin}")
         for name, obj in inspect.getmembers(simulator):
-            if (
-                inspect.isclass(obj)
-                and obj != Simulator
-            ):
+            if inspect.isclass(obj) and obj != Simulator:
                 simulator_classes[name] = obj
 
     logging.debug(f"Simulator classes: {simulator_classes}")

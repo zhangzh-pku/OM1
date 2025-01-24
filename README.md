@@ -29,18 +29,24 @@ cp .env.example .env
 
 3. Run an Hello World agent
 
-This very basic agent uses webcam data to estimate your emotion, generates a fake VLM caption, and sends those two inputs to central LLM. The LLM then returns `movement`, `speech`, and `face` commands, which are displayed in a small `pygame` window. This is windows also shows basic timing debug information so you can see how long each step takes.   
+This very basic agent uses webcam data to estimate your emotion, generates a fake VLM caption, and sends those two inputs to central LLM. The LLM then returns `movement`, `speech`, and `face` commands, which are displayed in a small `pygame` window. This is windows also shows basic timing debug information so you can see how long each step takes.
 
 
 ```bash
 uv run src/run.py spot
 ```
 
-NOTE: `uv` does many things in the background, such as setting up a good `venv` and downloading any dependencies if needed. Please add new dependencies to `pyproject.toml`.
+> [!NOTE]
+> `uv` does many things in the background, such as setting up a good `venv` and downloading any dependencies if needed. Please add new dependencies to `pyproject.toml`.
 
-NOTE: If you are running complex models, or need to download dependencies, there may be a delay before the agent starts.
+> [!NOTE]
+> If you are running complex models, or need to download dependencies, there may be a delay before the agent starts.
 
-NOTE: There should be a `pygame` window that pops up when you run `uv run src/run.py spot`. Sometimes the `pygame` window is hidden behind all other open windows - use "show all windows" to find it. 
+> [!NOTE]
+> The OpenMind LLM endpoint is https://api.openmind.org/api/core/openai and includes a rate limiter. To use OpenAI’s LLM services without rate limiting, you must either set the OPENAI_API_KEY environment variable and remove the base_url configuration or use the API key provided by us.
+
+> [!NOTE]
+> There should be a `pygame` window that pops up when you run `uv run src/run.py spot`. Sometimes the `pygame` window is hidden behind all other open windows - use "show all windows" to find it.
 
 ## CLI Commands
 
@@ -91,9 +97,9 @@ actions/
         └── unitree_LL.py
 ```
 
-In general, each robot will have specific capabilities, and therefore, each action will be hardware specific. 
+In general, each robot will have specific capabilities, and therefore, each action will be hardware specific.
 
-*Example*: if you are adding support for the Unitree G1 Humanoid version 13.2b, which supports a new movement subtype such as `dance_2`, you could name the updated action `move_unitree_g1_13_2b` and select that action in your `unitree_g1.json` configuration file. 
+*Example*: if you are adding support for the Unitree G1 Humanoid version 13.2b, which supports a new movement subtype such as `dance_2`, you could name the updated action `move_unitree_g1_13_2b` and select that action in your `unitree_g1.json` configuration file.
 
 
 ### Configuration
@@ -102,35 +108,104 @@ Agents are configured via JSON files in the `config/` directory. Key configurati
 
 ```json
 {
-  "hertz": 0.5, // Agent base tick rate, that can be overridden to respond
-                // quickly to changing environments via event triggered
-                // callbacks through real time middleware
-  "name": "agent_name", // Unique identifier
-  "system_prompt": "...", // Agent personality/behavior
+  "hertz": 0.5,
+  "name": "agent_name",
+  "system_prompt": "...",
   "agent_inputs": [
-    // Input sources
     {
-      "type": "VlmInput" // Input plugin to use
+      "type": "VlmInput"
     }
   ],
+  "cortex_llm": {
+    "type": "OpenAILLM",
+    "config": {
+      "base_url": "...",
+      "api_key": "...",
+    }
+  },
   "simulators": [
     {
       "type": "BasicDog"
     }
   ],
-  "cortex_llm": {
-    // LLM configuration
-    "type": "OpenAILLM" // LLM plugin to use
-  },
   "agent_actions": [
-    // Available capabilities
     {
-      "name": "move", // Action name
-      "implementation": "passthrough", // Implementation to use
-      "connector": "ros2" // Connector handler
+      "name": "move",
+      "implementation": "passthrough",
+      "connector": "ros2"
     }
   ]
 }
+```
+
+#### Hertz
+
+Defines the base tick rate of the agent. This rate can be overridden to allow the agent to respond quickly to changing environments using event-triggered callbacks through real-time middleware.
+
+```json
+"hertz": 0.5
+```
+
+#### Name
+
+A unique identifier for the agent.
+
+```json
+"name": "agent_name"
+```
+
+#### System Prompt
+
+Defines the agent’s personality and behavior. This acts as the system prompt for the agent’s operations.
+
+```json
+"system_prompt": "..."
+```
+
+#### Cortex LLM
+
+Configuration for the language model (LLM) used by the agent.
+
+- **Type**: Specifies the LLM plugin.
+
+- **Config**: Optional configuration for the LLM, including the API endpoint and API key. If no API key is provided, the LLM operates with a rate limiter with the OpenMind's public endpoint.
+
+  OpenMind OpenAI Proxy endpoint is [https://api.openmind.org/api/core/openai](https://api.openmind.org/api/core/openai)
+
+```json
+"cortex_llm": {
+  "type": "OpenAILLM",
+  "config": {
+    "base_url": "...", // Optional: URL of the LLM endpoint
+    "api_key": "..."   // Optional: API key can be obtained from OpenMind
+  }
+}
+```
+
+#### Simulators
+
+Lists the simulation modules used by the agent. These define the simulated environment or entities the agent interacts with.
+
+```json
+"simulators": [
+  {
+    "type": "BasicDog"
+  }
+]
+```
+
+#### Agent Actions
+
+Defines the agent’s available capabilities, including action names, their implementation, and the connector handler used to execute them.
+
+```json
+"agent_actions": [
+  {
+    "name": "move", // Action name
+    "implementation": "passthrough", // Implementation to use
+    "connector": "ros2" // Connector handler
+  }
+]
 ```
 
 ### Runtime Flow
@@ -139,7 +214,7 @@ Agents are configured via JSON files in the `config/` directory. Key configurati
 2. The Fuser combines inputs into a prompt
 3. The LLM generates commands based on the prompt
 4. The ActionOrchestrator executes commands through actions
-5. Connectors map omOS data/commands to external data buses and data distribution systems such as custom APIs, `ROS2`, `Zenoh`, or `CycloneDDS`. 
+5. Connectors map omOS data/commands to external data buses and data distribution systems such as custom APIs, `ROS2`, `Zenoh`, or `CycloneDDS`.
 
 ### Core operating principle of the system
 
@@ -180,7 +255,7 @@ The system is not event or callback driven, but is based on a loop that runs at 
 
 Required environment variables:
 
-- `OPENAI_API_KEY`: OpenAI API key for LLM integration
+- `OPENAI_API_KEY`: The API key for OpenAI integration. This is mandatory if you want to use OpenAI’s LLM services without rate limiting.
 
 ## Contributing
 
