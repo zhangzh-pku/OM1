@@ -29,7 +29,7 @@ cp .env.example .env
 
 3. Run an Hello World agent
 
-This very basic agent uses webcam data to estimate your emotion, generates a fake VLM caption, and sends those two inputs to central LLM. The LLM then returns `movement`, `speech`, and `face` commands, which are displayed in a small `pygame` window. This is windows also shows basic timing debug information so you can see how long each step takes.   
+This very basic agent uses webcam data to estimate your emotion, generates a fake VLM caption, and sends those two inputs to central LLM. The LLM then returns `movement`, `speech`, and `face` commands, which are displayed in a small `pygame` window. This is windows also shows basic timing debug information so you can see how long each step takes.
 
 
 ```bash
@@ -40,7 +40,7 @@ NOTE: `uv` does many things in the background, such as setting up a good `venv` 
 
 NOTE: If you are running complex models, or need to download dependencies, there may be a delay before the agent starts.
 
-NOTE: There should be a `pygame` window that pops up when you run `uv run src/run.py spot`. Sometimes the `pygame` window is hidden behind all other open windows - use "show all windows" to find it. 
+NOTE: There should be a `pygame` window that pops up when you run `uv run src/run.py spot`. Sometimes the `pygame` window is hidden behind all other open windows - use "show all windows" to find it.
 
 ## CLI Commands
 
@@ -91,9 +91,9 @@ actions/
         └── unitree_LL.py
 ```
 
-In general, each robot will have specific capabilities, and therefore, each action will be hardware specific. 
+In general, each robot will have specific capabilities, and therefore, each action will be hardware specific.
 
-*Example*: if you are adding support for the Unitree G1 Humanoid version 13.2b, which supports a new movement subtype such as `dance_2`, you could name the updated action `move_unitree_g1_13_2b` and select that action in your `unitree_g1.json` configuration file. 
+*Example*: if you are adding support for the Unitree G1 Humanoid version 13.2b, which supports a new movement subtype such as `dance_2`, you could name the updated action `move_unitree_g1_13_2b` and select that action in your `unitree_g1.json` configuration file.
 
 
 ### Configuration
@@ -113,7 +113,7 @@ Agents are configured via JSON files in the `config/` directory. Key configurati
   "cortex_llm": {
     "type": "OpenAILLM",
     "config": {
-			"base_url": "...", 
+      "base_url": "...",
       "api_key": "...",
   	}
   },
@@ -168,7 +168,7 @@ Configuration for the language model (LLM) used by the agent.
   >
   > Openmind OpenAI Proxy endpoint is [https://api.openmind.org/api/core/openai](https://api.openmind.org/api/core/openai)
 
-```json
+```
 "cortex_llm": {
   "type": "OpenAILLM",
   "config": {
@@ -210,7 +210,7 @@ Defines the agent’s available capabilities, including action names, their impl
 2. The Fuser combines inputs into a prompt
 3. The LLM generates commands based on the prompt
 4. The ActionOrchestrator executes commands through actions
-5. Connectors map omOS data/commands to external data buses and data distribution systems such as custom APIs, `ROS2`, `Zenoh`, or `CycloneDDS`. 
+5. Connectors map omOS data/commands to external data buses and data distribution systems such as custom APIs, `ROS2`, `Zenoh`, or `CycloneDDS`.
 
 ### Core operating principle of the system
 
