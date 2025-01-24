@@ -102,35 +102,106 @@ Agents are configured via JSON files in the `config/` directory. Key configurati
 
 ```json
 {
-  "hertz": 0.5, // Agent base tick rate, that can be overridden to respond
-                // quickly to changing environments via event triggered
-                // callbacks through real time middleware
-  "name": "agent_name", // Unique identifier
-  "system_prompt": "...", // Agent personality/behavior
+  "hertz": 0.5,
+  "name": "agent_name",
+  "system_prompt": "...",
   "agent_inputs": [
-    // Input sources
     {
-      "type": "VlmInput" // Input plugin to use
+      "type": "VlmInput"
     }
   ],
+  "cortex_llm": {
+    "type": "OpenAILLM",
+    "config": {
+			"base_url": "...", 
+      "api_key": "...",
+  	}
+  },
   "simulators": [
     {
       "type": "BasicDog"
     }
   ],
-  "cortex_llm": {
-    // LLM configuration
-    "type": "OpenAILLM" // LLM plugin to use
-  },
   "agent_actions": [
-    // Available capabilities
     {
-      "name": "move", // Action name
-      "implementation": "passthrough", // Implementation to use
-      "connector": "ros2" // Connector handler
+      "name": "move",
+      "implementation": "passthrough",
+      "connector": "ros2"
     }
   ]
 }
+```
+
+#### Hertz
+
+Defines the base tick rate of the agent. This rate can be overridden to allow the agent to respond quickly to changing environments using event-triggered callbacks through real-time middleware.
+
+```json
+"hertz": 0.5
+```
+
+#### Name
+
+A unique identifier for the agent.
+
+```json
+"name": "agent_name"
+```
+
+#### System Prompt
+
+Defines the agent’s personality and behavior. This acts as the system prompt for the agent’s operations.
+
+```json
+"system_prompt": "..."
+```
+
+#### Cortex LLM
+
+Configuration for the language model (LLM) used by the agent.
+
+- **Type**: Specifies the LLM plugin.
+
+- **Config**: Optional configuration for the LLM, including the API endpoint and API key. If no API key is provided, the LLM operates with a rate limiter with the Openmind's public endpoint.
+
+  > [!NOTE]
+  >
+  > Openmind OpenAI Proxy endpoint is [https://api.openmind.org/api/core/openai](https://api.openmind.org/api/core/openai)
+
+```json
+"cortex_llm": {
+  "type": "OpenAILLM",
+  "config": {
+    "base_url": "...", // Optional: URL of the LLM endpoint
+    "api_key": "..."   // Optional: API key can be obtained from Openmind
+  }
+}
+```
+
+#### Simulators
+
+Lists the simulation modules used by the agent. These define the simulated environment or entities the agent interacts with.
+
+```json
+"simulators": [
+  {
+    "type": "BasicDog"
+  }
+]
+```
+
+#### Agent Actions
+
+Defines the agent’s available capabilities, including action names, their implementation, and the connector handler used to execute them.
+
+```json
+"agent_actions": [
+  {
+    "name": "move", // Action name
+    "implementation": "passthrough", // Implementation to use
+    "connector": "ros2" // Connector handler
+  }
+]
 ```
 
 ### Runtime Flow
@@ -180,7 +251,7 @@ The system is not event or callback driven, but is based on a loop that runs at 
 
 Required environment variables:
 
-- `OPENAI_API_KEY`: OpenAI API key for LLM integration
+- `OPENAI_API_KEY`: The API key for OpenAI integration. This is mandatory if you want to use OpenAI’s LLM services without rate limiting.
 
 ## Contributing
 
