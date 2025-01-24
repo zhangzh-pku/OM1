@@ -2,7 +2,6 @@ import typing as T
 
 from inputs.base import AgentInput
 
-
 R = T.TypeVar("R")
 
 

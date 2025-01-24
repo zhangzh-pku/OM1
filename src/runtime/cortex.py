@@ -1,13 +1,12 @@
 import asyncio
 import logging
 
+from actions.orchestrator import ActionOrchestrator
 from fuser import Fuser
 from inputs.orchestrator import InputOrchestrator
-from actions.orchestrator import ActionOrchestrator
-from simulators.orchestrator import SimulatorOrchestrator
-
-from runtime.config import RuntimeConfig
 from providers.sleep_ticker_provider import SleepTickerProvider
+from runtime.config import RuntimeConfig
+from simulators.orchestrator import SimulatorOrchestrator
 
 
 class CortexRuntime:

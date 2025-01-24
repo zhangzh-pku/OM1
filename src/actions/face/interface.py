@@ -1,15 +1,19 @@
 from dataclasses import dataclass
 from enum import Enum
+
 from actions.base import Interface
+
 
 class FaceAction(str, Enum):
     CRY = "cry"
     SMILE = "smile"
     FROWN = "frown"
-    
+
+
 @dataclass
 class FaceInput:
     action: FaceAction
+
 
 @dataclass
 class Face(Interface[FaceInput, FaceInput]):

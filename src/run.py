@@ -1,7 +1,9 @@
 import asyncio
-import typer
-import dotenv
 import logging
+
+import dotenv
+import typer
+
 from runtime.config import load_config
 from runtime.cortex import CortexRuntime
 

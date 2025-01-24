@@ -1,8 +1,9 @@
-import threading
 import asyncio
+import threading
 from typing import Optional
 
 from .singleton import singleton
+
 
 @singleton
 class SleepTickerProvider:
@@ -13,6 +14,7 @@ class SleepTickerProvider:
     skipped/cancelled. It uses a lock mechanism to ensure thread safety when
     modifying the skip state.
     """
+
     def __init__(self):
         """
         Initialize the SleepTickerProvider with default values.

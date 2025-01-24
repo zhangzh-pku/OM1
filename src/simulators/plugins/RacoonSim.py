@@ -1,16 +1,15 @@
-import asyncio
-import random
-import logging
-import pygame, gif_pygame
-import re, os
+import os
+import re
+from typing import List
+
+import gif_pygame
+import pygame
 
 from llm.output_model import Command
 from providers.io_provider import IOProvider
 
-from typing import List
 
 class RacoonSim:
-
     def __init__(self):
         self.messages: list[str] = []
 
@@ -25,7 +24,7 @@ class RacoonSim:
         self.green = (0, 255, 0)
         self.blue = (0, 0, 128)
         self.black = (0, 0, 0)
-        self.lightblue = (84,118,156)
+        self.lightblue = (84, 118, 156)
 
         self.X = 800
         self.Y = 630
@@ -33,7 +32,7 @@ class RacoonSim:
         self.clock = pygame.Clock()
 
         self.display = pygame.display.set_mode((self.X, self.Y))
-        pygame.display.set_caption('Racoon Simulator')
+        pygame.display.set_caption("Racoon Simulator")
         self.display.fill(self.lightblue)
 
         self.surface_text = pygame.Surface((800, 230))
@@ -42,8 +41,8 @@ class RacoonSim:
         self.surface_ani = pygame.Surface((400, 400))
         self.surface_ani.fill(self.lightblue)
 
-        self.font = pygame.font.Font('freesansbold.ttf', 14)
-        self.path = os.path.join(os.path.dirname(__file__), 'assets')
+        self.font = pygame.font.Font("freesansbold.ttf", 14)
+        self.path = os.path.join(os.path.dirname(__file__), "assets")
 
         self.action_walk = gif_pygame.load(os.path.join(self.path, "walk.gif"))
         self.action_run = gif_pygame.load(os.path.join(self.path, "run.gif"))
@@ -53,7 +52,6 @@ class RacoonSim:
         self.a_s = ""
 
     def _tick(self) -> None:
-
         self.surface_ani.fill(self.lightblue)
 
         if self.a_s == "walk":
@@ -79,7 +77,7 @@ class RacoonSim:
         st = input
         st = st.strip()
         st = st.replace("\n", "")
-        st = re.sub(r"\s+", " ", st) # replace runs of whitespace
+        st = re.sub(r"\s+", " ", st)  # replace runs of whitespace
         st = st.replace("INPUT // START ", "")
         st = st.replace(" // END", "")
 
@@ -99,7 +97,6 @@ class RacoonSim:
         return earliest_time
 
     def run(self, commands: List[Command]) -> None:
-
         earliest_time = self.get_earliest_time()
 
         # make the background white
@@ -107,7 +104,9 @@ class RacoonSim:
 
         y = 15
         for action, values in self.io_provider.inputs.items():
-            inp = f"{(values.timestamp - earliest_time):.3f}:: {action} :: {values.input}"
+            inp = (
+                f"{(values.timestamp - earliest_time):.3f}:: {action} :: {values.input}"
+            )
             self.text = self.font.render(inp, True, self.black, self.white)
             self.textRect = self.text.get_rect()
             self.textRect.topleft = (20, y)
@@ -128,9 +127,13 @@ class RacoonSim:
         y += 20
         self.surface_text.blit(self.text, self.textRect)
 
-        processing_time_s = float(self.io_provider.llm_end_time) - float(self.io_provider.llm_start_time)
+        processing_time_s = float(self.io_provider.llm_end_time) - float(
+            self.io_provider.llm_start_time
+        )
         dt = f"{processing_time_s:.3f}"
-        self.text = self.font.render(f"LLM_proc time: {dt}", True, self.black, self.white)
+        self.text = self.font.render(
+            f"LLM_proc time: {dt}", True, self.black, self.white
+        )
         self.textRect = self.text.get_rect()
         self.textRect.topleft = (20, y)
         y += 20

@@ -1,6 +1,6 @@
-from dataclasses import dataclass
-from abc import ABC, abstractmethod
 import typing as T
+from abc import ABC, abstractmethod
+from dataclasses import dataclass
 
 IT = T.TypeVar("IT")
 OT = T.TypeVar("OT")

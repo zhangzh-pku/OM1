@@ -1,5 +1,4 @@
 from actions.base import ActionImplementation
-
 from actions.move.interface import MoveInput
 
 

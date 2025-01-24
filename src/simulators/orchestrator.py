@@ -3,8 +3,8 @@ import logging
 import typing as T
 
 from llm.output_model import Command
-from simulators.base import Simulator
 from runtime.config import RuntimeConfig
+from simulators.base import Simulator
 
 
 class SimulatorOrchestrator:
@@ -37,12 +37,14 @@ class SimulatorOrchestrator:
         # loop through simulators and send each one of them
         # the current LLM_full
         for simulator in self._config.simulators:
-            simulator_response = asyncio.create_task(self._promise_simulator(simulator, commands))
+            simulator_response = asyncio.create_task(
+                self._promise_simulator(simulator, commands)
+            )
             self.promise_queue.append(simulator_response)
 
-    async def _promise_simulator(self, simulator: Simulator, commands: T.List[Command]) -> T.Any:
-        logging.debug(
-            f"Calling simulator {simulator.name} with commands {commands}"
-        )
+    async def _promise_simulator(
+        self, simulator: Simulator, commands: T.List[Command]
+    ) -> T.Any:
+        logging.debug(f"Calling simulator {simulator.name} with commands {commands}")
         simulator.run(commands)
         return None

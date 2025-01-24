@@ -1,14 +1,14 @@
 import asyncio
 import random
-from PIL import Image
-from dataclasses import dataclass
 import time
+from dataclasses import dataclass
+from typing import Optional
+
+from PIL import Image
 
 from inputs.base.loop import LoopInput
-
 from providers.io_provider import IOProvider
 
-from typing import Optional
 
 @dataclass
 class Message:
@@ -20,6 +20,7 @@ class VlmInput(LoopInput[Image.Image]):
     """
     Input from a VLM
     """
+
     def __init__(self):
         # Track IO
         self.io_provider = IOProvider()
@@ -81,7 +82,9 @@ class VlmInput(LoopInput[Image.Image]):
         // END
         """
 
-        self.io_provider.add_input(self.__class__.__name__, latest_message.message, latest_message.timestamp)
+        self.io_provider.add_input(
+            self.__class__.__name__, latest_message.message, latest_message.timestamp
+        )
         self.messages = []
 
         return result

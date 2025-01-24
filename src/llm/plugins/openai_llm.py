@@ -1,15 +1,12 @@
-import openai
-import os
 import logging
-import typing as T
+import os
 import time
+import typing as T
 
+import openai
 from pydantic import BaseModel
 
 from llm import LLM, LLMConfig
-
-import logging
-
 
 R = T.TypeVar("R", bound=BaseModel)
 
@@ -47,7 +44,9 @@ class OpenAILLM(LLM[R]):
             message_content = parsed_response.choices[0].message.content
             self.io_provider.llm_end_time = time.time()
             try:
-                parsed_response = self._output_model.model_validate_json(message_content)
+                parsed_response = self._output_model.model_validate_json(
+                    message_content
+                )
                 logging.debug(f"LLM output: {parsed_response}")
                 return parsed_response
             except Exception as e:
