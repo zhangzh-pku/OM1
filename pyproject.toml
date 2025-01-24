@@ -12,8 +12,39 @@ dependencies = [
     "typer>=0.15.1",
     "opencv-python",
     "deepface",
-    "tf_keras"
+    "tf_keras",
+    "pygame",
+    "gif-pygame",
+    "web3"
 ]
 
 [tool.uv.sources]
 omos-modules = { git = "https://github.com/OpenmindAGI/omOS-modules", rev = "main" }
+
+[dependency-groups]
+dev = [
+    "black>=24.10.0",
+    "isort>=5.13.2",
+    "pre-commit>=4.1.0",
+    "ruff>=0.9.3",
+]
+
+[tool.black]
+line-length = 88
+include = '\.pyi?$'
+
+[tool.isort]
+profile = "black"
+multi_line_output = 3
+line_length = 88
+
+[tool.ruff]
+line-length = 88
+indent-width = 4
+
+[tool.ruff.lint]
+select = ["E", "F", "I"]
+ignore = ["E203", "E501"]
+fixable = ["ALL"]
+unfixable = []
+dummy-variable-rgx = "^(_+|(_+[a-zA-Z0-9_]*[a-zA-Z0-9]+?))$"

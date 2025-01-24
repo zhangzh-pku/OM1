@@ -13,6 +13,12 @@ curl -LsSf https://astral.sh/uv/install.sh | sh
 brew install uv
 ```
 
+If you are on mac, you may need to install `pyaudio` manually:
+
+```bash
+brew install portaudio
+```
+
 2. Set up environment variables:
 
 Edit `.env` with your API keys (e.g. OPENAI_API_KEY). NOTE: an OpenAI api key is required.
@@ -21,15 +27,26 @@ Edit `.env` with your API keys (e.g. OPENAI_API_KEY). NOTE: an OpenAI api key is
 cp .env.example .env
 ```
 
-2. Run an agent:
+3. Run an Hello World agent
+
+This very basic agent uses webcam data to estimate your emotion, generates a fake VLM caption, and sends those two inputs to central LLM. The LLM then returns `movement`, `speech`, and `face` commands, which are displayed in a small `pygame` window. This is windows also shows basic timing debug information so you can see how long each step takes.
+
 
 ```bash
 uv run src/run.py spot
 ```
 
-NOTE: `uv` does many things in the background, such as setting up a good `venv` and downloading any dependencies if needed. Please add new dependencies to `pyproject.toml`.
+> [!NOTE]
+> `uv` does many things in the background, such as setting up a good `venv` and downloading any dependencies if needed. Please add new dependencies to `pyproject.toml`.
 
-NOTE: If you are running complex models, or need to download dependencies, there may be a delay before the agent starts.
+> [!NOTE]
+> If you are running complex models, or need to download dependencies, there may be a delay before the agent starts.
+
+> [!NOTE]
+> The OpenMind LLM endpoint is https://api.openmind.org/api/core/openai and includes a rate limiter. To use OpenAI’s LLM services without rate limiting, you must either set the OPENAI_API_KEY environment variable and remove the base_url configuration or use the API key provided by us.
+
+> [!NOTE]
+> There should be a `pygame` window that pops up when you run `uv run src/run.py spot`. Sometimes the `pygame` window is hidden behind all other open windows - use "show all windows" to find it.
 
 ## CLI Commands
 
@@ -53,26 +70,26 @@ The main entry point is `src/run.py` which provides the following commands:
 │   ├── fuser/            # Input fusion logic
 │   ├── input/            # Input plugins (e.g. VLM, audio)
 │   ├── llm/              # LLM integration
-│   ├── modules/          # Agent outputs/actions/capabilities
+│   ├── actions/          # Agent outputs/actions/capabilities
 │   ├── runtime/          # Core runtime system
 │   └── run.py            # CLI entry point
 ```
 
-### Adding New Modules
+### Adding New Actions
 
-Modules are the core capabilities of an agent. For example, for a robot, these capabilities are actions such as movement and speech. Each module consists of:
+Actions are the core capabilities of an agent. For example, for a robot, these capabilities are actions such as movement and speech. Each action consists of:
 
 1. Interface (`interface.py`): Defines input/output types.
-2. Implementation (`impl/`): Business logic, if any. Otherwise, use passthrough.
+2. Implementation (`implementation/`): Business logic, if any. Otherwise, use passthrough.
 3. Connector (`connector/`): Code that connects `omOS` to specific virtual or physical environments, typically through middleware (e.g. custom APIs, `ROS2`, `Zenoh`, or `CycloneDDS`)
 
-Example module structure:
+Example action structure:
 
 ```
-modules/
+actions/
 └── move_{unique_hardware_id}/
     ├── interface.py      # Defines MoveInput/Output
-    ├── impl/
+    ├── implementation/
     │   └── passthrough.py
     └── connector/
         ├── ros2.py      # Maps omOS data/commands to other ROS2
@@ -80,9 +97,10 @@ modules/
         └── unitree_LL.py
 ```
 
-In general, each robot will have specific capabilities, and therefore, each module will be hardware specific.
+In general, each robot will have specific capabilities, and therefore, each action will be hardware specific.
 
-*Example*: if you are adding support for the Unitree G1 Humanoid version 13.2b, which supports a new movement subtype such as `dance_2`, you could name the updated module `move_unitree_g1_13_2b` and select that module in your `unitree_g1.json` configuration file.
+*Example*: if you are adding support for the Unitree G1 Humanoid version 13.2b, which supports a new movement subtype such as `dance_2`, you could name the updated action `move_unitree_g1_13_2b` and select that action in your `unitree_g1.json` configuration file.
+
 
 ### Configuration
 
@@ -90,30 +108,104 @@ Agents are configured via JSON files in the `config/` directory. Key configurati
 
 ```json
 {
-  "hertz": 0.5, // Agent base tick rate, that can be overridden to respond
-                // quickly to changing environments via event triggered
-                // callbacks through real time middleware
-  "name": "agent_name", // Unique identifier
-  "system_prompt": "...", // Agent personality/behavior
+  "hertz": 0.5,
+  "name": "agent_name",
+  "system_prompt": "...",
   "agent_inputs": [
-    // Input sources
     {
-      "type": "VlmInput" // Input plugin to use
+      "type": "VlmInput"
     }
   ],
   "cortex_llm": {
-    // LLM configuration
-    "type": "OpenAILLM" // LLM plugin to use
+    "type": "OpenAILLM",
+    "config": {
+      "base_url": "...",
+      "api_key": "...",
+    }
   },
-  "modules": [
-    // Available capabilities
+  "simulators": [
     {
-      "name": "move", // Module name
-      "impl": "passthrough", // Implementation to use
-      "connector": "ros2" // Connector handler
+      "type": "BasicDog"
+    }
+  ],
+  "agent_actions": [
+    {
+      "name": "move",
+      "implementation": "passthrough",
+      "connector": "ros2"
     }
   ]
 }
+```
+
+#### Hertz
+
+Defines the base tick rate of the agent. This rate can be overridden to allow the agent to respond quickly to changing environments using event-triggered callbacks through real-time middleware.
+
+```json
+"hertz": 0.5
+```
+
+#### Name
+
+A unique identifier for the agent.
+
+```json
+"name": "agent_name"
+```
+
+#### System Prompt
+
+Defines the agent’s personality and behavior. This acts as the system prompt for the agent’s operations.
+
+```json
+"system_prompt": "..."
+```
+
+#### Cortex LLM
+
+Configuration for the language model (LLM) used by the agent.
+
+- **Type**: Specifies the LLM plugin.
+
+- **Config**: Optional configuration for the LLM, including the API endpoint and API key. If no API key is provided, the LLM operates with a rate limiter with the OpenMind's public endpoint.
+
+  OpenMind OpenAI Proxy endpoint is [https://api.openmind.org/api/core/openai](https://api.openmind.org/api/core/openai)
+
+```json
+"cortex_llm": {
+  "type": "OpenAILLM",
+  "config": {
+    "base_url": "...", // Optional: URL of the LLM endpoint
+    "api_key": "..."   // Optional: API key can be obtained from OpenMind
+  }
+}
+```
+
+#### Simulators
+
+Lists the simulation modules used by the agent. These define the simulated environment or entities the agent interacts with.
+
+```json
+"simulators": [
+  {
+    "type": "BasicDog"
+  }
+]
+```
+
+#### Agent Actions
+
+Defines the agent’s available capabilities, including action names, their implementation, and the connector handler used to execute them.
+
+```json
+"agent_actions": [
+  {
+    "name": "move", // Action name
+    "implementation": "passthrough", // Implementation to use
+    "connector": "ros2" // Connector handler
+  }
+]
 ```
 
 ### Runtime Flow
@@ -121,7 +213,7 @@ Agents are configured via JSON files in the `config/` directory. Key configurati
 1. Input plugins collect data (vision, audio, etc.)
 2. The Fuser combines inputs into a prompt
 3. The LLM generates commands based on the prompt
-4. The ModuleOrchestrator executes commands through modules
+4. The ActionOrchestrator executes commands through actions
 5. Connectors map omOS data/commands to external data buses and data distribution systems such as custom APIs, `ROS2`, `Zenoh`, or `CycloneDDS`.
 
 ### Core operating principle of the system
@@ -137,7 +229,7 @@ The system is not event or callback driven, but is based on a loop that runs at 
             await self._tick()
 
     async def _tick(self) -> None:
-        finished_promises, _ = await self.module_orchestrator.flush_promises()
+        finished_promises, _ = await self.action_orchestrator.flush_promises()
         prompt = self.fuser.fuse(self.config.agent_inputs, finished_promises)
         if prompt is None:
             logging.warning("No prompt to fuse")
@@ -148,7 +240,7 @@ The system is not event or callback driven, but is based on a loop that runs at 
             return
 
         logging.debug("I'm thinking... ", output)
-        await self.module_orchestrator.promise(output.commands)
+        await self.action_orchestrator.promise(output.commands)
 ```
 
 ### Development Tips
@@ -156,14 +248,14 @@ The system is not event or callback driven, but is based on a loop that runs at 
 1. Use `--debug` flag for detailed logging
 2. Add new input plugins in `src/input/plugins/`
 3. Add new LLM integrations in `src/llm/plugins/`
-4. Test modules with the `passthrough` implementation first
+4. Test actions with the `passthrough` implementation first
 5. Use type hints and docstrings for better code maintainability
 
 ## Environment Variables
 
 Required environment variables:
 
-- `OPENAI_API_KEY`: OpenAI API key for LLM integration
+- `OPENAI_API_KEY`: The API key for OpenAI integration. This is mandatory if you want to use OpenAI’s LLM services without rate limiting.
 
 ## Contributing
 

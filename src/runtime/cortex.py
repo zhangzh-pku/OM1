@@ -1,29 +1,32 @@
 import asyncio
 import logging
 
+from actions.orchestrator import ActionOrchestrator
 from fuser import Fuser
-from input.orchestrator import InputOrchestrator
-from modules.orchestrator import ModuleOrchestrator
-from runtime.config import RuntimeConfig
+from inputs.orchestrator import InputOrchestrator
 from providers.sleep_ticker_provider import SleepTickerProvider
+from runtime.config import RuntimeConfig
+from simulators.orchestrator import SimulatorOrchestrator
 
 
 class CortexRuntime:
     """
     The CortexRuntime is the main entry point for the omOS agent.
-    It is responsible for running the agent, orchestrating communication 
+    It is responsible for running the agent, orchestrating communication
     between the memory, fuser, actions, and managing the inputs and outputs.
     """
 
     config: RuntimeConfig
     fuser: Fuser
-    module_orchestrator: ModuleOrchestrator
+    action_orchestrator: ActionOrchestrator
+    simulator_orchestrator: SimulatorOrchestrator
     sleep_ticker_provider: SleepTickerProvider
 
     def __init__(self, config: RuntimeConfig):
         self.config = config
         self.fuser = Fuser(config)
-        self.module_orchestrator = ModuleOrchestrator(config)
+        self.action_orchestrator = ActionOrchestrator(config)
+        self.simulator_orchestrator = SimulatorOrchestrator(config)
         self.sleep_ticker_provider = SleepTickerProvider()
 
     async def run(self) -> None:
@@ -44,15 +47,22 @@ class CortexRuntime:
             self.sleep_ticker_provider.skip_sleep = False
 
     async def _tick(self) -> None:
-        finished_promises, _ = await self.module_orchestrator.flush_promises()
+        # collect all the latest inputs
+        finished_promises, _ = await self.action_orchestrator.flush_promises()
+
+        # combine those inputs into a suitable prompt
         prompt = self.fuser.fuse(self.config.agent_inputs, finished_promises)
         if prompt is None:
             logging.warning("No prompt to fuse")
             return
+
+        # if there is a prompt, send to the AIs
         output = await self.config.cortex_llm.ask(prompt)
         if output is None:
             logging.warning("No output from LLM")
             return
 
-        logging.debug(f"Pushing output to execution: {output}")
-        await self.module_orchestrator.promise(output.commands)
+        # Trigger the simulators
+        await self.simulator_orchestrator.promise(output.commands)
+        # Trigger the actions
+        await self.action_orchestrator.promise(output.commands)

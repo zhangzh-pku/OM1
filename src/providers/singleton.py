@@ -1,11 +1,12 @@
 import threading
 from typing import Any
 
+
 def singleton(cls):
     """
     A thread-safe singleton decorator that ensures only one instance of a class exists.
 
-    This decorator implements the singleton pattern with thread safety using a lock.
+    This decorator implementationements the singleton pattern with thread safety using a lock.
     Multiple threads attempting to create an instance will be synchronized to prevent
     race conditions.
 
