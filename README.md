@@ -162,16 +162,16 @@ Configuration for the language model (LLM) used by the agent.
 
 - **Type**: Specifies the LLM plugin.
 
-- **Config**: Optional configuration for the LLM, including the API endpoint and API key. If no API key is provided, the LLM operates with a rate limiter with the Openmind's public endpoint.
+- **Config**: Optional configuration for the LLM, including the API endpoint and API key. If no API key is provided, the LLM operates with a rate limiter with the OpenMind's public endpoint.
 
-  Openmind OpenAI Proxy endpoint is [https://api.openmind.org/api/core/openai](https://api.openmind.org/api/core/openai)
+  OpenMind OpenAI Proxy endpoint is [https://api.openmind.org/api/core/openai](https://api.openmind.org/api/core/openai)
 
 ```json
 "cortex_llm": {
   "type": "OpenAILLM",
   "config": {
     "base_url": "...", // Optional: URL of the LLM endpoint
-    "api_key": "..."   // Optional: API key can be obtained from Openmind
+    "api_key": "..."   // Optional: API key can be obtained from OpenMind
   }
 }
 ```
