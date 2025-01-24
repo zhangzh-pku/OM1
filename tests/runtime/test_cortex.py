@@ -147,18 +147,11 @@ async def test_start_input_listeners(runtime):
 async def test_run_full_runtime(runtime):
     cortex_runtime, _ = runtime
 
-    # Mock the main components
-    loop = asyncio.get_event_loop()
-    input_listener_task = Mock(spec=asyncio.Task)
-    input_listener_task.done.return_value = True
-    input_listener_task.cancelled.return_value = False
-    input_listener_task.exception.return_value = None
-    input_listener_task.get_loop.return_value = loop
-
+    input_listener_task = asyncio.create_task(asyncio.sleep(0))
     cortex_runtime._start_input_listeners = AsyncMock(return_value=input_listener_task)
-    cortex_runtime._run_cortex_loop = AsyncMock()
-    cortex_loop_task = AsyncMock()
-    cortex_runtime._run_cortex_loop.return_value = cortex_loop_task
+
+    cortex_loop_task = asyncio.create_task(asyncio.sleep(0))
+    cortex_runtime._run_cortex_loop = AsyncMock(return_value=cortex_loop_task)
 
     await cortex_runtime.run()
 
