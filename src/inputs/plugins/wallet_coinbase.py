@@ -26,9 +26,6 @@ class WalletCoinbase(LoopInput[float]):
     def __init__(self):
         # Track IO
         self.io_provider = IOProvider()
-
-        self.ETH_balance = 0
-        self.ETH_balance_previous = 0
         self.messages: list[str] = []
 
         self.POLL_INTERVAL = 0.5 # seconds between blockchain data updates
@@ -39,14 +36,17 @@ class WalletCoinbase(LoopInput[float]):
         API_KEY = os.environ.get("COINBASE_API_KEY")
         API_SECRET = os.environ.get("COINBASE_API_SECRET")
         Cdp.configure(API_KEY, API_SECRET)
-                try:
+
+        try:
             # fetch wallet data
-            wallet = Wallet.fetch(self.COINBASE_WALLET_ID)
-
-            logging.debug(f"Wallet: {wallet}")
-
+            self.wallet = Wallet.fetch(self.COINBASE_WALLET_ID)
+            logging.debug(f"Wallet: {self.wallet}")
         except Exception as e:
-            logging.error(f"Error fetching Coinbase Wallet data: {e}")self.wallet = Wallet.fetch(self.COINBASE_WALLET_ID)
+            logging.error(f"Error fetching Coinbase Wallet data: {e}")
+        
+        self.ETH_balance = float(self.wallet.balance('eth'))
+        self.ETH_balance_previous = self.ETH_balance
+
         logging.info("Testing: WalletCoinbase: Initialized")
 
 
@@ -54,20 +54,11 @@ class WalletCoinbase(LoopInput[float]):
 
         await asyncio.sleep(self.POLL_INTERVAL)
 
-        try:
-            # fetch wallet data
-            wallet = Wallet.fetch(self.COINBASE_WALLET_ID)
-
-            logging.debug(f"Wallet: {wallet}")
-
-        except Exception as e:
-            logging.error(f"Error fetching Coinbase Wallet data: {e}")
-
         # randomly simulate ETH inbound transfers for debugging purposes
         if random.randint(0, 10) > 7:
-            wallet.faucet(asset_id='eth', amount=0.1)
+            self.wallet.faucet(asset_id='eth', amount=0.1)
 
-        self.ETH_balance = float(wallet.balance('eth')) + random_add_for_debugging
+        self.ETH_balance = float(self.wallet.balance('eth'))
         balance_change = self.ETH_balance - self.ETH_balance_previous
         self.ETH_balance_previous = self.ETH_balance
 
