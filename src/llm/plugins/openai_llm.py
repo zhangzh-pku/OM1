@@ -40,7 +40,6 @@ class OpenAILLM(LLM[R]):
                 messages=[{"role": "user", "content": prompt}],
                 response_format=self._output_model,
             )
-            print(parsed_response)
             message_content = parsed_response.choices[0].message.content
             self.io_provider.llm_end_time = time.time()
             try:

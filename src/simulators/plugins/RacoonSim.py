@@ -96,7 +96,7 @@ class RacoonSim:
                 earliest_time = timestamp
         return earliest_time
 
-    def run(self, commands: List[Command]) -> None:
+    def sim(self, commands: List[Command]) -> None:
         earliest_time = self.get_earliest_time()
 
         # make the background white
