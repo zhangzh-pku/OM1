@@ -1,0 +1,46 @@
+name: Run Unit Tests
+
+on:
+  push:
+    branches:
+      - 'main'
+  pull_request:
+    branches:
+      - '**'
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v4
+        with:
+          python-version: 3.12
+
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y portaudio19-dev python3-pyaudio
+
+        - name: Install uv
+          uses: astral-sh/setup-uv@v5
+
+        - name: "Set up Python"
+          uses: actions/setup-python@v5
+          with:
+            python-version-file: "pyproject.toml"
+
+      - name: Run unit tests
+        run: |
+          uv run pytest --log-cli-level=DEBUG -s
+
+      - name: Upload test results
+        uses: actions/upload-artifact@v3
+        if: always()
+        with:
+          name: test-results-${{ runner.os }}
+          path: pytest-results/

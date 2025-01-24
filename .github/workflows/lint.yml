@@ -39,10 +39,10 @@ jobs:
           python-version-file: "pyproject.toml"
 
       - name: Run Ruff
-        run: uv run ruff check src/
+        run: uv run ruff check .
 
       - name: Run Black
-        run: uv run black --check src/
+        run: uv run black --check .
 
       - name: Run isort
-        run: uv run isort --check-only src/
+        run: uv run isort --check-only .
