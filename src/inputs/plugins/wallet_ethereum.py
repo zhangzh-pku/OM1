@@ -92,7 +92,7 @@ class WalletEthereum(LoopInput[float]):
         logging.info(f"WalletEthereum: {message}")
         return Message(timestamp=time.time(), message=message)
 
-    async def raw_to_text(self, raw_input):
+    async def raw_to_text(self, raw_input: float):
         """
         Convert raw input to processed text and manage buffer.
 

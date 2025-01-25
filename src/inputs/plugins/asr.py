@@ -94,7 +94,7 @@ class ASRInput(LoopInput[str]):
         """
         return raw_input
 
-    async def raw_to_text(self, raw_input):
+    async def raw_to_text(self, raw_input: str):
         """
         Convert raw input to processed text and manage buffer.
 
@@ -105,9 +105,7 @@ class ASRInput(LoopInput[str]):
         """
         text = await self._raw_to_text(raw_input)
         if text is None:
-            if len(self.buffer) == 0:
-                return None
-            else:
+            if len(self.buffer) != 0:
                 # Skip sleep if there's already a message in the buffer
                 self.global_sleep_ticker_provider.skip_sleep = True
 
