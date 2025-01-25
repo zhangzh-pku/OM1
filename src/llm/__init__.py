@@ -11,13 +11,34 @@ R = T.TypeVar("R")
 
 
 class LLMConfig(BaseModel):
+    """
+    Configuration class for Language Learning Models.
+
+    Parameters
+    ----------
+    base_url : str, optional
+        Base URL for the LLM API endpoint
+    api_key : str, optional
+        Authentication key for the LLM service
+    """
+
     base_url: T.Optional[str] = None
     api_key: T.Optional[str] = None
 
 
 class LLM(T.Generic[R]):
     """
-    LLM interface
+    Base class for Language Learning Model implementations.
+
+    Generic interface for implementing LLM clients with type-safe responses.
+
+    Parameters
+    ----------
+    output_model : Type[R]
+        Type specification for model responses
+    config : LLMConfig, optional
+        Configuration settings for the LLM
+
     """
 
     def __init__(self, output_model: T.Type[R], config: T.Optional[LLMConfig]):
@@ -30,20 +51,46 @@ class LLM(T.Generic[R]):
         # Set up the IO provider
         self.io_provider = IOProvider()
 
-    async def ask(self, prompt: str, inputs: list[str]) -> R:
-        """Ask the LLM a question"""
+    async def ask(self, prompt: str) -> R:
+        """
+        Send a prompt to the LLM and receive a typed response.
+
+        Parameters
+        ----------
+        prompt : str
+            Input text to send to the model
+
+        Returns
+        -------
+        R
+            Response matching the output_model type specification
+
+        Raises
+        ------
+        NotImplementedError
+            Must be implemented by subclasses
+        """
         raise NotImplementedError
 
 
 def load_llm(llm_name: str) -> T.Type[LLM]:
     """
-    Load an LLM plugin from the plugins directory.
+    Dynamically load an LLM implementation from the plugins directory.
 
-    Args:
-        input_name: The name of the input plugin class to load.
+    Parameters
+    ----------
+    llm_name : str
+        Name of the LLM implementation class to load
 
-    Returns:
-        An instance of the input plugin.
+    Returns
+    -------
+    Type[LLM]
+        LLM class implementation
+
+    Raises
+    ------
+    ValueError
+        If requested LLM implementation is not found
     """
     # Get all files in plugins directory
     plugins_dir = os.path.join(os.path.dirname(__file__), "plugins")
