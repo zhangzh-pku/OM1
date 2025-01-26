@@ -33,18 +33,18 @@ def load_config(config_name: str) -> RuntimeConfig:
     parsed_config = {
         **raw_config,
         "agent_inputs": [
-            load_input(input["type"])() for input in raw_config["agent_inputs"]
-        ],
-        "simulators": [
-            load_simulator(simulator["type"])()
-            for simulator in raw_config["simulators"]
+            load_input(input["type"])() for input in raw_config.get("agent_inputs", [])
         ],
         "cortex_llm": load_llm(raw_config["cortex_llm"]["type"])(
             config=LLMConfig(**raw_config["cortex_llm"].get("config", {})),
             output_model=CortexOutputModel,
         ),
+        "simulators": [
+            load_simulator(simulator["type"])()
+            for simulator in raw_config.get("simulators", [])
+        ],
         "agent_actions": [
-            load_action(action) for action in raw_config["agent_actions"]
+            load_action(action) for action in raw_config.get("agent_actions", [])
         ],
     }
     return RuntimeConfig(**parsed_config)

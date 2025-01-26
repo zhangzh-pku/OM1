@@ -72,5 +72,5 @@ class SimulatorOrchestrator:
         self, simulator: Simulator, commands: T.List[Command]
     ) -> T.Any:
         logging.debug(f"Calling simulator {simulator.name} with commands {commands}")
-        simulator.run(commands)
+        simulator.sim(commands)
         return None
