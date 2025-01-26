@@ -1,4 +1,4 @@
-import asyncio
+import time
 from dataclasses import dataclass
 
 
@@ -6,8 +6,9 @@ from dataclasses import dataclass
 class Simulator:
     name: str
 
-    async def tick(self) -> None:
+    def tick(self) -> None:
         """
         Run the simulator for one tick
         """
-        await asyncio.sleep(60)
+        time.sleep(60)
+        pass

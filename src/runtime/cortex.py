@@ -30,10 +30,15 @@ class CortexRuntime:
         self.sleep_ticker_provider = SleepTickerProvider()
 
     async def run(self) -> None:
-        simulator_start = self._start_simulator_task()
         input_listener_task = await self._start_input_listeners()
         cortex_loop_task = asyncio.create_task(self._run_cortex_loop())
-        await asyncio.gather(simulator_start, input_listener_task, cortex_loop_task)
+
+        simulator_start = self._start_simulator_task()
+        action_start = self._start_action_task()
+
+        await asyncio.gather(
+            input_listener_task, cortex_loop_task, simulator_start, action_start
+        )
 
     async def _start_input_listeners(self) -> asyncio.Task:
         input_orchestrator = InputOrchestrator(self.config.agent_inputs)
@@ -42,6 +47,9 @@ class CortexRuntime:
 
     async def _start_simulator_task(self) -> asyncio.Future:
         return self.simulator_orchestrator.start()
+
+    async def _start_action_task(self) -> asyncio.Future:
+        return self.action_orchestrator.start()
 
     async def _run_cortex_loop(self) -> None:
         while True:
