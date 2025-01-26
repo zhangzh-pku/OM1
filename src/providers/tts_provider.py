@@ -31,7 +31,6 @@ class TTSProvider:
         url : str
             The URL endpoint for the TTS service
         """
-        print("TTSProvider __init__")
         self.running: bool = False
         self.audio_stream: AudioOutputStream = AudioOutputStream(url=url)
         self._thread: Optional[threading.Thread] = None
