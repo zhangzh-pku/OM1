@@ -56,8 +56,12 @@ class WalletCoinbase(LoopInput[float]):
 
         # randomly simulate ETH inbound transfers for debugging purposes
         if random.randint(0, 10) > 7:
-            self.wallet.faucet(asset_id='eth', amount=0.1)
+            faucet_transaction = self.wallet.faucet(asset_id='eth')
+            faucet_transaction.wait()
+            logging.info(f"WalletCoinbase: Faucet transaction: {faucet_transaction}")
 
+        self.wallet = Wallet.fetch(self.COINBASE_WALLET_ID)
+        logging.info(f"WalletCoinbase: Wallet refreshed: {self.wallet.balance('eth')}, the current balance is {self.ETH_balance}")
         self.ETH_balance = float(self.wallet.balance('eth'))
         balance_change = self.ETH_balance - self.ETH_balance_previous
         self.ETH_balance_previous = self.ETH_balance
@@ -70,11 +74,11 @@ class WalletCoinbase(LoopInput[float]):
         balance_change = raw_input[1]
 
         if balance_change > 0:
-            message = f"{time.time():.3f}::You just received {balance_change:.3f} ETH."
+            message = f"{time.time():.3f}::You just received {balance_change:.5f} ETH."
         else:
-            message = f"{time.time():.3f}::You have {balance:.3f} ETH."
+            message = f"{time.time():.3f}::There is no new ETH transaction. balance: {balance:.5f}"
 
-        logging.info(f"WalletEthereum: {message}")
+        logging.info(f"WalletCoinbase: {message}")
         return Message(timestamp=time.time(), message=message)
 
     async def raw_to_text(self, raw_input):
