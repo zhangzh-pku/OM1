@@ -1,4 +1,4 @@
-name: Run Lint
+name: Run Unit Tests
 
 on:
   push:
@@ -9,11 +9,8 @@ on:
       - '**'
 
 jobs:
-  lint-and-test:
+  test:
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        python-version: ["3.9", "3.10", "3.11"]
 
     steps:
       - name: Checkout code
@@ -37,11 +34,13 @@ jobs:
         with:
           python-version-file: "pyproject.toml"
 
-      - name: Run Ruff
-        run: uv run ruff check .
+      - name: Run unit tests
+        run: |
+          uv run pytest --log-cli-level=DEBUG -s
 
-      - name: Run Black
-        run: uv run black --check .
-
-      - name: Run isort
-        run: uv run isort --check-only .
+      - name: Upload test results
+        uses: actions/upload-artifact@v3
+        if: always()
+        with:
+          name: test-results-${{ runner.os }}
+          path: pytest-results/
