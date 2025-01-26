@@ -14,16 +14,38 @@ from providers.io_provider import IOProvider
 
 @dataclass
 class Message:
+    """
+    Container for timestamped messages.
+
+    Parameters
+    ----------
+    timestamp : float
+        Unix timestamp of the message
+    message : str
+        Content of the message
+    """
+
     timestamp: float
     message: str
 
 
 class WalletEthereum(LoopInput[float]):
     """
-    Queries current ETH balance and reports a balance increase
+    Ethereum wallet monitor that tracks ETH balance changes.
+
+    Queries the Ethereum blockchain for account balance updates and reports
+    incoming transactions.
+
+    Raises
+    ------
+    Exception
+        If connection to Ethereum network fails
     """
 
     def __init__(self):
+        """
+        Initialize WalletEthereum instance.
+        """
         # Track IO
         self.io_provider = IOProvider()
 
@@ -45,6 +67,14 @@ class WalletEthereum(LoopInput[float]):
             raise Exception("Failed to connect to Ethereum")
 
     async def _poll(self) -> List[float]:
+        """
+        Poll for Ethereum balance updates.
+
+        Returns
+        -------
+        List[float]
+            [current_balance, balance_change]
+        """
         await asyncio.sleep(self.POLL_INTERVAL)
 
         try:
@@ -81,6 +111,19 @@ class WalletEthereum(LoopInput[float]):
         return [self.ETH_balance, balance_change]
 
     async def _raw_to_text(self, raw_input: List[float]) -> str:
+        """
+        Convert balance data to human-readable message.
+
+        Parameters
+        ----------
+        raw_input : List[float]
+            [current_balance, balance_change]
+
+        Returns
+        -------
+        Message
+            Timestamped status or transaction notification
+        """
         balance = raw_input[0]
         balance_change = raw_input[1]
 
@@ -94,12 +137,12 @@ class WalletEthereum(LoopInput[float]):
 
     async def raw_to_text(self, raw_input: float):
         """
-        Convert raw input to processed text and manage buffer.
+        Process balance update and manage message buffer.
 
         Parameters
         ----------
-        raw_input : Optional[str]
-            Raw input to be processed
+        raw_input : float
+            Raw balance data
         """
         pending_message = await self._raw_to_text(raw_input)
 
@@ -121,11 +164,11 @@ class WalletEthereum(LoopInput[float]):
         latest_message = self.messages[-1]
 
         result = f"""
-        {self.__class__.__name__} INPUT
-        // START
-        {latest_message.timestamp:.3f}
-        // END
-        """
+{self.__class__.__name__} INPUT
+// START
+{latest_message.timestamp:.3f}
+// END
+"""
 
         self.io_provider.add_input(
             self.__class__.__name__, latest_message.message, latest_message.timestamp
