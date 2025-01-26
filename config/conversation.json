@@ -8,13 +8,16 @@
     }
   ],
   "cortex_llm": {
-    "type": "OpenAILLM"
+    "type": "OpenAILLM",
+    "config": {
+      "base_url": "https://api.openmind.org/api/core/openai"
+    }
   },
-  "modules": [
+  "agent_actions": [
     {
       "name": "speech",
-      "impl": "passthrough",
-      "mutation": "tts"
+      "implementation": "passthrough",
+      "connector": "tts"
     }
   ]
 }
