@@ -164,6 +164,3 @@ class RacoonSim:
             self.surface_text.blit(self.text, self.textRect)
 
         self.display.blit(self.surface_text, (0, 0))
-
-        # just for now - simple hack
-        self._tick()
