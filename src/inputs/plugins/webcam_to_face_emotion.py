@@ -12,6 +12,17 @@ from providers.io_provider import IOProvider
 
 @dataclass
 class Message:
+    """
+    Container for timestamped messages.
+
+    Parameters
+    ----------
+    timestamp : float
+        Unix timestamp of the message
+    message : str
+        Content of the message
+    """
+
     timestamp: float
     message: str
 
@@ -25,10 +36,16 @@ Thank you @manish-9245
 
 class FaceEmotionCapture(LoopInput[cv2.typing.MatLike]):
     """
-    Uses a webcam and returns a label of the person's emotions
+    Real-time facial emotion recognition using webcam input.
+
+    Uses OpenCV for face detection and DeepFace for emotion analysis.
+    Processes video frames to detect faces and classify emotions.
     """
 
     def __init__(self):
+        """
+        Initialize FaceEmotionCapture instance.
+        """
         # Track IO
         self.io_provider = IOProvider()
 
@@ -47,6 +64,14 @@ class FaceEmotionCapture(LoopInput[cv2.typing.MatLike]):
         self.messages: list[Message] = []
 
     async def _poll(self) -> cv2.typing.MatLike:
+        """
+        Capture frame from webcam.
+
+        Returns
+        -------
+        cv2.typing.MatLike
+            Captured video frame
+        """
         await asyncio.sleep(0.5)
 
         # Capture a frame every 500 ms
@@ -55,6 +80,19 @@ class FaceEmotionCapture(LoopInput[cv2.typing.MatLike]):
         return frame
 
     async def _raw_to_text(self, raw_input: cv2.typing.MatLike) -> Message:
+        """
+        Process video frame for emotion detection.
+
+        Parameters
+        ----------
+        raw_input : cv2.typing.MatLike
+            Input video frame
+
+        Returns
+        -------
+        Message
+            Timestamped emotion detection result
+        """
         frame = raw_input
 
         # Convert frame to grayscale
@@ -84,7 +122,7 @@ class FaceEmotionCapture(LoopInput[cv2.typing.MatLike]):
 
         return Message(timestamp=time.time(), message=message)
 
-    async def raw_to_text(self, raw_input):
+    async def raw_to_text(self, raw_input: cv2.typing.MatLike):
         """
         Convert raw input to processed text and manage buffer.
 
@@ -113,11 +151,11 @@ class FaceEmotionCapture(LoopInput[cv2.typing.MatLike]):
         latest_message = self.messages[-1]
 
         result = f"""
-        {self.__class__.__name__} INPUT
-        // START
-        {latest_message.timestamp:.3f}
-        // END
-        """
+{self.__class__.__name__} INPUT
+// START
+{latest_message.timestamp:.3f}
+// END
+"""
 
         self.io_provider.add_input(
             self.__class__.__name__, latest_message.message, latest_message.timestamp

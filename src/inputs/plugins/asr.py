@@ -10,24 +10,17 @@ from providers.sleep_ticker_provider import SleepTickerProvider
 
 
 class ASRInput(LoopInput[str]):
-    """Automatic Speech Recognition (ASR) input handler.
+    """
+    Automatic Speech Recognition (ASR) input handler.
 
     This class manages the input stream from an ASR service, buffering messages
     and providing text conversion capabilities.
-
-    Attributes
-    ----------
-    message_buffer : Queue[str]
-        FIFO queue for storing incoming ASR messages
-    asr : ASRProvider
-        Provider for ASR websocket connection
-    global_sleep_ticker_provider : SleepTickerProvider
-        Provider for managing sleep ticks
-    buffer : List[str]
-        Internal buffer for storing processed messages
     """
 
     def __init__(self):
+        """
+        Initialize ASRInput instance.
+        """
         super().__init__()
 
         # Buffer for storing the final output
@@ -94,7 +87,7 @@ class ASRInput(LoopInput[str]):
         """
         return raw_input
 
-    async def raw_to_text(self, raw_input):
+    async def raw_to_text(self, raw_input: str):
         """
         Convert raw input to processed text and manage buffer.
 
@@ -105,9 +98,7 @@ class ASRInput(LoopInput[str]):
         """
         text = await self._raw_to_text(raw_input)
         if text is None:
-            if len(self.buffer) == 0:
-                return None
-            else:
+            if len(self.buffer) != 0:
                 # Skip sleep if there's already a message in the buffer
                 self.global_sleep_ticker_provider.skip_sleep = True
 
