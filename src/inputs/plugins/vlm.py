@@ -12,16 +12,33 @@ from providers.io_provider import IOProvider
 
 @dataclass
 class Message:
+    """
+    Container for timestamped messages.
+
+    Parameters
+    ----------
+    timestamp : float
+        Unix timestamp of the message
+    message : str
+        Content of the message
+    """
+
     timestamp: float
     message: str
 
 
 class VlmInput(LoopInput[Image.Image]):
     """
-    Input from a VLM
+    Vision Language Model input handler.
+
+    Processes image inputs and generates text descriptions using a vision
+    language model. Maintains a buffer of processed messages.
     """
 
     def __init__(self):
+        """
+        Initialize VLM input handler with empty message buffer.
+        """
         # Track IO
         self.io_provider = IOProvider()
 
@@ -29,7 +46,19 @@ class VlmInput(LoopInput[Image.Image]):
         self.messages: list[Message] = []
 
     async def _poll(self) -> Image.Image:
+        """
+        Poll for new image input.
+
+        Currently generates random colored images for testing.
+        In production, this would interface with camera or sensor.
+
+        Returns
+        -------
+        Image.Image
+            Generated or captured image
+        """
         await asyncio.sleep(0.5)
+
         # this could be a camera or other sensor
         img = Image.new(
             "RGB",
@@ -39,6 +68,19 @@ class VlmInput(LoopInput[Image.Image]):
         return img
 
     async def _raw_to_text(self, raw_input: Image.Image) -> Message:
+        """
+        Process raw image input to generate text description.
+
+        Parameters
+        ----------
+        raw_input : Image.Image
+            Input image to process
+
+        Returns
+        -------
+        Message
+            Timestamped message containing description
+        """
         # now you can use the `raw_input` variable for something, it is of Type Image
         # but for simplementationicity let's not bother with the random image,
         # but just create a string that changes
@@ -49,12 +91,12 @@ class VlmInput(LoopInput[Image.Image]):
 
     async def raw_to_text(self, raw_input: Image.Image):
         """
-        Convert raw input to processed text and manage buffer.
+        Convert raw image to text and update message buffer.
 
         Parameters
         ----------
-        raw_input : Optional[str]
-            Raw input to be processed
+        raw_input : Image.Image
+            Raw image to be processed
         """
         pending_message = await self._raw_to_text(raw_input)
 
@@ -64,6 +106,9 @@ class VlmInput(LoopInput[Image.Image]):
     def formatted_latest_buffer(self) -> Optional[str]:
         """
         Format and clear the latest buffer contents.
+
+        Formats the most recent message with timestamp and class name,
+        adds it to the IO provider, then clears the buffer.
 
         Returns
         -------
@@ -76,11 +121,11 @@ class VlmInput(LoopInput[Image.Image]):
         latest_message = self.messages[-1]
 
         result = f"""
-        {self.__class__.__name__} INPUT
-        // START
-        {latest_message.timestamp:.3f}
-        // END
-        """
+{self.__class__.__name__} INPUT
+// START
+{latest_message.timestamp:.3f}
+// END
+"""
 
         self.io_provider.add_input(
             self.__class__.__name__, latest_message.message, latest_message.timestamp
