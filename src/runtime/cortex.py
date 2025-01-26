@@ -11,9 +11,17 @@ from simulators.orchestrator import SimulatorOrchestrator
 
 class CortexRuntime:
     """
-    The CortexRuntime is the main entry point for the omOS agent.
-    It is responsible for running the agent, orchestrating communication
-    between the memory, fuser, actions, and managing the inputs and outputs.
+    The main entry point for the omOS agent runtime environment.
+
+    The CortexRuntime orchestrates communication between memory, fuser,
+    actions, and manages inputs/outputs. It controls the agent's execution
+    cycle and coordinates all major subsystems.
+
+    Parameters
+    ----------
+    config : RuntimeConfig
+        Configuration object containing all runtime settings including
+        agent inputs, cortex LLM settings, and execution parameters.
     """
 
     config: RuntimeConfig
@@ -23,6 +31,14 @@ class CortexRuntime:
     sleep_ticker_provider: SleepTickerProvider
 
     def __init__(self, config: RuntimeConfig):
+        """
+        Initialize the CortexRuntime with provided configuration.
+
+        Parameters
+        ----------
+        config : RuntimeConfig
+            Configuration object for the runtime.
+        """
         self.config = config
         self.fuser = Fuser(config)
         self.action_orchestrator = ActionOrchestrator(config)
@@ -30,6 +46,16 @@ class CortexRuntime:
         self.sleep_ticker_provider = SleepTickerProvider()
 
     async def run(self) -> None:
+        """
+        Start the runtime's main execution loop.
+
+        This method initializes input listeners and begins the cortex
+        processing loop, running them concurrently.
+
+        Returns
+        -------
+        None
+        """
         input_listener_task = await self._start_input_listeners()
         cortex_loop_task = asyncio.create_task(self._run_cortex_loop())
 
@@ -41,6 +67,17 @@ class CortexRuntime:
         )
 
     async def _start_input_listeners(self) -> asyncio.Task:
+        """
+        Initialize and start input listeners.
+
+        Creates an InputOrchestrator for the configured agent inputs
+        and starts listening for input events.
+
+        Returns
+        -------
+        asyncio.Task
+            Task handling input listening operations.
+        """
         input_orchestrator = InputOrchestrator(self.config.agent_inputs)
         input_listener_task = asyncio.create_task(input_orchestrator.listen())
         return input_listener_task
@@ -52,6 +89,16 @@ class CortexRuntime:
         return self.action_orchestrator.start()
 
     async def _run_cortex_loop(self) -> None:
+        """
+        Execute the main cortex processing loop.
+
+        Runs continuously, managing the sleep/wake cycle and triggering
+        tick operations at the configured frequency.
+
+        Returns
+        -------
+        None
+        """
         while True:
             if not self.sleep_ticker_provider.skip_sleep:
                 await self.sleep_ticker_provider.sleep(1 / self.config.hertz)
@@ -59,6 +106,16 @@ class CortexRuntime:
             self.sleep_ticker_provider.skip_sleep = False
 
     async def _tick(self) -> None:
+        """
+        Execute a single tick of the cortex processing cycle.
+
+        Collects inputs, generates prompts, processes them through the LLM,
+        and triggers appropriate simulators and actions based on the output.
+
+        Returns
+        -------
+        None
+        """
         # collect all the latest inputs
         finished_promises, _ = await self.action_orchestrator.flush_promises()
 
