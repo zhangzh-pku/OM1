@@ -19,7 +19,7 @@ dependencies = [
 ]
 
 [tool.uv.sources]
-omos-modules = { git = "https://github.com/OpenmindAGI/omOS-modules", rev = "main" }
+omos-modules = { git = "https://github.com/OpenmindAGI/omOS-modules", rev = "1a436840fcfe60ece0f56f075f3c593598035ac1" }
 
 [dependency-groups]
 dev = [

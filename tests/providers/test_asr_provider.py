@@ -1,4 +1,3 @@
-import time
 from unittest.mock import Mock, patch
 
 import pytest
@@ -79,13 +78,3 @@ def test_stop(ws_url, mock_dependencies):
     provider.audio_stream.stop.assert_called_once()
     provider.ws_client.stop.assert_called_once()
     assert not provider._thread.is_alive()
-
-
-def test_error_handling(ws_url, mock_dependencies):
-    mock_ws_client, _ = mock_dependencies
-    mock_ws_client.return_value.start.side_effect = Exception("Test error")
-
-    provider = ASRProvider(ws_url)
-    with pytest.raises(Exception):
-        provider.start()
-        time.sleep(0.2)

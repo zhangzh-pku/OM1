@@ -16,7 +16,8 @@ def singleton(cls):
     Returns:
         function: A getter function that returns the singleton instance.
     """
-    instances = {}
+    if not hasattr(singleton, "instances"):
+        singleton.instances = {}
     lock = threading.Lock()
 
     def get_instance(*args, **kwargs) -> Any:
@@ -34,8 +35,8 @@ def singleton(cls):
             Any: The singleton instance of the decorated class.
         """
         with lock:
-            if cls not in instances:
-                instances[cls] = cls(*args, **kwargs)
-        return instances[cls]
+            if cls not in singleton.instances:
+                singleton.instances[cls] = cls(*args, **kwargs)
+            return singleton.instances[cls]
 
     return get_instance
