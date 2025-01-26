@@ -1,3 +1,4 @@
+import asyncio
 import os
 import re
 from typing import List
@@ -50,6 +51,10 @@ class RacoonSim:
         self.action_sit = gif_pygame.load(os.path.join(self.path, "crouch.gif"))
 
         self.a_s = ""
+
+    async def tick(self) -> None:
+        await asyncio.sleep(1 / 60)
+        self._tick()
 
     def _tick(self) -> None:
         self.surface_ani.fill(self.lightblue)

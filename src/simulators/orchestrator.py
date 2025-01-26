@@ -13,12 +13,33 @@ class SimulatorOrchestrator:
     Note: It is important that the simulators do not block the event loop.
     """
 
-    promise_queue: list[asyncio.Task[T.Any]]
+    promise_queue: T.List[asyncio.Task[T.Any]]
     _config: RuntimeConfig
+    _simulator_tasks: T.Dict[str, asyncio.Task[T.Any]]
 
     def __init__(self, config: RuntimeConfig):
         self._config = config
         self.promise_queue = []
+        self._simulator_tasks = {}
+
+    async def start(self):
+        """
+        Start continous simulator tasks
+        """
+        for simulator in self._config.simulators:
+            if simulator.name not in self._simulator_tasks:
+                task = asyncio.create_task(self._run_simulator_loop(simulator))
+                self._simulator_tasks[simulator.name] = task
+
+    async def _run_simulator_loop(self, simulator: Simulator):
+        """
+        Continuous loop for each simulator
+        """
+        while True:
+            try:
+                await simulator.tick()
+            except Exception as e:
+                logging.error(f"Error in simulator {simulator.name}: {e}")
 
     async def flush_promises(self) -> tuple[list[T.Any], list[asyncio.Task[T.Any]]]:
         """
