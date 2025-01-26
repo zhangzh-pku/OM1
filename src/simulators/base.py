@@ -10,5 +10,4 @@ class Simulator:
         """
         Run the simulator for one tick
         """
-        await asyncio.sleep(1 / 60)
-        raise NotImplementedError
+        await asyncio.sleep(60)
