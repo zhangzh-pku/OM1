@@ -40,9 +40,8 @@ class CortexRuntime:
         input_listener_task = asyncio.create_task(input_orchestrator.listen())
         return input_listener_task
 
-    async def _start_simulator_task(self) -> asyncio.Task:
-        simulator_task = asyncio.create_task(self.simulator_orchestrator.start())
-        return simulator_task
+    async def _start_simulator_task(self) -> asyncio.Future:
+        return self.simulator_orchestrator.start()
 
     async def _run_cortex_loop(self) -> None:
         while True:

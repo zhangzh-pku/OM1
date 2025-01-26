@@ -1,5 +1,6 @@
 import asyncio
 import logging
+import threading
 import typing as T
 
 from llm.output_model import Command
@@ -15,29 +16,33 @@ class SimulatorOrchestrator:
 
     promise_queue: T.List[asyncio.Task[T.Any]]
     _config: RuntimeConfig
-    _simulator_tasks: T.Dict[str, asyncio.Task[T.Any]]
+    _simulator_threads: T.Dict[str, threading.Thread]
 
     def __init__(self, config: RuntimeConfig):
         self._config = config
         self.promise_queue = []
-        self._simulator_tasks = {}
+        self._simulator_threads = {}
 
-    async def start(self):
+    def start(self):
         """
-        Start continous simulator tasks
+        Start simulators in separate threads
         """
         for simulator in self._config.simulators:
-            if simulator.name not in self._simulator_tasks:
-                task = asyncio.create_task(self._run_simulator_loop(simulator))
-                self._simulator_tasks[simulator.name] = task
+            if simulator.name not in self._simulator_threads:
+                thread = threading.Thread(
+                    target=self._run_simulator_loop, args=(simulator,), daemon=True
+                )
+                self._simulator_threads[simulator.name] = thread
+                thread.start()
+        return asyncio.Future()  # Return future for compatibility
 
-    async def _run_simulator_loop(self, simulator: Simulator):
+    def _run_simulator_loop(self, simulator: Simulator):
         """
-        Continuous loop for each simulator
+        Thread-based simulator loop
         """
         while True:
             try:
-                await simulator.tick()
+                simulator.tick()
             except Exception as e:
                 logging.error(f"Error in simulator {simulator.name}: {e}")
 

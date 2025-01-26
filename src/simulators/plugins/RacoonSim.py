@@ -1,6 +1,6 @@
-import asyncio
 import os
 import re
+import time
 from typing import List
 
 import gif_pygame
@@ -52,8 +52,8 @@ class RacoonSim:
 
         self.a_s = ""
 
-    async def tick(self) -> None:
-        await asyncio.sleep(1 / 60)
+    def tick(self) -> None:
+        time.sleep(1 / 200)
         self._tick()
 
     def _tick(self) -> None:
