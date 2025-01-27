@@ -1,14 +1,12 @@
+from dataclasses import dataclass
 import asyncio
 import logging
-import time
 import os
-from dataclasses import dataclass
-from cdp import Cdp, Wallet
-
+import time
 from typing import List, Optional
 
+from cdp import Cdp, Wallet
 from inputs.base.loop import LoopInput
-
 from providers.io_provider import IOProvider
 
 @dataclass
@@ -74,7 +72,7 @@ class WalletCoinbase(LoopInput[float]):
         if balance_change > 0:
             message = f"{balance_change:.5f}"
         else:
-            message = f"There is no new ETH transaction."
+            message = "There is no new ETH transaction."
 
         logging.debug(f"WalletCoinbase: {message}")
         return Message(timestamp=time.time(), message=message)
