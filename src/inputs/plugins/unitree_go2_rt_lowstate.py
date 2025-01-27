@@ -38,7 +38,7 @@ class UnitreeGo2Lowstate(FuserInput[str]):
     """
     Unitree Go2 Air Lowstate bridge.
     
-    Takes specific unitree CycloneDDS Lowstate messages, converts them to 
+    Takes specific Unitree CycloneDDS Lowstate messages, converts them to 
     text strings, and sends them to the fuser.
 
     Processes Unitree Lowstate information. These are things like joint position and battery charge.
@@ -57,7 +57,7 @@ class UnitreeGo2Lowstate(FuserInput[str]):
         self.messages: list[Message] = []
 
         self.UNITREE_WIRED_ETHERNET = os.environ.get("UNITREE_WIRED_ETHERNET", "eno0")
-        logging.debug(f"Using {self.UNITREE_WIRED_ETHERNET} as the network ethernet adapter")
+        logging.info(f"Using {self.UNITREE_WIRED_ETHERNET} as the network Ethernet adapter")
 
         # Fire up the Unitree system
         ChannelFactoryInitialize(0, self.UNITREE_WIRED_ETHERNET)
@@ -75,6 +75,7 @@ class UnitreeGo2Lowstate(FuserInput[str]):
         self.latest_v = float(msg.power_v)
         self.latest_a = float(msg.power_a)
         logging.info(f"Battery state voltage: {self.latest_v} current: {self.latest_a}")
+        # other things you can read
         # print("FR_0 motor state: ", msg.motor_state[go2.LegID["FR_0"]])
         # print("IMU state: ", msg.imu_state)
         # print("Battery state: voltage: ", msg.power_v, "current: ", msg.power_a)
@@ -89,8 +90,8 @@ class UnitreeGo2Lowstate(FuserInput[str]):
             list of floats
         """
 
-        # Does the complexitiy of this seem confusing and kinda pointless to you?
-        # It's on our radar and your patience is apprecaited
+        # Does the complexity of this seem confusing and kinda pointless to you?
+        # It's on our radar and your patience is appreciated
         await asyncio.sleep(0.5)
 
         return [self.latest_v, self.latest_a]
@@ -110,10 +111,10 @@ class UnitreeGo2Lowstate(FuserInput[str]):
             Timestamped message containing description
         """
         battery_voltage = raw_input[0]
-        if battery_voltage < 27.2:
-            message = "WARNING: You are low on energy. Consider sitting down."
-        elif battery_voltage < 26.0:
+        if battery_voltage < 26.0:
             message = "WARNING: You are low on energy. SIT DOWN NOW."
+        elif battery_voltage < 27.2:
+            message = "WARNING: You are low on energy. Consider sitting down."
         else:
             message = ""
 
