@@ -6,6 +6,8 @@ from typing import List
 import gif_pygame
 import pygame
 
+import logging
+
 from llm.output_model import Command
 from providers.io_provider import IOProvider
 
@@ -57,13 +59,19 @@ class RacoonSim:
     def _tick(self) -> None:
         self.surface_ani.fill(self.lightblue)
 
+        logging.info(f"Current Action Spec: {self.a_s}")
+
         if self.a_s == "walk":
+            logging.info(f"Current Action Spec: {self.a_s} - using WALK render")
             self.action_walk.render(self.surface_ani, (0, 0))
         elif self.a_s == "run":
+            logging.info(f"Current Action Spec: {self.a_s} - using RUN render")
             self.action_run.render(self.surface_ani, (0, 0))
         elif self.a_s == "sit":
+            logging.info(f"Current Action Spec: {self.a_s} - using SIT render")
             self.action_sit.render(self.surface_ani, (0, 0))
         else:
+            logging.info(f"Sorry, could not parse action spec {self.a_s} - defaulting to idle")
             self.action_idle.render(self.surface_ani, (0, 0))
 
         self.display.blit(self.surface_ani, (180, 230))
