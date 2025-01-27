@@ -35,6 +35,12 @@ This very basic agent uses webcam data to estimate your emotion, generates a fak
 uv run src/run.py spot
 ```
 
+Run an Unitree Go2 Air 
+
+```bash
+uv run src/run.py unitree
+```
+
 > [!NOTE]
 > `uv` does many things in the background, such as setting up a good `venv` and downloading any dependencies if needed. Please add new dependencies to `pyproject.toml`.
 
@@ -90,6 +96,9 @@ You should see roundtrip timing data.
 When you run `uv`, `unitree_sdk2_python` should be installed automatically as a python module. For ready access to the source and examples, you can also `git clone https://github.com/unitreerobotics/unitree_sdk2_python.git` to a convenient other location, but do not `pip3 install -e .` that installation unless you have lots of spare time and enjoy confusion. 
 
 ### Testing Unitree DDS Communication
+
+> [!NOTE]
+> Unitree CycloneDDS communication will only work if your environment contains a path to a working CycloneDDS installation (set via `CYCLONEDDS_HOME`).
 
 In the terminal, execute:
 

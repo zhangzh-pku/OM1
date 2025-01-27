@@ -16,7 +16,8 @@ dependencies = [
     "pygame",
     "gif-pygame",
     "web3",
-    "unitree_sdk2py"
+    "cyclonedds==0.10.2",
+    "numpy"
 ]
 
 [tool.uv.sources]
