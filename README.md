@@ -62,8 +62,8 @@ cmake --build . --target install
 # on Mac
 export CYCLONEDDS_HOME="/Users/username/Documents/GitHub/cyclonedds/install"
 ```
-
-*NOTE*: On Mac, you will need `cmake`, which you can install via `brew install cmake`.
+> [!NOTE]
+> On Mac, you will need `cmake`, which you can install via `brew install cmake`.
 
 Set `CYCLONEDDS_HOME` to the `/install` directory of the CycloneDDS you just compiled. You should add this path to your environment e.g. via your `.zshrc`. You can read more about CycloneDDS [here](https://index.ros.org/p/cyclonedds/). 
 
@@ -73,23 +73,21 @@ Test `cycloneDDS` with these commands, assuming you are still in `/build`:
 
 ```bash
 # send some pings
-./bin/RoundtripPing 0 0 0 
-
-# open another terminal and 
+./bin/RoundtripPing 0 0 0
+```
+In another terminal, receive those pings and send them right back:
+```bash
 ./bin/RoundtripPong
 ``` 
 
 You should see roundtrip timing data.
 
+> [!NOTE]
+> On Mac, you will need to `allow incoming connections` for the applications (RoundtripPing and RoundtripPong) - just "allow" the functionality in the security popup at first use.
+
 #### Installing Unitree DDS Communication
 
-Then, install `unitree_sdk2_python`. Execute the following commands in the terminal:
-```bash
-cd ~
-git clone https://github.com/unitreerobotics/unitree_sdk2_python.git
-cd unitree_sdk2_python
-pip3 install -e .
-``` 
+When you run `uv`, `unitree_sdk2_python` should be installed automatically as a python module. For ready access to the source and examples, you can also `git clone https://github.com/unitreerobotics/unitree_sdk2_python.git` to a convenient other location, but do not `pip3 install -e .` that installation unless you have lots of spare time and enjoy confusion. 
 
 ### Testing Unitree DDS Communication
 
