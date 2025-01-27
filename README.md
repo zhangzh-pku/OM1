@@ -35,12 +35,6 @@ This very basic agent uses webcam data to estimate your emotion, generates a fak
 uv run src/run.py spot
 ```
 
-Run an Unitree Go2 Air 
-
-```bash
-uv run src/run.py unitree
-```
-
 > [!NOTE]
 > `uv` does many things in the background, such as setting up a good `venv` and downloading any dependencies if needed. Please add new dependencies to `pyproject.toml`.
 
@@ -91,10 +85,6 @@ You should see roundtrip timing data.
 > [!NOTE]
 > On Mac, you will need to `allow incoming connections` for the applications (RoundtripPing and RoundtripPong) - just "allow" the functionality in the security popup at first use.
 
-#### Installing Unitree DDS Communication
-
-When you run `uv`, `unitree_sdk2_python` should be installed automatically as a python module. For ready access to the source and examples, you can also `git clone https://github.com/unitreerobotics/unitree_sdk2_python.git` to a convenient other location, but do not `pip3 install -e .` that installation unless you have lots of spare time and enjoy confusion. 
-
 ### Testing Unitree DDS Communication
 
 > [!NOTE]
@@ -103,7 +93,7 @@ When you run `uv`, `unitree_sdk2_python` should be installed automatically as a 
 In the terminal, execute:
 
 ```bash
-cd unitree_sdk2_python
+cd unitree
 python3 ./example/helloworld/publisher.py
 ```
 
@@ -113,6 +103,18 @@ python3 ./example/helloworld/subscriber.py
 ```
 
 You will see the data output in the terminal. The data structure transmitted between `publisher.py` and `subscriber.py` is defined in `user_data.py`, and users can define the required data structure as needed.
+
+### Reading Data from a Unitree Go2 Air connected via Ethernet
+
+First, connect the Unitree Go2 Air to your development machine with an Ethernet cable. Then, set the network adapter setting. Open the network settings and find the network interface that is connected to the Go2 Air. In IPv4 setting, change the IPv4 mode to `manual`, set the address to `192.168.123.99`, and set the mask to `255.255.255.0`. After completion, click `apply` (or equivalent) and wait for the network to reconnect. Finally provide the name of the network adapter in the `.env`, such as `UNITREE_WIRED_ETHERNET=eno0`.
+
+Then run:
+
+```bash
+uv run src/run.py unitree
+```
+
+If you see a `channel factory init error`, then you have not set the correct network interface adapter - the one you want to use is the network interface adapter *on your development machine - the computer you are currently sitting in front of* that is plugged into the Unitree quadruped (which has its own internal RockChip computer and network interface, which is *not* relevant to you right now). The ethernet adapter - such as `eno0` - needs to be set in the `.env`.
 
 ## CLI Commands
 
