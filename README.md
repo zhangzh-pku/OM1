@@ -31,7 +31,6 @@ cp .env.example .env
 
 This very basic agent uses webcam data to estimate your emotion, generates a fake VLM caption, and sends those two inputs to central LLM. The LLM then returns `movement`, `speech`, and `face` commands, which are displayed in a small `pygame` window. This is windows also shows basic timing debug information so you can see how long each step takes.
 
-
 ```bash
 uv run src/run.py spot
 ```
@@ -47,6 +46,66 @@ uv run src/run.py spot
 
 > [!NOTE]
 > There should be a `pygame` window that pops up when you run `uv run src/run.py spot`. Sometimes the `pygame` window is hidden behind all other open windows - use "show all windows" to find it.
+
+## Robot hardware support - Unitree/CycloneDDS
+
+### Installing CycloneDDS
+
+First, compile and install `CycloneDDS`. `CycloneDDS` works on Mac, Linux, and PC:
+
+```bash
+git clone https://github.com/eclipse-cyclonedds/cyclonedds -b releases/0.10.x 
+cd cyclonedds && mkdir build install && cd build
+cmake .. -DCMAKE_INSTALL_PREFIX=../install -DBUILD_EXAMPLES=ON
+cmake --build . --target install
+
+# on Mac
+export CYCLONEDDS_HOME="/Users/username/Documents/GitHub/cyclonedds/install"
+```
+
+*NOTE*: On Mac, you will need `cmake`, which you can install via `brew install cmake`.
+
+Set `CYCLONEDDS_HOME` to the `/install` directory of the CycloneDDS you just compiled. You should add this path to your environment e.g. via your `.zshrc`. You can read more about CycloneDDS [here](https://index.ros.org/p/cyclonedds/). 
+
+#### Testing CycloneDDS
+
+Test `cycloneDDS` with these commands, assuming you are still in `/build`:
+
+```bash
+# send some pings
+./bin/RoundtripPing 0 0 0 
+
+# open another terminal and 
+./bin/RoundtripPong
+``` 
+
+You should see roundtrip timing data.
+
+#### Installing Unitree DDS Communication
+
+Then, install `unitree_sdk2_python`. Execute the following commands in the terminal:
+```bash
+cd ~
+git clone https://github.com/unitreerobotics/unitree_sdk2_python.git
+cd unitree_sdk2_python
+pip3 install -e .
+``` 
+
+### Testing Unitree DDS Communication
+
+In the terminal, execute:
+
+```bash
+cd unitree_sdk2_python
+python3 ./example/helloworld/publisher.py
+```
+
+Open a new terminal and execute:
+```bash
+python3 ./example/helloworld/subscriber.py
+```
+
+You will see the data output in the terminal. The data structure transmitted between `publisher.py` and `subscriber.py` is defined in `user_data.py`, and users can define the required data structure as needed.
 
 ## CLI Commands
 

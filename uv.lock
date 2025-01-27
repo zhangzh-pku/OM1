@@ -312,6 +312,15 @@ wheels = [
 ]
 
 [[package]]
+name = "cyclonedds"
+version = "0.10.2"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "rich-click" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/62/88/4b440f5916976234838989c3214222a5abc6fd48009a992c4dc22a86c04f/cyclonedds-0.10.2.tar.gz", hash = "sha256:f834962eabbdcdf4e9cd75cf87222f3c5ef22d9cb9e7ed651d9a8710fe984a30", size = 156849 }
+
+[[package]]
 name = "cytoolz"
 version = "1.0.1"
 source = { registry = "https://pypi.org/simple" }
@@ -1097,6 +1106,7 @@ dependencies = [
     { name = "python-dotenv" },
     { name = "tf-keras" },
     { name = "typer" },
+    { name = "unitree-sdk2py" },
     { name = "web3" },
 ]
 
@@ -1120,6 +1130,7 @@ requires-dist = [
     { name = "python-dotenv", specifier = ">=1.0.1" },
     { name = "tf-keras" },
     { name = "typer", specifier = ">=0.15.1" },
+    { name = "unitree-sdk2py" },
     { name = "web3" },
 ]
 
@@ -1724,6 +1735,20 @@ wheels = [
 ]
 
 [[package]]
+name = "rich-click"
+version = "1.8.5"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "click" },
+    { name = "rich" },
+    { name = "typing-extensions" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/9a/31/103501e85e885e3e202c087fa612cfe450693210372766552ce1ab5b57b9/rich_click-1.8.5.tar.gz", hash = "sha256:a3eebe81da1c9da3c32f3810017c79bd687ff1b3fa35bfc9d8a3338797f1d1a1", size = 38229 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/aa/0b/e2de98c538c0ee9336211d260f88b7e69affab44969750aaca0b48a697c8/rich_click-1.8.5-py3-none-any.whl", hash = "sha256:0fab7bb5b66c15da17c210b4104277cd45f3653a7322e0098820a169880baee0", size = 35081 },
+]
+
+[[package]]
 name = "rlp"
 version = "4.0.1"
 source = { registry = "https://pypi.org/simple" }
@@ -1954,6 +1979,20 @@ source = { registry = "https://pypi.org/simple" }
 sdist = { url = "https://files.pythonhosted.org/packages/e1/34/943888654477a574a86a98e9896bae89c7aa15078ec29f490fef2f1e5384/tzdata-2024.2.tar.gz", hash = "sha256:7d85cc416e9382e69095b7bdf4afd9e3880418a2413feec7069d533d6b4e31cc", size = 193282 }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/a6/ab/7e5f53c3b9d14972843a647d8d7a853969a58aecc7559cb3267302c94774/tzdata-2024.2-py2.py3-none-any.whl", hash = "sha256:a48093786cdcde33cad18c2555e8532f34422074448fbc874186f0abd79565cd", size = 346586 },
+]
+
+[[package]]
+name = "unitree-sdk2py"
+version = "1.0.1"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "cyclonedds" },
+    { name = "numpy" },
+    { name = "opencv-python" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/63/e2/485a359a84158078bd9a6b56575266392d1b2aa6fde4149a3d2b2e0eac61/unitree_sdk2py-1.0.1.tar.gz", hash = "sha256:4c8013f47604e5f3f3d269e3d1fff82b6cb08279353ebaf300fee9d127bc138b", size = 32046 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/d9/39/31346741a5893285915bc2b25838287b6a2238c593ee3619ff5b48a2b9ce/unitree_sdk2py-1.0.1-py3-none-any.whl", hash = "sha256:c46248695a4063079a160d0e96844664eee56f5448ca67fddf456a00bd172147", size = 80405 },
 ]
 
 [[package]]

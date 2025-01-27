@@ -15,7 +15,8 @@ dependencies = [
     "tf_keras",
     "pygame",
     "gif-pygame",
-    "web3"
+    "web3",
+    "unitree_sdk2py"
 ]
 
 [tool.uv.sources]
