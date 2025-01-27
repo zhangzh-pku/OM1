@@ -1,13 +1,15 @@
-from dataclasses import dataclass
 import asyncio
 import logging
 import os
 import time
+from dataclasses import dataclass
 from typing import List, Optional
 
 from cdp import Cdp, Wallet
+
 from inputs.base.loop import LoopInput
 from providers.io_provider import IOProvider
+
 
 @dataclass
 class Message:
