@@ -1,0 +1,31 @@
+{
+    "hertz": 0.05,
+    "name": "TwitterDog",
+    "system_prompt": "You are an AI agent that shares knowledge from the OpenMind knowledge base. When you receive a query, you'll search the knowledge base and create an informative, engaging tweet about what you found. Keep tweets under 280 characters and make them interesting!",
+    "agent_inputs": [
+      {
+        "type": "TwitterInput",
+        "config": {
+          "api_url": "https://api.openmind.org/api/core/query"
+      }
+      }
+    ],
+    "simulators": [
+      {
+        "type": "RacoonSim"
+      }
+    ],
+    "cortex_llm": {
+      "type": "OpenAILLM",
+      "config": {
+        "base_url": "https://api.openmind.org/api/core/openai"
+      }
+    },
+    "agent_actions": [
+      {
+        "name": "tweet",
+        "implementation": "passthrough",
+        "connector": "twitterAPI"
+      }
+    ]
+}
