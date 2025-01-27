@@ -5,7 +5,7 @@ import pytest
 from pydantic import BaseModel
 
 from llm import LLMConfig
-from llm.plugins.openai_llm import OpenAILLM
+from llm.plugins.openai_llm import OpenMindLLM
 
 
 # Test output model
@@ -15,7 +15,7 @@ class DummyOutputModel(BaseModel):
 
 @pytest.fixture(autouse=True)
 def setup_environment():
-    os.environ["OPENAI_API_KEY"] = ""
+    os.environ["OPENMIND_API_KEY"] = ""
 
 
 @pytest.fixture
@@ -34,7 +34,7 @@ def mock_response():
 
 @pytest.fixture
 def llm(config):
-    return OpenAILLM(DummyOutputModel, config)
+    return OpenMindLLM(DummyOutputModel, config)
 
 
 @pytest.mark.asyncio
@@ -45,15 +45,15 @@ async def test_init_with_config(llm, config):
 
 @pytest.mark.asyncio
 async def test_init_with_env_api_key(monkeypatch):
-    monkeypatch.setenv("OPENAI_API_KEY", "env_key")
-    llm = OpenAILLM(DummyOutputModel)
+    monkeypatch.setenv("OPENMIND_API_KEY", "env_key")
+    llm = OpenMindLLM(DummyOutputModel)
     assert llm._client.api_key == "env_key"
 
 
 @pytest.mark.asyncio
 async def test_init_fallback_key():
     config = LLMConfig(base_url="test_url")
-    llm = OpenAILLM(DummyOutputModel, config)
+    llm = OpenMindLLM(DummyOutputModel, config)
     assert llm._client.api_key == "openmind-0x"
 
 

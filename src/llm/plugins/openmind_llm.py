@@ -11,11 +11,11 @@ from llm import LLM, LLMConfig
 R = T.TypeVar("R", bound=BaseModel)
 
 
-class OpenAILLM(LLM[R]):
+class OpenMindLLM(LLM[R]):
     """
-    An OpenAI-based Language Learning Model implementation.
+    An pluging for OpenAI-style Language Learning Model implementations.
 
-    This class implements the LLM interface for OpenAI's GPT models, handling
+    This class implements the LLM interface for OpenAI style GPT models, handling
     configuration, authentication, and async API communication.
 
     Parameters
@@ -41,7 +41,7 @@ class OpenAILLM(LLM[R]):
         super().__init__(output_model, config)
 
         base_url = config.base_url if config else None
-        api_key = os.getenv("OPENAI_API_KEY") or (config.api_key if config else None)
+        api_key = os.getenv("OPENMIND_API_KEY") or (config.api_key if config else None)
 
         client_kwargs = {}
         if base_url:

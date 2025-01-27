@@ -21,7 +21,7 @@ brew install portaudio
 
 2. Set up environment variables:
 
-Edit `.env` with your API keys (e.g. OPENAI_API_KEY). NOTE: an OpenAI api key is required.
+Edit `.env` with your API keys (e.g. OPENMIND_API_KEY). NOTE: an OpenAI api key is required.
 
 ```bash
 cp .env.example .env
@@ -42,7 +42,7 @@ uv run src/run.py spot
 > If you are running complex models, or need to download dependencies, there may be a delay before the agent starts.
 
 > [!NOTE]
-> The OpenMind LLM endpoint is https://api.openmind.org/api/core/openai and includes a rate limiter. To use OpenAI’s LLM services without rate limiting, you must either set the OPENAI_API_KEY environment variable and remove the base_url configuration or use the API key provided by us.
+> The OpenMind LLM endpoint includes a rate limiter. To use LLM services without rate limiting, please set the OPENMIND_API_KEY environment variable.
 
 > [!NOTE]
 > There should be a `pygame` window that pops up when you run `uv run src/run.py spot`. Sometimes the `pygame` window is hidden behind all other open windows - use "show all windows" to find it.
@@ -185,7 +185,7 @@ Agents are configured via JSON files in the `config/` directory. Key configurati
     }
   ],
   "cortex_llm": {
-    "type": "OpenAILLM",
+    "type": "OpenMindLLM",
     "config": {
       "base_url": "...",
       "api_key": "...",
@@ -242,7 +242,7 @@ Configuration for the language model (LLM) used by the agent.
 
 ```json
 "cortex_llm": {
-  "type": "OpenAILLM",
+  "type": "OpenMindLLM",
   "config": {
     "base_url": "...", // Optional: URL of the LLM endpoint
     "api_key": "..."   // Optional: API key can be obtained from OpenMind
@@ -323,7 +323,7 @@ The system is not event or callback driven, but is based on a loop that runs at 
 
 Required environment variables:
 
-- `OPENAI_API_KEY`: The API key for OpenAI integration. This is mandatory if you want to use OpenAI’s LLM services without rate limiting.
+- `OPENMIND_API_KEY`: The API key for OpenAI integration. This is mandatory if you want to use OpenAI’s LLM services without rate limiting.
 
 ## Contributing
 
