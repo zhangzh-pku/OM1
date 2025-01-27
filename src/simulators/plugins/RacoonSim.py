@@ -30,8 +30,6 @@ class RacoonSim:
         self.X = 800
         self.Y = 630
 
-        self.clock = pygame.Clock()
-
         self.display = pygame.display.set_mode((self.X, self.Y))
         pygame.display.set_caption("Racoon Simulator")
         self.display.fill(self.lightblue)
