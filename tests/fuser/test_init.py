@@ -3,12 +3,12 @@ from typing import List
 from unittest.mock import Mock, patch
 
 from fuser import Fuser
-from inputs.base import AgentInput
+from inputs.base import SensorOutput
 from providers.io_provider import IOProvider
 
 
 @dataclass
-class MockAgentInput(AgentInput):
+class MockSensorOutput(SensorOutput):
     def formatted_latest_buffer(self):
         return "test input"
 
@@ -53,7 +53,7 @@ def test_fuser_timestamps(mock_time):
 def test_fuser_with_inputs_and_actions(mock_describe):
     mock_describe.return_value = "action description"
     config = MockConfig(agent_actions=[MockAction("action1"), MockAction("action2")])
-    inputs = [MockAgentInput()]
+    inputs = [MockSensorOutput()]
     mock_io = Mock(spec=IOProvider)
 
     with patch("fuser.IOProvider", return_value=mock_io):

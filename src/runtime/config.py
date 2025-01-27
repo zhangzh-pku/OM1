@@ -6,7 +6,7 @@ from typing import List
 from actions import load_action
 from actions.base import AgentAction
 from inputs import load_input
-from inputs.base import AgentInput
+from inputs.base import SensorOutput
 from llm import LLM, LLMConfig, load_llm
 from llm.output_model import CortexOutputModel
 from simulators import load_simulator
@@ -26,7 +26,7 @@ class RuntimeConfig:
         Unique identifier for this configuration
     system_prompt : str
         System prompt used for LLM initialization
-    agent_inputs : List[AgentInput]
+    agent_inputs : List[SensorOutput]
         List of input components for gathering agent data
     cortex_llm : LLM[CortexOutputModel]
         Language model configuration for the agent's cognitive processing
@@ -39,7 +39,7 @@ class RuntimeConfig:
     hertz: float
     name: str
     system_prompt: str
-    agent_inputs: List[AgentInput]
+    agent_inputs: List[SensorOutput]
     cortex_llm: LLM[CortexOutputModel]
     agent_actions: List[AgentAction]
     simulators: List[Simulator]

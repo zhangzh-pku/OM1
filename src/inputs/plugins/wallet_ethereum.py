@@ -8,7 +8,7 @@ from typing import List, Optional
 
 from web3 import Web3
 
-from inputs.base.loop import LoopInput
+from inputs.base.loop import FuserInput
 from providers.io_provider import IOProvider
 
 
@@ -29,7 +29,7 @@ class Message:
     message: str
 
 
-class WalletEthereum(LoopInput[float]):
+class WalletEthereum(FuserInput[float]):
     """
     Ethereum wallet monitor that tracks ETH balance changes.
 

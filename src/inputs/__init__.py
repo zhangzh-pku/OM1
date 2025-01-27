@@ -3,10 +3,10 @@ import inspect
 import os
 import typing as T
 
-from inputs.base import AgentInput
+from inputs.base import SensorOutput
 
 
-def load_input(input_name: str) -> T.Type[AgentInput]:
+def load_input(input_name: str) -> T.Type[SensorOutput]:
     """
     Load an input plugin from the plugins directory.
 
@@ -20,15 +20,15 @@ def load_input(input_name: str) -> T.Type[AgentInput]:
     plugins_dir = os.path.join(os.path.dirname(__file__), "plugins")
     plugin_files = [f[:-3] for f in os.listdir(plugins_dir) if f.endswith(".py")]
 
-    # Import all plugin actions and find AgentInput subclasses
+    # Import all plugin actions and find SensorOutput subclasses
     input_classes = {}
     for plugin in plugin_files:
         action = importlib.import_module(f"inputs.plugins.{plugin}")
         for name, obj in inspect.getmembers(action):
             if (
                 inspect.isclass(obj)
-                and issubclass(obj, AgentInput)
-                and obj != AgentInput
+                and issubclass(obj, SensorOutput)
+                and obj != SensorOutput
             ):
                 input_classes[name] = obj
 

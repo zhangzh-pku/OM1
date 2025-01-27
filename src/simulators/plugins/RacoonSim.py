@@ -13,14 +13,10 @@ from providers.io_provider import IOProvider
 class RacoonSim:
     def __init__(self):
         self.messages: list[str] = []
-
         self.io_provider = IOProvider()
-
         self.name = __class__
         pygame.init()
 
-        # define the RGB value for white,
-        #  green, blue colour .
         self.white = (255, 255, 255)
         self.green = (0, 255, 0)
         self.blue = (0, 0, 128)
@@ -50,33 +46,34 @@ class RacoonSim:
         self.action_idle = gif_pygame.load(os.path.join(self.path, "idle.gif"))
         self.action_sit = gif_pygame.load(os.path.join(self.path, "crouch.gif"))
 
-        self.a_s = ""
+        self.action_command = ""
 
     def tick(self) -> None:
-        time.sleep(1 / 200)
+        # Control the base frame rate of the 
+        # pywindow refresh
+        time.sleep(1 / 20)
         self._tick()
 
+    # Advance animated gif one frame, or change type of animation 
+    # (run vs. walk), and update entire window.
     def _tick(self) -> None:
         self.surface_ani.fill(self.lightblue)
 
-        if self.a_s == "walk":
+        if self.action_command == "walk":
             self.action_walk.render(self.surface_ani, (0, 0))
-        elif self.a_s == "run":
+        elif self.action_command == "run":
             self.action_run.render(self.surface_ani, (0, 0))
-        elif self.a_s == "sit":
+        elif self.action_command == "sit":
             self.action_sit.render(self.surface_ani, (0, 0))
         else:
             self.action_idle.render(self.surface_ani, (0, 0))
 
         self.display.blit(self.surface_ani, (180, 230))
 
-        # this is what updates everything
+        # Updates the animation but also the text canvas. The 
+        # actual data are updated via data pushed to def sim() 
+        # from the orchestrator
         pygame.display.flip()
-
-    # async def _run_animation_loop(self) -> None:
-    #     while True:
-    #         await asyncio.sleep(0.1)
-    #         await self._tick()
 
     def input_clean(self, input, earliest_time) -> str:
         st = input
@@ -101,6 +98,8 @@ class RacoonSim:
                 earliest_time = timestamp
         return earliest_time
 
+    # Receive fresh data from /simulators/orchestrator and update 
+    # text to display. Also handles string cleanup where/if needed.    
     def sim(self, commands: List[Command]) -> None:
         earliest_time = self.get_earliest_time()
 
@@ -155,7 +154,7 @@ class RacoonSim:
             action_type = command.name
             action_spec = command.arguments[0].value
             if action_type == "move":
-                self.a_s = action_spec
+                self.action_command = action_spec
             action = action_type + "::" + action_spec
             self.text = self.font.render(action, True, self.black, self.white)
             self.textRect = self.text.get_rect()

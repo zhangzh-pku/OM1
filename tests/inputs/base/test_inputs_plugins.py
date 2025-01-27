@@ -2,7 +2,7 @@ from typing import Type
 
 import pytest
 
-from inputs.base.loop import LoopInput
+from inputs.base.loop import FuserInput
 
 
 def get_all_inputs_classes():
@@ -17,15 +17,15 @@ def get_all_inputs_classes():
     for plugin in plugin_files:
         module = importlib.import_module(f"inputs.plugins.{plugin}")
         for name, obj in inspect.getmembers(module):
-            if inspect.isclass(obj) and issubclass(obj, LoopInput) and obj != LoopInput:
+            if inspect.isclass(obj) and issubclass(obj, FuserInput) and obj != FuserInput:
                 inputs_classes.append(obj)
     return inputs_classes
 
 
 @pytest.mark.parametrize("input_class", get_all_inputs_classes())
-def test_init_signature(input_class: Type[LoopInput]):
+def test_init_signature(input_class: Type[FuserInput]):
     # Verify __init__ signature matches base class
-    base_params = set(LoopInput.__init__.__annotations__.keys())
+    base_params = set(FuserInput.__init__.__annotations__.keys())
     impl_params = set(input_class.__init__.__annotations__.keys())
     assert (
         base_params == impl_params
@@ -33,9 +33,9 @@ def test_init_signature(input_class: Type[LoopInput]):
 
 
 @pytest.mark.parametrize("input_class", get_all_inputs_classes())
-def test__poll_to_text_signature(input_class: Type[LoopInput]):
+def test__poll_to_text_signature(input_class: Type[FuserInput]):
     # Verify _poll method signature matches base class
-    base_params = set(LoopInput._poll.__annotations__.keys())
+    base_params = set(FuserInput._poll.__annotations__.keys())
     impl_params = set(input_class._poll.__annotations__.keys())
     assert (
         base_params == impl_params
@@ -43,9 +43,9 @@ def test__poll_to_text_signature(input_class: Type[LoopInput]):
 
 
 @pytest.mark.parametrize("input_class", get_all_inputs_classes())
-def test__listen_loop_to_text_signature(input_class: Type[LoopInput]):
+def test__listen_loop_to_text_signature(input_class: Type[FuserInput]):
     # Verify _listen_loop method signature matches base class
-    base_params = set(LoopInput._listen_loop.__annotations__.keys())
+    base_params = set(FuserInput._listen_loop.__annotations__.keys())
     impl_params = set(input_class._listen_loop.__annotations__.keys())
     assert (
         base_params == impl_params
@@ -53,9 +53,9 @@ def test__listen_loop_to_text_signature(input_class: Type[LoopInput]):
 
 
 @pytest.mark.parametrize("input_class", get_all_inputs_classes())
-def test__raw_to_text_signature(input_class: Type[LoopInput]):
+def test__raw_to_text_signature(input_class: Type[FuserInput]):
     # Verify _raw_to_text method signature matches base class
-    base_params = set(LoopInput._raw_to_text.__annotations__.keys())
+    base_params = set(FuserInput._raw_to_text.__annotations__.keys())
     impl_params = set(input_class._raw_to_text.__annotations__.keys())
     assert (
         base_params == impl_params
@@ -63,9 +63,9 @@ def test__raw_to_text_signature(input_class: Type[LoopInput]):
 
 
 @pytest.mark.parametrize("input_class", get_all_inputs_classes())
-def test_raw_to_text_signature(input_class: Type[LoopInput]):
+def test_raw_to_text_signature(input_class: Type[FuserInput]):
     # Verify _raw_to_text method signature matches base class
-    base_params = set(LoopInput.raw_to_text.__annotations__.keys())
+    base_params = set(FuserInput.raw_to_text.__annotations__.keys())
     impl_params = set(input_class.raw_to_text.__annotations__.keys())
     assert (
         base_params == impl_params
@@ -73,9 +73,9 @@ def test_raw_to_text_signature(input_class: Type[LoopInput]):
 
 
 @pytest.mark.parametrize("input_class", get_all_inputs_classes())
-def test_formatted_latest_buffer_signature(input_class: Type[LoopInput]):
+def test_formatted_latest_buffer_signature(input_class: Type[FuserInput]):
     # Verify formatted_latest_buffer method signature matches base class
-    base_params = set(LoopInput.formatted_latest_buffer.__annotations__.keys())
+    base_params = set(FuserInput.formatted_latest_buffer.__annotations__.keys())
     impl_params = set(input_class.formatted_latest_buffer.__annotations__.keys())
     assert (
         base_params == impl_params
@@ -83,9 +83,9 @@ def test_formatted_latest_buffer_signature(input_class: Type[LoopInput]):
 
 
 @pytest.mark.parametrize("input_class", get_all_inputs_classes())
-def test_listen_signature(input_class: Type[LoopInput]):
+def test_listen_signature(input_class: Type[FuserInput]):
     # Verify listen method signature matches base class
-    base_params = set(LoopInput.listen.__annotations__.keys())
+    base_params = set(FuserInput.listen.__annotations__.keys())
     impl_params = set(input_class.listen.__annotations__.keys())
     assert (
         base_params == impl_params
