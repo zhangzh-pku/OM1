@@ -1,5 +1,4 @@
 import asyncio
-import random
 import logging
 import time
 import os
@@ -61,7 +60,7 @@ class WalletCoinbase(LoopInput[float]):
         #     logging.info(f"WalletCoinbase: Faucet transaction: {faucet_transaction}")
 
         self.wallet = Wallet.fetch(self.COINBASE_WALLET_ID)
-        logging.info(f"WalletCoinbase: Wallet refreshed: {self.wallet.balance('eth')}, the current balance is {self.ETH_balance}")
+        logging.debug(f"WalletCoinbase: Wallet refreshed: {self.wallet.balance('eth')}, the current balance is {self.ETH_balance}")
         self.ETH_balance = float(self.wallet.balance('eth'))
         balance_change = self.ETH_balance - self.ETH_balance_previous
         self.ETH_balance_previous = self.ETH_balance
@@ -70,15 +69,14 @@ class WalletCoinbase(LoopInput[float]):
 
     async def _raw_to_text(self, raw_input: List[float]) -> str:
 
-        balance = raw_input[0]
         balance_change = raw_input[1]
 
         if balance_change > 0:
-            message = f"{time.time():.3f}::You just received {balance_change:.5f} ETH."
+            message = f"{balance_change:.5f}"
         else:
-            message = f"{time.time():.3f}::There is no new ETH transaction."
+            message = f"There is no new ETH transaction."
 
-        logging.info(f"WalletCoinbase: {message}")
+        logging.debug(f"WalletCoinbase: {message}")
         return Message(timestamp=time.time(), message=message)
 
     async def raw_to_text(self, raw_input):
@@ -97,7 +95,7 @@ class WalletCoinbase(LoopInput[float]):
 
     def formatted_latest_buffer(self) -> Optional[str]:
         """
-        Format and clear the latest buffer contents.
+        Format and clear the buffer contents. If there is any ETH transactions, combine them into a single message.
 
         Returns
         -------
@@ -107,15 +105,21 @@ class WalletCoinbase(LoopInput[float]):
         if len(self.messages) == 0:
             return None
 
-        latest_message = self.messages[-1]
+        transaction_sum = 0
+        for message in self.messages:  # Iterate in reverse to get the latest message first
+            if not message.message.startswith("There is no new ETH transaction."):
+                transaction_sum += float(message.message)
+
+        last_message = self.messages[-1]
+        result_message = Message(timestamp=last_message.timestamp, message="There is no new ETH transaction." if transaction_sum == 0 else f"You just received {transaction_sum:.5f} ETH.")
 
         result = f"""
         {self.__class__.__name__} INPUT
         // START
-        {latest_message.timestamp:.3f}
+        {result_message.message}
         // END
         """
 
-        self.io_provider.add_input(self.__class__.__name__, latest_message.message, latest_message.timestamp)
+        self.io_provider.add_input(self.__class__.__name__, result_message.message, result_message.timestamp)
         self.messages = []
         return result
