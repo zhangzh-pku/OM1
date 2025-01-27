@@ -257,6 +257,12 @@ Required environment variables:
 
 - `OPENAI_API_KEY`: The API key for OpenAI integration. This is mandatory if you want to use OpenAI’s LLM services without rate limiting.
 
+If you are using Coinbase Wallet integration, please set the following environment variable:
+
+- `COINBASE_WALLET_ID`: The ID for the Coinbase Wallet.
+- `COINBASE_API_KEY`: The API key for the Coinbase Project API.
+- `COINBASE_API_SECRET`: The API secret for the Coinbase Project API.
+
 ## Contributing
 
 1. Fork the repository
