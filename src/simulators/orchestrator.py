@@ -1,5 +1,6 @@
 import asyncio
 import logging
+import threading
 import typing as T
 
 from llm.output_model import Command
@@ -13,12 +14,37 @@ class SimulatorOrchestrator:
     Note: It is important that the simulators do not block the event loop.
     """
 
-    promise_queue: list[asyncio.Task[T.Any]]
+    promise_queue: T.List[asyncio.Task[T.Any]]
     _config: RuntimeConfig
+    _simulator_threads: T.Dict[str, threading.Thread]
 
     def __init__(self, config: RuntimeConfig):
         self._config = config
         self.promise_queue = []
+        self._simulator_threads = {}
+
+    def start(self):
+        """
+        Start simulators in separate threads
+        """
+        for simulator in self._config.simulators:
+            if simulator.name not in self._simulator_threads:
+                thread = threading.Thread(
+                    target=self._run_simulator_loop, args=(simulator,), daemon=True
+                )
+                self._simulator_threads[simulator.name] = thread
+                thread.start()
+        return asyncio.Future()  # Return future for compatibility
+
+    def _run_simulator_loop(self, simulator: Simulator):
+        """
+        Thread-based simulator loop
+        """
+        while True:
+            try:
+                simulator.tick()
+            except Exception as e:
+                logging.error(f"Error in simulator {simulator.name}: {e}")
 
     async def flush_promises(self) -> tuple[list[T.Any], list[asyncio.Task[T.Any]]]:
         """

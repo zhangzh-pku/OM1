@@ -1,5 +1,6 @@
 import os
 import re
+import time
 from typing import List
 
 import gif_pygame
@@ -50,6 +51,10 @@ class RacoonSim:
         self.action_sit = gif_pygame.load(os.path.join(self.path, "crouch.gif"))
 
         self.a_s = ""
+
+    def tick(self) -> None:
+        time.sleep(1 / 200)
+        self._tick()
 
     def _tick(self) -> None:
         self.surface_ani.fill(self.lightblue)
@@ -159,6 +164,3 @@ class RacoonSim:
             self.surface_text.blit(self.text, self.textRect)
 
         self.display.blit(self.surface_text, (0, 0))
-
-        # just for now - simple hack
-        self._tick()

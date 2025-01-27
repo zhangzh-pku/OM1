@@ -1,4 +1,5 @@
 import logging
+import time
 
 from actions.base import ActionConnector
 from actions.move.interface import MoveInput
@@ -48,3 +49,7 @@ class MoveRos2Connector(ActionConnector[MoveInput]):
             # raise ValueError(f"Unknown move type: {output_interface.action}")
 
         logging.info(f"SendThisToROS2: {new_msg}")
+
+    def tick(self) -> None:
+        time.sleep(1)
+        logging.info("!!!! MoveRos2Connector Ticked !!!!")

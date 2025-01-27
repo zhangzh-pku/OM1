@@ -1,5 +1,6 @@
 import asyncio
 import logging
+import threading
 import typing as T
 
 from actions.base import AgentAction
@@ -14,12 +15,59 @@ class ActionOrchestrator:
     Note: It is very important that the actions do not block the event loop.
     """
 
-    promise_queue: list[asyncio.Task[T.Any]]
+    promise_queue: T.List[asyncio.Task[T.Any]]
     _config: RuntimeConfig
+    _impl_threads: T.Dict[str, threading.Thread]
+    _connector_threads: T.Dict[str, threading.Thread]
 
     def __init__(self, config: RuntimeConfig):
         self._config = config
         self.promise_queue = []
+        self._impl_threads = {}
+        self._connector_threads = {}
+
+    def start(self):
+        """
+        Start actions and connectors in separate threads
+        """
+        for agent_action in self._config.agent_actions:
+            if agent_action.name not in self._impl_threads:
+                impl_thread = threading.Thread(
+                    target=self._run_implementation_loop,
+                    args=(agent_action,),
+                    daemon=True,
+                )
+                self._impl_threads[agent_action.name] = impl_thread
+                impl_thread.start()
+
+            if agent_action.name not in self._connector_threads:
+                conn_thread = threading.Thread(
+                    target=self._run_connector_loop, args=(agent_action,), daemon=True
+                )
+                self._connector_threads[agent_action.name] = conn_thread
+                conn_thread.start()
+
+        return asyncio.Future()  # Return future for compatibility
+
+    def _run_implementation_loop(self, action: AgentAction):
+        """
+        Thread-based implementation loop
+        """
+        while True:
+            try:
+                action.implementation.tick()
+            except Exception as e:
+                logging.error(f"Error in implementation {action.name}: {e}")
+
+    def _run_connector_loop(self, action: AgentAction):
+        """
+        Thread-based connector loop
+        """
+        while True:
+            try:
+                action.connector.tick()
+            except Exception as e:
+                logging.error(f"Error in connector {action.name}: {e}")
 
     async def flush_promises(self) -> tuple[list[T.Any], list[asyncio.Task[T.Any]]]:
         """
