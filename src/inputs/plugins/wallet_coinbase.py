@@ -49,7 +49,14 @@ class WalletCoinbase(LoopInput[float]):
         logging.info("Testing: WalletCoinbase: Initialized")
 
     async def _poll(self) -> List[float]:
+        """
+        Poll for Coinbase Wallet balance updates.
 
+        Returns
+        -------
+        List[float]
+            [current_balance, balance_change]
+        """
         await asyncio.sleep(self.POLL_INTERVAL)
 
         # randomly simulate ETH inbound transfers for debugging purposes
@@ -69,7 +76,19 @@ class WalletCoinbase(LoopInput[float]):
         return [self.ETH_balance, balance_change]
 
     async def _raw_to_text(self, raw_input: List[float]) -> str:
+        """
+        Convert balance data to human-readable message.
 
+        Parameters
+        ----------
+        raw_input : List[float]
+            [current_balance, balance_change]
+
+        Returns
+        -------
+        Message
+            Timestamped status or transaction notification
+        """
         balance_change = raw_input[1]
 
         if balance_change > 0:
@@ -80,14 +99,14 @@ class WalletCoinbase(LoopInput[float]):
         logging.debug(f"WalletCoinbase: {message}")
         return Message(timestamp=time.time(), message=message)
 
-    async def raw_to_text(self, raw_input):
+    async def raw_to_text(self, raw_input: float):
         """
-        Convert raw input to processed text and manage buffer.
+        Process balance update and manage message buffer.
 
         Parameters
         ----------
-        raw_input : Optional[str]
-            Raw input to be processed
+        raw_input : float
+            Raw balance data
         """
         pending_message = await self._raw_to_text(raw_input)
 
