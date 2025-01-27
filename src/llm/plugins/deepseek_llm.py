@@ -11,11 +11,11 @@ from llm import LLM, LLMConfig
 R = T.TypeVar("R", bound=BaseModel)
 
 
-class OpenAILLM(LLM[R]):
+class DeepSeekLLM(LLM[R]):
     """
-    An OpenAI-based Language Learning Model implementation.
+    An DeepSeek-based Language Learning Model implementation.
 
-    This class implements the LLM interface for OpenAI's GPT models, handling
+    This class implements the LLM interface for DeepSeek's conversation models, handling
     configuration, authentication, and async API communication.
 
     Parameters
@@ -29,7 +29,7 @@ class OpenAILLM(LLM[R]):
 
     def __init__(self, output_model: T.Type[R], config: T.Optional[LLMConfig] = None):
         """
-        Initialize the OpenAI LLM instance.
+        Initialize the DeepSeek LLM instance.
 
         Parameters
         ----------
@@ -40,9 +40,10 @@ class OpenAILLM(LLM[R]):
         """
         super().__init__(output_model, config)
 
-        base_url = config.base_url if config.base_url else "https://api.openai.com/v1"
+        base_url = config.base_url if config.base_url else "https://api.deepseek.com/v1"
         api_key = (
             os.getenv("OPENAI_API_KEY")
+            or os.getenv("DEEPSEEK_API_KEY")
             or os.getenv("OPENMIND_API_KEY")
             or (config.api_key if config else None)
         )
@@ -54,14 +55,17 @@ class OpenAILLM(LLM[R]):
             client_kwargs["api_key"] = api_key
 
         if not api_key and base_url:
-            logging.warning("OpenAI API key not found. The rate limit may be applied.")
+            logging.warning(
+                "DeepSeek API key not found. The rate limit may be applied."
+            )
             client_kwargs["api_key"] = "openmind-0x"
 
-        self._client = openai.AsyncClient(**client_kwargs)
+        logging.info(f"Initializing DeepSeek client with {client_kwargs}")
+        self._client = openai.OpenAI(**client_kwargs)
 
     async def ask(self, prompt: str) -> R | None:
         """
-        Send a prompt to the OpenAI API and get a structured response.
+        Send a prompt to the DeepSeek API and get a structured response.
 
         Parameters
         ----------
@@ -79,10 +83,18 @@ class OpenAILLM(LLM[R]):
             self.io_provider.llm_start_time = time.time()
             self.io_provider.set_llm_prompt(prompt)
 
-            parsed_response = await self._client.beta.chat.completions.parse(
-                model="gpt-4o",
-                messages=[{"role": "user", "content": prompt}],
-                response_format=self._output_model,
+            messages = [
+                {
+                    "role": "system",
+                    "content": f"You must respond with valid JSON matching this schema: {self._output_model.model_json_schema()}",
+                },
+                {"role": "user", "content": prompt},
+            ]
+
+            parsed_response = self._client.chat.completions.create(
+                model="deepseek-chat",
+                messages=messages,
+                response_format={"type": "json_object"},
             )
 
             message_content = parsed_response.choices[0].message.content
