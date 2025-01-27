@@ -27,7 +27,7 @@ class WalletCoinbase(LoopInput[float]):
         self.io_provider = IOProvider()
         self.messages: list[str] = []
 
-        self.POLL_INTERVAL = 0.5 # seconds between blockchain data updates
+        self.POLL_INTERVAL = 0.5  # seconds between blockchain data updates
         self.COINBASE_WALLET_ID = os.environ.get("COINBASE_WALLET_ID")
         logging.debug(f"Using {self.COINBASE_WALLET_ID} as the coinbase wallet id")
 
@@ -42,12 +42,11 @@ class WalletCoinbase(LoopInput[float]):
             logging.debug(f"Wallet: {self.wallet}")
         except Exception as e:
             logging.error(f"Error fetching Coinbase Wallet data: {e}")
-        
-        self.ETH_balance = float(self.wallet.balance('eth'))
+
+        self.ETH_balance = float(self.wallet.balance("eth"))
         self.ETH_balance_previous = self.ETH_balance
 
         logging.info("Testing: WalletCoinbase: Initialized")
-
 
     async def _poll(self) -> List[float]:
 
@@ -60,8 +59,10 @@ class WalletCoinbase(LoopInput[float]):
         #     logging.info(f"WalletCoinbase: Faucet transaction: {faucet_transaction}")
 
         self.wallet = Wallet.fetch(self.COINBASE_WALLET_ID)
-        logging.debug(f"WalletCoinbase: Wallet refreshed: {self.wallet.balance('eth')}, the current balance is {self.ETH_balance}")
-        self.ETH_balance = float(self.wallet.balance('eth'))
+        logging.debug(
+            f"WalletCoinbase: Wallet refreshed: {self.wallet.balance('eth')}, the current balance is {self.ETH_balance}"
+        )
+        self.ETH_balance = float(self.wallet.balance("eth"))
         balance_change = self.ETH_balance - self.ETH_balance_previous
         self.ETH_balance_previous = self.ETH_balance
 
@@ -106,12 +107,21 @@ class WalletCoinbase(LoopInput[float]):
             return None
 
         transaction_sum = 0
-        for message in self.messages:  # Iterate in reverse to get the latest message first
+        for (
+            message
+        ) in self.messages:  # Iterate in reverse to get the latest message first
             if not message.message.startswith("There is no new ETH transaction."):
                 transaction_sum += float(message.message)
 
         last_message = self.messages[-1]
-        result_message = Message(timestamp=last_message.timestamp, message="There is no new ETH transaction." if transaction_sum == 0 else f"You just received {transaction_sum:.5f} ETH.")
+        result_message = Message(
+            timestamp=last_message.timestamp,
+            message=(
+                "There is no new ETH transaction."
+                if transaction_sum == 0
+                else f"You just received {transaction_sum:.5f} ETH."
+            ),
+        )
 
         result = f"""
         {self.__class__.__name__} INPUT
@@ -120,6 +130,8 @@ class WalletCoinbase(LoopInput[float]):
         // END
         """
 
-        self.io_provider.add_input(self.__class__.__name__, result_message.message, result_message.timestamp)
+        self.io_provider.add_input(
+            self.__class__.__name__, result_message.message, result_message.timestamp
+        )
         self.messages = []
         return result
