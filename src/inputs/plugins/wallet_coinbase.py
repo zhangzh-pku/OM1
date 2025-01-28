@@ -97,7 +97,7 @@ class WalletCoinbase(LoopInput[float]):
             message = f"{balance_change:.5f}"
         else:
             return None
-        
+
         logging.debug(f"WalletCoinbase: {message}")
         return Message(timestamp=time.time(), message=message)
 
@@ -117,7 +117,7 @@ class WalletCoinbase(LoopInput[float]):
 
     def formatted_latest_buffer(self) -> Optional[str]:
         """
-        Format and clear the buffer contents. If there are multiple ETH transactions, 
+        Format and clear the buffer contents. If there are multiple ETH transactions,
         combine them into a single message.
 
         Returns
@@ -131,7 +131,7 @@ class WalletCoinbase(LoopInput[float]):
         transaction_sum = 0
 
         # all the messages, by definition, are non-zero
-        for message in self.messages: 
+        for message in self.messages:
             transaction_sum += float(message.message)
 
         last_message = self.messages[-1]

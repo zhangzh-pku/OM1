@@ -1,6 +1,6 @@
 import asyncio
-import time
 import random
+import time
 from dataclasses import dataclass
 from typing import Optional
 
@@ -34,6 +34,7 @@ https://github.com/manish-9245/Facial-Emotion-Recognition-using-OpenCV-and-Deepf
 Thank you @manish-9245
 """
 
+
 def check_webcam():
     """Checks if a webcam is available and returns True if found, False otherwise."""
 
@@ -42,6 +43,7 @@ def check_webcam():
     cap.release()
 
     return ret
+
 
 class FaceEmotionCapture(LoopInput[cv2.typing.MatLike]):
     """
@@ -64,9 +66,9 @@ class FaceEmotionCapture(LoopInput[cv2.typing.MatLike]):
         )
 
         self.have_cam = check_webcam()
-        
+
         # Start capturing video, if we have a webcam
-        self.cap = None 
+        self.cap = None
         if self.have_cam:
             cv2.VideoCapture(0)
 
@@ -75,8 +77,6 @@ class FaceEmotionCapture(LoopInput[cv2.typing.MatLike]):
 
         # Messages buffer
         self.messages: list[Message] = []
-
-
 
     async def _poll(self) -> Optional[cv2.typing.MatLike]:
         """
