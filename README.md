@@ -171,6 +171,8 @@ Configuration for the language model (LLM) used by the agent.
 - **Config**: Optional configuration for the LLM, including the API endpoint and API key. If no API key is provided, the LLM operates with a rate limiter with the OpenMind's public endpoint.
 
   OpenMind OpenAI Proxy endpoint is [https://api.openmind.org/api/core/openai](https://api.openmind.org/api/core/openai)
+  
+  OpenMind DeepSeek Proxy endpoint is https://api.openmind.org/api/core/deepseek
 
 ```json
 "cortex_llm": {
