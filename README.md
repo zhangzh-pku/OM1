@@ -116,6 +116,8 @@ uv run src/run.py unitree
 
 If you see a `channel factory init error`, then you have not set the correct network interface adapter - the one you want to use is the network interface adapter *on your development machine - the computer you are currently sitting in front of* that is plugged into the Unitree quadruped (which has its own internal RockChip computer and network interface, which is *not* relevant to you right now). The ethernet adapter - such as `eno0` - needs to be set in the `.env`.
 
+## General Agent and Robot Examples
+
 ### Example 1 - The Coinbase Wallet
 
 Similar to the `Hello World (Spot)` example, except uses the Coinbase wallet.
