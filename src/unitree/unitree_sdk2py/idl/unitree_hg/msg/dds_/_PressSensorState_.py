@@ -6,8 +6,6 @@
 
 """
 
-from enum import auto
-from typing import TYPE_CHECKING, Optional
 from dataclasses import dataclass
 
 import cyclonedds.idl as idl
@@ -21,10 +19,10 @@ import cyclonedds.idl.types as types
 @dataclass
 @annotate.final
 @annotate.autoid("sequential")
-class PressSensorState_(idl.IdlStruct, typename="unitree_hg.msg.dds_.PressSensorState_"):
+class PressSensorState_(
+    idl.IdlStruct, typename="unitree_hg.msg.dds_.PressSensorState_"
+):
     pressure: types.array[types.float32, 12]
     temperature: types.array[types.float32, 12]
     lost: types.uint32
     reserve: types.uint32
-
-

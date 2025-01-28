@@ -1,16 +1,13 @@
-import time
+from typing import Callable
 
-from typing import Callable, Any
-
-from ..idl.unitree_api.msg.dds_ import Request_ as Request
 from ..idl.unitree_api.msg.dds_ import Response_ as Response
-
 from .server_stub import ServerStub
-
 
 """
 " class ServerBase
 """
+
+
 class ServerBase:
     def __init__(self, name: str):
         self.__name = name
@@ -22,7 +19,12 @@ class ServerBase:
 
     def _Start(self, enablePrioQueue: bool = False):
         self.__serverStub.Init(self.__serverRequestHandler, enablePrioQueue)
-        print("[ServerBase] server started. name:", self.__name, ", enable proirity queue:", enablePrioQueue)
+        print(
+            "[ServerBase] server started. name:",
+            self.__name,
+            ", enable proirity queue:",
+            enablePrioQueue,
+        )
 
     def _SetServerRequestHandler(self, serverRequestHandler: Callable):
         self.__serverRequestHandler = serverRequestHandler

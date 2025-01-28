@@ -6,8 +6,6 @@
 
 """
 
-from enum import auto
-from typing import TYPE_CHECKING, Optional
 from dataclasses import dataclass
 
 import cyclonedds.idl as idl
@@ -17,12 +15,11 @@ import cyclonedds.idl.types as types
 # root module import for resolving types
 # import unitree_api
 
+
 @dataclass
 @annotate.final
 @annotate.autoid("sequential")
 class Response_(idl.IdlStruct, typename="unitree_api.msg.dds_.Response_"):
-    header: 'unitree_sdk2py.idl.unitree_api.msg.dds_.ResponseHeader_'
+    header: "unitree_sdk2py.idl.unitree_api.msg.dds_.ResponseHeader_"
     data: str
     binary: types.sequence[types.uint8]
-
-

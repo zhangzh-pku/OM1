@@ -17,7 +17,11 @@ def get_all_inputs_classes():
     for plugin in plugin_files:
         module = importlib.import_module(f"inputs.plugins.{plugin}")
         for name, obj in inspect.getmembers(module):
-            if inspect.isclass(obj) and issubclass(obj, FuserInput) and obj != FuserInput:
+            if (
+                inspect.isclass(obj)
+                and issubclass(obj, FuserInput)
+                and obj != FuserInput
+            ):
                 inputs_classes.append(obj)
     return inputs_classes
 

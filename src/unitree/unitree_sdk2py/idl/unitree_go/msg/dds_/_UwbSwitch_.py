@@ -6,8 +6,6 @@
 
 """
 
-from enum import auto
-from typing import TYPE_CHECKING, Optional
 from dataclasses import dataclass
 
 import cyclonedds.idl as idl
@@ -23,5 +21,3 @@ import cyclonedds.idl.types as types
 @annotate.autoid("sequential")
 class UwbSwitch_(idl.IdlStruct, typename="unitree_go.msg.dds_.UwbSwitch_"):
     enabled: types.uint8
-
-

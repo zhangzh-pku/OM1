@@ -1,19 +1,16 @@
 import time
 
-from enum import Enum
-from threading import Thread, Condition
-
-from ..idl.unitree_api.msg.dds_ import Request_ as Request
-from ..idl.unitree_api.msg.dds_ import Response_ as Response
-
 from ..core.channel import ChannelFactory
 from ..core.channel_name import ChannelType, GetClientChannelName
+from ..idl.unitree_api.msg.dds_ import Request_ as Request
+from ..idl.unitree_api.msg.dds_ import Response_ as Response
 from .request_future import RequestFuture, RequestFutureQueue
-
 
 """
 " class ClientStub
 """
+
+
 class ClientStub:
     def __init__(self, serviceName: str):
         self.__serviceName = serviceName
@@ -27,11 +24,16 @@ class ClientStub:
         self.__futureQueue = RequestFutureQueue()
 
         # create channel
-        self.__sendChannel = factory.CreateSendChannel(GetClientChannelName(self.__serviceName, ChannelType.SEND), Request)
-        self.__recvChannel = factory.CreateRecvChannel(GetClientChannelName(self.__serviceName, ChannelType.RECV), Response,
-                                    self.__ResponseHandler,10)
+        self.__sendChannel = factory.CreateSendChannel(
+            GetClientChannelName(self.__serviceName, ChannelType.SEND), Request
+        )
+        self.__recvChannel = factory.CreateRecvChannel(
+            GetClientChannelName(self.__serviceName, ChannelType.RECV),
+            Response,
+            self.__ResponseHandler,
+            10,
+        )
         time.sleep(0.5)
-
 
     def Send(self, request: Request, timeout: float):
         if self.__sendChannel.Write(request, timeout):

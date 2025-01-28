@@ -6,6 +6,8 @@ from .g1_loco_api import *
 """
 " class SportClient
 """
+
+
 class LocoClient(Client):
     def __init__(self):
         super().__init__(LOCO_SERVICE_NAME, False)
@@ -21,7 +23,7 @@ class LocoClient(Client):
         self._RegistApi(ROBOT_API_ID_LOCO_GET_BALANCE_MODE, 0)
         self._RegistApi(ROBOT_API_ID_LOCO_GET_SWING_HEIGHT, 0)
         self._RegistApi(ROBOT_API_ID_LOCO_GET_STAND_HEIGHT, 0)
-        self._RegistApi(ROBOT_API_ID_LOCO_GET_PHASE, 0) # deprecated
+        self._RegistApi(ROBOT_API_ID_LOCO_GET_PHASE, 0)  # deprecated
 
         self._RegistApi(ROBOT_API_ID_LOCO_SET_FSM_ID, 0)
         self._RegistApi(ROBOT_API_ID_LOCO_SET_BALANCE_MODE, 0)
@@ -57,13 +59,13 @@ class LocoClient(Client):
     # 7105
     def SetVelocity(self, vx: float, vy: float, omega: float, duration: float = 1.0):
         p = {}
-        velocity = [vx,vy,omega]
+        velocity = [vx, vy, omega]
         p["velocity"] = velocity
         p["duration"] = duration
         parameter = json.dumps(p)
         code, data = self._Call(ROBOT_API_ID_LOCO_SET_VELOCITY, parameter)
         return code
-    
+
     # 7106
     def SetTaskId(self, task_id: float):
         p = {}
@@ -74,7 +76,7 @@ class LocoClient(Client):
 
     def Damp(self):
         self.SetFsmId(1)
-    
+
     def Start(self):
         self.SetFsmId(200)
 
@@ -91,7 +93,7 @@ class LocoClient(Client):
         self.SetFsmId(0)
 
     def StopMove(self):
-        self.SetVelocity(0., 0., 0.)
+        self.SetVelocity(0.0, 0.0, 0.0)
 
     def HighStand(self):
         UINT32_MAX = (1 << 32) - 1
@@ -121,4 +123,3 @@ class LocoClient(Client):
         else:
             self.first_shake_hand_stage_ = not self.first_shake_hand_stage_
             return self.SetTaskId(3 if self.first_shake_hand_stage_ else 2)
-    

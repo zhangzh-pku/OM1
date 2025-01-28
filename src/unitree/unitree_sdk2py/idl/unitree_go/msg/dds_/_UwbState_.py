@@ -6,8 +6,6 @@
 
 """
 
-from enum import auto
-from typing import TYPE_CHECKING, Optional
 from dataclasses import dataclass
 
 import cyclonedds.idl as idl
@@ -39,5 +37,3 @@ class UwbState_(idl.IdlStruct, typename="unitree_go.msg.dds_.UwbState_"):
     error_state: types.uint8
     buttons: types.uint8
     enabled_from_app: types.uint8
-
-

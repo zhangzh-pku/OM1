@@ -6,13 +6,10 @@
 
 """
 
-from enum import auto
-from typing import TYPE_CHECKING, Optional
 from dataclasses import dataclass
 
 import cyclonedds.idl as idl
 import cyclonedds.idl.annotations as annotate
-import cyclonedds.idl.types as types
 
 # root module import for resolving types
 # import std_msgs
@@ -23,5 +20,3 @@ import cyclonedds.idl.types as types
 @annotate.autoid("sequential")
 class String_(idl.IdlStruct, typename="std_msgs.msg.dds_.String_"):
     data: str
-
-

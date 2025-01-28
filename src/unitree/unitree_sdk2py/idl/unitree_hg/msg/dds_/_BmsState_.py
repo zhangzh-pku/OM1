@@ -6,8 +6,6 @@
 
 """
 
-from enum import auto
-from typing import TYPE_CHECKING, Optional
 from dataclasses import dataclass
 
 import cyclonedds.idl as idl
@@ -35,5 +33,3 @@ class BmsState_(idl.IdlStruct, typename="unitree_hg.msg.dds_.BmsState_"):
     manufacturer_date: types.uint16
     bmsstate: types.array[types.uint32, 5]
     reserve: types.array[types.uint32, 3]
-
-

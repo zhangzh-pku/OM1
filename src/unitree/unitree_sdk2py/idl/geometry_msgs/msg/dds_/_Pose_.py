@@ -6,13 +6,10 @@
 
 """
 
-from enum import auto
-from typing import TYPE_CHECKING, Optional
 from dataclasses import dataclass
 
 import cyclonedds.idl as idl
 import cyclonedds.idl.annotations as annotate
-import cyclonedds.idl.types as types
 
 # root module import for resolving types
 # import geometry_msgs
@@ -22,7 +19,5 @@ import cyclonedds.idl.types as types
 @annotate.final
 @annotate.autoid("sequential")
 class Pose_(idl.IdlStruct, typename="geometry_msgs.msg.dds_.Pose_"):
-    position: 'unitree_sdk2py.idl.geometry_msgs.msg.dds_.Point_'
-    orientation: 'unitree_sdk2py.idl.geometry_msgs.msg.dds_.Quaternion_'
-
-
+    position: "unitree_sdk2py.idl.geometry_msgs.msg.dds_.Point_"
+    orientation: "unitree_sdk2py.idl.geometry_msgs.msg.dds_.Quaternion_"

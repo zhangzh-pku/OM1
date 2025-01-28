@@ -1,21 +1,18 @@
 import asyncio
-import random
-import time
-import sys
 import logging
 import os
-
+import time
 from dataclasses import dataclass
 from typing import Optional
 
-from PIL import Image
-
 from inputs.base.loop import FuserInput
 from providers.io_provider import IOProvider
-
-from unitree.unitree_sdk2py.core.channel import ChannelSubscriber, ChannelFactoryInitialize
-from unitree.unitree_sdk2py.idl.default import unitree_go_msg_dds__LowState_
+from unitree.unitree_sdk2py.core.channel import (
+    ChannelFactoryInitialize,
+    ChannelSubscriber,
+)
 from unitree.unitree_sdk2py.idl.unitree_go.msg.dds_ import LowState_
+
 
 @dataclass
 class Message:
@@ -37,12 +34,12 @@ class Message:
 class UnitreeGo2Lowstate(FuserInput[str]):
     """
     Unitree Go2 Air Lowstate bridge.
-    
-    Takes specific Unitree CycloneDDS Lowstate messages, converts them to 
+
+    Takes specific Unitree CycloneDDS Lowstate messages, converts them to
     text strings, and sends them to the fuser.
 
     Processes Unitree Lowstate information. These are things like joint position and battery charge.
-    
+
     Maintains a buffer of processed messages.
     """
 
@@ -57,12 +54,14 @@ class UnitreeGo2Lowstate(FuserInput[str]):
         self.messages: list[Message] = []
 
         self.UNITREE_WIRED_ETHERNET = os.environ.get("UNITREE_WIRED_ETHERNET", "eno0")
-        logging.info(f"Using {self.UNITREE_WIRED_ETHERNET} as the network Ethernet adapter")
+        logging.info(
+            f"Using {self.UNITREE_WIRED_ETHERNET} as the network Ethernet adapter"
+        )
 
         # Fire up the Unitree system
         ChannelFactoryInitialize(0, self.UNITREE_WIRED_ETHERNET)
 
-        # create subscriber 
+        # create subscriber
         self.low_state = None
         self.lowstate_subscriber = ChannelSubscriber("rt/lowstate", LowState_)
         self.lowstate_subscriber.Init(self.LowStateMessageHandler, 10)

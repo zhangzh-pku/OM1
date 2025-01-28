@@ -1,6 +1,9 @@
 import time
+
 from unitree_sdk2py.core.channel import ChannelFactoryInitialize
-from unitree_sdk2py.go2.sport.sport_client import SportClient, PathPoint, SPORT_PATH_POINT_SIZE
+from unitree_sdk2py.go2.sport.sport_client import (
+    SportClient,
+)
 
 if __name__ == "__main__":
     ChannelFactoryInitialize(0, "enp2s0")
@@ -32,7 +35,7 @@ if __name__ == "__main__":
     while True:
         print("##################RecoveryStand###################")
         code = client.RecoveryStand()
-        
+
         if code != 0:
             print("sport recovery stand error. code:", code)
         else:
@@ -60,7 +63,7 @@ if __name__ == "__main__":
 
         print("##################RecoveryStand###################")
         code = client.RecoveryStand()
-        
+
         if code != 0:
             print("sport recovery stand error. code:", code)
         else:
@@ -76,10 +79,10 @@ if __name__ == "__main__":
             print("sport stand down success.")
 
         time.sleep(3)
-        
+
         print("##################RiseSit###################")
         code = client.RiseSit()
-        
+
         if code != 0:
             print("sport rise sit error. code:", code)
         else:
@@ -89,7 +92,7 @@ if __name__ == "__main__":
 
         print("##################SetBodyHight###################")
         code = client.BodyHeight(0.18)
-        
+
         if code != 0:
             print("sport body hight error. code:", code)
         else:
@@ -100,7 +103,7 @@ if __name__ == "__main__":
         print("##################GetState#################")
         keys = ["state", "bodyHeight", "footRaiseHeight", "speedLevel", "gait"]
         code, data = client.GetState(keys)
-        
+
         if code != 0:
             print("sport get state error. code:", code)
         else:

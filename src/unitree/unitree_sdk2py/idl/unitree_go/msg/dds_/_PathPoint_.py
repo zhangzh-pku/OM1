@@ -6,8 +6,6 @@
 
 """
 
-from enum import auto
-from typing import TYPE_CHECKING, Optional
 from dataclasses import dataclass
 
 import cyclonedds.idl as idl
@@ -29,5 +27,3 @@ class PathPoint_(idl.IdlStruct, typename="unitree_go.msg.dds_.PathPoint_"):
     vx: types.float32
     vy: types.float32
     vyaw: types.float32
-
-

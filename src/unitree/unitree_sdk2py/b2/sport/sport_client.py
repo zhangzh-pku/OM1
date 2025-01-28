@@ -12,8 +12,19 @@ SPORT_PATH_POINT_SIZE = 30
 """
 " class PathPoint
 """
+
+
 class PathPoint:
-    def __init__(self, timeFromStart: float, x: float, y: float, yaw: float, vx: float, vy: float, vyaw: float):
+    def __init__(
+        self,
+        timeFromStart: float,
+        x: float,
+        y: float,
+        yaw: float,
+        vx: float,
+        vy: float,
+        vyaw: float,
+    ):
         self.timeFromStart = timeFromStart
         self.x = x
         self.y = y
@@ -26,10 +37,11 @@ class PathPoint:
 """
 " class SportClient
 """
+
+
 class SportClient(Client):
     def __init__(self, enableLease: bool = False):
         super().__init__(SPORT_SERVICE_NAME, enableLease)
-
 
     def Init(self):
         # set api version
@@ -206,7 +218,6 @@ class SportClient(Client):
         parameter = json.dumps(p)
         code, data = self._Call(SPORT_API_ID_FRONTJUMP, parameter)
         return code
-
 
     # 1035
     def EconomicGait(self, flag: bool):

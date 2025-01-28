@@ -6,8 +6,6 @@
 
 """
 
-from enum import auto
-from typing import TYPE_CHECKING, Optional
 from dataclasses import dataclass
 
 import cyclonedds.idl as idl
@@ -26,5 +24,3 @@ class Quaternion_(idl.IdlStruct, typename="geometry_msgs.msg.dds_.Quaternion_"):
     y: types.float64
     z: types.float64
     w: types.float64
-
-

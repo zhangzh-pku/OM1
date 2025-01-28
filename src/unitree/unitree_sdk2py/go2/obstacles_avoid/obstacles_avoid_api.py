@@ -1,6 +1,7 @@
 """
 " service name
 """
+
 OBSTACLES_AVOID_SERVICE_NAME = "obstacles_avoid"
 
 

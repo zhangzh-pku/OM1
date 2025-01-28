@@ -1,19 +1,18 @@
-import time
-
-from typing import Callable, Any
+from typing import Callable
 
 from ..idl.unitree_api.msg.dds_ import Request_ as Request
-from ..idl.unitree_api.msg.dds_ import ResponseStatus_ as ResponseStatus
-from ..idl.unitree_api.msg.dds_ import ResponseHeader_ as ResponseHeader
 from ..idl.unitree_api.msg.dds_ import Response_ as Response
-
-from .server_base import ServerBase
-from .lease_server import LeaseServer
+from ..idl.unitree_api.msg.dds_ import ResponseHeader_ as ResponseHeader
+from ..idl.unitree_api.msg.dds_ import ResponseStatus_ as ResponseStatus
 from .internal import *
+from .lease_server import LeaseServer
+from .server_base import ServerBase
 
 """
 " class Server
 """
+
+
 class Server(ServerBase):
     def __init__(self, name: str):
         self.__apiVersion = ""
@@ -67,7 +66,7 @@ class Server(ServerBase):
         return apiId in self.__apiBinarySet
 
     def __CheckLeaseDenied(self, leaseId: int):
-        if (self.__enableLease):
+        if self.__enableLease:
             return self.__leaseServer.CheckRequestLeaseDenied(leaseId)
         else:
             return False
@@ -90,7 +89,7 @@ class Server(ServerBase):
             requestHandler = None
             binaryRequestHandler = None
             checkLease = False
-            
+
             if self.__IsBinary(apiId):
                 binaryRequestHandler, checkLease = self.__GetBinaryHandler(apiId)
             else:

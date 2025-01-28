@@ -1,6 +1,7 @@
 """
 " service name
 """
+
 MOTION_SWITCHER_SERVICE_NAME = "motion_switcher"
 
 

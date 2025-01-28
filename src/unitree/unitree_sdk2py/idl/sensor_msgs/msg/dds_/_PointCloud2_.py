@@ -6,8 +6,6 @@
 
 """
 
-from enum import auto
-from typing import TYPE_CHECKING, Optional
 from dataclasses import dataclass
 
 import cyclonedds.idl as idl
@@ -21,19 +19,16 @@ import cyclonedds.idl.types as types
 #     import std_msgs.msg.dds_
 
 
-
 @dataclass
 @annotate.final
 @annotate.autoid("sequential")
 class PointCloud2_(idl.IdlStruct, typename="sensor_msgs.msg.dds_.PointCloud2_"):
-    header: 'unitree_sdk2py.idl.std_msgs.msg.dds_.Header_'
+    header: "unitree_sdk2py.idl.std_msgs.msg.dds_.Header_"
     height: types.uint32
     width: types.uint32
-    fields: types.sequence['unitree_sdk2py.idl.sensor_msgs.msg.dds_.PointField_']
+    fields: types.sequence["unitree_sdk2py.idl.sensor_msgs.msg.dds_.PointField_"]
     is_bigendian: bool
     point_step: types.uint32
     row_step: types.uint32
     data: types.sequence[types.uint8]
     is_dense: bool
-
-

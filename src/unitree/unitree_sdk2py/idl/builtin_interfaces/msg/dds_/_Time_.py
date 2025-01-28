@@ -6,8 +6,6 @@
 
 """
 
-from enum import auto
-from typing import TYPE_CHECKING, Optional
 from dataclasses import dataclass
 
 import cyclonedds.idl as idl
@@ -24,5 +22,3 @@ import cyclonedds.idl.types as types
 class Time_(idl.IdlStruct, typename="builtin_interfaces.msg.dds_.Time_"):
     sec: types.int32
     nanosec: types.uint32
-
-

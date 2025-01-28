@@ -1,6 +1,7 @@
-import time
 from threading import Lock
+
 from .thread import RecurrentThread
+
 
 class HZSample:
     def __init__(self, interval: float = 1.0):
@@ -21,4 +22,4 @@ class HZSample:
         with self.__lock:
             count = self.__count
             self.__count = 0
-        print("HZ: {}".format(count/self.__inter))
+        print("HZ: {}".format(count / self.__inter))

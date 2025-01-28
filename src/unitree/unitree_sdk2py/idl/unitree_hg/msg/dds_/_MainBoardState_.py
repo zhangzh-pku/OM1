@@ -6,8 +6,6 @@
 
 """
 
-from enum import auto
-from typing import TYPE_CHECKING, Optional
 from dataclasses import dataclass
 
 import cyclonedds.idl as idl
@@ -26,5 +24,3 @@ class MainBoardState_(idl.IdlStruct, typename="unitree_hg.msg.dds_.MainBoardStat
     temperature: types.array[types.int16, 6]
     value: types.array[types.float32, 6]
     state: types.array[types.uint32, 6]
-
-

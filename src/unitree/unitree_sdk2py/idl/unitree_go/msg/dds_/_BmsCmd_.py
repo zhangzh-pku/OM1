@@ -6,8 +6,6 @@
 
 """
 
-from enum import auto
-from typing import TYPE_CHECKING, Optional
 from dataclasses import dataclass
 
 import cyclonedds.idl as idl
@@ -24,5 +22,3 @@ import cyclonedds.idl.types as types
 class BmsCmd_(idl.IdlStruct, typename="unitree_go.msg.dds_.BmsCmd_"):
     off: types.uint8
     reserve: types.array[types.uint8, 3]
-
-

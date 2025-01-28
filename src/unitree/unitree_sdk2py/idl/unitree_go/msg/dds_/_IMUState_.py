@@ -6,8 +6,6 @@
 
 """
 
-from enum import auto
-from typing import TYPE_CHECKING, Optional
 from dataclasses import dataclass
 
 import cyclonedds.idl as idl
@@ -27,5 +25,3 @@ class IMUState_(idl.IdlStruct, typename="unitree_go.msg.dds_.IMUState_"):
     accelerometer: types.array[types.float32, 3]
     rpy: types.array[types.float32, 3]
     temperature: types.uint8
-
-

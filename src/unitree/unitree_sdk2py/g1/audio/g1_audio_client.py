@@ -6,6 +6,8 @@ from .g1_audio_api import *
 """
 " class SportClient
 """
+
+
 class AudioClient(Client):
     def __init__(self):
         super().__init__(AUDIO_SERVICE_NAME, False)
@@ -21,8 +23,8 @@ class AudioClient(Client):
         self._RegistApi(ROBOT_API_ID_AUDIO_START_PLAY, 0)
         self._RegistApi(ROBOT_API_ID_AUDIO_STOP_PLAY, 0)
         self._RegistApi(ROBOT_API_ID_AUDIO_GET_VOLUME, 0)
-        self._RegistApi(ROBOT_API_ID_AUDIO_SET_VOLUME, 0) 
-        self._RegistApi(ROBOT_API_ID_AUDIO_SET_RGB_LED, 0) 
+        self._RegistApi(ROBOT_API_ID_AUDIO_SET_VOLUME, 0)
+        self._RegistApi(ROBOT_API_ID_AUDIO_SET_RGB_LED, 0)
 
     ## API Call ##
     def TtsMaker(self, text: str, speaker_id: int):

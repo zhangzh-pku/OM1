@@ -6,8 +6,6 @@
 
 """
 
-from enum import auto
-from typing import TYPE_CHECKING, Optional
 from dataclasses import dataclass
 
 import cyclonedds.idl as idl
@@ -21,11 +19,11 @@ import cyclonedds.idl.types as types
 @dataclass
 @annotate.final
 @annotate.autoid("sequential")
-class WirelessController_(idl.IdlStruct, typename="unitree_go.msg.dds_.WirelessController_"):
+class WirelessController_(
+    idl.IdlStruct, typename="unitree_go.msg.dds_.WirelessController_"
+):
     lx: types.float32
     ly: types.float32
     rx: types.float32
     ry: types.float32
     keys: types.uint16
-
-
