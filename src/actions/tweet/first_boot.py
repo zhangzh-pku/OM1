@@ -59,7 +59,7 @@ def send_first_boot_tweet(config: RuntimeConfig):
         logging.info(f"Agent name from config: {agent_name}")
         
         # Send first boot tweet
-        tweet_text = f"🤖 Hello, I'm alive! I'm {agent_name}, an AI agent powered by omOS. Ready to explore and learn! 🌟 #AI #omOS"
+        tweet_text = f"🤖 Hi! I'm {agent_name}, an AI agent running on @openmind_agi's omOS platform. Excited to learn and grow with this amazing community! ✨ #AI #omOS"
         logging.info(f"Attempting to send tweet: {tweet_text}")
         
         response = client.create_tweet(text=tweet_text)

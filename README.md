@@ -43,7 +43,7 @@ uv run src/run.py spot
 > If you are running complex models, or need to download dependencies, there may be a delay before the agent starts.
 
 > [!NOTE]
-> The OpenMind LLM endpoint is https://api.openmind.org/api/core/openai and includes a rate limiter. To use OpenAI’s LLM services without rate limiting, you must either set the OPENAI_API_KEY environment variable and remove the base_url configuration or use the API key provided by us.
+> The OpenMind LLM endpoint is https://api.openmind.org/api/core/openai and includes a rate limiter. To use OpenAI's LLM services without rate limiting, you must either set the OPENAI_API_KEY environment variable and remove the base_url configuration or use the API key provided by us.
 
 > [!NOTE]
 > There should be a `pygame` window that pops up when you run `uv run src/run.py spot`. Sometimes the `pygame` window is hidden behind all other open windows - use "show all windows" to find it.
@@ -68,6 +68,66 @@ uv run src/run.py deepseek
 
 ```bash
 uv run src/run.py conversation
+```
+
+### Example 4 - Twitter Agent
+
+The Twitter agent can monitor and respond to queries, generating tweets based on context from OpenMind's API.
+
+```bash
+# Run Twitter agent with a specific query
+uv run src/run.py twitter --query "What are the latest developments in cryptocurrency?"
+
+# Or run without query for normal operation
+uv run src/run.py twitter
+```
+
+#### Twitter Agent Setup
+
+1. Create a `.env` file with your Twitter credentials:
+```bash
+TWITTER_API_KEY=your_api_key
+TWITTER_API_SECRET=your_api_secret
+TWITTER_ACCESS_TOKEN=your_access_token
+TWITTER_ACCESS_TOKEN_SECRET=your_access_token_secret
+```
+
+2. The agent uses OpenMind's API for context:
+```json
+"cortex_llm": {
+  "type": "OpenAILLM",
+  "config": {
+    "base_url": "https://api.openmind.org/api/core/openai"
+  }
+}
+```
+
+#### Features
+- Query-based tweet generation
+- Rate-limited API calls
+- Intelligent idle state management
+- Context-aware responses
+
+#### Configuration
+The Twitter agent can be configured in `config/twitter.json`:
+```json
+{
+  "hertz": 0.5,
+  "name": "twitter_agent",
+  "system_prompt": "You are an AI agent that processes queries and generates informative tweets...",
+  "agent_inputs": [
+    {
+      "type": "TwitterInput"
+    }
+  ],
+  "agent_actions": [
+    {
+      "name": "tweet",
+      "implementation": "passthrough",
+      "connector": "twitter"
+    }
+  ]
+}
 ```
 
 ## CLI Commands
@@ -165,7 +225,7 @@ Agents are configured via JSON files in the `config/` directory. Key configurati
 
 * **Name** A unique identifier for the agent.
 
-* **System Prompt** Defines the agent’s personality and behavior. This acts as the system prompt for the agent’s operations.
+* **System Prompt** Defines the agent's personality and behavior. This acts as the system prompt for the agent's operations.
 
 * **Cortex LLM** Configuration for the language model (LLM) used by the agent.
 
@@ -201,7 +261,7 @@ Lists the simulation modules used by the agent. These define the simulated envir
 
 #### Agent Actions
 
-Defines the agent’s available capabilities, including action names, their implementation, and the connector used to execute them.
+Defines the agent's available capabilities, including action names, their implementation, and the connector used to execute them.
 
 ```json
 "agent_actions": [
@@ -232,7 +292,7 @@ Defines the agent’s available capabilities, including action names, their impl
 
 ## Environment Variables
 
-- `OPENAI_API_KEY`: The API key for OpenAI integration. This is mandatory if you want to use OpenAI’s LLM services without rate limiting.
+- `OPENAI_API_KEY`: The API key for OpenAI integration. This is mandatory if you want to use OpenAI's LLM services without rate limiting.
 - `OPENMIND_API_KEY`: The API key for OpenMind endpoints. This is mandatory if you want to use OpenMind endpoints without rate limiting.
 - `ETH_ADDRESS`: The Ethereum address of agent, prefixed with `Ox`. Example: `0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045`. Only relevant if your agent has a wallet.
 - `UNITREE_WIRED_ETHERNET`: Your netrowrk adapet that is conncted to a Unitree robot. Example: `eno0`. Only relevant if your agent has a physical (robot) embodiment.

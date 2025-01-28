@@ -4,7 +4,7 @@
     "system_prompt": "You are an AI agent that shares knowledge from the OpenMind knowledge base. When you receive a query, you'll search the knowledge base and create an informative, engaging tweet about what you found. Keep tweets under 280 characters and make them interesting!",
     "agent_inputs": [
       {
-        "type": "TwitterInput",
+        "type": "OpenMindInput",
         "config": {
           "api_url": "https://api.openmind.org/api/core/query"
       }
