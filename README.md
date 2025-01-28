@@ -87,13 +87,15 @@ The main entry point is `src/run.py` which provides the following commands:
 
 ```
 .
-├── config/                 # Agent configuration files
+├── config/               # Agent configuration files
 ├── src/
-│   ├── fuser/            # Input fusion logic
-│   ├── input/            # Input plugins (e.g. VLM, audio)
-│   ├── llm/              # LLM integration
 │   ├── actions/          # Agent outputs/actions/capabilities
+│   ├── fuser/            # Input fusion logic
+│   ├── inputs/           # Input plugins (e.g. VLM, audio)
+│   ├── llm/              # LLM integration
+│   ├── providers/        # ????
 │   ├── runtime/          # Core runtime system
+│   ├── simulators/       # Virtual endponits such as `RacoonSim`
 │   └── run.py            # CLI entry point
 ```
 
