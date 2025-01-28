@@ -7,7 +7,6 @@ import gif_pygame
 import pygame
 
 #import logging
-
 from llm.output_model import Command
 from providers.io_provider import IOProvider
 
