@@ -133,9 +133,9 @@ class WalletEthereum(LoopInput[float]):
         balance_change = raw_input[1]
 
         if balance_change > 0:
-            message = f"{time.time():.3f}::You just received {balance_change:.3f} ETH."
+            message = f"You just received {balance_change:.3f} ETH."
         else:
-            message = f"{time.time():.3f}::You have {balance:.3f} ETH."
+            message = f"You have {balance:.3f} ETH."
 
         logging.info(f"WalletEthereum: {message}")
         return Message(timestamp=time.time(), message=message)
@@ -171,7 +171,7 @@ class WalletEthereum(LoopInput[float]):
         result = f"""
 {self.__class__.__name__} INPUT
 // START
-{latest_message.timestamp:.3f}
+{latest_message.message}
 // END
 """
 

@@ -8,6 +8,7 @@ class FaceAction(str, Enum):
     CRY = "cry"
     SMILE = "smile"
     FROWN = "frown"
+    THINK = "think"
 
 
 @dataclass

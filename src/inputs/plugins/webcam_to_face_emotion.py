@@ -1,5 +1,6 @@
 import asyncio
 import time
+import random
 from dataclasses import dataclass
 from typing import Optional
 
@@ -33,6 +34,14 @@ https://github.com/manish-9245/Facial-Emotion-Recognition-using-OpenCV-and-Deepf
 Thank you @manish-9245
 """
 
+def check_webcam():
+    """Checks if a webcam is available and returns True if found, False otherwise."""
+
+    cap = cv2.VideoCapture(0)  # 0 is the default camera index
+    ret, frame = cap.read()
+    cap.release()
+
+    return ret
 
 class FaceEmotionCapture(LoopInput[cv2.typing.MatLike]):
     """
@@ -54,8 +63,12 @@ class FaceEmotionCapture(LoopInput[cv2.typing.MatLike]):
             cv2.data.haarcascades + "haarcascade_frontalface_default.xml"
         )
 
-        # Start capturing video
-        self.cap = cv2.VideoCapture(0)
+        self.have_cam = check_webcam()
+        
+        # Start capturing video, if we have a webcam
+        self.cap = None 
+        if self.have_cam:
+            cv2.VideoCapture(0)
 
         # Initialize emotion label
         self.emotion = ""
@@ -63,7 +76,9 @@ class FaceEmotionCapture(LoopInput[cv2.typing.MatLike]):
         # Messages buffer
         self.messages: list[Message] = []
 
-    async def _poll(self) -> cv2.typing.MatLike:
+
+
+    async def _poll(self) -> Optional[cv2.typing.MatLike]:
         """
         Capture frame from webcam.
 
@@ -75,9 +90,9 @@ class FaceEmotionCapture(LoopInput[cv2.typing.MatLike]):
         await asyncio.sleep(0.5)
 
         # Capture a frame every 500 ms
-        ret, frame = self.cap.read()
-
-        return frame
+        if self.have_cam:
+            ret, frame = self.cap.read()
+            return frame
 
     async def _raw_to_text(self, raw_input: cv2.typing.MatLike) -> Message:
         """
@@ -93,6 +108,13 @@ class FaceEmotionCapture(LoopInput[cv2.typing.MatLike]):
         Message
             Timestamped emotion detection result
         """
+        if not self.have_cam:
+            # simulate a model response
+            emotions = ["happy", "angry", "sad", "bored"]
+            random_emotion = random.choice(emotions)
+            message = f"I see a person. Their emotion is {random_emotion}."
+            return Message(timestamp=time.time(), message=message)
+
         frame = raw_input
 
         # Convert frame to grayscale
@@ -153,7 +175,7 @@ class FaceEmotionCapture(LoopInput[cv2.typing.MatLike]):
         result = f"""
 {self.__class__.__name__} INPUT
 // START
-{latest_message.timestamp:.3f}
+{latest_message.message}
 // END
 """
 
