@@ -51,6 +51,9 @@ class WalletEthereum(LoopInput[float]):
 
         self.ETH_balance = 0
         self.ETH_balance_previous = 0
+        self.balance_eth = 0
+        self.balance_change = 0
+
         self.messages: list[str] = []
         self.eth_info = ""
 
@@ -60,6 +63,7 @@ class WalletEthereum(LoopInput[float]):
             "ETH_ADDRESS", "0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045"
         )
         logging.debug(f"Using {self.ACCOUNT_ADDRESS} as the wallet address")
+        logging.info("Testing: WalletEthereum: Initialized")
 
         # Initialize Web3
         self.web3 = Web3(Web3.HTTPProvider(self.PROVIDER_URL))
@@ -83,32 +87,33 @@ class WalletEthereum(LoopInput[float]):
 
             # Get account data
             balance_wei = self.web3.eth.get_balance(self.ACCOUNT_ADDRESS)
-            balance_eth = self.web3.from_wei(balance_wei, "ether")
+            self.balance_eth = float(self.web3.from_wei(balance_wei, "ether"))
 
             self.eth_info = {
                 "block_number": int(block_number),
                 "address": str(
                     self.ACCOUNT_ADDRESS
-                ),  # just to be clear that that's a string
-                "balance": float(balance_eth),
+                ),  # that's a string prefixed with `0x`
+                "balance": self.balance_eth,
             }
             logging.debug(
                 f"Block: {self.eth_info['block_number']}, Account Balance: {self.eth_info['balance']:.3f} ETH"
             )
 
+            # randomly simulate ETH inbound transfers for debugging purposes
+            random_add_for_debugging = 0
+            if random.randint(0, 10) > 7:
+                random_add_for_debugging = 1.0
+
+            self.ETH_balance = self.balance_eth + random_add_for_debugging
+            self.balance_change = self.ETH_balance - self.ETH_balance_previous
+            self.ETH_balance_previous = self.ETH_balance
+
         except Exception as e:
             logging.error(f"Error fetching blockchain data: {e}")
 
-        # randomly simulate ETH inbound transfers for debugging purposes
-        random_add_for_debugging = 0
-        if random.randint(0, 10) > 7:
-            random_add_for_debugging = 1.0
-
-        self.ETH_balance = float(balance_eth) + random_add_for_debugging
-        balance_change = self.ETH_balance - self.ETH_balance_previous
-        self.ETH_balance_previous = self.ETH_balance
-
-        return [self.ETH_balance, balance_change]
+        # use the old values if the try fails, otherwise use the new/updated values
+        return [self.ETH_balance, self.balance_change]
 
     async def _raw_to_text(self, raw_input: List[float]) -> str:
         """

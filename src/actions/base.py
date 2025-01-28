@@ -1,3 +1,4 @@
+import time
 import typing as T
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
@@ -21,11 +22,17 @@ class ActionImplementation(ABC, T.Generic[IT, OT]):
     async def execute(self, input_protocol: IT) -> OT:
         pass
 
+    def tick(self) -> None:
+        time.sleep(60)
+
 
 class ActionConnector(ABC, T.Generic[OT]):
     @abstractmethod
     async def connect(self, input_protocol: OT) -> None:
         pass
+
+    def tick(self) -> None:
+        time.sleep(60)
 
 
 @dataclass
