@@ -5,20 +5,14 @@ from actions.base import Interface
 
 
 class MovementAction(str, Enum):
-    STAND_UP = "stand up"
-    LAY_DOWN = "lay down"
-    POUNCE = "pounce"
     STAND_STILL = "stand still"
     SIT = "sit"
-    STRETCH = "stretch"
     DANCE = "dance"
     SHAKE_PAW = "shake paw"
     WALK = "walk"
+    WALK_BACK = "walk back"
     RUN = "run"
     JUMP = "jump"
-    MOVE_BACK = "move back"
-    TURN_LEFT = "turn left"
-    TURN_RIGHT = "turn right"
 
 
 @dataclass

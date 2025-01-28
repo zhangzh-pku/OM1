@@ -53,4 +53,4 @@ class MoveRos2Connector(ActionConnector[MoveInput]):
     def tick(self) -> None:
         time.sleep(1)
         # here is where we will query the joystick?
-        logging.info("!!!! MoveRos2Connector Ticked !!!!")
+        logging.info("MoveRos2Connector Tick")
