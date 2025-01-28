@@ -79,7 +79,7 @@ class WalletEthereum(LoopInput[float]):
             [current_balance, balance_change]
         """
         await asyncio.sleep(self.POLL_INTERVAL)
-        
+
         try:
             # Get latest block data
             block_number = self.web3.eth.block_number
