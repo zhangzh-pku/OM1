@@ -14,21 +14,34 @@ def send_first_boot_tweet(config: RuntimeConfig):
     config : RuntimeConfig
         Runtime configuration containing agent name
     """
+    logging.info("Starting first boot tweet process...")
+    
     # Create .omos directory in project root if it doesn't exist
     project_root = Path(__file__).parent.parent.parent.parent
     omos_dir = project_root / '.omos'
+    logging.info(f"Creating .omos directory at: {omos_dir}")
     omos_dir.mkdir(exist_ok=True)
     
     # Check if first boot marker exists
     first_boot_file = omos_dir / 'first_boot_tweet'
+    logging.info(f"Checking for first boot marker at: {first_boot_file}")
+    
     if first_boot_file.exists():
         logging.info("First boot tweet already sent")
         return
 
     try:
         # Initialize Twitter client
+        logging.info("Loading environment variables...")
         load_dotenv()
         
+        # Check if environment variables are loaded
+        api_key = os.getenv('TWITTER_API_KEY')
+        if not api_key:
+            logging.error("Twitter API credentials not found in .env file")
+            return
+        
+        logging.info("Initializing Twitter client...")
         # Suppress tweepy warnings
         with warnings.catch_warnings():
             warnings.filterwarnings("ignore", category=SyntaxWarning)
@@ -43,9 +56,12 @@ def send_first_boot_tweet(config: RuntimeConfig):
         
         # Get agent name from config
         agent_name = config.name
+        logging.info(f"Agent name from config: {agent_name}")
         
         # Send first boot tweet
         tweet_text = f"🤖 Hello, I'm alive! I'm {agent_name}, an AI agent powered by omOS. Ready to explore and learn! 🌟 #AI #omOS"
+        logging.info(f"Attempting to send tweet: {tweet_text}")
+        
         response = client.create_tweet(text=tweet_text)
         
         # Create marker file
@@ -58,3 +74,5 @@ def send_first_boot_tweet(config: RuntimeConfig):
         
     except Exception as e:
         logging.error(f"Failed to send first boot tweet: {str(e)}")
+        # Print full exception details
+        logging.exception("Full error details:")

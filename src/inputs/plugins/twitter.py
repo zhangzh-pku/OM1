@@ -41,7 +41,7 @@ class TwitterInput(LoopInput[str]):
         # Initialize sleep ticker provider
         self.global_sleep_ticker_provider = SleepTickerProvider()
 
-    def _handle_twitter_message(self, raw_message: str):
+    def _handle_twp_message(self, raw_message: str):
         """Handle incoming WebSocket messages"""
         try:
             message = json.loads(raw_message)
