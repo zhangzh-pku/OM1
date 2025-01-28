@@ -48,6 +48,28 @@ uv run src/run.py spot
 > [!NOTE]
 > There should be a `pygame` window that pops up when you run `uv run src/run.py spot`. Sometimes the `pygame` window is hidden behind all other open windows - use "show all windows" to find it.
 
+### Example 1 - The Coinbase Wallet
+
+Similar to the `Hello World (Spot)` example, except uses the Coinbase wallet.
+
+```bash
+uv run src/run.py coinbase
+```
+
+### Example 2 - Using DeepSeek as the Core LLM
+
+Similar to the `Hello World (Spot)` example, except uses `DeepSeek` rather than `OpenAI 4o`.
+
+```bash
+uv run src/run.py deepseek
+```
+
+### Example 3 - Using Cloud Endpoints for Voice Inputs
+
+```bash
+uv run src/run.py conversation
+```
+
 ## CLI Commands
 
 The main entry point is `src/run.py` which provides the following commands:
