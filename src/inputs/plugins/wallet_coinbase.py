@@ -75,7 +75,7 @@ class WalletCoinbase(LoopInput[float]):
 
         return [self.ETH_balance, balance_change]
 
-    async def _raw_to_text(self, raw_input: List[float]) -> str:
+    async def _raw_to_text(self, raw_input: List[float]) -> Optional[Message]:
         """
         Convert balance data to human-readable message.
 
@@ -91,10 +91,12 @@ class WalletCoinbase(LoopInput[float]):
         """
         balance_change = raw_input[1]
 
+        message = ""
+
         if balance_change > 0:
             message = f"{balance_change:.5f}"
         else:
-            message = "There is no new ETH transaction."
+            return None
 
         logging.debug(f"WalletCoinbase: {message}")
         return Message(timestamp=time.time(), message=message)
@@ -115,7 +117,8 @@ class WalletCoinbase(LoopInput[float]):
 
     def formatted_latest_buffer(self) -> Optional[str]:
         """
-        Format and clear the buffer contents. If there is any ETH transactions, combine them into a single message.
+        Format and clear the buffer contents. If there are multiple ETH transactions,
+        combine them into a single message.
 
         Returns
         -------
@@ -126,20 +129,15 @@ class WalletCoinbase(LoopInput[float]):
             return None
 
         transaction_sum = 0
-        for (
-            message
-        ) in self.messages:  # Iterate in reverse to get the latest message first
-            if not message.message.startswith("There is no new ETH transaction."):
-                transaction_sum += float(message.message)
+
+        # all the messages, by definition, are non-zero
+        for message in self.messages:
+            transaction_sum += float(message.message)
 
         last_message = self.messages[-1]
         result_message = Message(
             timestamp=last_message.timestamp,
-            message=(
-                "There is no new ETH transaction."
-                if transaction_sum == 0
-                else f"You just received {transaction_sum:.5f} ETH."
-            ),
+            message=f"You just received {transaction_sum:.5f} ETH.",
         )
 
         result = f"""

@@ -122,7 +122,7 @@ class VlmInput(FuserInput[Image.Image]):
         result = f"""
 {self.__class__.__name__} INPUT
 // START
-{latest_message.timestamp:.3f}
+{latest_message.message}
 // END
 """
 

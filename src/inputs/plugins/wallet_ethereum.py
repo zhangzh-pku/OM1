@@ -58,7 +58,7 @@ class WalletEthereum(FuserInput[float]):
         self.eth_info = ""
 
         self.PROVIDER_URL = "https://eth.llamarpc.com"
-        self.POLL_INTERVAL = 0.5  # seconds between blockchain data updates
+        self.POLL_INTERVAL = 4  # seconds between blockchain data updates
         self.ACCOUNT_ADDRESS = os.environ.get(
             "ETH_ADDRESS", "0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045"
         )
@@ -102,7 +102,10 @@ class WalletEthereum(FuserInput[float]):
 
             # randomly simulate ETH inbound transfers for debugging purposes
             random_add_for_debugging = 0
-            if random.randint(0, 10) > 7:
+            dice = random.randint(0, 10)
+            logging.debug(f"WalletEthereum: dice {dice}")
+            if dice > 7:
+                logging.info("WalletEthereum: randomly adding 1.0 ETH")
                 random_add_for_debugging = 1.0
 
             self.ETH_balance = self.balance_eth + random_add_for_debugging
@@ -115,7 +118,7 @@ class WalletEthereum(FuserInput[float]):
         # use the old values if the try fails, otherwise use the new/updated values
         return [self.ETH_balance, self.balance_change]
 
-    async def _raw_to_text(self, raw_input: List[float]) -> str:
+    async def _raw_to_text(self, raw_input: List[float]) -> Optional[str]:
         """
         Convert balance data to human-readable message.
 
@@ -129,16 +132,13 @@ class WalletEthereum(FuserInput[float]):
         Message
             Timestamped status or transaction notification
         """
-        balance = raw_input[0]
+        # balance = raw_input[0]
         balance_change = raw_input[1]
 
         if balance_change > 0:
-            message = f"{time.time():.3f}::You just received {balance_change:.3f} ETH."
-        else:
-            message = f"{time.time():.3f}::You have {balance:.3f} ETH."
-
-        logging.info(f"WalletEthereum: {message}")
-        return Message(timestamp=time.time(), message=message)
+            message = f"You just received {balance_change:.3f} ETH."
+            logging.debug(f"WalletEthereum: {message}")
+            return Message(timestamp=time.time(), message=message)
 
     async def raw_to_text(self, raw_input: float):
         """
@@ -171,7 +171,7 @@ class WalletEthereum(FuserInput[float]):
         result = f"""
 {self.__class__.__name__} INPUT
 // START
-{latest_message.timestamp:.3f}
+{latest_message.message}
 // END
 """
 
