@@ -1,11 +1,11 @@
 import os
-from unittest.mock import AsyncMock, MagicMock
+from unittest.mock import MagicMock
 
 import pytest
 from pydantic import BaseModel
 
 from llm import LLMConfig
-from llm.plugins.openai_llm import OpenAILLM
+from llm.plugins.deepseek_llm import DeepSeekLLM
 
 
 # Test output model
@@ -15,7 +15,9 @@ class DummyOutputModel(BaseModel):
 
 @pytest.fixture(autouse=True)
 def setup_environment():
+    """Clear relevant environment variables before each test"""
     os.environ["OPENAI_API_KEY"] = ""
+    os.environ["DEEPSEEK_API_KEY"] = ""
 
 
 @pytest.fixture
@@ -25,6 +27,7 @@ def config():
 
 @pytest.fixture
 def mock_response():
+    """Fixture providing a valid mock API response"""
     response = MagicMock()
     response.choices = [
         MagicMock(message=MagicMock(content='{"test_field": "success"}'))
@@ -34,37 +37,41 @@ def mock_response():
 
 @pytest.fixture
 def llm(config):
-    return OpenAILLM(DummyOutputModel, config)
+    return DeepSeekLLM(DummyOutputModel, config)
 
 
 @pytest.mark.asyncio
 async def test_init_with_config(llm, config):
+    """Test initialization with provided configuration"""
     assert llm._client.base_url == config.base_url
     assert llm._client.api_key == config.api_key
 
 
 @pytest.mark.asyncio
 async def test_init_with_env_api_key(monkeypatch):
+    """Test environment variable API key precedence"""
     config = LLMConfig(base_url="test_url")
-    monkeypatch.setenv("OPENAI_API_KEY", "env_key")
-    llm = OpenAILLM(DummyOutputModel, config)
+    monkeypatch.setenv("DEEPSEEK_API_KEY", "env_key")
+    llm = DeepSeekLLM(DummyOutputModel, config)
     assert llm._client.api_key == "env_key"
 
 
 @pytest.mark.asyncio
 async def test_init_fallback_key():
+    """Test fallback API key when no credentials provided"""
     config = LLMConfig(base_url="test_url")
-    llm = OpenAILLM(DummyOutputModel, config)
+    llm = DeepSeekLLM(DummyOutputModel, config)
     assert llm._client.api_key == "openmind-0x"
 
 
 @pytest.mark.asyncio
 async def test_ask_success(llm, mock_response):
+    """Test successful API request and response parsing"""
     with pytest.MonkeyPatch.context() as m:
         m.setattr(
-            llm._client.beta.chat.completions,
-            "parse",
-            AsyncMock(return_value=mock_response),
+            llm._client.chat.completions,
+            "create",
+            MagicMock(return_value=mock_response),
         )
 
         result = await llm.ask("test prompt")
@@ -74,14 +81,15 @@ async def test_ask_success(llm, mock_response):
 
 @pytest.mark.asyncio
 async def test_ask_invalid_json(llm):
+    """Test handling of invalid JSON response"""
     invalid_response = MagicMock()
     invalid_response.choices = [MagicMock(message=MagicMock(content="invalid"))]
 
     with pytest.MonkeyPatch.context() as m:
         m.setattr(
-            llm._client.beta.chat.completions,
-            "parse",
-            AsyncMock(return_value=invalid_response),
+            llm._client.chat.completions,
+            "create",
+            MagicMock(return_value=invalid_response),
         )
 
         result = await llm.ask("test prompt")
@@ -90,11 +98,12 @@ async def test_ask_invalid_json(llm):
 
 @pytest.mark.asyncio
 async def test_ask_api_error(llm):
+    """Test error handling for API exceptions"""
     with pytest.MonkeyPatch.context() as m:
         m.setattr(
-            llm._client.beta.chat.completions,
-            "parse",
-            AsyncMock(side_effect=Exception("API error")),
+            llm._client.chat.completions,
+            "create",
+            MagicMock(side_effect=Exception("API error")),
         )
 
         result = await llm.ask("test prompt")
@@ -103,11 +112,12 @@ async def test_ask_api_error(llm):
 
 @pytest.mark.asyncio
 async def test_io_provider_timing(llm, mock_response):
+    """Test timing metrics collection"""
     with pytest.MonkeyPatch.context() as m:
         m.setattr(
-            llm._client.beta.chat.completions,
-            "parse",
-            AsyncMock(return_value=mock_response),
+            llm._client.chat.completions,
+            "create",
+            MagicMock(return_value=mock_response),
         )
 
         await llm.ask("test prompt")

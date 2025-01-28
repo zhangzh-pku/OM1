@@ -101,7 +101,6 @@ In general, each robot will have specific capabilities, and therefore, each acti
 
 *Example*: if you are adding support for the Unitree G1 Humanoid version 13.2b, which supports a new movement subtype such as `dance_2`, you could name the updated action `move_unitree_g1_13_2b` and select that action in your `unitree_g1.json` configuration file.
 
-
 ### Configuration
 
 Agents are configured via JSON files in the `config/` directory. Key configuration elements:
@@ -138,46 +137,28 @@ Agents are configured via JSON files in the `config/` directory. Key configurati
 }
 ```
 
-#### Hertz
+* **Hertz** Defines the base tick rate of the agent. This rate can be overridden to allow the agent to respond quickly to changing environments using event-triggered callbacks through real-time middleware.
 
-Defines the base tick rate of the agent. This rate can be overridden to allow the agent to respond quickly to changing environments using event-triggered callbacks through real-time middleware.
+* **Name** A unique identifier for the agent.
 
-```json
-"hertz": 0.5
-```
+* **System Prompt** Defines the agent’s personality and behavior. This acts as the system prompt for the agent’s operations.
 
-#### Name
+* **Cortex LLM** Configuration for the language model (LLM) used by the agent.
 
-A unique identifier for the agent.
+  - **Type**: Specifies the LLM plugin.
 
-```json
-"name": "agent_name"
-```
+  - **Config**: Optional configuration for the LLM, including the API endpoint and API key. If no API key is provided, the LLM operates with a rate limiter with the OpenMind's public endpoint.
 
-#### System Prompt
-
-Defines the agent’s personality and behavior. This acts as the system prompt for the agent’s operations.
-
-```json
-"system_prompt": "..."
-```
-
-#### Cortex LLM
-
-Configuration for the language model (LLM) used by the agent.
-
-- **Type**: Specifies the LLM plugin.
-
-- **Config**: Optional configuration for the LLM, including the API endpoint and API key. If no API key is provided, the LLM operates with a rate limiter with the OpenMind's public endpoint.
-
-  OpenMind OpenAI Proxy endpoint is [https://api.openmind.org/api/core/openai](https://api.openmind.org/api/core/openai)
+OpenMind OpenAI Proxy endpoint is [https://api.openmind.org/api/core/openai](https://api.openmind.org/api/core/openai)
+  
+OpenMind DeepSeek Proxy endpoint is [https://api.openmind.org/api/core/deepseek](https://api.openmind.org/api/core/deepseek)
 
 ```json
 "cortex_llm": {
   "type": "OpenAILLM",
   "config": {
     "base_url": "...", // Optional: URL of the LLM endpoint
-    "api_key": "..."   // Optional: API key can be obtained from OpenMind
+    "api_key": "..."   // Optional: API key from OpenMind
   }
 }
 ```
@@ -196,7 +177,7 @@ Lists the simulation modules used by the agent. These define the simulated envir
 
 #### Agent Actions
 
-Defines the agent’s available capabilities, including action names, their implementation, and the connector handler used to execute them.
+Defines the agent’s available capabilities, including action names, their implementation, and the connector used to execute them.
 
 ```json
 "agent_actions": [
@@ -214,12 +195,33 @@ Defines the agent’s available capabilities, including action names, their impl
 2. The Fuser combines inputs into a prompt
 3. The LLM generates commands based on the prompt
 4. The ActionOrchestrator executes commands through actions
-5. Connectors map omOS data/commands to external data buses and data distribution systems such as custom APIs, `ROS2`, `Zenoh`, or `CycloneDDS`.
+5. Connectors map OM1 data/commands to external data buses and data distribution systems such as custom APIs, `ROS2`, `Zenoh`, or `CycloneDDS`.
 
+### Development Tips
+
+1. Use `--debug` flag for detailed logging
+2. Add new input plugins in `src/input/plugins/`
+3. Add new LLM integrations in `src/llm/plugins/`
+4. Test actions with the `passthrough` implementation first
+5. Use type hints and docstrings for better code maintainability
+6. Run `uv run ruff check . --fix` and `uv run black .` check/format your code. 
+
+## Environment Variables
+
+- `OPENAI_API_KEY`: The API key for OpenAI integration. This is mandatory if you want to use OpenAI’s LLM services without rate limiting.
+- `OPENMIND_API_KEY`: The API key for OpenMind endpoints. This is mandatory if you want to use OpenMind endpoints without rate limiting.
+- `ETH_ADDRESS`: The Ethereum address of agent, prefixed with `Ox`. Example: `0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045`. Only relevant if your agent has a wallet.
+- `UNITREE_WIRED_ETHERNET`: Your netrowrk adapet that is conncted to a Unitree robot. Example: `eno0`. Only relevant if your agent has a physical (robot) embodiment.
+
+If you are using Coinbase Wallet integration, please set the following environment variables:
+
+- `COINBASE_WALLET_ID`: The ID for the Coinbase Wallet.
+- `COINBASE_API_KEY`: The API key for the Coinbase Project API.
+- `COINBASE_API_SECRET`: The API secret for the Coinbase Project API.
+- 
 ### Core operating principle of the system
 
-The system is not event or callback driven, but is based on a loop that runs at a fixed frequency of `self.config.hertz`. This loop looks for the most recent data from various sources, fuses the data into a prompt, sends that prompt to one or more LLMs, and then sends the LLM responses to virtual or physical robots.
-
+The system is based on a loop that runs at a fixed frequency of `self.config.hertz`. This loop looks for the most recent data from various sources, fuses the data into a prompt, sends that prompt to one or more LLMs, and then sends the LLM responses to virtual agents or physical robots.
 
 ```python
 # cortex.py
@@ -243,26 +245,6 @@ The system is not event or callback driven, but is based on a loop that runs at 
         await self.action_orchestrator.promise(output.commands)
 ```
 
-### Development Tips
-
-1. Use `--debug` flag for detailed logging
-2. Add new input plugins in `src/input/plugins/`
-3. Add new LLM integrations in `src/llm/plugins/`
-4. Test actions with the `passthrough` implementation first
-5. Use type hints and docstrings for better code maintainability
-
-## Environment Variables
-
-Required environment variables:
-
-- `OPENAI_API_KEY`: The API key for OpenAI integration. This is mandatory if you want to use OpenAI’s LLM services without rate limiting.
-
-If you are using Coinbase Wallet integration, please set the following environment variable:
-
-- `COINBASE_WALLET_ID`: The ID for the Coinbase Wallet.
-- `COINBASE_API_KEY`: The API key for the Coinbase Project API.
-- `COINBASE_API_SECRET`: The API secret for the Coinbase Project API.
-
 ## Contributing
 
 1. Fork the repository
@@ -272,4 +254,4 @@ If you are using Coinbase Wallet integration, please set the following environme
 
 ## License
 
-[Add your license information here]
+[Add your license information]

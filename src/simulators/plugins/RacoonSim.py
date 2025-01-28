@@ -6,6 +6,7 @@ from typing import List
 import gif_pygame
 import pygame
 
+# import logging
 from llm.output_model import Command
 from providers.io_provider import IOProvider
 
@@ -30,8 +31,6 @@ class RacoonSim:
         self.X = 800
         self.Y = 630
 
-        self.clock = pygame.Clock()
-
         self.display = pygame.display.set_mode((self.X, self.Y))
         pygame.display.set_caption("Racoon Simulator")
         self.display.fill(self.lightblue)
@@ -45,10 +44,16 @@ class RacoonSim:
         self.font = pygame.font.Font("freesansbold.ttf", 14)
         self.path = os.path.join(os.path.dirname(__file__), "assets")
 
-        self.action_walk = gif_pygame.load(os.path.join(self.path, "walk.gif"))
-        self.action_run = gif_pygame.load(os.path.join(self.path, "run.gif"))
         self.action_idle = gif_pygame.load(os.path.join(self.path, "idle.gif"))
-        self.action_sit = gif_pygame.load(os.path.join(self.path, "crouch.gif"))
+        self.action_sit = gif_pygame.load(os.path.join(self.path, "ko.gif"))
+        self.action_walk = gif_pygame.load(os.path.join(self.path, "walk.gif"))
+        self.action_walk_back = gif_pygame.load(
+            os.path.join(self.path, "walk_back.gif")
+        )
+        self.action_run = gif_pygame.load(os.path.join(self.path, "run.gif"))
+        self.action_shake_paw = gif_pygame.load(os.path.join(self.path, "crouch.gif"))
+        self.action_dance = gif_pygame.load(os.path.join(self.path, "dance.gif"))
+        self.action_jump = gif_pygame.load(os.path.join(self.path, "jump.gif"))
 
         self.a_s = ""
 
@@ -59,24 +64,40 @@ class RacoonSim:
     def _tick(self) -> None:
         self.surface_ani.fill(self.lightblue)
 
+        # logging.info(f"Current Action Spec: {self.a_s}")
+
         if self.a_s == "walk":
+            # logging.info(f"Current Action Spec: {self.a_s} - using WALK render")
             self.action_walk.render(self.surface_ani, (0, 0))
+        elif self.a_s == "walk back":
+            # logging.info(f"Current Action Spec: {self.a_s} - using WALK BACK render")
+            self.action_walk_back.render(self.surface_ani, (0, 0))
         elif self.a_s == "run":
+            # logging.info(f"Current Action Spec: {self.a_s} - using RUN render")
             self.action_run.render(self.surface_ani, (0, 0))
         elif self.a_s == "sit":
+            # logging.info(f"Current Action Spec: {self.a_s} - using SIT render")
             self.action_sit.render(self.surface_ani, (0, 0))
+        elif self.a_s == "shake paw":
+            # logging.info(f"Current Action Spec: {self.a_s} - using SHAKE PAW render")
+            self.action_shake_paw.render(self.surface_ani, (0, 0))
+        elif self.a_s == "dance":
+            # logging.info(f"Current Action Spec: {self.a_s} - using DANCE render")
+            self.action_dance.render(self.surface_ani, (0, 0))
+        elif self.a_s == "stand still":
+            # logging.info(f"Current Action Spec: {self.a_s} - using IDLE render")
+            self.action_idle.render(self.surface_ani, (0, 0))
+        elif self.a_s == "jump":
+            # logging.info(f"Current Action Spec: {self.a_s} - using JUMP render")
+            self.action_jump.render(self.surface_ani, (0, 0))
         else:
+            # logging.info(f"Could not parse action spec {self.a_s} - defaulting to idle")
             self.action_idle.render(self.surface_ani, (0, 0))
 
         self.display.blit(self.surface_ani, (180, 230))
 
         # this is what updates everything
         pygame.display.flip()
-
-    # async def _run_animation_loop(self) -> None:
-    #     while True:
-    #         await asyncio.sleep(0.1)
-    #         await self._tick()
 
     def input_clean(self, input, earliest_time) -> str:
         st = input
