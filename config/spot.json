@@ -10,7 +10,7 @@
       "type": "FaceEmotionCapture"
     },
     {
-      "type": "WalletCoinbase"
+      "type": "WalletEthereum"
     }
   ],
   "simulators": [
