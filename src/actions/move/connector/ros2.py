@@ -52,4 +52,4 @@ class MoveRos2Connector(ActionConnector[MoveInput]):
 
     def tick(self) -> None:
         time.sleep(1)
-        logging.info("!!!! MoveRos2Connector Ticked !!!!")
+        logging.info("MoveRos2Connector Tick")
