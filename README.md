@@ -56,6 +56,10 @@ Similar to the `Hello World (Spot)` example, except uses the Coinbase wallet.
 uv run src/run.py coinbase
 ```
 
+In this Coinbase example, the wallet agent will track the balance of the Coinbase wallet and send a message when there is a new transaction. The bot will send its appreciation for receiving tokens.
+
+The Coinbase wallet currently supports Base Sepolia and Base Mainnet networks. For more details, please see the [Coinbase documentation](https://docs.cdp.coinbase.com/mpc-wallet/docs/wallets).
+
 ### Example 2 - Using DeepSeek as the Core LLM
 
 Similar to the `Hello World (Spot)` example, except uses `DeepSeek` rather than `OpenAI 4o`.
@@ -242,7 +246,7 @@ If you are using Coinbase Wallet integration, please set the following environme
 - `COINBASE_WALLET_ID`: The ID for the Coinbase Wallet.
 - `COINBASE_API_KEY`: The API key for the Coinbase Project API.
 - `COINBASE_API_SECRET`: The API secret for the Coinbase Project API.
-- 
+
 ### Core operating principle of the system
 
 The system is based on a loop that runs at a fixed frequency of `self.config.hertz`. This loop looks for the most recent data from various sources, fuses the data into a prompt, sends that prompt to one or more LLMs, and then sends the LLM responses to virtual agents or physical robots.
