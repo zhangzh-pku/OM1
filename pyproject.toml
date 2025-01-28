@@ -17,7 +17,8 @@ dependencies = [
     "gif-pygame",
     "web3",
     "cyclonedds==0.10.2",
-    "numpy"
+    "numpy",
+    "cdp-sdk>=0.15.0",
 ]
 
 [tool.uv.sources]

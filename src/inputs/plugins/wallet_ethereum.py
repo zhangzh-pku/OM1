@@ -63,6 +63,7 @@ class WalletEthereum(FuserInput[float]):
             "ETH_ADDRESS", "0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045"
         )
         logging.debug(f"Using {self.ACCOUNT_ADDRESS} as the wallet address")
+        logging.info("Testing: WalletEthereum: Initialized")
 
         # Initialize Web3
         self.web3 = Web3(Web3.HTTPProvider(self.PROVIDER_URL))

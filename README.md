@@ -116,6 +116,28 @@ uv run src/run.py unitree
 
 If you see a `channel factory init error`, then you have not set the correct network interface adapter - the one you want to use is the network interface adapter *on your development machine - the computer you are currently sitting in front of* that is plugged into the Unitree quadruped (which has its own internal RockChip computer and network interface, which is *not* relevant to you right now). The ethernet adapter - such as `eno0` - needs to be set in the `.env`.
 
+### Example 1 - The Coinbase Wallet
+
+Similar to the `Hello World (Spot)` example, except uses the Coinbase wallet.
+
+```bash
+uv run src/run.py coinbase
+```
+
+### Example 2 - Using DeepSeek as the Core LLM
+
+Similar to the `Hello World (Spot)` example, except uses `DeepSeek` rather than `OpenAI 4o`.
+
+```bash
+uv run src/run.py deepseek
+```
+
+### Example 3 - Using Cloud Endpoints for Voice Inputs
+
+```bash
+uv run src/run.py conversation
+```
+
 ## CLI Commands
 
 The main entry point is `src/run.py` which provides the following commands:
@@ -133,13 +155,15 @@ The main entry point is `src/run.py` which provides the following commands:
 
 ```
 .
-├── config/                 # Agent configuration files
+├── config/               # Agent configuration files
 ├── src/
-│   ├── fuser/            # Input fusion logic
-│   ├── input/            # Input plugins (e.g. VLM, audio)
-│   ├── llm/              # LLM integration
 │   ├── actions/          # Agent outputs/actions/capabilities
+│   ├── fuser/            # Input fusion logic
+│   ├── inputs/           # Input plugins (e.g. VLM, audio)
+│   ├── llm/              # LLM integration
+│   ├── providers/        # ????
 │   ├── runtime/          # Core runtime system
+│   ├── simulators/       # Virtual endponits such as `RacoonSim`
 │   └── run.py            # CLI entry point
 ```
 
@@ -281,6 +305,12 @@ Defines the agent’s available capabilities, including action names, their impl
 - `ETH_ADDRESS`: The Ethereum address of agent, prefixed with `Ox`. Example: `0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045`. Only relevant if your agent has a wallet.
 - `UNITREE_WIRED_ETHERNET`: Your netrowrk adapet that is conncted to a Unitree robot. Example: `eno0`. Only relevant if your agent has a physical (robot) embodiment.
 
+If you are using Coinbase Wallet integration, please set the following environment variables:
+
+- `COINBASE_WALLET_ID`: The ID for the Coinbase Wallet.
+- `COINBASE_API_KEY`: The API key for the Coinbase Project API.
+- `COINBASE_API_SECRET`: The API secret for the Coinbase Project API.
+- 
 ### Core operating principle of the system
 
 The system is based on a loop that runs at a fixed frequency of `self.config.hertz`. This loop looks for the most recent data from various sources, fuses the data into a prompt, sends that prompt to one or more LLMs, and then sends the LLM responses to virtual agents or physical robots.
