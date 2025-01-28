@@ -16,17 +16,6 @@ from unitree.unitree_sdk2py.idl.unitree_go.msg.dds_ import LowState_
 
 @dataclass
 class Message:
-    """
-    Container for timestamped messages.
-
-    Parameters
-    ----------
-    timestamp : float
-        Unix timestamp of the message
-    message : str
-        Content of the message
-    """
-
     timestamp: float
     message: str
 
@@ -58,13 +47,15 @@ class UnitreeGo2Lowstate(FuserInput[str]):
             f"Using {self.UNITREE_WIRED_ETHERNET} as the network Ethernet adapter"
         )
 
-        # Fire up the Unitree system
-        ChannelFactoryInitialize(0, self.UNITREE_WIRED_ETHERNET)
-
         # create subscriber
         self.low_state = None
-        self.lowstate_subscriber = ChannelSubscriber("rt/lowstate", LowState_)
-        self.lowstate_subscriber.Init(self.LowStateMessageHandler, 10)
+        self.lowstate_subscriber = None
+
+        # Fire up the Unitree system unless adapater is set to "SIM""
+        if "SIM" not in self.UNITREE_WIRED_ETHERNET 
+            ChannelFactoryInitialize(0, self.UNITREE_WIRED_ETHERNET)
+            self.lowstate_subscriber = ChannelSubscriber("rt/lowstate", LowState_)
+            self.lowstate_subscriber.Init(self.LowStateMessageHandler, 10)
 
         self.latest_v = 0.0
         self.latest_a = 0.0
@@ -95,7 +86,7 @@ class UnitreeGo2Lowstate(FuserInput[str]):
 
         return [self.latest_v, self.latest_a]
 
-    async def _raw_to_text(self, raw_input: [float]) -> Message:
+    async def _raw_to_text(self, raw_input: [float]) -> Optional[Message]:
         """
         Process raw lowstate to generate text description.
 
@@ -112,12 +103,10 @@ class UnitreeGo2Lowstate(FuserInput[str]):
         battery_voltage = raw_input[0]
         if battery_voltage < 26.0:
             message = "WARNING: You are low on energy. SIT DOWN NOW."
+            return Message(timestamp=time.time(), message=message)
         elif battery_voltage < 27.2:
             message = "WARNING: You are low on energy. Consider sitting down."
-        else:
-            message = ""
-
-        return Message(timestamp=time.time(), message=message)
+            return Message(timestamp=time.time(), message=message)
 
     async def raw_to_text(self, raw_input: [float]):
         """
@@ -153,7 +142,7 @@ class UnitreeGo2Lowstate(FuserInput[str]):
         result = f"""
 {self.__class__.__name__} INPUT
 // START
-{latest_message.timestamp:.3f}
+{latest_message.message}
 // END
 """
 
