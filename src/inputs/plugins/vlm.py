@@ -6,8 +6,6 @@ from dataclasses import dataclass
 from queue import Empty, Queue
 from typing import Dict, List, Optional
 
-from PIL import Image
-
 from inputs.base.loop import LoopInput
 from providers.io_provider import IOProvider
 from providers.vlm_provider import VLMProvider
@@ -30,7 +28,7 @@ class Message:
     message: str
 
 
-class VLMInput(LoopInput[Image.Image]):
+class VLMInput(LoopInput[str]):
     """
     Vision Language Model input handler.
 
