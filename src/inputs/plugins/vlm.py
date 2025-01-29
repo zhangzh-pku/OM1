@@ -6,6 +6,7 @@ from dataclasses import dataclass
 from queue import Empty, Queue
 from typing import Dict, List, Optional
 
+from inputs.base import AgentInputConfig
 from inputs.base.loop import LoopInput
 from providers.io_provider import IOProvider
 from providers.vlm_provider import VLMProvider
@@ -40,13 +41,15 @@ class VLMInput(LoopInput[str]):
     and provides formatted output of the latest processed messages.
     """
 
-    def __init__(self):
+    def __init__(self, config: AgentInputConfig = AgentInputConfig()):
         """
         Initialize VLM input handler.
 
         Sets up the required providers and buffers for handling VLM processing.
         Initializes connection to the VLM service and registers message handlers.
         """
+        super().__init__(config)
+
         # Track IO
         self.io_provider = IOProvider()
 
@@ -57,7 +60,13 @@ class VLMInput(LoopInput[str]):
         self.message_buffer: Queue[str] = Queue()
 
         # Initialize VLM provider
-        self.vlm: VLMProvider = VLMProvider(ws_url="wss://api-vila.openmind.org")
+        base_url = (
+            self.config.base_url
+            if self.config.base_url
+            else "wss://api-vila.openmind.org"
+        )
+
+        self.vlm: VLMProvider = VLMProvider(ws_url=base_url)
         self.vlm.start()
         self.vlm.register_message_callback(self._handle_vlm_message)
 

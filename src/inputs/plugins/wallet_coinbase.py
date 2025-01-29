@@ -7,6 +7,7 @@ from typing import List, Optional
 
 from cdp import Cdp, Wallet
 
+from inputs.base import AgentInputConfig
 from inputs.base.loop import LoopInput
 from providers.io_provider import IOProvider
 
@@ -22,7 +23,9 @@ class WalletCoinbase(LoopInput[float]):
     Queries current ETH balance and reports a balance increase
     """
 
-    def __init__(self):
+    def __init__(self, config: AgentInputConfig = AgentInputConfig()):
+        super().__init__(config)
+
         # Track IO
         self.io_provider = IOProvider()
         self.messages: list[str] = []

@@ -4,6 +4,7 @@ import logging
 from queue import Empty, Queue
 from typing import Dict, List, Optional
 
+from inputs.base import AgentInputConfig
 from inputs.base.loop import LoopInput
 from providers.asr_provider import ASRProvider
 from providers.sleep_ticker_provider import SleepTickerProvider
@@ -17,11 +18,11 @@ class ASRInput(LoopInput[str]):
     and providing text conversion capabilities.
     """
 
-    def __init__(self):
+    def __init__(self, config: AgentInputConfig = AgentInputConfig()):
         """
         Initialize ASRInput instance.
         """
-        super().__init__()
+        super().__init__(config)
 
         # Buffer for storing the final output
         self.messages: List[str] = []
@@ -30,7 +31,13 @@ class ASRInput(LoopInput[str]):
         self.message_buffer: Queue[str] = Queue()
 
         # Initialize ASR provider
-        self.asr: ASRProvider = ASRProvider(ws_url="wss://api-asr.openmind.org")
+        base_url = (
+            self.config.base_url
+            if self.config.base_url
+            else "wss://api-asr.openmind.org"
+        )
+
+        self.asr: ASRProvider = ASRProvider(ws_url=base_url)
         self.asr.start()
         self.asr.register_message_callback(self._handle_asr_message)
 

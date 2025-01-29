@@ -7,6 +7,7 @@ from typing import Optional
 import cv2
 from deepface import DeepFace
 
+from inputs.base import AgentInputConfig
 from inputs.base.loop import LoopInput
 from providers.io_provider import IOProvider
 
@@ -53,10 +54,12 @@ class FaceEmotionCapture(LoopInput[cv2.typing.MatLike]):
     Processes video frames to detect faces and classify emotions.
     """
 
-    def __init__(self):
+    def __init__(self, config: AgentInputConfig = AgentInputConfig()):
         """
         Initialize FaceEmotionCapture instance.
         """
+        super().__init__(config)
+
         # Track IO
         self.io_provider = IOProvider()
 

@@ -8,6 +8,7 @@ from typing import List, Optional
 
 from web3 import Web3
 
+from inputs.base import AgentInputConfig
 from inputs.base.loop import LoopInput
 from providers.io_provider import IOProvider
 
@@ -42,10 +43,12 @@ class WalletEthereum(LoopInput[float]):
         If connection to Ethereum network fails
     """
 
-    def __init__(self):
+    def __init__(self, config: AgentInputConfig = AgentInputConfig()):
         """
         Initialize WalletEthereum instance.
         """
+        super().__init__(config)
+
         # Track IO
         self.io_provider = IOProvider()
 
