@@ -1,19 +1,22 @@
 import logging
 import time
+import os
 
 import hid
 
 from actions.base import ActionConnector
 from actions.move.interface import MoveInput
 
+from unitree.unitree_sdk2py.core.channel import ChannelSubscriber, ChannelFactoryInitialize
+from unitree.unitree_sdk2py.idl.default import unitree_go_msg_dds__SportModeState_
+from unitree.unitree_sdk2py.idl.unitree_go.msg.dds_ import SportModeState_
+from unitree.unitree_sdk2py.go2.sport.sport_client import SportClient
 
 class MoveRos2Connector(ActionConnector[MoveInput]):
 
     def __init__(self):
         # pygame.init()
         self.joysticks = []
-
-        logging.info("Joystick")
 
         self.vendor_id = ""
         self.product_id = ""
@@ -23,27 +26,33 @@ class MoveRos2Connector(ActionConnector[MoveInput]):
         self.cb: list[str] = []
 
         for device in hid.enumerate():
-            logging.info(f"device {device['product_string']}")
+            logging.debug(f"device {device['product_string']}")
             if "Xbox Wireless Controller" in device["product_string"]:
                 self.vendor_id = device["vendor_id"]
                 self.product_id = device["product_id"]
                 self.gamepad = hid.Device(self.vendor_id, self.product_id)
-                # self.gamepad.open(self.vendor_id, self.product_id)
-                # self.gamepad.set_nonblocking(True)
                 logging.info(
                     f"Connected {device['product_string']} {self.vendor_id} {self.product_id}"
                 )
                 break
 
-        # for i in range(0, pygame.joystick.get_count()):
-        # create an Joystick object in our list
-        #    self.joysticks.append(pygame.joystick.Joystick(i))
-        # initialize the appended joystick
-        #    self.joysticks[-1].init()
-        # print a statement telling what the name of the controller is
-        #    logging.info(f"Joystick {joysticks[-1].get_name()}")
+        # create sport client
+        self.sport_client = None
+
+        self.UNIEN0 = os.getenv("UNITREE_WIRED_ETHERNET")
+        if self.UNIEN0 is not None and self.UNIEN0 is not "SIM":
+            # Set up Unitree subscriber unless adapater is set to "SIM""
+            # ChannelFactoryInitialize(0, self.UNITREE_WIRED_ETHERNET)
+            # this can only be done once, at top level
+            logging.info(
+                f"Move system using {self.UNIEN0} as the network Ethernet adapter"
+            )
+            self.sport_client = SportClient()  
+            self.sport_client.SetTimeout(10.0)
+            self.sport_client.Init()
 
     async def connect(self, output_interface: MoveInput) -> None:
+        
         # define/clarify the datatype
         new_msg = {"thought": "", "vx": 0.0, "vy": 0.0, "vyaw": 0.0}
 
@@ -54,9 +63,13 @@ class MoveRos2Connector(ActionConnector[MoveInput]):
             return
 
         if output_interface.action == "stand up":
-            new_msg["thought"] = "stand_up"
+            logging.info("Unitree AI command: stand up")
+            if self.sport_client:
+                self.sport_client.StandUp()
         elif output_interface.action == "lay down":
-            new_msg["thought"] = "lay_down"
+            logging.info("Unitree AI command: lay down")
+            if self.sport_client:
+                self.sport_client.StandDown()
         elif output_interface.action == "pounce":
             new_msg["thought"] = "pounce"
         elif output_interface.action == "stand still":
@@ -64,11 +77,15 @@ class MoveRos2Connector(ActionConnector[MoveInput]):
         elif output_interface.action == "sit":
             new_msg["thought"] = "sit"
         elif output_interface.action == "stretch":
-            new_msg["thought"] = "stretch"
+            logging.info("Unitree AI command: stretch")
+            if self.sport_client:
+                self.sport_client.Stretch()
         elif output_interface.action == "dance":
             new_msg["thought"] = "dance"
         elif output_interface.action == "shake paw":
-            new_msg["thought"] = "say_hello"
+            logging.info("Unitree AI command: shake paw")
+            if self.sport_client:
+                self.sport_client.Hello()
         elif output_interface.action == "walk":  # CCW(LEFT) + ; CW(RIGHT) -
             new_msg["thought"] = "move"
             new_msg["vx"] = 0.4
@@ -97,7 +114,7 @@ class MoveRos2Connector(ActionConnector[MoveInput]):
 
         time.sleep(0.1)
 
-        logging.info("MoveRos2Connector Tick")
+        # logging.info("MoveRos2Connector Tick")
 
         if self.gamepad:
 
@@ -131,13 +148,21 @@ class MoveRos2Connector(ActionConnector[MoveInput]):
 
             if self.cb[-1] == "game_a":
                 logging.info("ROS2 unitree: stand_up")
+                if self.sport_client:
+                    self.sport_client.StandUp()
                 del self.cb[-1]
             elif self.cb[-1] == "game_b":
+                if self.sport_client:
+                    self.sport_client.StandDown()
                 logging.info("ROS2 unitree: lay_down")
                 del self.cb[-1]
             elif self.cb[-1] == "game_x":
+                if self.sport_client:
+                    self.sport_client.Hello()
                 logging.info("ROS2 unitree: say_hello")
                 del self.cb[-1]
             elif self.cb[-1] == "game_y":
+                if self.sport_client:
+                    self.sport_client.Stretch()
                 logging.info("ROS2 unitree: stretch")
                 del self.cb[-1]

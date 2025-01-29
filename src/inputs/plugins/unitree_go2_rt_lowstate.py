@@ -8,7 +8,6 @@ from typing import Optional
 from inputs.base.loop import FuserInput
 from providers.io_provider import IOProvider
 from unitree.unitree_sdk2py.core.channel import (
-    ChannelFactoryInitialize,
     ChannelSubscriber,
 )
 from unitree.unitree_sdk2py.idl.unitree_go.msg.dds_ import LowState_
@@ -42,21 +41,15 @@ class UnitreeGo2Lowstate(FuserInput[str]):
         # Messages buffer
         self.messages: list[Message] = []
 
-        self.UNITREE_WIRED_ETHERNET = os.environ.get("UNITREE_WIRED_ETHERNET", "eno0")
-        logging.info(
-            f"Using {self.UNITREE_WIRED_ETHERNET} as the network Ethernet adapter"
-        )
-
         # create subscriber
         self.low_state = None
         self.lowstate_subscriber = None
 
-        # Fire up the Unitree system unless adapater is set to "SIM""
-        if "SIM" in self.UNITREE_WIRED_ETHERNET:
-            # do nothing
-            logging.info("Unitree SIM mode")
-        else:
-            ChannelFactoryInitialize(0, self.UNITREE_WIRED_ETHERNET)
+        self.UNIEN0 = os.getenv("UNITREE_WIRED_ETHERNET")
+        if self.UNIEN0 is not None and self.UNIEN0 is not "SIM":
+            # Set up Unitree subscriber unless adapater is set to "SIM""
+            # ChannelFactoryInitialize(0, self.UNITREE_WIRED_ETHERNET)
+            # this can only be done once, at top level
             self.lowstate_subscriber = ChannelSubscriber("rt/lowstate", LowState_)
             self.lowstate_subscriber.Init(self.LowStateMessageHandler, 10)
 
@@ -67,7 +60,7 @@ class UnitreeGo2Lowstate(FuserInput[str]):
         self.low_state = msg
         self.latest_v = float(msg.power_v)
         self.latest_a = float(msg.power_a)
-        logging.info(f"Battery state voltage: {self.latest_v} current: {self.latest_a}")
+        
         # other things you can read
         # print("FR_0 motor state: ", msg.motor_state[go2.LegID["FR_0"]])
         # print("IMU state: ", msg.imu_state)
@@ -85,8 +78,10 @@ class UnitreeGo2Lowstate(FuserInput[str]):
 
         # Does the complexity of this seem confusing and kinda pointless to you?
         # It's on our radar and your patience is appreciated
-        await asyncio.sleep(0.5)
-
+        await asyncio.sleep(2.0)
+        
+        logging.info(f"Battery voltage: {self.latest_v} current: {self.latest_a}")
+        
         return [self.latest_v, self.latest_a]
 
     async def _raw_to_text(self, raw_input: [float]) -> Optional[Message]:
