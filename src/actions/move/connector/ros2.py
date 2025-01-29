@@ -1,43 +1,46 @@
 import logging
 import time
-import pygame
+
+import hid
 
 from actions.base import ActionConnector
 from actions.move.interface import MoveInput
 
-import hid
 
 class MoveRos2Connector(ActionConnector[MoveInput]):
 
     def __init__(self):
         # pygame.init()
         self.joysticks = []
-        
-        logging.info(f"Joystick")
-        
-        self.vendor_id=""
-        self.product_id=""
-        self.gamepad=None
+
+        logging.info("Joystick")
+
+        self.vendor_id = ""
+        self.product_id = ""
+        self.button_previous = None
+        self.gamepad = None
 
         self.cb: list[str] = []
 
         for device in hid.enumerate():
-            logging.info(f"device {device['product_string']}") 
-            if "Xbox Wireless Controller" in device['product_string']:
-                self.vendor_id  = device['vendor_id']
-                self.product_id = device['product_id']
+            logging.info(f"device {device['product_string']}")
+            if "Xbox Wireless Controller" in device["product_string"]:
+                self.vendor_id = device["vendor_id"]
+                self.product_id = device["product_id"]
                 self.gamepad = hid.Device(self.vendor_id, self.product_id)
-                #self.gamepad.open(self.vendor_id, self.product_id)
-                #self.gamepad.set_nonblocking(True)
-                logging.info(f"Connected {device['product_string']} {self.vendor_id} {self.product_id}")
+                # self.gamepad.open(self.vendor_id, self.product_id)
+                # self.gamepad.set_nonblocking(True)
+                logging.info(
+                    f"Connected {device['product_string']} {self.vendor_id} {self.product_id}"
+                )
                 break
 
-        #for i in range(0, pygame.joystick.get_count()):
-            # create an Joystick object in our list
+        # for i in range(0, pygame.joystick.get_count()):
+        # create an Joystick object in our list
         #    self.joysticks.append(pygame.joystick.Joystick(i))
-            # initialize the appended joystick
+        # initialize the appended joystick
         #    self.joysticks[-1].init()
-            # print a statement telling what the name of the controller is
+        # print a statement telling what the name of the controller is
         #    logging.info(f"Joystick {joysticks[-1].get_name()}")
 
     async def connect(self, output_interface: MoveInput) -> None:
@@ -45,7 +48,9 @@ class MoveRos2Connector(ActionConnector[MoveInput]):
         new_msg = {"thought": "", "vx": 0.0, "vy": 0.0, "vyaw": 0.0}
 
         if len(self.cb) > 0:
-            logging.info(f"WARNING - there are manual game controller commands in the queue: {self.cb}")
+            logging.info(
+                f"WARNING - there are manual game controller commands in the queue: {self.cb}"
+            )
             return
 
         if output_interface.action == "stand up":
@@ -89,29 +94,41 @@ class MoveRos2Connector(ActionConnector[MoveInput]):
         logging.info(f"SendThisToROS2: {new_msg}")
 
     def tick(self) -> None:
-        
+
         time.sleep(0.1)
-        
+
         logging.info("MoveRos2Connector Tick")
-        
+
         if self.gamepad:
 
-            report = list(self.gamepad.read(64))
-            
-            if report[14] == 0:
-                if len(self.cb) > 0 and self.cb[-1] is not "end": self.cb.append("end")
-            elif report[14] == 1:
-                if len(self.cb) == 0 or self.cb[-1] is not "game_a": self.cb.append("game_a")
-            elif report[14] == 2:
-                if len(self.cb) == 0 or self.cb[-1] is not "game_b": self.cb.append("game_b")
-            elif report[14] == 8:
-                if len(self.cb) == 0 or self.cb[-1] is not "game_x": self.cb.append("game_x")
-            elif report[14] == 16:
-                if len(self.cb) == 0 or self.cb[-1] is not "game_y": self.cb.append("game_y")
-            
-            logging.info(f"Gamepad {self.cb}")
+            button_now = list(self.gamepad.read(64))[14]
+
+            if self.button_previous == 0 and button_now > 0:
+                # YAY - user just pressed a button
+                # we need this logic because when the user presses a button
+                # the gamepad sends a 'press' indication over and over again
+                # for several hundred ms, which would create numerous
+                # duplicated movement commands with a single button press
+                # to prevent this, we only act when the button state changes from
+                # 0 to > 0
+                if button_now == 1:
+                    if len(self.cb) == 0 or self.cb[-1] != "game_a":
+                        self.cb.append("game_a")
+                elif button_now == 2:
+                    if len(self.cb) == 0 or self.cb[-1] != "game_b":
+                        self.cb.append("game_b")
+                elif button_now == 8:
+                    if len(self.cb) == 0 or self.cb[-1] != "game_x":
+                        self.cb.append("game_x")
+                elif button_now == 16:
+                    if len(self.cb) == 0 or self.cb[-1] != "game_y":
+                        self.cb.append("game_y")
+                logging.info(f"Gamepad button depressed edge {self.cb}")
+
+            self.button_previous = button_now
 
         if len(self.cb) > 0:
+
             if self.cb[-1] == "game_a":
                 logging.info("ROS2 unitree: stand_up")
                 del self.cb[-1]
@@ -124,5 +141,3 @@ class MoveRos2Connector(ActionConnector[MoveInput]):
             elif self.cb[-1] == "game_y":
                 logging.info("ROS2 unitree: stretch")
                 del self.cb[-1]
-        
-

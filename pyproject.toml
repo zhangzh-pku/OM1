@@ -51,6 +51,7 @@ line_length = 88
 [tool.ruff]
 line-length = 88
 indent-width = 4
+exclude = ["src/unitree/*.py"]
 
 [tool.ruff.lint]
 select = ["E", "F", "I"]
