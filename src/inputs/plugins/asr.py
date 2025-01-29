@@ -24,7 +24,7 @@ class ASRInput(LoopInput[str]):
         super().__init__()
 
         # Buffer for storing the final output
-        self.buffer: List[str] = []
+        self.messages: List[str] = []
 
         # Buffer for storing messages
         self.message_buffer: Queue[str] = Queue()
@@ -96,17 +96,17 @@ class ASRInput(LoopInput[str]):
         raw_input : Optional[str]
             Raw input to be processed
         """
-        text = await self._raw_to_text(raw_input)
-        if text is None:
-            if len(self.buffer) != 0:
-                # Skip sleep if there's already a message in the buffer
+        pending_message = await self._raw_to_text(raw_input)
+        if pending_message is None:
+            if len(self.messages) != 0:
+                # Skip sleep if there's already a message in the messages buffer
                 self.global_sleep_ticker_provider.skip_sleep = True
 
-        if text is not None:
-            if len(self.buffer) == 0:
-                self.buffer.append(text)
+        if pending_message is not None:
+            if len(self.messages) == 0:
+                self.messages.append(pending_message)
             else:
-                self.buffer[-1] = f"{self.buffer[-1]} {text}"
+                self.messages[-1] = f"{self.messages[-1]} {pending_message}"
 
     def formatted_latest_buffer(self) -> Optional[str]:
         """
@@ -117,14 +117,14 @@ class ASRInput(LoopInput[str]):
         Optional[str]
             Formatted string of buffer contents or None if buffer is empty
         """
-        if len(self.buffer) == 0:
+        if len(self.messages) == 0:
             return None
 
         result = f"""
 {self.__class__.__name__} INPUT
 // START
-{self.buffer[-1]}
+{self.messages[-1]}
 // END
 """
-        self.buffer = []
+        self.messages = []
         return result
