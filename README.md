@@ -161,10 +161,6 @@ python3 ./example/helloworld/subscriber.py
 
 You will see the data output in the terminal. The data structure transmitted between `publisher.py` and `subscriber.py` is defined in `user_data.py`, and users can define the required data structure as needed.
 
-export DYLD_FALLBACK_LIBRARY_PATH="$HOMEBREW_PREFIX/lib"
-
-
-
 ### Reading Data from a Unitree Go2 Air connected via Ethernet
 
 First, connect the Unitree Go2 Air to your development machine with an Ethernet cable. Then, set the network adapter setting. Open the network settings and find the network interface that is connected to the Go2 Air. In IPv4 setting, change the IPv4 mode to `manual`, set the address to `192.168.123.99`, and set the mask to `255.255.255.0`. After completion, click `apply` (or equivalent) and wait for the network to reconnect. Finally provide the name of the network adapter in the `.env`, such as `UNITREE_WIRED_ETHERNET=eno0`.

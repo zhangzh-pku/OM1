@@ -89,28 +89,18 @@ class MoveRos2Connector(ActionConnector[MoveInput]):
         logging.info(f"SendThisToROS2: {new_msg}")
 
     def tick(self) -> None:
+        
         time.sleep(0.1)
+        
         logging.info("MoveRos2Connector Tick")
         
         if self.gamepad:
-            
-            if len(self.cb) > 0:
-                if self.cb[-1] == "game_a":
-                    logging.info("ROS2 unitree: stand_up")
-                    del self.cb[-1]
-                elif self.cb[-1] == "game_b":
-                    logging.info("ROS2 unitree: lay_down")
-                    del self.cb[-1]
-                elif self.cb[-1] == "game_x":
-                    logging.info("ROS2 unitree: say_hello")
-                    del self.cb[-1]
-                elif self.cb[-1] == "game_y":
-                    logging.info("ROS2 unitree: stretch")
-                    del self.cb[-1]
 
             report = list(self.gamepad.read(64))
             
-            if report[14] == 1:
+            if report[14] == 0:
+                if len(self.cb) > 0 and self.cb[-1] is not "end": self.cb.append("end")
+            elif report[14] == 1:
                 if len(self.cb) == 0 or self.cb[-1] is not "game_a": self.cb.append("game_a")
             elif report[14] == 2:
                 if len(self.cb) == 0 or self.cb[-1] is not "game_b": self.cb.append("game_b")
@@ -120,5 +110,19 @@ class MoveRos2Connector(ActionConnector[MoveInput]):
                 if len(self.cb) == 0 or self.cb[-1] is not "game_y": self.cb.append("game_y")
             
             logging.info(f"Gamepad {self.cb}")
+
+        if len(self.cb) > 0:
+            if self.cb[-1] == "game_a":
+                logging.info("ROS2 unitree: stand_up")
+                del self.cb[-1]
+            elif self.cb[-1] == "game_b":
+                logging.info("ROS2 unitree: lay_down")
+                del self.cb[-1]
+            elif self.cb[-1] == "game_x":
+                logging.info("ROS2 unitree: say_hello")
+                del self.cb[-1]
+            elif self.cb[-1] == "game_y":
+                logging.info("ROS2 unitree: stretch")
+                    del self.cb[-1]
         
 
