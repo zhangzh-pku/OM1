@@ -49,7 +49,7 @@ profile = "black"
 multi_line_output = 3
 line_length = 88
 sources = ["src", "tests"]
-skip = "/src/unitree"
+skip_glob = [".venv*", "/src/unitree"]
 
 [tool.ruff]
 line-length = 88
