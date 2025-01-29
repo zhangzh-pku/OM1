@@ -70,6 +70,12 @@ uv run src/run.py deepseek
 uv run src/run.py conversation
 ```
 
+### Example 3 - Using Gemini as the Core LLM
+
+```bash
+uv run src/run.py gemini
+```
+
 ## CLI Commands
 
 The main entry point is `src/run.py` which provides the following commands:
@@ -177,6 +183,8 @@ OpenMind OpenAI Proxy endpoint is [https://api.openmind.org/api/core/openai](htt
   
 OpenMind DeepSeek Proxy endpoint is [https://api.openmind.org/api/core/deepseek](https://api.openmind.org/api/core/deepseek)
 
+OpenMind Gemini Proxy endpoint is [https://api.openmind.org/api/core/gemini](https://api.openmind.org/api/core/gemini)
+
 ```json
 "cortex_llm": {
   "type": "OpenAILLM",
@@ -233,6 +241,7 @@ Defines the agent’s available capabilities, including action names, their impl
 ## Environment Variables
 
 - `OPENAI_API_KEY`: The API key for OpenAI integration. This is mandatory if you want to use OpenAI’s LLM services without rate limiting.
+- `GEMINI_API_KEY`: The API key for Gemini integration. This is mandatory if you want to use Gemini’s LLM services without rate limiting.
 - `OPENMIND_API_KEY`: The API key for OpenMind endpoints. This is mandatory if you want to use OpenMind endpoints without rate limiting.
 - `ETH_ADDRESS`: The Ethereum address of agent, prefixed with `Ox`. Example: `0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045`. Only relevant if your agent has a wallet.
 - `UNITREE_WIRED_ETHERNET`: Your netrowrk adapet that is conncted to a Unitree robot. Example: `eno0`. Only relevant if your agent has a physical (robot) embodiment.
