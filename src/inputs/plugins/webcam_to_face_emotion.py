@@ -34,6 +34,7 @@ https://github.com/manish-9245/Facial-Emotion-Recognition-using-OpenCV-and-Deepf
 Thank you @manish-9245
 """
 
+
 def check_webcam():
     """Checks if a webcam is available and returns True if found, False otherwise."""
 
@@ -43,7 +44,8 @@ def check_webcam():
 
     return ret
 
-class FaceEmotionCapture(LoopInput[cv2.typing.MatLike]):
+
+class FaceEmotionCapture(FuserInput[cv2.typing.MatLike]):
     """
     Real-time facial emotion recognition using webcam input.
 

@@ -19,6 +19,7 @@ dependencies = [
     "cyclonedds==0.10.2",
     "numpy",
     "cdp-sdk>=0.15.0",
+    "hid"
 ]
 
 [tool.uv.sources]

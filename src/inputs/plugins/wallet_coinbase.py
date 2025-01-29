@@ -7,7 +7,7 @@ from typing import List, Optional
 
 from cdp import Cdp, Wallet
 
-from inputs.base.loop import LoopInput
+from inputs.base.loop import FuserInput
 from providers.io_provider import IOProvider
 
 
@@ -17,7 +17,7 @@ class Message:
     message: str
 
 
-class WalletCoinbase(LoopInput[float]):
+class WalletCoinbase(FuserInput[float]):
     """
     Queries current ETH balance and reports a balance increase
     """

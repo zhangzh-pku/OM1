@@ -13,10 +13,11 @@ curl -LsSf https://astral.sh/uv/install.sh | sh
 brew install uv
 ```
 
-If you are on mac, you may need to install `pyaudio` manually:
+If you are on mac, you may need to install `portaudio` and `hidapi` manually:
 
 ```bash
 brew install portaudio
+brew install hidapi
 ```
 
 2. Set up environment variables:
@@ -46,6 +47,62 @@ uv run src/run.py spot
 
 > [!NOTE]
 > There should be a `pygame` window that pops up when you run `uv run src/run.py spot`. Sometimes the `pygame` window is hidden behind all other open windows - use "show all windows" to find it.
+
+> [!NOTE]
+> There is a bug on Mac when installing packages with `brew` - some libraries cannot be found by `uv`. If you get errors such as 
+`Unable to load any of the following libraries:libhidapi-hidraw.so` and you are on a Mac, try setting `export DYLD_FALLBACK_LIBRARY_PATH="$HOMEBREW_PREFIX/lib"` in your `.zshenv` or equivalent. 
+
+## Agent and Robot Examples
+
+### Example 1 - The Coinbase Wallet
+
+Similar to the `Hello World (Spot)` example, except uses the Coinbase wallet rather than Ethereum Mainnet.
+
+```bash
+uv run src/run.py coinbase
+```
+
+The agent tracks the balance of ????? in a Coinbase wallet and sends a message when there is a new transaction. The agent can be instructed via the prompt to express appreciation for receiving tokens. Here is how this is done - see `/config/coinbase.json`:
+
+```bash
+"system_prompt": "
+... 
+You like receiving ETH. If you receive an ETH transaction, show your appreciation though actions and speech. 
+...
+4. If there is a new ETH transaction, you might:\n    Move: 'shake paw'\n    Speak: {{'sentence': 'Thank you I really appreciate the ETH you just sent.'}}\n    Face: 'smile'\n\n
+...",
+```
+
+The Coinbase wallet currently supports Base Sepolia and Base Mainnet networks. The Coinbase Wallet integration requires the following environment variables:
+
+- `COINBASE_WALLET_ID`: The ID for the Coinbase Wallet.
+- `COINBASE_API_KEY`: The API key for the Coinbase Project API.
+- `COINBASE_API_SECRET`: The API secret for the Coinbase Project API.
+
+
+You can get a Wallet ID from ???????. For new uswers, the procedure is_______. The API_KEY comes from __________. The API_SECRET is _________. These key are all strings and should looke like this:
+
+```bash
+COINBASE_WALLET_ID=???????????
+COINBASE_API_KEY=?????????
+COINBASE_API_SECRET=??????????
+```
+
+For more details, please see the [Coinbase documentation](https://docs.cdp.coinbase.com/mpc-wallet/docs/wallets).
+
+### Example 2 - Using DeepSeek as the Core LLM
+
+Similar to the `Hello World (Spot)` example, except uses `DeepSeek` rather than `OpenAI 4o`.
+
+```bash
+uv run src/run.py deepseek
+```
+
+### Example 3 - Using Cloud Endpoints for Voice Inputs
+
+```bash
+uv run src/run.py conversation
+```
 
 ## Robot hardware support - Unitree/CycloneDDS
 
@@ -104,6 +161,10 @@ python3 ./example/helloworld/subscriber.py
 
 You will see the data output in the terminal. The data structure transmitted between `publisher.py` and `subscriber.py` is defined in `user_data.py`, and users can define the required data structure as needed.
 
+export DYLD_FALLBACK_LIBRARY_PATH="$HOMEBREW_PREFIX/lib"
+
+
+
 ### Reading Data from a Unitree Go2 Air connected via Ethernet
 
 First, connect the Unitree Go2 Air to your development machine with an Ethernet cable. Then, set the network adapter setting. Open the network settings and find the network interface that is connected to the Go2 Air. In IPv4 setting, change the IPv4 mode to `manual`, set the address to `192.168.123.99`, and set the mask to `255.255.255.0`. After completion, click `apply` (or equivalent) and wait for the network to reconnect. Finally provide the name of the network adapter in the `.env`, such as `UNITREE_WIRED_ETHERNET=eno0`.
@@ -115,58 +176,6 @@ uv run src/run.py unitree
 ```
 
 If you see a `channel factory init error`, then you have not set the correct network interface adapter - the one you want to use is the network interface adapter *on your development machine - the computer you are currently sitting in front of* that is plugged into the Unitree quadruped (which has its own internal RockChip computer and network interface, which is *not* relevant to you right now). The ethernet adapter - such as `eno0` - needs to be set in the `.env`.
-
-## General Agent and Robot Examples
-
-### Example 1 - The Coinbase Wallet
-
-Similar to the `Hello World (Spot)` example, except uses the Coinbase wallet rather than Ethereum Mainnet.
-
-```bash
-uv run src/run.py coinbase
-```
-
-The agent tracks the balance of ????? in a Coinbase wallet and sends a message when there is a new transaction. The agent can be instructed via the prompt to express appreciation for receiving tokens. Here is how this is done - see `/config/coinbase.json`:
-
-```bash
-"system_prompt": "
-... 
-You like receiving ETH. If you receive an ETH transaction, show your appreciation though actions and speech. 
-...
-4. If there is a new ETH transaction, you might:\n    Move: 'shake paw'\n    Speak: {{'sentence': 'Thank you I really appreciate the ETH you just sent.'}}\n    Face: 'smile'\n\n
-...",
-```
-
-The Coinbase wallet currently supports Base Sepolia and Base Mainnet networks. The Coinbase Wallet integration requires the following environment variables:
-
-- `COINBASE_WALLET_ID`: The ID for the Coinbase Wallet.
-- `COINBASE_API_KEY`: The API key for the Coinbase Project API.
-- `COINBASE_API_SECRET`: The API secret for the Coinbase Project API.
-
-
-You can get a Wallet ID from ???????. For new uswers, the procedure is_______. The API_KEY comes from __________. The API_SECRET is _________. These key are all strings and should looke like this:
-
-```bash
-COINBASE_WALLET_ID=???????????
-COINBASE_API_KEY=?????????
-COINBASE_API_SECRET=??????????
-```
-
-For more details, please see the [Coinbase documentation](https://docs.cdp.coinbase.com/mpc-wallet/docs/wallets).
-
-### Example 2 - Using DeepSeek as the Core LLM
-
-Similar to the `Hello World (Spot)` example, except uses `DeepSeek` rather than `OpenAI 4o`.
-
-```bash
-uv run src/run.py deepseek
-```
-
-### Example 3 - Using Cloud Endpoints for Voice Inputs
-
-```bash
-uv run src/run.py conversation
-```
 
 ## CLI Commands
 
@@ -333,7 +342,7 @@ Defines the agent’s available capabilities, including action names, their impl
 - `OPENAI_API_KEY`: The API key for OpenAI integration. This is mandatory if you want to use OpenAI’s LLM services without rate limiting.
 - `OPENMIND_API_KEY`: The API key for OpenMind endpoints. This is mandatory if you want to use OpenMind endpoints without rate limiting.
 - `ETH_ADDRESS`: The Ethereum address of agent, prefixed with `Ox`. Example: `0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045`. Only relevant if your agent has a wallet.
-- `UNITREE_WIRED_ETHERNET`: Your netrowrk adapet that is conncted to a Unitree robot. Example: `eno0`. Only relevant if your agent has a physical (robot) embodiment.
+- `UNITREE_WIRED_ETHERNET`: Your network adapter that is connected to a Unitree robot. Example: `eno0`. Only relevant if your agent has a physical (robot) embodiment. You can set this to "SIM" to debug some limited functionality.
 
 ### Core operating principle of the system
 

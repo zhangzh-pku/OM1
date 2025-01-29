@@ -52,7 +52,10 @@ class UnitreeGo2Lowstate(FuserInput[str]):
         self.lowstate_subscriber = None
 
         # Fire up the Unitree system unless adapater is set to "SIM""
-        if "SIM" not in self.UNITREE_WIRED_ETHERNET 
+        if "SIM" in self.UNITREE_WIRED_ETHERNET:
+            # do nothing
+            logging.info(f"Unitree SIM mode")
+        else:
             ChannelFactoryInitialize(0, self.UNITREE_WIRED_ETHERNET)
             self.lowstate_subscriber = ChannelSubscriber("rt/lowstate", LowState_)
             self.lowstate_subscriber.Init(self.LowStateMessageHandler, 10)

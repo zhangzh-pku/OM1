@@ -10,13 +10,8 @@
       "type": "UnitreeGo2Lowstate"
     }
   ],
-  "simulators": [
-    {
-      "type": "RacoonSim"
-    }
-  ],
   "cortex_llm": {
-    "type": "OpenMindLLM",
+    "type": "OpenAILLM",
     "config": {
       "base_url": "https://api.openmind.org/api/core/openai"
     }
