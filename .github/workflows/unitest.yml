@@ -26,6 +26,14 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y portaudio19-dev python3-pyaudio cmake
 
+      - name: Install cycloneDDS
+      run: |
+        git clone https://github.com/eclipse-cyclonedds/cyclonedds -b releases/0.10.x
+        cd cyclonedds && mkdir build install && cd build
+        cmake .. -DCMAKE_INSTALL_PREFIX=../install -DBUILD_EXAMPLES=ON
+        cmake --build . --target install
+        export CYCLONEDDS_HOME=$(pwd)/../install
+
       - name: Install uv
         uses: astral-sh/setup-uv@v5
 
