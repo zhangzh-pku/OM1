@@ -123,6 +123,6 @@ class MoveRos2Connector(ActionConnector[MoveInput]):
                 del self.cb[-1]
             elif self.cb[-1] == "game_y":
                 logging.info("ROS2 unitree: stretch")
-                    del self.cb[-1]
+                del self.cb[-1]
         
 
