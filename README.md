@@ -100,19 +100,21 @@ uv run src/run.py conversation
 
 ### Example 4 - Twitter Agent
 
-The Twitter agent can monitor and respond to queries, generating tweets based on context from OpenMind's API.
+# omOS Tweet Agent
 
-```bash
-# Run Twitter agent with a specific query
-uv run src/run.py twitter --query "What are the latest developments in cryptocurrency?"
+A Twitter bot powered by OpenMind's knowledge base that automatically generates and posts tweets about the latest developments in AI and technology.
 
-# Or run without query for normal operation
-uv run src/run.py twitter
-```
+## Features
 
-#### Twitter Agent Setup
+- Queries OpenMind's knowledge base for latest AI/tech developments
+- Generates contextually relevant tweets using LLM
+- Posts tweets automatically via Twitter API
+- Configurable query parameters and posting frequency
 
-1. Create a `.env` file with your Twitter credentials:
+## Setup
+
+1. Create a Twitter Developer Account and get API credentials
+2. Set up environment variables:
 ```bash
 TWITTER_API_KEY=your_api_key
 TWITTER_API_SECRET=your_api_secret
@@ -120,43 +122,45 @@ TWITTER_ACCESS_TOKEN=your_access_token
 TWITTER_ACCESS_TOKEN_SECRET=your_access_token_secret
 ```
 
-2. The agent uses OpenMind's API for context:
-```json
-"cortex_llm": {
-  "type": "OpenAILLM",
-  "config": {
-    "base_url": "https://api.openmind.org/api/core/openai"
-  }
-}
-```
-
-#### Features
-- Query-based tweet generation
-- Rate-limited API calls
-- Intelligent idle state management
-- Context-aware responses
-
-#### Configuration
-The Twitter agent can be configured in `config/twitter.json`:
+3. Configure the agent in `config/twitter.json`:
 ```json
 {
-  "hertz": 0.5,
+  "hertz": 0.2,
   "name": "twitter_agent",
-  "system_prompt": "You are an AI agent that processes queries and generates informative tweets...",
+  "system_prompt": "You are an AI agent that shares knowledge...",
   "agent_inputs": [
     {
-      "type": "TwitterInput"
+      "type": "TwitterInput",
+      "config": {
+        "query": "What are the latest developments in AI and technology?"
+      }
     }
   ],
-  "agent_actions": [
-    {
-      "name": "tweet",
-      "implementation": "passthrough",
-      "connector": "twitter"
-    }
-  ]
+  "cortex_llm": {
+    "type": "OpenAILLM",
+    "config": {}
+  },
+  "agent_actions": ["tweet"]
 }
 ```
+
+## Usage
+
+Run the agent:
+```bash
+uv run src/run.py twitter
+```
+
+## Components
+
+- **TwitterInput**: Queries OpenMind's knowledge base for context
+- **TweetAction**: Generates and posts tweets using the context
+- **First Boot Tweet**: Special tweet sent when agent starts up
+
+## Development
+
+- Format code: `uv run black .`
+- Check linting: `uv run ruff check .`
 
 ## CLI Commands
 

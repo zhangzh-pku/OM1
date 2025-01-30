@@ -4,18 +4,12 @@ from actions.base import Interface
 
 
 @dataclass
-class TweetInput(Interface):
+class TweetInput:
     """Input interface for tweet action."""
+    tweet: str = ""  # Make tweet optional with default empty string
 
-    tweet: str
 
-
-@dataclass
-class Tweet(Interface[TweetInput, TweetInput]):
-    """
-    Tweets to be made by the agent.
-    Effect: Allows the agent to tweet.
-    """
-
+class Tweet(Interface):
+    """Tweet action interface."""
     input: TweetInput
     output: TweetInput
