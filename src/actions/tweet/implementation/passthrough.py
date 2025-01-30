@@ -3,8 +3,8 @@ from actions.tweet.interface import TweetInput
 
 
 class TweetPassthrough(ActionImplementation[TweetInput]):
-    """Simple passthrough implementation for tweet action"""
+    """Simple passthrough implementation for tweet action."""
 
     async def execute(self, interface: TweetInput) -> None:
-        """Execute the tweet action"""
+        """Execute the tweet action."""
         pass

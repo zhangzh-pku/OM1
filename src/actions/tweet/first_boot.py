@@ -9,14 +9,7 @@ from runtime.config import RuntimeConfig
 
 
 def send_first_boot_tweet(config: RuntimeConfig):
-    """
-    Send a 'Hello I'm alive' tweet on first omOS boot.
-    
-    Parameters
-    ----------
-    config : RuntimeConfig
-        Runtime configuration containing agent name
-    """
+    """Send the first boot tweet."""
     load_dotenv()
     logging.info("Attempting to send first boot tweet...")
     try:
