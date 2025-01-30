@@ -1,16 +1,13 @@
 import logging
-import time
 import os
+import time
 
 import hid
 
 from actions.base import ActionConnector
 from actions.move.interface import MoveInput
-
-from unitree.unitree_sdk2py.core.channel import ChannelSubscriber, ChannelFactoryInitialize
-from unitree.unitree_sdk2py.idl.default import unitree_go_msg_dds__SportModeState_
-from unitree.unitree_sdk2py.idl.unitree_go.msg.dds_ import SportModeState_
 from unitree.unitree_sdk2py.go2.sport.sport_client import SportClient
+
 
 class MoveRos2Connector(ActionConnector[MoveInput]):
 
@@ -40,19 +37,19 @@ class MoveRos2Connector(ActionConnector[MoveInput]):
         self.sport_client = None
 
         self.UNIEN0 = os.getenv("UNITREE_WIRED_ETHERNET")
-        if self.UNIEN0 is not None and self.UNIEN0 is not "SIM":
+        if self.UNIEN0 is not None and self.UNIEN0 != "SIM":
             # Set up Unitree subscriber unless adapater is set to "SIM""
             # ChannelFactoryInitialize(0, self.UNITREE_WIRED_ETHERNET)
             # this can only be done once, at top level
             logging.info(
                 f"Move system using {self.UNIEN0} as the network Ethernet adapter"
             )
-            self.sport_client = SportClient()  
+            self.sport_client = SportClient()
             self.sport_client.SetTimeout(10.0)
             self.sport_client.Init()
 
     async def connect(self, output_interface: MoveInput) -> None:
-        
+
         # define/clarify the datatype
         new_msg = {"thought": "", "vx": 0.0, "vy": 0.0, "vyaw": 0.0}
 

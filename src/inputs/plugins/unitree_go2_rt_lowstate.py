@@ -46,7 +46,7 @@ class UnitreeGo2Lowstate(FuserInput[str]):
         self.lowstate_subscriber = None
 
         self.UNIEN0 = os.getenv("UNITREE_WIRED_ETHERNET")
-        if self.UNIEN0 is not None and self.UNIEN0 is not "SIM":
+        if self.UNIEN0 is not None and self.UNIEN0 != "SIM":
             # Set up Unitree subscriber unless adapater is set to "SIM""
             # ChannelFactoryInitialize(0, self.UNITREE_WIRED_ETHERNET)
             # this can only be done once, at top level
@@ -60,7 +60,7 @@ class UnitreeGo2Lowstate(FuserInput[str]):
         self.low_state = msg
         self.latest_v = float(msg.power_v)
         self.latest_a = float(msg.power_a)
-        
+
         # other things you can read
         # print("FR_0 motor state: ", msg.motor_state[go2.LegID["FR_0"]])
         # print("IMU state: ", msg.imu_state)
@@ -79,9 +79,9 @@ class UnitreeGo2Lowstate(FuserInput[str]):
         # Does the complexity of this seem confusing and kinda pointless to you?
         # It's on our radar and your patience is appreciated
         await asyncio.sleep(2.0)
-        
+
         logging.info(f"Battery voltage: {self.latest_v} current: {self.latest_a}")
-        
+
         return [self.latest_v, self.latest_a]
 
     async def _raw_to_text(self, raw_input: [float]) -> Optional[Message]:
