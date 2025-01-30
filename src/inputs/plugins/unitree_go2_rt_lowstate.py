@@ -3,7 +3,7 @@ import logging
 import os
 import time
 from dataclasses import dataclass
-from typing import Optional, List
+from typing import List, Optional
 
 from inputs.base.loop import FuserInput
 from providers.io_provider import IOProvider
@@ -12,10 +12,11 @@ try:
     from unitree.unitree_sdk2py.core.channel import ChannelSubscriber
     from unitree.unitree_sdk2py.idl.unitree_go.msg.dds_ import LowState_
 except ImportError:
-    logging.warning("Unitree SDK not found. Please install the Unitree SDK to use this plugin.")
+    logging.warning(
+        "Unitree SDK not found. Please install the Unitree SDK to use this plugin."
+    )
     LowState_ = None
     ChannelSubscriber = None
-
 
 
 @dataclass

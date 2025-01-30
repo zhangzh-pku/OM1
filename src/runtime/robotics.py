@@ -1,6 +1,8 @@
-import os
 import logging
+import os
+
 from .config import RuntimeConfig
+
 
 def load_unitree(config: RuntimeConfig):
     """
@@ -30,7 +32,9 @@ def load_unitree(config: RuntimeConfig):
     """
     unitree_ethernet = os.getenv("UNITREE_WIRED_ETHERNET") or config.unitree_ethernet
     if unitree_ethernet is not None:
-        logging.info(f"Using {unitree_ethernet} as the Unitree network Ethernet adapter")
+        logging.info(
+            f"Using {unitree_ethernet} as the Unitree network Ethernet adapter"
+        )
 
         from unitree.unitree_sdk2py.core.channel import ChannelFactoryInitialize
 
