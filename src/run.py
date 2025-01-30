@@ -1,11 +1,10 @@
 import asyncio
 import logging
 import typer
-from dotenv import load_dotenv
 
+from actions.tweet.first_boot import send_first_boot_tweet
 from runtime.config import load_config
 from runtime.cortex import CortexRuntime
-from actions.tweet.first_boot import send_first_boot_tweet
 
 print("Starting omOS...")
 
