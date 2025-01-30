@@ -16,6 +16,7 @@ class Message:
     timestamp: float
     message: str
 
+
 # TODO(Kyle): Support Cryptos other than ETH
 class WalletCoinbase(LoopInput[float]):
     """

@@ -1,5 +1,4 @@
 import logging
-import os
 import time
 import typing as T
 
@@ -40,29 +39,31 @@ class DeepSeekLLM(LLM[R]):
         """
         super().__init__(output_model, config)
 
-        llm_url = "https://api.openmind.org/api/core/deepseek"
+        base_url = None
         api_key = None
 
-        if config.custom_url:
-            llm_url = config.custom_url
-            logging.info(f"Using custom DeepSeek endpoint: {llm_url}")
-            if os.getenv("DEEPSEEK_API_KEY"):
-                api_key = os.getenv("DEEPSEEK_API_KEY")
+        openmind_api = "https://api.openmind.org/api/core/deepseek"
+
+        if config.base_url:
+            if config.base_url == openmind_api:
+                # we are using Openmind endpoint
+                base_url = config.base_url
+                if config.api_key:
+                    api_key = config.api_key
+                else:
+                    raise ValueError("config file missing dummy or real api_key")
             else:
-                logging.error(
-                    "You set a custom DeepSeek endpoint in your config file, \
-but have not provided an DeepSeek access key in the .env. Please do so to access \
-DeepSeek directly."
-                )
-                raise ValueError("DEEPSEEK_API_KEY missing")
-        else:
-            api_key = config.openmind_api_key
+                # user is providing custom endpoint
+                logging.info(f"Using custom DeepSeek endpoint: {config.base_url}")
+                base_url = config.base_url
+                if config.api_key:
+                    api_key = config.api_key
+                else:
+                    raise ValueError("config file missing api_key: DEEPSEEK_API_KEY")
 
         client_kwargs = {}
-        if llm_url:
-            client_kwargs["base_url"] = llm_url
-        if api_key:
-            client_kwargs["api_key"] = api_key
+        client_kwargs["base_url"] = base_url
+        client_kwargs["api_key"] = api_key
 
         logging.info(f"Initializing DeepSeek client with {client_kwargs}")
         self._client = openai.OpenAI(**client_kwargs)

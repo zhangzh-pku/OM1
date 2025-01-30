@@ -20,11 +20,7 @@ curl -LsSf https://astral.sh/uv/install.sh | sh
 brew install uv
 ```
 
-If you are on Mac, you may need to install `pyaudio` manually:
-
-```bash
-brew install portaudio
-```
+If you are on Mac, you may need to install `pyaudio` manually, via `brew install portaudio`.
 
 3. Set up environment and configuration variables
 
@@ -33,15 +29,14 @@ Add your Openmind API key in `/config/spot.json`. You can obtain an free Openmin
 ```bash
 # /config/spot.json`
 ...
-"openmind_api_key": "openmind-pat-cnh4d7_example_797wtgy47d"
+"api_key": "openmind-pat-cnh4d7_example_797wtgy47d"
 ...
 ```
 
 > [!NOTE]
-> You can directly access OpenAI style endpoints by specifying a custom API endpoint in your configuration file. To do this:
-> * provide a `custom_url`, such as https://api.openai.com/v1 and https://api.deepseek.com/v1
-> * set any needed keys in the .env file, such as `OPENAI_API_KEY=YourKeyHere`
-> * and then, `cp .env.example .env`
+> You can directly access other OpenAI style endpoints by specifying a custom API endpoint in your configuration file. To do this:
+> * provide an alternative `base_url`, such as https://api.openai.com/v1 and https://api.deepseek.com/v1
+> * change the configiration file `api_key:` to the OpenAI, DeepSeek, or other keys
 
 4. Run an Hello World agent
 
@@ -56,11 +51,16 @@ uv run src/run.py spot
 > * If you are running complex models, or need to download dependencies, there may be a delay before the agent starts.
 > * There should be a `pygame` window that pops up when you run `uv run src/run.py spot`. If you do not see `RacoonSim`, the window might be hidden behind all your other open windows - use "show all windows" (or equivalent) to find it.
 
+## Examples: Wallets, DeepSeek, and Voice Inputs (conversation)
+
 ### Example 1 - The Coinbase Wallet
 
 Similar to the `Hello World (Spot)` example, except uses the Coinbase wallet rather than Ethereum Mainnet.
 
 ```bash
+cp .env.example .env
+# then, enter your conibase credentials into the .env
+# then, run
 uv run src/run.py coinbase
 ```
 
@@ -80,7 +80,6 @@ The Coinbase wallet currently supports Base Sepolia and Base Mainnet networks. T
 - `COINBASE_WALLET_ID`: The ID for the Coinbase Wallet.
 - `COINBASE_API_KEY`: The API key for the Coinbase Project API.
 - `COINBASE_API_SECRET`: The API secret for the Coinbase Project API.
-
 
 The API_KEY and API_SECRET are generated from the [Coinbase Developer Portal](https://portal.cdp.coinbase.com) by navigating to the "API Keys" tab and then clicking "Create API Key". If you don't already have a Developer-Managed Wallet, you can create one by following [these instructions](https://docs.cdp.coinbase.com/mpc-wallet/docs/quickstart#creating-a-wallet) with the API key and secret you just created. Then, you can get a Wallet ID from the created wallet.
 
@@ -179,8 +178,8 @@ Agents are configured via JSON files in the `config/` directory. Key configurati
   "cortex_llm": {
     "type": "OpenAILLM",  
     "config": {
-      "custom_url": "",
-      "openmind_api_key": "your_key_here"
+      "base_url": "",
+      "api_key": "your_key_here"
     }
   },
   "simulators": [
@@ -253,9 +252,8 @@ Defines the agent’s available capabilities, including action names, their impl
 5. Use type hints and docstrings for better code maintainability
 6. Run `uv run ruff check . --fix` and `uv run black .` check/format your code. 
 
-## Environment Variables
+## Optional Environment Variables
 
-- `OPENAI_API_KEY`: Optional API keys for OpenAI or other custom LLM endpoints.
 - `ETH_ADDRESS`: The Ethereum address of agent, prefixed with `Ox`. Example: `0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045`. Only relevant if your agent has a wallet.
 - `UNITREE_WIRED_ETHERNET`: Your netrowrk adapet that is conncted to a Unitree robot. Example: `eno0`. Only relevant if your agent has a physical (robot) embodiment.
 
