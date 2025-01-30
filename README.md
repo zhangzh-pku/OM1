@@ -22,7 +22,7 @@ brew install hidapi # only needed for XBOX game controller support, for robotics
 
 2. Set up environment variables:
 
-Edit `.env` with your API keys (e.g. OPENMIND_API_KEY). NOTE: an OpenAI api key is required.
+Edit `.env` with your API keys (e.g. `OPENMIND_API_KEY`). NOTE: an OpenMind key is required.
 
 ```bash
 cp .env.example .env
@@ -110,7 +110,7 @@ uv run src/run.py conversation
 
 You can control a Unitree Go2 Air. This has been tested for Linux Ubunto 22.04 running on an Nvidia Orin, and a Mac laptop running Seqoia 15.2. To do this: 
 
-* Connect an XBOX controller to your computer. 
+* Connect an `XBOX` controller to your computer. 
 * Connect your computer to the Ethernet port of the Unitree Go2 Air, and keep track of the Ethernet port you are using. For example, the port could be `en0`.
 * Install `CycloneDDS`, if you do not already have it on your computer.
 * Set the correct `CYCLONEDDS_HOME` via `export CYCLONEDDS_HOME="your_path_here/cyclonedds/install"`. You should add this path to your environment e.g. via your `.zshrc`. 
@@ -199,7 +199,7 @@ The main entry point is `src/run.py` which provides the following commands:
 │   ├── llm/              # LLM integration
 │   ├── providers/        # ????
 │   ├── runtime/          # Core runtime system
-│   ├── simulators/       # Virtual endponits such as `RacoonSim`
+│   ├── simulators/       # Virtual endpoints such as `RacoonSim`
 │   └── run.py            # CLI entry point
 ```
 
@@ -220,9 +220,9 @@ actions/
     ├── implementation/
     │   └── passthrough.py
     └── connector/
-        ├── ros2.py      # Maps omOS data/commands to other ROS2
+        ├── ros2.py      # Maps data/commands to middleware and ROS2
         ├── zenoh.py
-        └── unitree_LL.py
+        └── unitree.py
 ```
 
 In general, each robot will have specific capabilities, and therefore, each action will be hardware specific.
