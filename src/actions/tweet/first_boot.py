@@ -17,13 +17,11 @@ def send_first_boot_tweet(config: RuntimeConfig):
     config : RuntimeConfig
         Runtime configuration containing agent name
     """
-    logging.info("Starting first boot tweet process...")
+    load_dotenv()
+    logging.info("Attempting to send first boot tweet...")
     try:
         # Initialize Twitter client
         logging.info("Loading environment variables...")
-        load_dotenv()
-        
-        # Check if environment variables are loaded
         api_key = os.getenv('TWITTER_API_KEY')
         if not api_key:
             logging.error("Twitter API credentials not found in .env file")

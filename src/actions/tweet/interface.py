@@ -4,7 +4,9 @@ from actions.base import Interface
 
 
 @dataclass
-class TweetInput:
+class TweetInput(Interface):
+    """Input interface for tweet action"""
+
     tweet: str
 
 
