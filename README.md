@@ -17,7 +17,7 @@ If you are on mac, you may need to install `portaudio` and `hidapi` manually:
 
 ```bash
 brew install portaudio
-brew install hidapi
+brew install hidapi # only needed for XBOX game controller support, for robotics
 ```
 
 2. Set up environment variables:
@@ -104,74 +104,75 @@ uv run src/run.py deepseek
 uv run src/run.py conversation
 ```
 
-## Robot hardware support - Unitree/CycloneDDS
+## Robots
 
-### Installing CycloneDDS
+### Unitree Go2 Air Quadruped ("dog")
 
-First, compile and install `CycloneDDS`. `CycloneDDS` works on Mac, Linux, and PC:
+You can control a Unitree Go2 Air. This has been tested for Linux Ubunto 22.04 running on an Nvidia Orin, and a Mac laptop running Seqoia 15.2. To do this: 
 
-```bash
-git clone https://github.com/eclipse-cyclonedds/cyclonedds -b releases/0.10.x 
-cd cyclonedds && mkdir build install && cd build
-cmake .. -DCMAKE_INSTALL_PREFIX=../install -DBUILD_EXAMPLES=ON
-cmake --build . --target install
-
-# on Mac
-export CYCLONEDDS_HOME="/Users/username/Documents/GitHub/cyclonedds/install"
-```
-> [!NOTE]
-> On Mac, you will need `cmake`, which you can install via `brew install cmake`.
-
-Set `CYCLONEDDS_HOME` to the `/install` directory of the CycloneDDS you just compiled. You should add this path to your environment e.g. via your `.zshrc`. You can read more about CycloneDDS [here](https://index.ros.org/p/cyclonedds/). 
-
-#### Testing CycloneDDS
-
-Test `cycloneDDS` with these commands, assuming you are still in `/build`:
-
-```bash
-# send some pings
-./bin/RoundtripPing 0 0 0
-```
-In another terminal, receive those pings and send them right back:
-```bash
-./bin/RoundtripPong
-``` 
-
-You should see roundtrip timing data.
-
-> [!NOTE]
-> On Mac, you will need to `allow incoming connections` for the applications (RoundtripPing and RoundtripPong) - just "allow" the functionality in the security popup at first use.
-
-### Testing Unitree DDS Communication
-
-> [!NOTE]
-> Unitree CycloneDDS communication will only work if your environment contains a path to a working CycloneDDS installation (set via `CYCLONEDDS_HOME`).
-
-In the terminal, execute:
-
-```bash
-cd unitree
-python3 ./example/helloworld/publisher.py
-```
-
-Open a new terminal and execute:
-```bash
-python3 ./example/helloworld/subscriber.py
-```
-
-You will see the data output in the terminal. The data structure transmitted between `publisher.py` and `subscriber.py` is defined in `user_data.py`, and users can define the required data structure as needed.
-
-### Interacting with a Unitree Go2 Air connected via Ethernet
-
-First, connect the Unitree Go2 Air to your development machine with an Ethernet cable. Then, set the network adapter setting. Open the network settings and find the network interface that is connected to the Go2 Air. In IPv4 setting, change the IPv4 mode to `manual`, set the address to `192.168.123.99`, and set the mask to `255.255.255.0`. After completion, click `apply` (or equivalent) and wait for the network to reconnect. Finally provide the name of the network adapter in the `.env`, such as `UNITREE_WIRED_ETHERNET=eno0`.
-
-Then run:
+* Connect an XBOX controller to your computer. 
+* Connect your computer to the Ethernet port of the Unitree Go2 Air, and keep track of the Ethernet port you are using. For example, the port could be `en0`.
+* Install `CycloneDDS`, if you do not already have it on your computer.
+* Set the correct `CYCLONEDDS_HOME` via `export CYCLONEDDS_HOME="your_path_here/cyclonedds/install"`. You should add this path to your environment e.g. via your `.zshrc`. 
 
 ```bash
 uv run src/run.py unitree
 ```
 
-If you see a `channel factory init error`, then you have not set the correct network interface adapter - the one you want to use is the network interface adapter *on your development machine - the computer you are currently sitting in front of* that is plugged into the Unitree quadruped (which has its own internal RockChip computer and network interface, which is *not* relevant to you right now). The ethernet adapter - such as `eno0` or `en0` - needs to be set in the `.env`, fo example, `UNITREE_WIRED_ETHERNET=en0`.
+OM1 will control a safe and limited subset of motions (such as `stretch` and `sit down`). You can also manually control the dog via the game controller. Press:
+
+* A to stand up
+* B to sit down
+* X to shake paw
+* Y to stretch  
+
+Allowing the dog to `move`, `pounce`, and `run` requires **you** to add this functionality. **Warning: If you add additional movement capabilities, this is at your own risk. Due to the autonomous nature of the system, we recommend to perform such testing in the absence of squirrels, cats, rabbits, or small children (assuming you are providing a `dog` prompt)**. 
+
+#### Installing CycloneDDS
+
+First, build and install `CycloneDDS`. You can read more about CycloneDDS [here](https://index.ros.org/p/cyclonedds/). `CycloneDDS` works on Mac, Linux, and PC.
+
+> [!NOTE]
+> On Mac, you will need `cmake`, which you can install via `brew install cmake`.
+
+To build and install `CycloneDDS`, run:
+```bash
+git clone https://github.com/eclipse-cyclonedds/cyclonedds -b releases/0.10.x 
+cd cyclonedds && mkdir build install && cd build
+cmake .. -DCMAKE_INSTALL_PREFIX=../install -DBUILD_EXAMPLES=ON
+cmake --build . --target install
+```
+
+Once you have done this, as stated above, set the correct `CYCLONEDDS_HOME` via `export CYCLONEDDS_HOME="your_path_here/cyclonedds/install"`. You should add this path to your environment e.g. via your `.zshrc`. 
+
+#### Unitree Go2 Air Ethernet Setup
+
+Connect the Unitree Go2 Air to your development machine with an Ethernet cable. Then, set the network adapter setting. Open the network settings and find the network interface that is connected to the Go2 Air. In IPv4 setting, change the IPv4 mode to `manual`, set the address to `192.168.123.99`, and set the mask to `255.255.255.0`. After completion, click `apply` (or equivalent) and wait for the network to reconnect. Finally provide the name of the network adapter in the `.env`, such as `UNITREE_WIRED_ETHERNET=eno0`.
+
+#### Unitree Go2 Air Common Problems
+
+*channel factory init error*: If you see a `channel factory init error`, then you have not set the correct network interface adapter - the one you want to use is the network interface adapter *on your development machine - the computer you are currently sitting in front of* that is plugged into the Unitree quadruped (which has its own internal RockChip computer and network interface, which is *not* relevant to you right now). The ethernet adapter - such as `eno0` or `en0` - needs to be set in the `.env`, for example, `UNITREE_WIRED_ETHERNET=en0`.
+
+*"nothing is working"* There are dozens of potential reasons "nothing is working". The first step is to test your ability to `ping` the quadruped:
+```bash
+ping 192.168.123.99
+```
+
+Assuming you can `ping` the robot, then text the `cycloneDDS` middleware. From `cycloneDDS/build`:
+```bash
+# send some pings
+./bin/RoundtripPing 0 0 0
+```
+
+In another terminal, receive those pings and send them right back:
+```bash
+./bin/RoundtripPong
+``` 
+
+> [!NOTE]
+> On Mac, you will need to `allow incoming connections` for the applications (RoundtripPing and RoundtripPong) - just "allow" the functionality in the security popup at first use.
+
+You should see roundtrip timing data. If all of that works, then open an issue in the repo and we will help you to work though the fault tree to get you started.
 
 ## CLI Commands
 
