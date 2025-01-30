@@ -40,22 +40,30 @@ class OpenAILLM(LLM[R]):
         """
         super().__init__(output_model, config)
 
-        base_url = config.base_url if config.base_url else "https://api.openai.com/v1"
-        api_key = (
-            os.getenv("OPENAI_API_KEY")
-            or os.getenv("OPENMIND_API_KEY")
-            or (config.api_key if config else None)
-        )
+        base_url = None
+        if config.base_url:
+            logging.info("Using default route to OpenAI")
+            # the standard case - use Openmind LLM endpoint
+            # set in the config file
+            base_url = config.base_url
+            api_key = config.openmind_api_key
+        else:
+            logging.info("Using fallback route to OpenAI")
+            base_url = "https://api.openai.com/v1"
+            if os.getenv("OPENAI_API_KEY"):
+                api_key = os.getenv("OPENAI_API_KEY")
+                base_url = "https://api.openai.com/v1"
+            else: 
+                logging.error("You are attempting to directly access OpenAI, \
+but have not provided an OpenAI access key in \
+the .env. Please do so to access OpenAI directly.")
+                raise ValueError('OPENAI_API_KEY missing')
 
         client_kwargs = {}
         if base_url:
             client_kwargs["base_url"] = base_url
         if api_key:
             client_kwargs["api_key"] = api_key
-
-        if not api_key and base_url:
-            logging.warning("OpenAI API key not found. The rate limit may be applied.")
-            client_kwargs["api_key"] = "openmind-0x"
 
         self._client = openai.AsyncClient(**client_kwargs)
 
