@@ -22,8 +22,8 @@ class LLMConfig(BaseModel):
         Authentication key for the LLM service
     """
 
-    custom_url: T.Optional[str] = None
-    openmind_api_key: T.Optional[str] = None
+    base_url: T.Optional[str] = None
+    api_key: T.Optional[str] = None
 
 
 class LLM(T.Generic[R]):
