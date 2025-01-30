@@ -16,10 +16,14 @@ dependencies = [
     "pygame",
     "gif-pygame",
     "web3",
-    "cyclonedds==0.10.2",
     "numpy",
     "cdp-sdk>=0.15.0",
     "hid"
+]
+
+[project.optional-dependencies]
+dds = [
+    "cyclonedds==0.10.2"
 ]
 
 [tool.uv.sources]

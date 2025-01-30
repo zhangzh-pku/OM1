@@ -1300,7 +1300,6 @@ version = "0.1.0"
 source = { virtual = "." }
 dependencies = [
     { name = "cdp-sdk" },
-    { name = "cyclonedds" },
     { name = "deepface" },
     { name = "gif-pygame" },
     { name = "hid" },
@@ -1316,6 +1315,11 @@ dependencies = [
     { name = "web3" },
 ]
 
+[package.optional-dependencies]
+dds = [
+    { name = "cyclonedds" },
+]
+
 [package.dev-dependencies]
 dev = [
     { name = "black" },
@@ -1329,7 +1333,7 @@ dev = [
 [package.metadata]
 requires-dist = [
     { name = "cdp-sdk", specifier = ">=0.15.0" },
-    { name = "cyclonedds", specifier = "==0.10.2" },
+    { name = "cyclonedds", marker = "extra == 'dds'", specifier = "==0.10.2" },
     { name = "deepface" },
     { name = "gif-pygame" },
     { name = "hid" },

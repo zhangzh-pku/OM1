@@ -1,7 +1,7 @@
 import json
 import os
 from dataclasses import dataclass
-from typing import List
+from typing import List, Optional
 
 from actions import load_action
 from actions.base import AgentAction
@@ -34,6 +34,8 @@ class RuntimeConfig:
         List of available actions the agent can perform
     simulators : List[Simulator]
         List of simulation components for environment modeling
+    unitree_ethernet : str
+        Ethernet adapter name for Unitree robot communication
     """
 
     hertz: float
@@ -43,6 +45,9 @@ class RuntimeConfig:
     cortex_llm: LLM[CortexOutputModel]
     agent_actions: List[AgentAction]
     simulators: List[Simulator]
+
+    # unitree
+    unitree_ethernet: Optional[str] = None
 
 
 def load_config(config_name: str) -> RuntimeConfig:
