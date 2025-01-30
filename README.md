@@ -116,6 +116,7 @@ You can control a Unitree Go2 Air. This has been tested for Linux Ubunto 22.04 r
 * Set the correct `CYCLONEDDS_HOME` via `export CYCLONEDDS_HOME="your_path_here/cyclonedds/install"`. You should add this path to your environment e.g. via your `.zshrc`. 
 
 ```bash
+uv pip install -r pyproject.toml --extra dds
 uv run src/run.py unitree
 ```
 
@@ -167,7 +168,7 @@ Assuming you can `ping` the robot, then text the `cycloneDDS` middleware. From `
 In another terminal, receive those pings and send them right back:
 ```bash
 ./bin/RoundtripPong
-``` 
+```
 
 > [!NOTE]
 > On Mac, you will need to `allow incoming connections` for the applications (RoundtripPing and RoundtripPong) - just "allow" the functionality in the security popup at first use.
@@ -278,7 +279,7 @@ Agents are configured via JSON files in the `config/` directory. Key configurati
   - **Config**: Optional configuration for the LLM, including the API endpoint and API key. If no API key is provided, the LLM operates with a rate limiter with the OpenMind's public endpoint.
 
 OpenMind OpenAI Proxy endpoint is [https://api.openmind.org/api/core/openai](https://api.openmind.org/api/core/openai)
-  
+
 OpenMind DeepSeek Proxy endpoint is [https://api.openmind.org/api/core/deepseek](https://api.openmind.org/api/core/deepseek)
 
 ```json
