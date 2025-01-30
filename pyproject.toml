@@ -22,7 +22,7 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-robotics = [
+dds = [
     "cyclonedds==0.10.2"
 ]
 
