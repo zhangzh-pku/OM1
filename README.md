@@ -145,7 +145,7 @@ Actions are the core capabilities of an agent. For example, for a robot, these c
 
 1. Interface (`interface.py`): Defines input/output types.
 2. Implementation (`implementation/`): Business logic, if any. Otherwise, use passthrough.
-3. Connector (`connector/`): Code that connects `omOS` to specific virtual or physical environments, typically through middleware (e.g. custom APIs, `ROS2`, `Zenoh`, or `CycloneDDS`)
+3. Connector (`connector/`): Code that connects `OM1` to specific virtual or physical environments, typically through middleware (e.g. custom APIs, `ROS2`, `Zenoh`, or `CycloneDDS`)
 
 Example action structure:
 
@@ -156,7 +156,7 @@ actions/
     ├── implementation/
     │   └── passthrough.py
     └── connector/
-        ├── ros2.py      # Maps omOS data/commands to other ROS2
+        ├── ros2.py      # Maps OM1 data/commands to other ROS2
         ├── zenoh.py
         └── unitree_LL.py
 ```
