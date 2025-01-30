@@ -50,11 +50,39 @@ uv run src/run.py spot
 
 ### Example 1 - The Coinbase Wallet
 
-Similar to the `Hello World (Spot)` example, except uses the Coinbase wallet.
+Similar to the `Hello World (Spot)` example, except uses the Coinbase wallet rather than Ethereum Mainnet.
 
 ```bash
 uv run src/run.py coinbase
 ```
+
+The agent tracks the balance of ????? in a Coinbase wallet and sends a message when there is a new transaction. The agent can be instructed via the prompt to express appreciation for receiving tokens. Here is how this is done - see `/config/coinbase.json`:
+
+```bash
+"system_prompt": "
+... 
+You like receiving ETH. If you receive an ETH transaction, show your appreciation though actions and speech. 
+...
+4. If there is a new ETH transaction, you might:\n    Move: 'shake paw'\n    Speak: {{'sentence': 'Thank you I really appreciate the ETH you just sent.'}}\n    Face: 'smile'\n\n
+...",
+```
+
+The Coinbase wallet currently supports Base Sepolia and Base Mainnet networks. The Coinbase Wallet integration requires the following environment variables:
+
+- `COINBASE_WALLET_ID`: The ID for the Coinbase Wallet.
+- `COINBASE_API_KEY`: The API key for the Coinbase Project API.
+- `COINBASE_API_SECRET`: The API secret for the Coinbase Project API.
+
+
+You can get a Wallet ID from ???????. For new uswers, the procedure is_______. The API_KEY comes from __________. The API_SECRET is _________. These key are all strings and should looke like this:
+
+```bash
+COINBASE_WALLET_ID=???????????
+COINBASE_API_KEY=?????????
+COINBASE_API_SECRET=??????????
+```
+
+For more details, please see the [Coinbase documentation](https://docs.cdp.coinbase.com/mpc-wallet/docs/wallets).
 
 ### Example 2 - Using DeepSeek as the Core LLM
 
@@ -297,12 +325,6 @@ Defines the agent's available capabilities, including action names, their implem
 - `ETH_ADDRESS`: The Ethereum address of agent, prefixed with `Ox`. Example: `0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045`. Only relevant if your agent has a wallet.
 - `UNITREE_WIRED_ETHERNET`: Your netrowrk adapet that is conncted to a Unitree robot. Example: `eno0`. Only relevant if your agent has a physical (robot) embodiment.
 
-If you are using Coinbase Wallet integration, please set the following environment variables:
-
-- `COINBASE_WALLET_ID`: The ID for the Coinbase Wallet.
-- `COINBASE_API_KEY`: The API key for the Coinbase Project API.
-- `COINBASE_API_SECRET`: The API secret for the Coinbase Project API.
-- 
 ### Core operating principle of the system
 
 The system is based on a loop that runs at a fixed frequency of `self.config.hertz`. This loop looks for the most recent data from various sources, fuses the data into a prompt, sends that prompt to one or more LLMs, and then sends the LLM responses to virtual agents or physical robots.
