@@ -19,6 +19,3 @@ wheels/
 
 # Mac specific lint
 .DS_Store
-
-# exclude submodules
-/src/unitree
