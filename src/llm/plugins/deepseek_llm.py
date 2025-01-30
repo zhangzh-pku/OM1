@@ -48,11 +48,13 @@ class DeepSeekLLM(LLM[R]):
             logging.info(f"Using custom DeepSeek endpoint: {llm_url}")
             if os.getenv("DEEPSEEK_API_KEY"):
                 api_key = os.getenv("DEEPSEEK_API_KEY")
-            else: 
-                logging.error("You set a custom DeepSeek endpoint in your config file, \
+            else:
+                logging.error(
+                    "You set a custom DeepSeek endpoint in your config file, \
 but have not provided an DeepSeek access key in the .env. Please do so to access \
-DeepSeek directly.")
-                raise ValueError('DEEPSEEK_API_KEY missing')
+DeepSeek directly."
+                )
+                raise ValueError("DEEPSEEK_API_KEY missing")
         else:
             api_key = config.openmind_api_key
 

@@ -48,11 +48,13 @@ class OpenAILLM(LLM[R]):
             logging.info(f"Using custom OpenAI endpoint: {llm_url}")
             if os.getenv("OPENAI_API_KEY"):
                 api_key = os.getenv("OPENAI_API_KEY")
-            else: 
-                logging.error("You set a custom OpenAI endpoint in your config file, \
+            else:
+                logging.error(
+                    "You set a custom OpenAI endpoint in your config file, \
 but have not provided an OpenAI access key in the .env. Please do so to access \
-OpenAI directly.")
-                raise ValueError('OPENAI_API_KEY missing')
+OpenAI directly."
+                )
+                raise ValueError("OPENAI_API_KEY missing")
         else:
             api_key = config.openmind_api_key
 
