@@ -62,7 +62,7 @@ Similar to the `Hello World (Spot)` example, except uses the Coinbase wallet rat
 
 ```bash
 cp .env.example .env
-# then, enter your conibase credentials into the .env
+# then, enter your coinbase credentials into the .env
 # then, run
 uv run src/run.py coinbase
 ```

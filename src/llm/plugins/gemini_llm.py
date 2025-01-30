@@ -67,7 +67,8 @@ class GeminiLLM(LLM[R]):
         try:
             self.io_provider.llm_start_time = time.time()
             self.io_provider.set_llm_prompt(prompt)
-            response = self._execute_api_request(prompt)
+            response = await self._execute_api_request(prompt)
+            logging.info(f"Gemini raw response: {response}")
             self.io_provider.llm_end_time = time.time()
             return self._parse_response(response)
 
@@ -75,13 +76,14 @@ class GeminiLLM(LLM[R]):
             logging.error(f"Gemini API error: {error}")
             return None
 
-    def _execute_api_request(self, prompt: str):
+    async def _execute_api_request(self, prompt: str):
         """Execute the actual API call to Gemini"""
-        return self._client.chat.completions.create(
+        completion = await self._client.chat.completions.create(
             model="gemini-2.0-flash-exp",
             messages=self._build_messages(prompt),
             response_format={"type": "json_object"},
         )
+        return completion 
 
     def _build_messages(self, prompt: str) -> list[dict]:
         """Construct message payload for API request"""
@@ -94,8 +96,9 @@ class GeminiLLM(LLM[R]):
     def _parse_response(self, response) -> R | None:
         try:
             content = response.choices[0].message.content
+            logging.info(f"Gemini output: {content}")
             parsed = self._output_model.model_validate_json(content)
-            logging.debug(f"Gemini output: {parsed}")
+            logging.debug(f"Gemini output parsed: {parsed}")
             return parsed
         except Exception as error:
             logging.error(f"Failed to parse Gemini response: {error}")
