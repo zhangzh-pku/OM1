@@ -7,9 +7,7 @@ import typer
 
 from runtime.config import load_config
 from runtime.cortex import CortexRuntime
-from unitree.unitree_sdk2py.core.channel import (
-    ChannelFactoryInitialize,
-)
+from unitree.unitree_sdk2py.core.channel import ChannelFactoryInitialize
 
 app = typer.Typer()
 

@@ -7,9 +7,7 @@ from typing import Optional
 
 from inputs.base.loop import FuserInput
 from providers.io_provider import IOProvider
-from unitree.unitree_sdk2py.core.channel import (
-    ChannelSubscriber,
-)
+from unitree.unitree_sdk2py.core.channel import ChannelSubscriber
 from unitree.unitree_sdk2py.idl.unitree_go.msg.dds_ import LowState_
 
 
