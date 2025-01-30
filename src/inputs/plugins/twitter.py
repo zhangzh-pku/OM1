@@ -12,7 +12,9 @@ class TwitterInput(LoopInput[str]):
     """Context query input handler for RAG."""
 
     def __init__(
-        self, api_url: str = "https://api.openmind.org/api/core/query", config: dict = None
+        self,
+        api_url: str = "https://api.openmind.org/api/core/query",
+        config: dict = None,
     ):
         super().__init__()
         self.buffer: List[str] = []
@@ -66,7 +68,9 @@ class TwitterInput(LoopInput[str]):
                         self.buffer = [context]  # Replace buffer with context
                 else:
                     error_text = await response.text()
-                    logging.error(f"Query failed with status {response.status}: {error_text}")
+                    logging.error(
+                        f"Query failed with status {response.status}: {error_text}"
+                    )
 
         except Exception as e:
             logging.error(f"Error querying context: {str(e)}")
@@ -76,7 +80,7 @@ class TwitterInput(LoopInput[str]):
         logging.debug(f"raw_to_text received: {raw_input}")
         text = await self._raw_to_text(raw_input)
         logging.debug(f"_raw_to_text returned: {text}")
-        
+
         if text is not None:
             logging.debug(f"Adding to buffer: {text}")
             # If we have text but no context, treat it as a query
@@ -116,7 +120,9 @@ class TwitterInput(LoopInput[str]):
 
     def formatted_latest_buffer(self) -> Optional[str]:
         """Format and return the context."""
-        content = self.context if self.context else (self.buffer[-1] if self.buffer else None)
+        content = (
+            self.context if self.context else (self.buffer[-1] if self.buffer else None)
+        )
 
         if not content:
             return None
@@ -133,4 +139,4 @@ TwitterInput CONTEXT
         """Initialize with a query"""
         logging.info(f"[TwitterInput] Initializing with query: {query}")
         self.message_buffer.put_nowait(query)  # Add query to message buffer
-        await self._query_context(query)  # Immediately get context 
+        await self._query_context(query)  # Immediately get context
