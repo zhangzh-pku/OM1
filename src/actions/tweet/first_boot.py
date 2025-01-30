@@ -1,8 +1,8 @@
 import logging
-import openai
 import os
 import warnings
 
+import openai
 from dotenv import load_dotenv
 
 from runtime.config import RuntimeConfig
