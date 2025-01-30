@@ -47,6 +47,7 @@ norecursedirs = ["src/unitree"]
 [tool.black]
 line-length = 88
 include = '\.pyi?$'
+exclude = "(.venv)|(/src/unitree)"
 
 [tool.isort]
 profile = "black"
