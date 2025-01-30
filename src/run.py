@@ -1,10 +1,9 @@
 import asyncio
 import logging
 import typer
+from dotenv import load_dotenv
 
 print("Starting omOS...")
-
-import dotenv
 
 from runtime.config import load_config
 from runtime.cortex import CortexRuntime

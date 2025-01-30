@@ -1,12 +1,12 @@
-import json
 import asyncio
-import aiohttp
-from queue import Queue, Empty
+from queue import Empty, Queue
 import logging
-from typing import Dict, Optional, List, AsyncIterator
-import typing as T
+from typing import AsyncIterator, Optional, List
+
+import aiohttp
 
 from inputs.base.loop import LoopInput
+
 
 class TwitterInput(LoopInput[str]):
     """Context query input handler for RAG"""

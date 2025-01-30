@@ -1,11 +1,12 @@
-import logging
-import os
-import openai
-from pathlib import Path
-import warnings
 from dotenv import load_dotenv
-from runtime.config import RuntimeConfig
+import logging
+import openai
+import os
 import random
+import warnings
+
+from runtime.config import RuntimeConfig
+
 
 def send_first_boot_tweet(config: RuntimeConfig):
     """
