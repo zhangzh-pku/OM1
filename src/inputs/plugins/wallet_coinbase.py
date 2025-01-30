@@ -18,7 +18,7 @@ class Message:
 
 
 # TODO(Kyle): Support Cryptos other than ETH
-class WalletCoinbase(LoopInput[float]):
+class WalletCoinbase(FuserInput[float]):
     """
     Queries current ETH balance and reports a balance increase
     """
