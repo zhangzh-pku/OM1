@@ -1,10 +1,17 @@
-# OpenMind OS (omOS)
+# Openmind OS (OM1)
 
-OpenMind OS is an agent runtime system that enables the creation and execution of digital and physical embodied AI agents with modular capabilities like movement, speech, and perception. A key benefit of using omOS is the ease of deploying consistent digital personas across virtual and physical environments.
+Openmind's OM1 is an agent runtime system that enables the creation and execution of digital and physical embodied AI agents with modular capabilities like movement, speech, and perception. One benefit of using OM1 is the ease of deploying consistent digital personas across virtual and physical environments.
 
 ## Quick Start
 
-1. Install the Rust python package manager `uv`:
+1. Clone the repo
+
+```bash
+git clone https://github.com/OpenmindAGI/omOS.git
+git submodule update --init --recursive
+```
+
+2. Install the Rust python package manager `uv`:
 
 ```bash
 # for linux
@@ -20,17 +27,25 @@ brew install portaudio
 brew install hidapi # only needed for XBOX game controller support, for robotics
 ```
 
-2. Set up environment variables:
+3. Set up environment and configuration variables
 
-Edit `.env` with your API keys (e.g. `OPENMIND_API_KEY`). NOTE: an OpenMind key is required.
+Add your Openmind API key in `/config/spot.json`. You can obtain an free Openmind access key at http://openmind.org/free.
 
 ```bash
-cp .env.example .env
+# /config/spot.json`
+...
+"api_key": "openmind-pat-cnh4d7_example_797wtgy47d"
+...
 ```
 
-3. Run an Hello World agent
+> [!NOTE]
+> You can directly access other OpenAI style endpoints by specifying a custom API endpoint in your configuration file. To do this:
+> * provide an alternative `base_url`, such as https://api.openai.com/v1 and https://api.deepseek.com/v1
+> * change the configiration file `api_key:` to the OpenAI, DeepSeek, or other keys
 
-This very basic agent uses webcam data to estimate your emotion, generates a fake VLM caption, and sends those two inputs to central LLM. The LLM then returns `movement`, `speech`, and `face` commands, which are displayed in a small `pygame` window. This is windows also shows basic timing debug information so you can see how long each step takes.
+4. Run an Hello World agent
+
+This basic agent uses webcam data to estimate your emotion, generates a fake VLM caption, and sends those two inputs to a central LLM. The LLM then returns `movement`, `speech`, and `face` commands, which are displayed in `RacoonSim`, a small `pygame` window. `RacooonSim` also shows basic timing and other debug information.
 
 ```bash
 uv run src/run.py spot
@@ -43,10 +58,9 @@ uv run src/run.py spot
 > If you are running complex models, or need to download dependencies, there may be a delay before the agent starts.
 
 > [!NOTE]
-> The OpenMind LLM endpoint includes a rate limiter. To use LLM services without rate limiting, please set the OPENMIND_API_KEY environment variable.
+> There should be a `pygame` window that pops up when you run `uv run src/run.py spot`. If you do not see `RacoonSim`, the window might be hidden behind all your other open windows - use "show all windows" (or equivalent) to find it.
 
-> [!NOTE]
-> There should be a `pygame` window that pops up when you run `uv run src/run.py spot`. Sometimes the `pygame` window is hidden behind all other open windows - use "show all windows" to find it.
+## Examples: Wallets, DeepSeek, and Voice Inputs (conversation)
 
 > [!NOTE]
 > There is a bug on Mac when installing packages with `brew` - some libraries cannot be found by `uv`. If you get errors such as 
@@ -59,10 +73,13 @@ uv run src/run.py spot
 Similar to the `Hello World (Spot)` example, except uses the Coinbase wallet rather than Ethereum Mainnet.
 
 ```bash
+cp .env.example .env
+# then, enter your conibase credentials into the .env
+# then, run
 uv run src/run.py coinbase
 ```
 
-The agent tracks the balance of ????? in a Coinbase wallet and sends a message when there is a new transaction. The agent can be instructed via the prompt to express appreciation for receiving tokens. Here is how this is done - see `/config/coinbase.json`:
+The agent tracks the balance of testnet ETH in a Coinbase wallet and sends a message when there is a new transaction. The agent can be instructed via the prompt to express appreciation for receiving tokens. See `/config/coinbase.json` for an example for how this is done:
 
 ```bash
 "system_prompt": "
@@ -79,13 +96,13 @@ The Coinbase wallet currently supports Base Sepolia and Base Mainnet networks. T
 - `COINBASE_API_KEY`: The API key for the Coinbase Project API.
 - `COINBASE_API_SECRET`: The API secret for the Coinbase Project API.
 
+The API_KEY and API_SECRET are generated from the [Coinbase Developer Portal](https://portal.cdp.coinbase.com) by navigating to the "API Keys" tab and then clicking "Create API Key". If you don't already have a Developer-Managed Wallet, you can create one by following [these instructions](https://docs.cdp.coinbase.com/mpc-wallet/docs/quickstart#creating-a-wallet) with the API key and secret you just created. Then, you can get a Wallet ID from the created wallet.
 
-You can get a Wallet ID from ???????. For new uswers, the procedure is_______. The API_KEY comes from __________. The API_SECRET is _________. These key are all strings and should looke like this:
-
+These keys are all strings and should look like this:
 ```bash
-COINBASE_WALLET_ID=???????????
-COINBASE_API_KEY=?????????
-COINBASE_API_SECRET=??????????
+COINBASE_WALLET_ID="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
+COINBASE_API_KEY="organizations/your-org-id/apiKeys/your-api-key-id"
+COINBASE_API_SECRET="-----BEGIN EC PRIVATE KEY-----\nyour-api-key-private-key\n-----END EC PRIVATE KEY-----\n"
 ```
 
 For more details, please see the [Coinbase documentation](https://docs.cdp.coinbase.com/mpc-wallet/docs/wallets).
@@ -245,15 +262,15 @@ Agents are configured via JSON files in the `config/` directory. Key configurati
     }
   ],
   "cortex_llm": {
-    "type": "OpenMindLLM",
+    "type": "OpenAILLM",  
     "config": {
-      "base_url": "...",
-      "api_key": "...",
+      "base_url": "",
+      "api_key": "your_key_here"
     }
   },
   "simulators": [
     {
-      "type": "BasicDog"
+      "type": "RacoonSim"
     }
   ],
   "agent_actions": [
@@ -276,21 +293,7 @@ Agents are configured via JSON files in the `config/` directory. Key configurati
 
   - **Type**: Specifies the LLM plugin.
 
-  - **Config**: Optional configuration for the LLM, including the API endpoint and API key. If no API key is provided, the LLM operates with a rate limiter with the OpenMind's public endpoint.
-
-OpenMind OpenAI Proxy endpoint is [https://api.openmind.org/api/core/openai](https://api.openmind.org/api/core/openai)
-
-OpenMind DeepSeek Proxy endpoint is [https://api.openmind.org/api/core/deepseek](https://api.openmind.org/api/core/deepseek)
-
-```json
-"cortex_llm": {
-  "type": "OpenMindLLM",
-  "config": {
-    "base_url": "...", // Optional: URL of the LLM endpoint
-    "api_key": "..."   // Optional: API key from OpenMind
-  }
-}
-```
+  - **Config**: Configuration for the LLM, including the Openmind API key. If no API key is provided, the LLM operates with a rate limiter with the OpenMind's public endpoint.
 
 #### Simulators
 
@@ -299,7 +302,7 @@ Lists the simulation modules used by the agent. These define the simulated envir
 ```json
 "simulators": [
   {
-    "type": "BasicDog"
+    "type": "RacoonSim"
   }
 ]
 ```
@@ -335,9 +338,8 @@ Defines the agent’s available capabilities, including action names, their impl
 5. Use type hints and docstrings for better code maintainability
 6. Run `uv run ruff check . --fix` and `uv run black .` check/format your code. 
 
-## Environment Variables
+## Optional Environment Variables
 
-- `OPENMIND_API_KEY`: The API key for OpenMind endpoints. This is mandatory if you want to use OpenMind endpoints without rate limiting.
 - `ETH_ADDRESS`: The Ethereum address of agent, prefixed with `Ox`. Example: `0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045`. Only relevant if your agent has a wallet.
 - `UNITREE_WIRED_ETHERNET`: Your network adapter that is connected to a Unitree robot. Example: `eno0`. Only relevant if your agent has a physical (robot) embodiment. You can set this to "SIM" to debug some limited functionality.
 

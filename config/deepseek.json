@@ -21,7 +21,8 @@
   "cortex_llm": {
     "type": "DeepSeekLLM",
     "config": {
-      "base_url": "https://api.openmind.org/api/core/deepseek"
+      "custom_url": "",
+      "openmind_api_key": "your_key_here"
     }
   },
   "agent_actions": [
