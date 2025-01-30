@@ -1,67 +1,108 @@
 import json
 import asyncio
+import aiohttp
 from queue import Queue, Empty
 import logging
-from typing import Dict, Optional, List
-
-from providers.TwitterProvider import TwitterProvider
-from providers.sleep_ticker_provider import SleepTickerProvider
+from typing import Dict, Optional, List, AsyncIterator
+import typing as T
 
 from inputs.base.loop import LoopInput
 
 class TwitterInput(LoopInput[str]):
-    """Twitt data puller input handler.
-    This class manages the input stream from an Twitter data aggregator service, 
-    uffering messages.
-    Attributes
-    ----------
-    message_buffer : Queue[str]
-        FIFO queue for storing incoming Twitter messages
-    twp : TwitterProvider
-        Provider for Twitter websocket connection
-    global_sleep_ticker_provider : SleepTickerProvider
-        Provider for managing sleep ticks
-    buffer : List[str]
-        Internal buffer for storing processed twitter data
-    """
-    def __init__(self):
-        super().__init__()
-
-        # Buffer for storing the final output
-        self.buffer: List[str] = []
-
-        # Buffer for storing messages
-        self.message_buffer: Queue[str] = Queue()
-
-        # Initialize ASR provider
-        self.twp: TwitterProvider = TwitterProvider(ws_url="wss://api.openmind.org/api/core/query") 
-        self.twp.start()
-        self.twp.register_message_callback(self._handle_twp_message)
-
-        # Initialize sleep ticker provider
-        self.global_sleep_ticker_provider = SleepTickerProvider()
-
-    def _handle_twp_message(self, raw_message: str):
-        """Handle incoming WebSocket messages"""
-        try:
-            message = json.loads(raw_message)
-            if "results" in message:
-                documents = message["results"]
-                formatted_context = '\n\n'.join([r.get('content', {}).get('text', '') for r in documents if r.get('content', {}).get('text', '')])
-                self.message_buffer.put(formatted_context)
-                logging.info(f"Received context: {formatted_context}")
-        except json.JSONDecodeError:
-            logging.error(f"Invalid JSON message: {raw_message}")
-            
+    """Context query input handler for RAG"""
     
+    def __init__(self, api_url: str = "https://api.openmind.org/api/core/query", config: dict = None):
+        super().__init__()
+        self.buffer: List[str] = []
+        self.message_buffer: Queue[str] = Queue()
+        self.api_url = api_url
+        self.session: Optional[aiohttp.ClientSession] = None
+        self.context: Optional[str] = None
+        self.config = config or {}
+        
+        # Store query from config if provided
+        self.query = self.config.get('query', "What's new in AI and technology?")
+
+    async def __aenter__(self):
+        """Async context manager entry"""
+        await self._init_session()
+        return self
+
+    async def __aexit__(self, exc_type, exc_val, exc_tb):
+        """Async context manager exit"""
+        if self.session:
+            await self.session.close()
+
+    async def _init_session(self):
+        """Initialize aiohttp session if not exists"""
+        if self.session is None:
+            timeout = aiohttp.ClientTimeout(total=10)
+            self.session = aiohttp.ClientSession(timeout=timeout)
+
+    async def _query_context(self, query: str):
+        """Perform context query to RAG endpoint"""
+        await self._init_session()
+        
+        try:
+            async with self.session.post(
+                self.api_url,
+                json={"query": query},
+                headers={"Content-Type": "application/json"}
+            ) as response:
+                if response.status == 200:
+                    data = await response.json()
+                    if "results" in data:
+                        documents = data["results"]
+                        context = '\n\n'.join([
+                            r.get('content', {}).get('text', '') 
+                            for r in documents 
+                            if r.get('content', {}).get('text', '')
+                        ])
+                        self.context = context
+                        self.buffer = [context]  # Replace buffer with context
+                else:
+                    error_text = await response.text()
+                    logging.error(f"Query failed with status {response.status}: {error_text}")
+                    
+        except Exception as e:
+            logging.error(f"Error querying context: {str(e)}")
+
+    async def raw_to_text(self, raw_input):
+        """Convert raw input to processed text and manage buffer"""
+        logging.debug(f"raw_to_text received: {raw_input}")
+        text = await self._raw_to_text(raw_input)
+        logging.debug(f"_raw_to_text returned: {text}")
+        
+        if text is not None:
+            logging.debug(f"Adding to buffer: {text}")
+            # If we have text but no context, treat it as a query
+            if not self.context:
+                await self._query_context(text)
+            logging.debug(f"Buffer now contains: {self.buffer}")
+
+    async def _raw_to_text(self, raw_input: str) -> Optional[str]:
+        """Convert raw input to text format and add to buffer"""
+        if raw_input:
+            self.message_buffer.put_nowait(raw_input)  # Add to message buffer
+        return raw_input
+
+    async def start(self):
+        """Start the input handler with initial query"""
+        await self._query_context(self.query)
+        self.message_buffer.put_nowait(self.query)
+
+    async def listen(self) -> AsyncIterator[str]:
+        """Listen for new messages"""
+        await self.start()
+        
+        while True:
+            message = await self._poll()
+            if message:
+                yield message
+            await asyncio.sleep(0.1)
+
     async def _poll(self) -> Optional[str]:
-        """
-        Poll for new messages in the buffer.
-        Returns
-        -------
-        Optional[str]
-            Message from the buffer if available, None otherwise
-        """
+        """Poll for new messages"""
         await asyncio.sleep(0.5)
         try:
             message = self.message_buffer.get_nowait()
@@ -69,58 +110,23 @@ class TwitterInput(LoopInput[str]):
         except Empty:
             return None
 
-    async def _raw_to_text(self, raw_input: str) -> str:
-        """
-        Convert raw input to text format.
-        Parameters
-        ----------
-        raw_input : str
-            Raw input string to be converted
-        Returns
-        -------
-        Optional[str]
-            Converted text or None if conversion fails
-        """
-        return raw_input
-
-    async def raw_to_text(self, raw_input):
-        """
-        Convert raw input to processed text and manage buffer.
-        Parameters
-        ----------
-        raw_input : Optional[str]
-            Raw input to be processed
-        """
-        text = await self._raw_to_text(raw_input)
-        if text is None:
-            if len(self.buffer) == 0:
-                return None
-            else:
-                # Skip sleep if there's already a message in the buffer
-                self.global_sleep_ticker_provider.skip_sleep = True
-
-        if text is not None:
-            if len(self.buffer) == 0:
-                self.buffer.append(text)
-            else:
-                self.buffer[-1] = f"{self.buffer[-1]} {text}"
-
     def formatted_latest_buffer(self) -> Optional[str]:
-        """
-        Format and clear the latest buffer contents.
-        Returns
-        -------
-        Optional[str]
-            Formatted string of buffer contents or None if buffer is empty
-        """
-        if len(self.buffer) == 0:
+        """Format and return the context"""
+        content = self.context if self.context else (self.buffer[-1] if self.buffer else None)
+        
+        if not content:
             return None
 
         result = f"""
-{self.__class__.__name__} INPUT
+TwitterInput CONTEXT
 // START
-{self.buffer[-1]}
+{content}
 // END
 """
-        self.buffer = []
         return result
+
+    async def initialize_with_query(self, query: str):
+        """Initialize with a query"""
+        logging.info(f"[TwitterInput] Initializing with query: {query}")
+        self.message_buffer.put_nowait(query)  # Add query to message buffer
+        await self._query_context(query)  # Immediately get context 

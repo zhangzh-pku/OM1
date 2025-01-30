@@ -31,16 +31,10 @@ def start(config_name: str, query: str = None, debug: bool = False):
     # Try to send first boot tweet
     logging.info("Attempting to send first boot tweet...")
     send_first_boot_tweet(config)
-    
-    if config_name == "twitter" and query:
-        # Run with query
-        runtime = CortexRuntime(config)
-        asyncio.run(runtime.run())
-        return
-        
-    # Normal startup
+
     runtime = CortexRuntime(config)
     asyncio.run(runtime.run())
+       
 
 if __name__ == "__main__":
     print("Running main")

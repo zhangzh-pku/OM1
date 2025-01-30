@@ -1,9 +1,11 @@
 import logging
 import os
+import openai
 from pathlib import Path
 import warnings
 from dotenv import load_dotenv
 from runtime.config import RuntimeConfig
+import random
 
 def send_first_boot_tweet(config: RuntimeConfig):
     """
@@ -15,21 +17,6 @@ def send_first_boot_tweet(config: RuntimeConfig):
         Runtime configuration containing agent name
     """
     logging.info("Starting first boot tweet process...")
-    
-    # Create .omos directory in project root if it doesn't exist
-    project_root = Path(__file__).parent.parent.parent.parent
-    omos_dir = project_root / '.omos'
-    logging.info(f"Creating .omos directory at: {omos_dir}")
-    omos_dir.mkdir(exist_ok=True)
-    
-    # Check if first boot marker exists
-    first_boot_file = omos_dir / 'first_boot_tweet'
-    logging.info(f"Checking for first boot marker at: {first_boot_file}")
-    
-    if first_boot_file.exists():
-        logging.info("First boot tweet already sent")
-        return
-
     try:
         # Initialize Twitter client
         logging.info("Loading environment variables...")
@@ -58,16 +45,31 @@ def send_first_boot_tweet(config: RuntimeConfig):
         agent_name = config.name
         logging.info(f"Agent name from config: {agent_name}")
         
-        # Send first boot tweet
-        tweet_text = f"🤖 Hi! I'm {agent_name}, an AI agent running on @openmind_agi's omOS platform. Excited to learn and grow with this amazing community! ✨ #AI #omOS"
+        # Generate tweet using OpenAI
+        prompt = f"""Write a tweet announcing that {agent_name} has just been activated. The tweet should:
+1. Be friendly and enthusiastic
+2. Mention the agent's name
+3. Reference @openmind_agi and omOS
+4. Include relevant emojis
+5. Include #AI #omOS hashtags
+6. Stay under 280 characters"""
+        
+        openai.api_key = os.getenv("OPENAI_API_KEY")
+        completion = openai.chat.completions.create(
+            model="gpt-4",
+            messages=[
+                {"role": "system", "content": "You are a helpful AI assistant that writes engaging tweets."},
+                {"role": "user", "content": prompt}
+            ],
+            max_tokens=100,
+            temperature=0.7
+        )
+        
+        tweet_text = completion.choices[0].message.content.strip()
+        
         logging.info(f"Attempting to send tweet: {tweet_text}")
         
         response = client.create_tweet(text=tweet_text)
-        
-        # Create marker file
-        first_boot_file.touch()
-        
-        # Log success
         tweet_id = response.data['id']
         tweet_url = f"https://twitter.com/user/status/{tweet_id}"
         logging.info(f"First boot tweet sent! URL: {tweet_url}")
