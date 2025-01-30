@@ -40,25 +40,27 @@ class DeepSeekLLM(LLM[R]):
         """
         super().__init__(output_model, config)
 
-        base_url = config.base_url if config.base_url else "https://api.deepseek.com/v1"
-        api_key = (
-            os.getenv("OPENAI_API_KEY")
-            or os.getenv("DEEPSEEK_API_KEY")
-            or os.getenv("OPENMIND_API_KEY")
-            or (config.api_key if config else None)
-        )
+        llm_url = "https://api.openmind.org/api/core/deepseek"
+        api_key = None
+
+        if config.custom_url:
+            llm_url = config.custom_url
+            logging.info(f"Using custom DeepSeek endpoint: {llm_url}")
+            if os.getenv("DEEPSEEK_API_KEY"):
+                api_key = os.getenv("DEEPSEEK_API_KEY")
+            else: 
+                logging.error("You set a custom DeepSeek endpoint in your config file, \
+but have not provided an DeepSeek access key in the .env. Please do so to access \
+DeepSeek directly.")
+                raise ValueError('DEEPSEEK_API_KEY missing')
+        else:
+            api_key = config.openmind_api_key
 
         client_kwargs = {}
-        if base_url:
-            client_kwargs["base_url"] = base_url
+        if llm_url:
+            client_kwargs["base_url"] = llm_url
         if api_key:
             client_kwargs["api_key"] = api_key
-
-        if not api_key and base_url:
-            logging.warning(
-                "DeepSeek API key not found. The rate limit may be applied."
-            )
-            client_kwargs["api_key"] = "openmind-0x"
 
         logging.info(f"Initializing DeepSeek client with {client_kwargs}")
         self._client = openai.OpenAI(**client_kwargs)

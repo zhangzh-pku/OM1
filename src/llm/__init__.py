@@ -18,12 +18,12 @@ class LLMConfig(BaseModel):
     ----------
     base_url : str, optional
         Base URL for the LLM API endpoint
-    api_key : str, optional
+    openmind_api_key : str, optional
         Authentication key for the LLM service
     """
 
-    base_url: T.Optional[str] = None
-    api_key: T.Optional[str] = None
+    custom_url: T.Optional[str] = None
+    openmind_api_key: T.Optional[str] = None
 
 
 class LLM(T.Generic[R]):
@@ -43,7 +43,7 @@ class LLM(T.Generic[R]):
 
     def __init__(self, output_model: T.Type[R], config: T.Optional[LLMConfig]):
         # Set up the LLM configuration
-        self._conifg = config
+        self._config = config
 
         # Set up the output model
         self._output_model = output_model

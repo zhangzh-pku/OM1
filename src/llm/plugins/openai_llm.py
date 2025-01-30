@@ -40,32 +40,30 @@ class OpenAILLM(LLM[R]):
         """
         super().__init__(output_model, config)
 
-        base_url = None
+        llm_url = "https://api.openmind.org/api/core/openai"
         api_key = None
-        if config.base_url:
-            logging.info("Using default route to OpenAI")
-            # the standard case - use Openmind LLM endpoint
-            # set in the config file
-            base_url = config.base_url
-            api_key = config.openmind_api_key
-        else:
-            logging.info("Using fallback route to OpenAI")
-            base_url = "https://api.openai.com/v1"
+
+        if config.custom_url:
+            llm_url = config.custom_url
+            logging.info(f"Using custom OpenAI endpoint: {llm_url}")
             if os.getenv("OPENAI_API_KEY"):
                 api_key = os.getenv("OPENAI_API_KEY")
             else: 
-                logging.error("You are attempting to directly access OpenAI, \
-but have not provided an OpenAI access key in \
-the .env. Please do so to access OpenAI directly.")
+                logging.error("You set a custom OpenAI endpoint in your config file, \
+but have not provided an OpenAI access key in the .env. Please do so to access \
+OpenAI directly.")
                 raise ValueError('OPENAI_API_KEY missing')
+        else:
+            api_key = config.openmind_api_key
 
         client_kwargs = {}
-        if base_url:
-            client_kwargs["base_url"] = base_url
+        if llm_url:
+            client_kwargs["base_url"] = llm_url
         if api_key:
             client_kwargs["api_key"] = api_key
 
         self._client = openai.AsyncClient(**client_kwargs)
+        logging.info(f"Initializing OpenAI client with {client_kwargs}")
 
     async def ask(self, prompt: str) -> R | None:
         """

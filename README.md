@@ -1,10 +1,17 @@
-# OpenMind OS (omOS)
+# Openmind OS (OM1)
 
-OpenMind OS is an agent runtime system that enables the creation and execution of digital and physical embodied AI agents with modular capabilities like movement, speech, and perception. A key benefit of using omOS is the ease of deploying consistent digital personas across virtual and physical environments.
+Openmind's OM1 is an agent runtime system that enables the creation and execution of digital and physical embodied AI agents with modular capabilities like movement, speech, and perception. One benefit of using OM1 is the ease of deploying consistent digital personas across virtual and physical environments.
 
 ## Quick Start
 
-1. Install the Rust python package manager `uv`:
+1. Clone the repo
+
+```bash
+git clone https://github.com/OpenmindAGI/omOS.git
+git submodule update --init --recursive
+```
+
+2. Install the Rust python package manager `uv`:
 
 ```bash
 # for linux
@@ -13,40 +20,41 @@ curl -LsSf https://astral.sh/uv/install.sh | sh
 brew install uv
 ```
 
-If you are on mac, you may need to install `pyaudio` manually:
+If you are on Mac, you may need to install `pyaudio` manually:
 
 ```bash
 brew install portaudio
 ```
 
-2. Set up environment variables:
+3. Set up environment and configuration variables
 
-Edit `.env` with your API keys (e.g. OPENAI_API_KEY). NOTE: an OpenAI api key is required.
+Add your Openmind API key in `/config/spot.json`. You can obtain an free Openmind access key at http://openmind.org/free.
 
 ```bash
-cp .env.example .env
+# /config/spot.json`
+...
+"openmind_api_key": "openmind-pat-cnh4d7_example_797wtgy47d"
+...
 ```
 
-3. Run an Hello World agent
+> [!NOTE]
+> You can directly access OpenAI style endpoints by specifying a custom API endpoint in your configuration file. To do this:
+> * provide a `custom_url`, such as https://api.openai.com/v1 and https://api.deepseek.com/v1
+> * set any needed keys in the .env file, such as `OPENAI_API_KEY=YourKeyHere`
+> * and then, `cp .env.example .env`
 
-This very basic agent uses webcam data to estimate your emotion, generates a fake VLM caption, and sends those two inputs to central LLM. The LLM then returns `movement`, `speech`, and `face` commands, which are displayed in a small `pygame` window. This is windows also shows basic timing debug information so you can see how long each step takes.
+4. Run an Hello World agent
 
+This basic agent uses webcam data to estimate your emotion, generates a fake VLM caption, and sends those two inputs to a central LLM. The LLM then returns `movement`, `speech`, and `face` commands, which are displayed in `RacoonSim`, a small `pygame` window. `RacooonSim` also shows basic timing and other debug information.
 
 ```bash
 uv run src/run.py spot
 ```
 
 > [!NOTE]
-> `uv` does many things in the background, such as setting up a good `venv` and downloading any dependencies if needed. Please add new dependencies to `pyproject.toml`.
-
-> [!NOTE]
-> If you are running complex models, or need to download dependencies, there may be a delay before the agent starts.
-
-> [!NOTE]
-> The OpenMind LLM endpoint is https://api.openmind.org/api/core/openai and includes a rate limiter. To use OpenAI’s LLM services without rate limiting, you must either set the OPENAI_API_KEY environment variable and remove the base_url configuration or use the API key provided by us.
-
-> [!NOTE]
-> There should be a `pygame` window that pops up when you run `uv run src/run.py spot`. Sometimes the `pygame` window is hidden behind all other open windows - use "show all windows" to find it.
+> * `uv` does many things in the background, such as setting up a good `venv` and downloading any dependencies if needed. Please add new dependencies to `pyproject.toml`.
+> * If you are running complex models, or need to download dependencies, there may be a delay before the agent starts.
+> * There should be a `pygame` window that pops up when you run `uv run src/run.py spot`. If you do not see `RacoonSim`, the window might be hidden behind all your other open windows - use "show all windows" (or equivalent) to find it.
 
 ### Example 1 - The Coinbase Wallet
 
@@ -123,7 +131,7 @@ The main entry point is `src/run.py` which provides the following commands:
 │   ├── llm/              # LLM integration
 │   ├── providers/        # ????
 │   ├── runtime/          # Core runtime system
-│   ├── simulators/       # Virtual endponits such as `RacoonSim`
+│   ├── simulators/       # Virtual agents/robots such as `RacoonSim`
 │   └── run.py            # CLI entry point
 ```
 
@@ -168,15 +176,15 @@ Agents are configured via JSON files in the `config/` directory. Key configurati
     }
   ],
   "cortex_llm": {
-    "type": "OpenAILLM",
+    "type": "OpenAILLM",  
     "config": {
-      "base_url": "...",
-      "api_key": "...",
+      "custom_url": "",
+      "openmind_api_key": "your_key_here"
     }
   },
   "simulators": [
     {
-      "type": "BasicDog"
+      "type": "RacoonSim"
     }
   ],
   "agent_actions": [
@@ -199,21 +207,7 @@ Agents are configured via JSON files in the `config/` directory. Key configurati
 
   - **Type**: Specifies the LLM plugin.
 
-  - **Config**: Optional configuration for the LLM, including the API endpoint and API key. If no API key is provided, the LLM operates with a rate limiter with the OpenMind's public endpoint.
-
-OpenMind OpenAI Proxy endpoint is [https://api.openmind.org/api/core/openai](https://api.openmind.org/api/core/openai)
-  
-OpenMind DeepSeek Proxy endpoint is [https://api.openmind.org/api/core/deepseek](https://api.openmind.org/api/core/deepseek)
-
-```json
-"cortex_llm": {
-  "type": "OpenAILLM",
-  "config": {
-    "base_url": "...", // Optional: URL of the LLM endpoint
-    "api_key": "..."   // Optional: API key from OpenMind
-  }
-}
-```
+  - **Config**: Configuration for the LLM, including the Openmind API key. If no API key is provided, the LLM operates with a rate limiter with the OpenMind's public endpoint.
 
 #### Simulators
 
@@ -222,7 +216,7 @@ Lists the simulation modules used by the agent. These define the simulated envir
 ```json
 "simulators": [
   {
-    "type": "BasicDog"
+    "type": "RacoonSim"
   }
 ]
 ```
@@ -260,8 +254,7 @@ Defines the agent’s available capabilities, including action names, their impl
 
 ## Environment Variables
 
-- `OPENAI_API_KEY`: The API key for OpenAI integration. This is mandatory if you want to use OpenAI’s LLM services without rate limiting.
-- `OPENMIND_API_KEY`: The API key for OpenMind endpoints. This is mandatory if you want to use OpenMind endpoints without rate limiting.
+- `OPENAI_API_KEY`: Optional API keys for OpenAI or other custom LLM endpoints.
 - `ETH_ADDRESS`: The Ethereum address of agent, prefixed with `Ox`. Example: `0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045`. Only relevant if your agent has a wallet.
 - `UNITREE_WIRED_ETHERNET`: Your netrowrk adapet that is conncted to a Unitree robot. Example: `eno0`. Only relevant if your agent has a physical (robot) embodiment.
 
