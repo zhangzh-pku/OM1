@@ -18,7 +18,8 @@
   "cortex_llm": {
     "type": "GeminiLLM",
     "config": {
-      "base_url": "https://api.openmind.org/api/core/gemini"
+      "base_url": "https://api.openmind.org/api/core/gemini",
+      "api_key": "openmind_free"
     }
   },
   "agent_actions": [
