@@ -8,6 +8,7 @@ Openmind's OM1 is an agent runtime system that enables the creation and executio
 
 ```bash
 git clone https://github.com/OpenmindAGI/omOS.git
+mkdir ./omOS/src/unitree
 git submodule update --init --recursive
 ```
 
@@ -155,13 +156,13 @@ First, build and install `CycloneDDS`. You can read more about CycloneDDS [here]
 
 To build and install `CycloneDDS`, run:
 ```bash
-git clone https://github.com/eclipse-cyclonedds/cyclonedds -b releases/0.10.x 
+git clone https://github.com/eclipse-cyclonedds/cyclonedds -b releases/0.10.x
 cd cyclonedds && mkdir build install && cd build
 cmake .. -DCMAKE_INSTALL_PREFIX=../install -DBUILD_EXAMPLES=ON
 cmake --build . --target install
 ```
 
-Once you have done this, as stated above, set the correct `CYCLONEDDS_HOME` via `export CYCLONEDDS_HOME="your_path_here/cyclonedds/install"`. You should add this path to your environment e.g. via your `.zshrc`. 
+Once you have done this, as stated above, set the correct `CYCLONEDDS_HOME` via `export CYCLONEDDS_HOME="your_path_here/cyclonedds/install"`. You should add this path to your environment e.g. via your `.zshrc`. For example, on a Mac this might be: `export CYCLONEDDS_HOME="$HOME/Documents/GitHub/cyclonedds/install"`
 
 #### Unitree Go2 Air Ethernet Setup
 
@@ -170,6 +171,8 @@ Connect the Unitree Go2 Air to your development machine with an Ethernet cable. 
 #### Unitree Go2 Air Common Problems
 
 *channel factory init error*: If you see a `channel factory init error`, then you have not set the correct network interface adapter - the one you want to use is the network interface adapter *on your development machine - the computer you are currently sitting in front of* that is plugged into the Unitree quadruped (which has its own internal RockChip computer and network interface, which is *not* relevant to you right now). The ethernet adapter - such as `eno0` or `en0` - needs to be set in the `.env`, for example, `UNITREE_WIRED_ETHERNET=en0`.
+
+*The CycloneDDS library could not be located*: You forgot to install cycloneDDS (see above), or, you did not proavide a path to the `/install`, via `export CYCLONEDDS_HOME="$HOME/Documents/GitHub/cyclonedds/install"` or equivalent.
 
 *"nothing is working"* There are dozens of potential reasons "nothing is working". The first step is to test your ability to `ping` the quadruped:
 ```bash
