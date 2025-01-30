@@ -3,7 +3,7 @@ import logging
 import os
 import time
 from dataclasses import dataclass
-from typing import Optional
+from typing import Optional, List
 
 from inputs.base.loop import FuserInput
 from providers.io_provider import IOProvider
@@ -12,7 +12,7 @@ try:
     from unitree.unitree_sdk2py.core.channel import ChannelSubscriber
     from unitree.unitree_sdk2py.idl.unitree_go.msg.dds_ import LowState_
 except ImportError:
-    logging.warning("Unitree SDK not found. Running in simulation mode.")
+    logging.warning("Unitree SDK not found. Please install the Unitree SDK to use this plugin.")
     LowState_ = None
     ChannelSubscriber = None
 
@@ -71,13 +71,13 @@ class UnitreeGo2Lowstate(FuserInput[str]):
         # print("IMU state: ", msg.imu_state)
         # print("Battery state: voltage: ", msg.power_v, "current: ", msg.power_a)
 
-    async def _poll(self) -> [float]:
+    async def _poll(self) -> List[float]:
         """
         Poll for new lowstate data.
 
         Returns
         -------
-        [float]
+        List[float]
             list of floats
         """
 
@@ -89,13 +89,13 @@ class UnitreeGo2Lowstate(FuserInput[str]):
 
         return [self.latest_v, self.latest_a]
 
-    async def _raw_to_text(self, raw_input: [float]) -> Optional[Message]:
+    async def _raw_to_text(self, raw_input: List[float]) -> Optional[Message]:
         """
         Process raw lowstate to generate text description.
 
         Parameters
         ----------
-        raw_input : [float]
+        raw_input : List[float]
             Raw lowstate data to be processed
 
         Returns
@@ -111,13 +111,13 @@ class UnitreeGo2Lowstate(FuserInput[str]):
             message = "WARNING: You are low on energy. Consider sitting down."
             return Message(timestamp=time.time(), message=message)
 
-    async def raw_to_text(self, raw_input: [float]):
+    async def raw_to_text(self, raw_input: List[float]):
         """
         Convert raw lowstate to text and update message buffer.
 
         Parameters
         ----------
-        raw_input : [float]
+        raw_input : List[float]
             Raw lowstate data to be processed
         """
         pending_message = await self._raw_to_text(raw_input)
