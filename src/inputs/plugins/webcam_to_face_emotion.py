@@ -1,4 +1,5 @@
 import asyncio
+import logging
 import random
 import time
 from dataclasses import dataclass
@@ -36,13 +37,14 @@ Thank you @manish-9245
 
 
 def check_webcam():
-    """Checks if a webcam is available and returns True if found, False otherwise."""
-
+    """
+    Checks if a webcam is available and returns True if found, False otherwise.
+    """
     cap = cv2.VideoCapture(0)  # 0 is the default camera index
-    ret, frame = cap.read()
-    cap.release()
-
-    return ret
+    if not cap.isOpened():
+        logging.error("No webcam found.")
+        return False
+    return True
 
 
 class FaceEmotionCapture(FuserInput[cv2.typing.MatLike]):
@@ -70,7 +72,7 @@ class FaceEmotionCapture(FuserInput[cv2.typing.MatLike]):
         # Start capturing video, if we have a webcam
         self.cap = None
         if self.have_cam:
-            cv2.VideoCapture(0)
+            self.cap = cv2.VideoCapture(0)
 
         # Initialize emotion label
         self.emotion = ""
