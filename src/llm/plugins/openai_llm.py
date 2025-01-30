@@ -41,6 +41,7 @@ class OpenAILLM(LLM[R]):
         super().__init__(output_model, config)
 
         base_url = None
+        api_key = None
         if config.base_url:
             logging.info("Using default route to OpenAI")
             # the standard case - use Openmind LLM endpoint
@@ -52,7 +53,6 @@ class OpenAILLM(LLM[R]):
             base_url = "https://api.openai.com/v1"
             if os.getenv("OPENAI_API_KEY"):
                 api_key = os.getenv("OPENAI_API_KEY")
-                base_url = "https://api.openai.com/v1"
             else: 
                 logging.error("You are attempting to directly access OpenAI, \
 but have not provided an OpenAI access key in \
