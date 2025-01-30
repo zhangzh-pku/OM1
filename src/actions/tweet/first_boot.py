@@ -1,9 +1,9 @@
-from dotenv import load_dotenv
 import logging
 import openai
 import os
-import random
 import warnings
+
+from dotenv import load_dotenv
 
 from runtime.config import RuntimeConfig
 

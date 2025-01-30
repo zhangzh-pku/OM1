@@ -1,5 +1,4 @@
 from actions.base import ActionImplementation
-
 from actions.tweet.interface import TweetInput
 
 

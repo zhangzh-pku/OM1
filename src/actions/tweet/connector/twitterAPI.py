@@ -1,7 +1,8 @@
-from dotenv import load_dotenv
 import logging
 import os
 import warnings
+
+from dotenv import load_dotenv
 
 from actions.base import ActionConnector
 from actions.tweet.interface import TweetInput

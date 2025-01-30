@@ -1,7 +1,7 @@
 import asyncio
-from queue import Empty, Queue
 import logging
-from typing import AsyncIterator, Optional, List
+from queue import Empty, Queue
+from typing import AsyncIterator, List, Optional
 
 import aiohttp
 
