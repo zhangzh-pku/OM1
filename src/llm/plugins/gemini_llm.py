@@ -83,7 +83,7 @@ class GeminiLLM(LLM[R]):
             messages=self._build_messages(prompt),
             response_format={"type": "json_object"},
         )
-        return completion 
+        return completion
 
     def _build_messages(self, prompt: str) -> list[dict]:
         """Construct message payload for API request"""
