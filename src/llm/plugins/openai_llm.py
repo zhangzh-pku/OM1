@@ -1,5 +1,4 @@
 import logging
-import os
 import time
 import typing as T
 
@@ -40,24 +39,34 @@ class OpenAILLM(LLM[R]):
         """
         super().__init__(output_model, config)
 
-        base_url = config.base_url if config.base_url else "https://api.openai.com/v1"
-        api_key = (
-            os.getenv("OPENAI_API_KEY")
-            or os.getenv("OPENMIND_API_KEY")
-            or (config.api_key if config else None)
-        )
+        base_url = None
+        api_key = None
+
+        openmind_api = "https://api.openmind.org/api/core/openai"
+
+        if config.base_url:
+            if config.base_url == openmind_api:
+                # we are using Openmind endpoint
+                base_url = openmind_api
+                if config.api_key:
+                    api_key = config.api_key
+                else:
+                    raise ValueError("config file missing dummy or real api_key")
+            else:
+                # user is providing custom endpoint
+                logging.info(f"Using custom OpenAI endpoint: {config.base_url}")
+                base_url = config.base_url
+                if config.api_key:
+                    api_key = config.api_key
+                else:
+                    raise ValueError("config file missing api_key: OPENAI_API_KEY")
 
         client_kwargs = {}
-        if base_url:
-            client_kwargs["base_url"] = base_url
-        if api_key:
-            client_kwargs["api_key"] = api_key
-
-        if not api_key and base_url:
-            logging.warning("OpenAI API key not found. The rate limit may be applied.")
-            client_kwargs["api_key"] = "openmind-0x"
+        client_kwargs["base_url"] = base_url
+        client_kwargs["api_key"] = api_key
 
         self._client = openai.AsyncClient(**client_kwargs)
+        logging.info(f"Initializing OpenAI client with {client_kwargs}")
 
     async def ask(self, prompt: str) -> R | None:
         """
