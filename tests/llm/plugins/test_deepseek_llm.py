@@ -1,4 +1,3 @@
-import os
 from unittest.mock import MagicMock
 
 import pytest
@@ -11,13 +10,6 @@ from llm.plugins.deepseek_llm import DeepSeekLLM
 # Test output model
 class DummyOutputModel(BaseModel):
     test_field: str
-
-
-@pytest.fixture(autouse=True)
-def setup_environment():
-    """Clear relevant environment variables before each test"""
-    os.environ["OPENAI_API_KEY"] = ""
-    os.environ["DEEPSEEK_API_KEY"] = ""
 
 
 @pytest.fixture
@@ -48,20 +40,13 @@ async def test_init_with_config(llm, config):
 
 
 @pytest.mark.asyncio
-async def test_init_with_env_api_key(monkeypatch):
-    """Test environment variable API key precedence"""
-    config = LLMConfig(base_url="test_url")
-    monkeypatch.setenv("DEEPSEEK_API_KEY", "env_key")
-    llm = DeepSeekLLM(DummyOutputModel, config)
-    assert llm._client.api_key == "env_key"
-
-
-@pytest.mark.asyncio
-async def test_init_fallback_key():
+async def test_init_empty_key():
     """Test fallback API key when no credentials provided"""
     config = LLMConfig(base_url="test_url")
-    llm = DeepSeekLLM(DummyOutputModel, config)
-    assert llm._client.api_key == "openmind-0x"
+    with pytest.raises(
+        ValueError, match="config file missing api_key: DEEPSEEK_API_KEY"
+    ):
+        DeepSeekLLM(DummyOutputModel, config)
 
 
 @pytest.mark.asyncio

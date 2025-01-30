@@ -28,13 +28,13 @@ def base_llm(config):
 
 def test_llm_init(base_llm, config):
     assert base_llm._output_model == DummyOutputModel
-    assert base_llm._conifg == config
+    assert base_llm._config == config
     assert isinstance(base_llm.io_provider, type(IOProvider()))
 
 
 def test_llm_init_no_config():
     llm = MockLLM(DummyOutputModel, None)
-    assert llm._conifg is None
+    assert llm._config is None
 
 
 @pytest.mark.asyncio
