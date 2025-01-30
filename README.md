@@ -35,7 +35,10 @@ Add your Openmind API key in `/config/spot.json`. You can obtain an free Openmin
 
 > [!NOTE]
 > You can directly access other OpenAI style endpoints by specifying a custom API endpoint in your configuration file. To do this:
-> * provide an alternative `base_url`, such as https://api.openai.com/v1 and https://api.deepseek.com/v1
+> * provide an alternative `base_url`, such as: 
+> - https://api.openai.com/v1
+> - https://api.deepseek.com/v1
+> - https://generativelanguage.googleapis.com/v1beta/openai/
 > * change the configiration file `api_key:` to the OpenAI, DeepSeek, or other keys
 
 4. Run an Hello World agent

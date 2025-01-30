@@ -32,35 +32,36 @@ class GeminiLLM(LLM[R]):
         """
         super().__init__(output_model, config)
 
-        # Configure authentication
-        api_key = (
-            os.getenv("GEMINI_API_KEY")
-            or os.getenv("OPENMIND_API_KEY")
-            or (config.api_key if config else None)
-        )
+        base_url = None
+        api_key = None
 
-        # Configure base URL
-        base_url = config.base_url if config else None
-        default_base_url = "https://generativelanguage.googleapis.com/v1beta/openai/"
-        resolved_base_url = base_url or default_base_url
+        openmind_api = "https://api.openmind.org/api/core/gemini"
 
-        # Set up client arguments
-        client_kwargs = {
-            "base_url": resolved_base_url,
-            "api_key": api_key or "openmind-0x",
-        }
+        if config.base_url:
+            if config.base_url == openmind_api:
+                # we are using Openmind endpoint
+                base_url = openmind_api
+                if config.api_key:
+                    api_key = config.api_key
+                else:
+                    raise ValueError("config file missing api_key")
+            else:
+                # user is providing custom endpoint
+                logging.info(f"Using custom Gemini endpoint: {config.base_url}")
+                base_url = config.base_url
+                if config.api_key:
+                    api_key = config.api_key
+                else:
+                    raise ValueError("config file missing api_key: GEMINI_API_KEY")
 
-        # Warn about rate limits if using public endpoint
-        if not api_key and resolved_base_url == default_base_url:
-            logging.warning("Gemini API key not found. The rate limit may be applied.")
+        client_kwargs = {}
+        client_kwargs["base_url"] = base_url
+        client_kwargs["api_key"] = api_key
 
         # Initialize OpenAI-compatible client
+        logging.info(f"Initializing Gemini OpenAI client with {client_kwargs}")
         self._client = openai.AsyncOpenAI(**client_kwargs)
         self.io_provider = IOProvider()
-
-        # Debug logging
-        logging.debug(f"Gemini API key configured: {bool(api_key)}")
-        logging.debug(f"Using base URL: {resolved_base_url}")
 
     async def ask(self, prompt: str) -> R | None:
         """Execute LLM query and parse response"""
