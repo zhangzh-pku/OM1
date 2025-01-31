@@ -3,9 +3,11 @@ import threading
 import time
 from typing import Callable, Optional
 
-from omOS_speech import AudioOutputStream
-from .singleton import singleton
 import pyaudio
+from omOS_speech import AudioOutputStream
+
+from .singleton import singleton
+
 
 @singleton
 class TTSProvider:
@@ -34,9 +36,13 @@ class TTSProvider:
 
         p = pyaudio.PyAudio()
         SPEAKER = p.get_default_output_device_info()
-        logging.info(f"SYSTEM DEFAULT SPEAKER: idx:{SPEAKER["index"]} name:{SPEAKER["name"]}")
+        logging.info(
+            f"SYSTEM DEFAULT SPEAKER: idx:{SPEAKER["index"]} name:{SPEAKER["name"]}"
+        )
 
-        self.audio_stream: AudioOutputStream = AudioOutputStream(url=url, device=int(SPEAKER["index"]))
+        self.audio_stream: AudioOutputStream = AudioOutputStream(
+            url=url, device=int(SPEAKER["index"])
+        )
         self._thread: Optional[threading.Thread] = None
 
     def register_tts_state_callback(self, tts_state_callback: Optional[Callable]):
