@@ -143,7 +143,7 @@ class CortexRuntime:
                 logging.info(f"appended: {action_type}")
 
         # Trigger the actions
-        if "ASRInput" in prompt:
+        if ("ASRInput" in prompt) or ("WalletCoinbase" in prompt):
             await self.action_orchestrator.promise(output.commands)
         else:
             await self.action_orchestrator.promise(commands_silent)
