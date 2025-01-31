@@ -35,7 +35,10 @@ Add your Openmind API key in `/config/spot.json`. You can obtain an free Openmin
 
 > [!NOTE]
 > You can directly access other OpenAI style endpoints by specifying a custom API endpoint in your configuration file. To do this:
-> * provide an alternative `base_url`, such as https://api.openai.com/v1 and https://api.deepseek.com/v1
+> * provide an alternative `base_url`, such as: 
+> - https://api.openai.com/v1
+> - https://api.deepseek.com/v1
+> - https://generativelanguage.googleapis.com/v1beta/openai/
 > * change the configiration file `api_key:` to the OpenAI, DeepSeek, or other keys
 
 4. Run an Hello World agent
@@ -59,7 +62,7 @@ Similar to the `Hello World (Spot)` example, except uses the Coinbase wallet rat
 
 ```bash
 cp .env.example .env
-# then, enter your conibase credentials into the .env
+# then, enter your coinbase credentials into the .env
 # then, run
 uv run src/run.py coinbase
 ```
@@ -92,12 +95,13 @@ COINBASE_API_SECRET="-----BEGIN EC PRIVATE KEY-----\nyour-api-key-private-key\n-
 
 For more details, please see the [Coinbase documentation](https://docs.cdp.coinbase.com/mpc-wallet/docs/wallets).
 
-### Example 2 - Using DeepSeek as the Core LLM
+### Example 2 - Using DeepSeek or Gemini as the Core LLM
 
-Similar to the `Hello World (Spot)` example, except uses `DeepSeek` rather than `OpenAI 4o`.
+Similar to the `Hello World (Spot)` example, except uses `DeepSeek` or `Gemini`rather than `OpenAI 4o`.
 
 ```bash
 uv run src/run.py deepseek
+uv run src/run.py gemini
 ```
 
 ### Example 3 - Using Cloud Endpoints for Voice Inputs
@@ -141,7 +145,7 @@ Actions are the core capabilities of an agent. For example, for a robot, these c
 
 1. Interface (`interface.py`): Defines input/output types.
 2. Implementation (`implementation/`): Business logic, if any. Otherwise, use passthrough.
-3. Connector (`connector/`): Code that connects `omOS` to specific virtual or physical environments, typically through middleware (e.g. custom APIs, `ROS2`, `Zenoh`, or `CycloneDDS`)
+3. Connector (`connector/`): Code that connects `OM1` to specific virtual or physical environments, typically through middleware (e.g. custom APIs, `ROS2`, `Zenoh`, or `CycloneDDS`)
 
 Example action structure:
 
@@ -152,7 +156,7 @@ actions/
     ├── implementation/
     │   └── passthrough.py
     └── connector/
-        ├── ros2.py      # Maps omOS data/commands to other ROS2
+        ├── ros2.py      # Maps OM1 data/commands to other ROS2
         ├── zenoh.py
         └── unitree_LL.py
 ```
@@ -207,7 +211,21 @@ Agents are configured via JSON files in the `config/` directory. Key configurati
 
   - **Type**: Specifies the LLM plugin.
 
-  - **Config**: Configuration for the LLM, including the Openmind API key. If no API key is provided, the LLM operates with a rate limiter with the OpenMind's public endpoint.
+  - **Config**: Configuration for the LLM, including the API endpoint and API key. If you do not change the file, and use the `openmind_free`, the LLM operates with a rate limiter with the OpenMind's public endpoint.
+
+OpenMind OpenAI Proxy endpoint is [https://api.openmind.org/api/core/openai](https://api.openmind.org/api/core/openai)
+OpenMind DeepSeek Proxy endpoint is [https://api.openmind.org/api/core/deepseek](https://api.openmind.org/api/core/deepseek)
+OpenMind Gemini Proxy endpoint is [https://api.openmind.org/api/core/gemini](https://api.openmind.org/api/core/gemini)
+
+```json
+"cortex_llm": {
+  "type": "OpenAILLM",
+  "config": {
+    "base_url": "...", // Optional: URL of the LLM endpoint
+    "api_key": "..."   // Required: API key from OpenMind or OpenAI
+  }
+}
+```
 
 #### Simulators
 

@@ -16,5 +16,5 @@ repos:
   rev: v1.5.0
   hooks:
     - id: detect-secrets
-      args: ['scan']
+      args: [--exclude-secrets, 'openmind_free']
       files: ^config/.*$

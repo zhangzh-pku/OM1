@@ -85,7 +85,7 @@ class VlmInput(LoopInput[Image.Image]):
         # but for simplementationicity let's not bother with the random image,
         # but just create a string that changes
         num = random.randint(0, 100)
-        message = f"I see {num} people. Also, I see a rocket."
+        message = f"DUMMY VLM - FAKE DATA - I see {num} people. Also, I see a rocket."
 
         return Message(timestamp=time.time(), message=message)
 
