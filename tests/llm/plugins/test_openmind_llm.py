@@ -40,7 +40,7 @@ async def test_init_with_config(llm, config):
 @pytest.mark.asyncio
 async def test_init_empty_key():
     config = LLMConfig(base_url="test_url")
-    with pytest.raises(ValueError, match="config file missing api_key: OPENAI_API_KEY"):
+    with pytest.raises(ValueError, match="config file missing api_key"):
         OpenAILLM(DummyOutputModel, config)
 
 

@@ -43,9 +43,7 @@ async def test_init_with_config(llm, config):
 async def test_init_empty_key():
     """Test fallback API key when no credentials provided"""
     config = LLMConfig(base_url="test_url")
-    with pytest.raises(
-        ValueError, match="config file missing api_key: DEEPSEEK_API_KEY"
-    ):
+    with pytest.raises(ValueError, match="config file missing api_key"):
         DeepSeekLLM(DummyOutputModel, config)
 
 

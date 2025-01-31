@@ -1,5 +1,4 @@
-import os
-from unittest.mock import MagicMock
+from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 from pydantic import BaseModel
@@ -10,13 +9,6 @@ from llm.plugins.gemini_llm import GeminiLLM
 
 class DummyOutputModel(BaseModel):
     test_field: str
-
-
-@pytest.fixture(autouse=True)
-def setup_environment():
-    """Clear relevant environment variables before each test"""
-    os.environ["GEMINI_API_KEY"] = ""
-    os.environ["OPENMIND_API_KEY"] = ""
 
 
 @pytest.fixture
@@ -40,20 +32,11 @@ def llm(config):
 
 
 @pytest.mark.asyncio
-async def test_init_with_env_api_key(monkeypatch):
-    """Test environment variable API key precedence"""
-    config = LLMConfig(base_url="test_url")
-    monkeypatch.setenv("GEMINI_API_KEY", "env_key")
-    llm = GeminiLLM(DummyOutputModel, config)
-    assert llm._client.api_key == "env_key"
-
-
-@pytest.mark.asyncio
-async def test_init_fallback_key():
+async def test_init_empty_key():
     """Test fallback API key when no credentials provided"""
     config = LLMConfig(base_url="test_url")
-    llm = GeminiLLM(DummyOutputModel, config)
-    assert llm._client.api_key == "openmind-0x"
+    with pytest.raises(ValueError, match="config file missing api_key"):
+        GeminiLLM(DummyOutputModel, config)
 
 
 @pytest.mark.asyncio
@@ -98,7 +81,7 @@ async def test_ask_success(llm, mock_response):
         m.setattr(
             llm._client.chat.completions,
             "create",
-            MagicMock(return_value=mock_response),
+            AsyncMock(return_value=mock_response),
         )
 
         result = await llm.ask("test prompt")
