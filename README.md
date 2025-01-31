@@ -25,7 +25,7 @@ If you are on mac, you may need to install `portaudio` and `hidapi` manually:
 
 ```bash
 brew install portaudio
-brew install hidapi # only needed for XBOX game controller support, for robotics
+brew install hidapi # needed for XBOX game controller support, for robotics
 ```
 
 > [!NOTE]
@@ -70,16 +70,13 @@ uv run src/run.py spot
 
 ## Examples: Wallets, DeepSeek, and Voice Inputs (conversation)
 
-## Agent and Robot Examples
-
 ### Example 1 - The Coinbase Wallet
 
 Similar to the `Hello World (Spot)` example, except uses the Coinbase wallet rather than Ethereum Mainnet.
 
 ```bash
 cp .env.example .env
-# then, enter your coinbase credentials into the .env
-# then, run
+# then, enter your coinbase credentials into the .env and run
 uv run src/run.py coinbase
 ```
 
@@ -326,14 +323,6 @@ Defines the agent’s available capabilities, including action names, their impl
 ]
 ```
 
-### Runtime Flow
-
-1. Input plugins collect data (vision, audio, etc.)
-2. The Fuser combines inputs into a prompt
-3. The LLM generates commands based on the prompt
-4. The ActionOrchestrator executes commands through actions
-5. Connectors map OM1 data/commands to external data buses and data distribution systems such as custom APIs, `ROS2`, `Zenoh`, or `CycloneDDS`.
-
 ### Development Tips
 
 1. Use `--debug` flag for detailed logging
@@ -348,9 +337,18 @@ Defines the agent’s available capabilities, including action names, their impl
 - `ETH_ADDRESS`: The Ethereum address of agent, prefixed with `Ox`. Example: `0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045`. Only relevant if your agent has a wallet.
 - `UNITREE_WIRED_ETHERNET`: Your network adapter that is connected to a Unitree robot. Example: `eno0`. Only relevant if your agent has a physical (robot) embodiment. You can set this to "SIM" to debug some limited functionality.
 
-### Core operating principle of the system
+### Core Architecture of the System; Runtime Flow
 
 The system is based on a loop that runs at a fixed frequency of `self.config.hertz`. This loop looks for the most recent data from various sources, fuses the data into a prompt, sends that prompt to one or more LLMs, and then sends the LLM responses to virtual agents or physical robots.
+
+Specific runtime flow:
+
+1. Input plugins collect data (vision, audio, etc.)
+2. The Fuser combines inputs into a prompt
+3. The LLM generates commands based on the prompt
+4. The ActionOrchestrator executes commands through actions
+5. Connectors map OM1 data/commands to external data buses and data distribution systems such as custom APIs, `ROS2`, `Zenoh`, or `CycloneDDS`.
+
 
 ```python
 # cortex.py

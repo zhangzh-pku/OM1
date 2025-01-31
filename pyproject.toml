@@ -1,7 +1,7 @@
 [project]
-name = "omOS"
+name = "OM1"
 version = "0.1.0"
-description = "Add your description here"
+description = "OM1 - a modern agent and robotics runtime system"
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
