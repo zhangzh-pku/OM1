@@ -221,7 +221,7 @@ OpenMind Gemini Proxy endpoint is [https://api.openmind.org/api/core/gemini](htt
 "cortex_llm": {
   "type": "OpenAILLM",
   "config": {
-    "base_url": "...", // Required: URL of the LLM endpoint
+    "base_url": "...", // Optional: URL of the LLM endpoint
     "api_key": "..."   // Required: API key from OpenMind or OpenAI
   }
 }
