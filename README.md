@@ -41,7 +41,10 @@ Add your Openmind API key in `/config/spot.json`. You can obtain an free Openmin
 
 > [!NOTE]
 > You can directly access other OpenAI style endpoints by specifying a custom API endpoint in your configuration file. To do this:
-> * provide an alternative `base_url`, such as https://api.openai.com/v1 and https://api.deepseek.com/v1
+> * provide an alternative `base_url`, such as:
+> - https://api.openai.com/v1
+> - https://api.deepseek.com/v1
+> - https://generativelanguage.googleapis.com/v1beta/openai/
 > * change the configiration file `api_key:` to the OpenAI, DeepSeek, or other keys
 
 4. Run an Hello World agent
@@ -64,8 +67,8 @@ uv run src/run.py spot
 ## Examples: Wallets, DeepSeek, and Voice Inputs (conversation)
 
 > [!NOTE]
-> There is a bug on Mac when installing packages with `brew` - some libraries cannot be found by `uv`. If you get errors such as 
-`Unable to load any of the following libraries:libhidapi-hidraw.so` and you are on a Mac, try setting `export DYLD_FALLBACK_LIBRARY_PATH="$HOMEBREW_PREFIX/lib"` in your `.zshenv` or equivalent. 
+> There is a bug on Mac when installing packages with `brew` - some libraries cannot be found by `uv`. If you get errors such as
+`Unable to load any of the following libraries:libhidapi-hidraw.so` and you are on a Mac, try setting `export DYLD_FALLBACK_LIBRARY_PATH="$HOMEBREW_PREFIX/lib"` in your `.zshenv` or equivalent.
 
 ## Agent and Robot Examples
 
@@ -75,7 +78,7 @@ Similar to the `Hello World (Spot)` example, except uses the Coinbase wallet rat
 
 ```bash
 cp .env.example .env
-# then, enter your conibase credentials into the .env
+# then, enter your coinbase credentials into the .env
 # then, run
 uv run src/run.py coinbase
 ```
@@ -84,8 +87,8 @@ The agent tracks the balance of testnet ETH in a Coinbase wallet and sends a mes
 
 ```bash
 "system_prompt": "
-... 
-You like receiving ETH. If you receive an ETH transaction, show your appreciation though actions and speech. 
+...
+You like receiving ETH. If you receive an ETH transaction, show your appreciation though actions and speech.
 ...
 4. If there is a new ETH transaction, you might:\n    Move: 'shake paw'\n    Speak: {{'sentence': 'Thank you I really appreciate the ETH you just sent.'}}\n    Face: 'smile'\n\n
 ...",
@@ -108,12 +111,13 @@ COINBASE_API_SECRET="-----BEGIN EC PRIVATE KEY-----\nyour-api-key-private-key\n-
 
 For more details, please see the [Coinbase documentation](https://docs.cdp.coinbase.com/mpc-wallet/docs/wallets).
 
-### Example 2 - Using DeepSeek as the Core LLM
+### Example 2 - Using DeepSeek or Gemini as the Core LLM
 
-Similar to the `Hello World (Spot)` example, except uses `DeepSeek` rather than `OpenAI 4o`.
+Similar to the `Hello World (Spot)` example, except uses `DeepSeek` or `Gemini`rather than `OpenAI 4o`.
 
 ```bash
 uv run src/run.py deepseek
+uv run src/run.py gemini
 ```
 
 ### Example 3 - Using Cloud Endpoints for Voice Inputs
@@ -126,12 +130,12 @@ uv run src/run.py conversation
 
 ### Unitree Go2 Air Quadruped ("dog")
 
-You can control a Unitree Go2 Air. This has been tested for Linux Ubunto 22.04 running on an Nvidia Orin, and a Mac laptop running Seqoia 15.2. To do this: 
+You can control a Unitree Go2 Air. This has been tested for Linux Ubunto 22.04 running on an Nvidia Orin, and a Mac laptop running Seqoia 15.2. To do this:
 
-* Connect an `XBOX` controller to your computer. 
+* Connect an `XBOX` controller to your computer.
 * Connect your computer to the Ethernet port of the Unitree Go2 Air, and keep track of the Ethernet port you are using. For example, the port could be `en0`.
 * Install `CycloneDDS`, if you do not already have it on your computer.
-* Set the correct `CYCLONEDDS_HOME` via `export CYCLONEDDS_HOME="your_path_here/cyclonedds/install"`. You should add this path to your environment e.g. via your `.zshrc`. 
+* Set the correct `CYCLONEDDS_HOME` via `export CYCLONEDDS_HOME="your_path_here/cyclonedds/install"`. You should add this path to your environment e.g. via your `.zshrc`.
 
 ```bash
 uv pip install -r pyproject.toml --extra dds
@@ -143,9 +147,9 @@ OM1 will control a safe and limited subset of motions (such as `stretch` and `si
 * A to stand up
 * B to sit down
 * X to shake paw
-* Y to stretch  
+* Y to stretch
 
-Allowing the dog to `move`, `pounce`, and `run` requires **you** to add this functionality. **Warning: If you add additional movement capabilities, this is at your own risk. Due to the autonomous nature of the system, we recommend to perform such testing in the absence of squirrels, cats, rabbits, or small children (assuming you are providing a `dog` prompt)**. 
+Allowing the dog to `move`, `pounce`, and `run` requires **you** to add this functionality. **Warning: If you add additional movement capabilities, this is at your own risk. Due to the autonomous nature of the system, we recommend to perform such testing in the absence of squirrels, cats, rabbits, or small children (assuming you are providing a `dog` prompt)**.
 
 #### Installing CycloneDDS
 
@@ -230,7 +234,7 @@ Actions are the core capabilities of an agent. For example, for a robot, these c
 
 1. Interface (`interface.py`): Defines input/output types.
 2. Implementation (`implementation/`): Business logic, if any. Otherwise, use passthrough.
-3. Connector (`connector/`): Code that connects `omOS` to specific virtual or physical environments, typically through middleware (e.g. custom APIs, `ROS2`, `Zenoh`, or `CycloneDDS`)
+3. Connector (`connector/`): Code that connects `OM1` to specific virtual or physical environments, typically through middleware (e.g. custom APIs, `ROS2`, `Zenoh`, or `CycloneDDS`)
 
 Example action structure:
 
@@ -241,7 +245,7 @@ actions/
     ├── implementation/
     │   └── passthrough.py
     └── connector/
-        ├── ros2.py      # Maps data/commands to middleware and ROS2
+        ├── ros2.py      # Maps OM1 data/commands to other ROS2
         ├── zenoh.py
         └── unitree.py
 ```
@@ -265,7 +269,7 @@ Agents are configured via JSON files in the `config/` directory. Key configurati
     }
   ],
   "cortex_llm": {
-    "type": "OpenAILLM",  
+    "type": "OpenAILLM",
     "config": {
       "base_url": "",
       "api_key": "your_key_here"
@@ -296,7 +300,21 @@ Agents are configured via JSON files in the `config/` directory. Key configurati
 
   - **Type**: Specifies the LLM plugin.
 
-  - **Config**: Configuration for the LLM, including the Openmind API key. If no API key is provided, the LLM operates with a rate limiter with the OpenMind's public endpoint.
+  - **Config**: Configuration for the LLM, including the API endpoint and API key. If you do not change the file, and use the `openmind_free`, the LLM operates with a rate limiter with the OpenMind's public endpoint.
+
+OpenMind OpenAI Proxy endpoint is [https://api.openmind.org/api/core/openai](https://api.openmind.org/api/core/openai)
+OpenMind DeepSeek Proxy endpoint is [https://api.openmind.org/api/core/deepseek](https://api.openmind.org/api/core/deepseek)
+OpenMind Gemini Proxy endpoint is [https://api.openmind.org/api/core/gemini](https://api.openmind.org/api/core/gemini)
+
+```json
+"cortex_llm": {
+  "type": "OpenAILLM",
+  "config": {
+    "base_url": "...", // Optional: URL of the LLM endpoint
+    "api_key": "..."   // Required: API key from OpenMind or OpenAI
+  }
+}
+```
 
 #### Simulators
 
@@ -339,7 +357,7 @@ Defines the agent’s available capabilities, including action names, their impl
 3. Add new LLM integrations in `src/llm/plugins/`
 4. Test actions with the `passthrough` implementation first
 5. Use type hints and docstrings for better code maintainability
-6. Run `uv run ruff check . --fix` and `uv run black .` check/format your code. 
+6. Run `uv run ruff check . --fix` and `uv run black .` check/format your code.
 
 ## Optional Environment Variables
 

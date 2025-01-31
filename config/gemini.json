@@ -8,9 +8,6 @@
     },
     {
       "type": "FaceEmotionCapture"
-    },
-    {
-      "type": "WalletEthereum"
     }
   ],
   "simulators": [
@@ -19,8 +16,9 @@
     }
   ],
   "cortex_llm": {
-    "type": "DeepSeekLLM",
+    "type": "GeminiLLM",
     "config": {
+      "base_url": "https://api.openmind.org/api/core/gemini",
       "api_key": "openmind_free"
     }
   },

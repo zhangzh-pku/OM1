@@ -42,8 +42,9 @@ def check_webcam():
     """
     cap = cv2.VideoCapture(0)  # 0 is the default camera index
     if not cap.isOpened():
-        logging.error("No webcam found.")
+        logging.info("No webcam found")
         return False
+    logging.info("Found cam(0)")
     return True
 
 

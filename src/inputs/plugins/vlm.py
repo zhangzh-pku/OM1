@@ -84,7 +84,7 @@ class VlmInput(FuserInput[Image.Image]):
         # You can use the `raw_input` variable for something, it is of Type Image
         # But for simpicity let's just create a string that changes
         num = random.randint(0, 100)
-        message = f"I see {num} people. Also, I see a rocket."
+        message = f"DUMMY VLM - FAKE DATA - I see {num} people. Also, I see a rocket."
 
         return Message(timestamp=time.time(), message=message)
 
