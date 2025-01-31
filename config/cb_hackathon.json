@@ -17,8 +17,8 @@
   "cortex_llm": {
     "type": "OpenAILLM",
     "config": {
-      "base_url": "https://api.openmind.org/api/core/openai",
-      "api_key": "openmind_free"
+      "base_url": "https://api.openai.com/v1",
+      "api_key": "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"
     }
   },
   "agent_actions": [

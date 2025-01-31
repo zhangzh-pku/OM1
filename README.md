@@ -126,6 +126,15 @@ uv run src/run.py gemini
 uv run src/run.py conversation
 ```
 
+> [!NOTE]
+> The system is set yo use your default microphone, and your default aurio output (speaker). Please test both your microphone and speaker to make sure they are connrected and working.
+
+### Example 4 - Coinbase Hackathon Configuration
+
+```bash
+uv run src/run.py cb_hackathon
+```
+
 ## Robots
 
 ### Unitree Go2 Air Quadruped ("dog")
