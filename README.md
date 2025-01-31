@@ -28,6 +28,10 @@ brew install portaudio
 brew install hidapi # only needed for XBOX game controller support, for robotics
 ```
 
+> [!NOTE]
+> There is a bug on Mac when installing packages with `brew` - some libraries cannot be found by `uv`. If you get errors such as
+`Unable to load any of the following libraries:libhidapi-hidraw.so` and you are on a Mac, try setting `export DYLD_FALLBACK_LIBRARY_PATH="$HOMEBREW_PREFIX/lib"` in your `.zshenv` or equivalent.
+
 3. Set up environment and configuration variables
 
 Add your Openmind API key in `/config/spot.json`. You can obtain an free Openmind access key at http://openmind.org/free.
@@ -65,10 +69,6 @@ uv run src/run.py spot
 > There should be a `pygame` window that pops up when you run `uv run src/run.py spot`. If you do not see `RacoonSim`, the window might be hidden behind all your other open windows - use "show all windows" (or equivalent) to find it.
 
 ## Examples: Wallets, DeepSeek, and Voice Inputs (conversation)
-
-> [!NOTE]
-> There is a bug on Mac when installing packages with `brew` - some libraries cannot be found by `uv`. If you get errors such as
-`Unable to load any of the following libraries:libhidapi-hidraw.so` and you are on a Mac, try setting `export DYLD_FALLBACK_LIBRARY_PATH="$HOMEBREW_PREFIX/lib"` in your `.zshenv` or equivalent.
 
 ## Agent and Robot Examples
 
