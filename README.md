@@ -83,33 +83,13 @@ cp .env.example .env
 uv run src/run.py coinbase
 ```
 
-The agent tracks the balance of testnet ETH in a Coinbase wallet and sends a message when there is a new transaction. The agent can be instructed via the prompt to express appreciation for receiving tokens. See `/config/coinbase.json` for an example for how this is done:
-
-```bash
-"system_prompt": "
-...
-You like receiving ETH. If you receive an ETH transaction, show your appreciation though actions and speech.
-...
-4. If there is a new ETH transaction, you might:\n    Move: 'shake paw'\n    Speak: {{'sentence': 'Thank you I really appreciate the ETH you just sent.'}}\n    Face: 'smile'\n\n
-...",
-```
-
-The Coinbase wallet currently supports Base Sepolia and Base Mainnet networks. The Coinbase Wallet integration requires the following environment variables:
+The Coinbase Wallet integration requires the following environment variables:
 
 - `COINBASE_WALLET_ID`: The ID for the Coinbase Wallet.
 - `COINBASE_API_KEY`: The API key for the Coinbase Project API.
 - `COINBASE_API_SECRET`: The API secret for the Coinbase Project API.
 
-The API_KEY and API_SECRET are generated from the [Coinbase Developer Portal](https://portal.cdp.coinbase.com) by navigating to the "API Keys" tab and then clicking "Create API Key". If you don't already have a Developer-Managed Wallet, you can create one by following [these instructions](https://docs.cdp.coinbase.com/mpc-wallet/docs/quickstart#creating-a-wallet) with the API key and secret you just created. Then, you can get a Wallet ID from the created wallet.
-
-These keys are all strings and should look like this:
-```bash
-COINBASE_WALLET_ID="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
-COINBASE_API_KEY="organizations/your-org-id/apiKeys/your-api-key-id"
-COINBASE_API_SECRET="-----BEGIN EC PRIVATE KEY-----\nyour-api-key-private-key\n-----END EC PRIVATE KEY-----\n"
-```
-
-For more details, please see the [Coinbase documentation](https://docs.cdp.coinbase.com/mpc-wallet/docs/wallets).
+Please see [Coinbase hackathon](./documentation/coinbase_hackathon.md) for more information.
 
 ### Example 2 - Using DeepSeek or Gemini as the Core LLM
 
