@@ -8,8 +8,8 @@ from typing import Optional
 import cv2
 from deepface import DeepFace
 
-from inputs.base import AgentInputConfig
-from inputs.base.loop import LoopInput
+from inputs.base import SensorOutputConfig
+from inputs.base.loop import FuserInput
 from providers.io_provider import IOProvider
 
 
@@ -43,12 +43,13 @@ def check_webcam():
     """
     cap = cv2.VideoCapture(0)  # 0 is the default camera index
     if not cap.isOpened():
-        logging.error("No webcam found.")
+        logging.info("No webcam found")
         return False
+    logging.info("Found cam(0)")
     return True
 
 
-class FaceEmotionCapture(LoopInput[cv2.typing.MatLike]):
+class FaceEmotionCapture(FuserInput[cv2.typing.MatLike]):
     """
     Real-time facial emotion recognition using webcam input.
 

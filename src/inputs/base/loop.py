@@ -1,11 +1,12 @@
 import typing as T
 
-from inputs.base import AgentInput, AgentInputConfig
+from inputs.base import SensorOutput, SensorOutputConfig
+
 
 R = T.TypeVar("R")
 
 
-class LoopInput(AgentInput[R]):
+class FuserInput(SensorOutput[R]):
     """
     Input polling implementation using a continuous asynchronous loop.
 
@@ -15,7 +16,7 @@ class LoopInput(AgentInput[R]):
 
     def __init__(self, config: AgentInputConfig = AgentInputConfig()):
         """
-        Initialize LoopInput instance.
+        Initialize FuserInput instance.
         """
         super().__init__(config)
 

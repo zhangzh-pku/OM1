@@ -18,15 +18,10 @@
   "cortex_llm": {
     "type": "OpenAILLM",
     "config": {
-      "base_url": "https://api.openmind.org/api/core/openai"
+      "api_key": "openmind_free"
     }
   },
   "agent_actions": [
-    {
-      "name": "move",
-      "implementation": "passthrough",
-      "connector": "ros2"
-    },
     {
       "name": "speech",
       "implementation": "passthrough",

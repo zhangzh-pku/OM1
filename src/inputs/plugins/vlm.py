@@ -6,8 +6,8 @@ from dataclasses import dataclass
 from queue import Empty, Queue
 from typing import Dict, List, Optional
 
-from inputs.base import AgentInputConfig
-from inputs.base.loop import LoopInput
+from inputs.base import SensorOutputConfig
+from inputs.base.loop import FuserInput
 from providers.io_provider import IOProvider
 from providers.vlm_provider import VLMProvider
 
@@ -29,7 +29,7 @@ class Message:
     message: str
 
 
-class VLMInput(LoopInput[str]):
+class VLMInput(FuserInput[str]):
     """
     Vision Language Model input handler.
 
@@ -128,7 +128,8 @@ class VLMInput(LoopInput[str]):
             A timestamped message containing the processed input
         """
         return Message(timestamp=time.time(), message=raw_input)
-
+      
+      
     async def raw_to_text(self, raw_input: Optional[str]):
         """
         Convert raw input to text and update message buffer.

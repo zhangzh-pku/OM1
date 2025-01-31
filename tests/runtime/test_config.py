@@ -4,7 +4,7 @@ from unittest.mock import mock_open, patch
 import pytest
 
 from actions.base import AgentAction
-from inputs.base import AgentInput, AgentInputConfig
+from inputs.base import SensorOutput, SensorOutputConfig
 from llm import LLM
 from llm.output_model import CortexOutputModel
 from runtime.config import RuntimeConfig, load_config
@@ -32,11 +32,9 @@ def mock_config_data():
 
 @pytest.fixture
 def mock_dependencies():
-    class MockInput(AgentInput):
-        def __init__(self, config=AgentInputConfig()):
+    class MockInput(SensorOutput):
+        def __init__(self, config=SensorOutputConfig()):
             super().__init__(config)
-
-        pass
 
     class MockAction(AgentAction):
         def __init__(self):

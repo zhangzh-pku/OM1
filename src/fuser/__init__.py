@@ -3,7 +3,7 @@ import time
 import typing as T
 
 from actions import describe_action
-from inputs.base import AgentInput
+from inputs.base import SensorOutput
 from providers.io_provider import IOProvider
 from runtime.config import RuntimeConfig
 
@@ -40,7 +40,7 @@ class Fuser:
         self.config = config
         self.io_provider = IOProvider()
 
-    def fuse(self, inputs: list[AgentInput], finished_promises: list[T.Any]) -> str:
+    def fuse(self, inputs: list[SensorOutput], finished_promises: list[T.Any]) -> str:
         """
         Combine all inputs into a single formatted prompt string.
 
@@ -49,7 +49,7 @@ class Fuser:
 
         Parameters
         ----------
-        inputs : list[AgentInput]
+        inputs : list[SensorOutput]
             List of agent input objects containing latest input buffers.
         finished_promises : list[Any]
             List of completed promises from previous actions.

@@ -22,7 +22,12 @@ class ActionImplementation(ABC, T.Generic[IT, OT]):
     async def execute(self, input_protocol: IT) -> OT:
         pass
 
+    # Fallback code that will not normally run, but is here
+    # for safety. In general, the specific actions e.g.
+    # /actions/move/connector/ros2.py will provide their
+    # own implementions
     def tick(self) -> None:
+        # fallback setting, specific sleep value should not matter.
         time.sleep(60)
 
 

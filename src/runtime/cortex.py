@@ -133,5 +133,17 @@ class CortexRuntime:
 
         # Trigger the simulators
         await self.simulator_orchestrator.promise(output.commands)
+
+        commands_silent = []
+        for command in output.commands:
+            action_type = command.name
+            # action_spec = command.arguments[0].value
+            if action_type != "speech":
+                commands_silent.append(command)
+                logging.info(f"appended: {action_type}")
+
         # Trigger the actions
-        await self.action_orchestrator.promise(output.commands)
+        if "ASRInput" in prompt:
+            await self.action_orchestrator.promise(output.commands)
+        else:
+            await self.action_orchestrator.promise(commands_silent)

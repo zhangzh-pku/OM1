@@ -3,6 +3,7 @@ from unittest.mock import AsyncMock, Mock, patch
 
 import pytest
 
+from llm.output_model import Command, CommandArgument
 from runtime.config import RuntimeConfig
 from runtime.cortex import CortexRuntime
 
@@ -57,8 +58,11 @@ async def test_tick_successful_execution(runtime):
     )
     mocks["fuser"].fuse.return_value = "test prompt"
 
+    command = Command(
+        name="command1", arguments=[CommandArgument(name="arg1", value="val1")]
+    )
     mock_output = Mock()
-    mock_output.commands = ["command1"]
+    mock_output.commands = [command]
     cortex_runtime.config.cortex_llm.ask = AsyncMock(return_value=mock_output)
 
     mocks["simulator_orchestrator"].promise = AsyncMock()
@@ -72,8 +76,8 @@ async def test_tick_successful_execution(runtime):
         cortex_runtime.config.agent_inputs, finished_promises
     )
     cortex_runtime.config.cortex_llm.ask.assert_called_once_with("test prompt")
-    mocks["simulator_orchestrator"].promise.assert_called_once_with(["command1"])
-    mocks["action_orchestrator"].promise.assert_called_once_with(["command1"])
+    mocks["simulator_orchestrator"].promise.assert_called_once_with([command])
+    mocks["action_orchestrator"].promise.assert_called_once_with([command])
 
 
 @pytest.mark.asyncio
