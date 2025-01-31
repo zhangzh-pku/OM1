@@ -4,7 +4,7 @@ import logging
 from queue import Empty, Queue
 from typing import Dict, List, Optional
 
-from inputs.base import FuserInputConfig
+from inputs.base import SensorOutputConfig
 from inputs.base.loop import FuserInput
 from providers.asr_provider import ASRProvider
 from providers.sleep_ticker_provider import SleepTickerProvider
@@ -18,7 +18,7 @@ class ASRInput(FuserInput[str]):
     and providing text conversion capabilities.
     """
 
-    def __init__(self, config: AgentInputConfig = AgentInputConfig()):
+    def __init__(self, config: SensorOutputConfig = SensorOutputConfig()):
         """
         Initialize ASRInput instance.
         """

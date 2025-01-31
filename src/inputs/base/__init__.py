@@ -29,7 +29,7 @@ class SensorOutput(T.Generic[R]):
         The raw input type that this agent handles
     """
 
-    def __init__(self, config: AgentInputConfig):
+    def __init__(self, config: SensorOutputConfig):
         """
         Initialize an SensorOutput instance.
         """

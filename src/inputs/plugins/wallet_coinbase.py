@@ -24,7 +24,7 @@ class WalletCoinbase(FuserInput[float]):
     Queries current ETH balance and reports a balance increase
     """
 
-    def __init__(self, config: AgentInputConfig = AgentInputConfig()):
+    def __init__(self, config: SensorOutputConfig = SensorOutputConfig()):
         super().__init__(config)
 
         # Track IO

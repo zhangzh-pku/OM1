@@ -43,7 +43,7 @@ class WalletEthereum(FuserInput[float]):
         If connection to Ethereum network fails
     """
 
-    def __init__(self, config: AgentInputConfig = AgentInputConfig()):
+    def __init__(self, config: SensorOutputConfig = SensorOutputConfig()):
         """
         Initialize WalletEthereum instance.
         """

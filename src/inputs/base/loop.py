@@ -2,7 +2,6 @@ import typing as T
 
 from inputs.base import SensorOutput, SensorOutputConfig
 
-
 R = T.TypeVar("R")
 
 
@@ -14,7 +13,7 @@ class FuserInput(SensorOutput[R]):
     as they become available.
     """
 
-    def __init__(self, config: AgentInputConfig = AgentInputConfig()):
+    def __init__(self, config: SensorOutputConfig = SensorOutputConfig()):
         """
         Initialize FuserInput instance.
         """

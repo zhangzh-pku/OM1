@@ -57,7 +57,7 @@ class FaceEmotionCapture(FuserInput[cv2.typing.MatLike]):
     Processes video frames to detect faces and classify emotions.
     """
 
-    def __init__(self, config: AgentInputConfig = AgentInputConfig()):
+    def __init__(self, config: SensorOutputConfig = SensorOutputConfig()):
         """
         Initialize FaceEmotionCapture instance.
         """

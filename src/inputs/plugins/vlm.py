@@ -41,7 +41,7 @@ class VLMInput(FuserInput[str]):
     and provides formatted output of the latest processed messages.
     """
 
-    def __init__(self, config: AgentInputConfig = AgentInputConfig()):
+    def __init__(self, config: SensorOutputConfig = SensorOutputConfig()):
         """
         Initialize VLM input handler.
 
@@ -128,8 +128,7 @@ class VLMInput(FuserInput[str]):
             A timestamped message containing the processed input
         """
         return Message(timestamp=time.time(), message=raw_input)
-      
-      
+
     async def raw_to_text(self, raw_input: Optional[str]):
         """
         Convert raw input to text and update message buffer.
