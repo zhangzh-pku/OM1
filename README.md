@@ -89,7 +89,8 @@ The Coinbase Wallet integration requires the following environment variables:
 - `COINBASE_API_KEY`: The API key for the Coinbase Project API.
 - `COINBASE_API_SECRET`: The API secret for the Coinbase Project API.
 
-Please see [Coinbase hackathon](./documentation/coinbase_hackathon.md) for more information.
+Please see [Coinbase hackathon](https://github.com/OpenmindAGI/omOS/blob/main/documention/coinbase_hackathon.md) for more information.
+
 
 ### Example 2 - Using DeepSeek or Gemini as the Core LLM
 
@@ -109,17 +110,11 @@ uv run src/run.py conversation
 > [!NOTE]
 > The system is set yo use your default microphone, and your default aurio output (speaker). Please test both your microphone and speaker to make sure they are connrected and working.
 
-### Example 4 - Coinbase Hackathon Configuration
-
-```bash
-uv run src/run.py cb_hackathon
-```
-
 ## Robots
 
 ### Unitree Go2 Air Quadruped ("dog")
 
-You can control a Unitree Go2 Air. This has been tested for Linux Ubunto 22.04 running on an Nvidia Orin, and a Mac laptop running Seqoia 15.2. To do this:
+You can control a Unitree Go2 Air. This has been tested for Linux Ubuntu 22.04 running on an Nvidia Orin, and a Mac laptop running Seqoia 15.2. To do this:
 
 * Connect an `XBOX` controller to your computer.
 * Connect your computer to the Ethernet port of the Unitree Go2 Air, and keep track of the Ethernet port you are using. For example, the port could be `en0`.
@@ -155,7 +150,7 @@ cmake .. -DCMAKE_INSTALL_PREFIX=../install -DBUILD_EXAMPLES=ON
 cmake --build . --target install
 ```
 
-Once you have done this, as stated above, set the correct `CYCLONEDDS_HOME` via `export CYCLONEDDS_HOME="your_path_here/cyclonedds/install"`. You should add this path to your environment e.g. via your `.zshrc`. For example, on a Mac this might be: `export CYCLONEDDS_HOME="$HOME/Documents/GitHub/cyclonedds/install"`
+Then, set the correct `CYCLONEDDS_HOME` via `export CYCLONEDDS_HOME="your_path_here/cyclonedds/install"`. You should add this path to your environment e.g. via your `.zshrc`. For example, on a Mac this might be: `export CYCLONEDDS_HOME="$HOME/Documents/GitHub/cyclonedds/install"`
 
 #### Unitree Go2 Air Ethernet Setup
 

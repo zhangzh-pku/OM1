@@ -34,6 +34,12 @@ COINBASE_API_KEY="organizations/your-org-id/apiKeys/your-api-key-id"
 COINBASE_API_SECRET="-----BEGIN EC PRIVATE KEY-----\nyour-api-key-private-key\n-----END EC PRIVATE KEY-----\n"
 ```
 
+### Coinbase Hackathon Quadruped Configuration
+
+```bash
+uv run src/run.py cb_hackathon
+```
+
 
 
 
