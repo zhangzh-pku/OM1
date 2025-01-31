@@ -50,7 +50,6 @@ class DeepSeekLLM(LLM[R]):
         client_kwargs["base_url"] = base_url
         client_kwargs["api_key"] = api_key
 
-        logging.info(f"Initializing DeepSeek client with {client_kwargs}")
         self._client = openai.OpenAI(**client_kwargs)
 
     async def ask(self, prompt: str) -> R | None:
@@ -69,7 +68,7 @@ class DeepSeekLLM(LLM[R]):
             parsing fails.
         """
         try:
-            logging.debug(f"LLM input: {prompt}")
+            logging.debug(f"DeepSeek LLM input: {prompt}")
             self.io_provider.llm_start_time = time.time()
             self.io_provider.set_llm_prompt(prompt)
 

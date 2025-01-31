@@ -26,7 +26,7 @@ def asr_input(mock_asr_provider, mock_sleep_ticker):
 
 
 def test_init(asr_input, mock_asr_provider):
-    assert asr_input.buffer == []
+    assert asr_input.messages == []
     assert asr_input.message_buffer.empty()
     mock_asr_provider.start.assert_called_once()
     mock_asr_provider.register_message_callback.assert_called_once_with(
@@ -69,17 +69,17 @@ async def test_raw_to_text_conversion(asr_input):
 @pytest.mark.asyncio
 async def test_raw_to_text_buffer_management(asr_input, mock_sleep_ticker):
     await asr_input.raw_to_text("first message")
-    assert asr_input.buffer == ["first message"]
+    assert asr_input.messages == ["first message"]
 
     await asr_input.raw_to_text("second message")
-    assert asr_input.buffer == ["first message second message"]
+    assert asr_input.messages == ["first message second message"]
 
 
 def test_formatted_latest_buffer(asr_input):
-    asr_input.buffer = ["test message"]
+    asr_input.messages = ["test message"]
     result = asr_input.formatted_latest_buffer()
     assert "test message" in result
-    assert asr_input.buffer == []
+    assert asr_input.messages == []
 
 
 def test_formatted_latest_buffer_empty(asr_input):

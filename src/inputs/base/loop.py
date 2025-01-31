@@ -1,6 +1,6 @@
 import typing as T
 
-from inputs.base import SensorOutput
+from inputs.base import SensorOutput, SensorOutputConfig
 
 R = T.TypeVar("R")
 
@@ -13,11 +13,11 @@ class FuserInput(SensorOutput[R]):
     as they become available.
     """
 
-    def __init__(self):
+    def __init__(self, config: SensorOutputConfig = SensorOutputConfig()):
         """
         Initialize FuserInput instance.
         """
-        super().__init__()
+        super().__init__(config)
 
     async def _listen_loop(self) -> T.AsyncIterator[R]:
         """

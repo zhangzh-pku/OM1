@@ -6,7 +6,7 @@ from typing import List, Optional
 from actions import load_action
 from actions.base import AgentAction
 from inputs import load_input
-from inputs.base import SensorOutput
+from inputs.base import SensorOutput, SensorOutputConfig
 from llm import LLM, LLMConfig, load_llm
 from llm.output_model import CortexOutputModel
 from simulators import load_simulator
@@ -86,7 +86,9 @@ def load_config(config_name: str) -> RuntimeConfig:
         parsed_config = {
             **raw_config,
             "agent_inputs": [
-                load_input(input["type"])()
+                load_input(input["type"])(
+                    config=SensorOutputConfig(**input.get("config", {}))
+                )
                 for input in raw_config.get("agent_inputs", [])
             ],
             "cortex_llm": load_llm(raw_config["cortex_llm"]["type"])(

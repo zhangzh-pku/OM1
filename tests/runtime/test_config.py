@@ -4,7 +4,7 @@ from unittest.mock import mock_open, patch
 import pytest
 
 from actions.base import AgentAction
-from inputs.base import SensorOutput
+from inputs.base import SensorOutput, SensorOutputConfig
 from llm import LLM
 from llm.output_model import CortexOutputModel
 from runtime.config import RuntimeConfig, load_config
@@ -17,7 +17,7 @@ def mock_config_data():
         "hertz": 10.0,
         "name": "test_config",
         "system_prompt": "test prompt",
-        "agent_inputs": [{"type": "test_input"}],
+        "agent_inputs": [{"type": "test_input", "config": {"base_url": "test-url"}}],
         "cortex_llm": {"type": "test_llm", "config": {"model": "test-model"}},
         "simulators": [{"type": "test_simulator"}],
         "agent_actions": [
@@ -33,7 +33,8 @@ def mock_config_data():
 @pytest.fixture
 def mock_dependencies():
     class MockInput(SensorOutput):
-        pass
+        def __init__(self, config=SensorOutputConfig()):
+            super().__init__(config)
 
     class MockAction(AgentAction):
         def __init__(self):
@@ -65,7 +66,7 @@ def mock_empty_config_data():
         "hertz": 10.0,
         "name": "empty_config",
         "system_prompt": "",
-        "agent_inputs": [],
+        "agent_inputs": [{"type": "nonexistent_input_type", "config": {}}],
         "cortex_llm": {"type": "test_llm", "config": {}},
         "simulators": [],
         "agent_actions": [],
@@ -78,7 +79,10 @@ def mock_multiple_components_config():
         "hertz": 20.0,
         "name": "multiple_components",
         "system_prompt": "test prompt",
-        "agent_inputs": [{"type": "test_input_1"}, {"type": "test_input_2"}],
+        "agent_inputs": [
+            {"type": "test_input_1", "config": {"base_url": "test"}},
+            {"type": "test_input_2"},
+        ],
         "cortex_llm": {"type": "test_llm", "config": {"model": "test-model"}},
         "simulators": [{"type": "test_simulator_1"}, {"type": "test_simulator_2"}],
         "agent_actions": [
@@ -137,7 +141,8 @@ def test_load_empty_config(mock_empty_config_data, mock_dependencies):
         assert config.hertz == mock_empty_config_data["hertz"]
         assert config.name == mock_empty_config_data["name"]
         assert config.system_prompt == ""
-        assert len(config.agent_inputs) == 0
+        assert len(config.agent_inputs) == 1
+        assert isinstance(config.agent_inputs[0], mock_dependencies["input"])
         assert isinstance(config.cortex_llm, mock_dependencies["llm"])
         assert len(config.simulators) == 0
         assert len(config.agent_actions) == 0

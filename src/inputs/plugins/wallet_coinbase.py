@@ -7,6 +7,7 @@ from typing import List, Optional
 
 from cdp import Cdp, Wallet
 
+from inputs.base import SensorOutputConfig
 from inputs.base.loop import FuserInput
 from providers.io_provider import IOProvider
 
@@ -23,7 +24,9 @@ class WalletCoinbase(FuserInput[float]):
     Queries current ETH balance and reports a balance increase
     """
 
-    def __init__(self):
+    def __init__(self, config: SensorOutputConfig = SensorOutputConfig()):
+        super().__init__(config)
+
         # Track IO
         self.io_provider = IOProvider()
         self.messages: list[str] = []
