@@ -17,7 +17,6 @@ dependencies = [
     "gif-pygame",
     "web3",
     "cdp-sdk>=0.15.0",
-    "google-generativeai>=0.3.2",
 ]
 
 [tool.uv.sources]

@@ -39,34 +39,19 @@ class OpenAILLM(LLM[R]):
         """
         super().__init__(output_model, config)
 
-        base_url = None
-        api_key = None
+        base_url = config.base_url or "https://api.openmind.org/api/core/openai"
 
-        openmind_api = "https://api.openmind.org/api/core/openai"
-
-        if config.base_url:
-            if config.base_url == openmind_api:
-                # we are using Openmind endpoint
-                base_url = openmind_api
-                if config.api_key:
-                    api_key = config.api_key
-                else:
-                    raise ValueError("config file missing dummy or real api_key")
-            else:
-                # user is providing custom endpoint
-                logging.info(f"Using custom OpenAI endpoint: {config.base_url}")
-                base_url = config.base_url
-                if config.api_key:
-                    api_key = config.api_key
-                else:
-                    raise ValueError("config file missing api_key: OPENAI_API_KEY")
+        if config.api_key is None or config.api_key == "":
+            raise ValueError("config file missing OpenMind api_key")
+        else:
+            api_key = config.api_key
 
         client_kwargs = {}
         client_kwargs["base_url"] = base_url
         client_kwargs["api_key"] = api_key
 
-        self._client = openai.AsyncClient(**client_kwargs)
         logging.info(f"Initializing OpenAI client with {client_kwargs}")
+        self._client = openai.AsyncClient(**client_kwargs)
 
     async def ask(self, prompt: str) -> R | None:
         """
