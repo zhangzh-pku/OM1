@@ -4,12 +4,12 @@ import logging
 from queue import Empty, Queue
 from typing import Dict, List, Optional
 
-from inputs.base.loop import LoopInput
+from inputs.base.loop import FuserInput
 from providers.asr_provider import ASRProvider
 from providers.sleep_ticker_provider import SleepTickerProvider
 
 
-class ASRInput(LoopInput[str]):
+class ASRInput(FuserInput[str]):
     """
     Automatic Speech Recognition (ASR) input handler.
 

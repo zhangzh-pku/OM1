@@ -34,7 +34,7 @@ class GeminiLLM(LLM[R]):
         base_url = config.base_url or "https://api.openmind.org/api/core/gemini"
 
         if config.api_key is None or config.api_key == "":
-            raise ValueError("config file missing OpenMind api_key")
+            raise ValueError("config file missing api_key")
         else:
             api_key = config.api_key
 

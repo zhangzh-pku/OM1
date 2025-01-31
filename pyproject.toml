@@ -16,7 +16,14 @@ dependencies = [
     "pygame",
     "gif-pygame",
     "web3",
+    "numpy",
     "cdp-sdk>=0.15.0",
+    "hid"
+]
+
+[project.optional-dependencies]
+dds = [
+    "cyclonedds==0.10.2"
 ]
 
 [tool.uv.sources]
@@ -35,19 +42,25 @@ dev = [
 [tool.pytest.ini_options]
 pythonpath = ["src"]
 asyncio_mode = "auto"
+norecursedirs = ["src/unitree"]
 
 [tool.black]
 line-length = 88
 include = '\.pyi?$'
+exclude = "(.venv)|(/src/unitree)"
 
 [tool.isort]
 profile = "black"
 multi_line_output = 3
 line_length = 88
+sources = ["src", "tests"]
+skip_glob = [".venv*", "/src/unitree"]
 
 [tool.ruff]
 line-length = 88
 indent-width = 4
+src = ["src"]
+exclude = ["src/unitree"]
 
 [tool.ruff.lint]
 select = ["E", "F", "I"]

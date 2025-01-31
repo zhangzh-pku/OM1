@@ -55,4 +55,4 @@ def test_ask_signature(llm_class: Type[LLM]):
 def test_init_with_config(llm_class: Type[LLM], config: LLMConfig):
     llm = llm_class(DummyOutputModel, config)
     assert llm._output_model == DummyOutputModel
-    assert llm._conifg == config
+    assert llm._config == config

@@ -3,9 +3,9 @@ import typing as T
 R = T.TypeVar("R")
 
 
-class AgentInput(T.Generic[R]):
+class SensorOutput(T.Generic[R]):
     """
-    Base class for all agent inputs. Provides the interface for converting raw inputs
+    Base class for all sensor outputs aka agent inputs. Provides the interface for converting raw inputs
     into text format for processing by the fuser.
 
     Type Parameters
@@ -16,7 +16,7 @@ class AgentInput(T.Generic[R]):
 
     def __init__(self):
         """
-        Initialize an AgentInput instance.
+        Initialize an SensorOutput instance.
         """
         pass
 

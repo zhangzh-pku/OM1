@@ -26,11 +26,6 @@
   },
   "agent_actions": [
     {
-      "name": "move",
-      "implementation": "passthrough",
-      "connector": "ros2"
-    },
-    {
       "name": "speech",
       "implementation": "passthrough",
       "connector": "ros2"

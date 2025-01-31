@@ -6,7 +6,7 @@ from typing import Optional
 
 from PIL import Image
 
-from inputs.base.loop import LoopInput
+from inputs.base.loop import FuserInput
 from providers.io_provider import IOProvider
 
 
@@ -27,7 +27,7 @@ class Message:
     message: str
 
 
-class VlmInput(LoopInput[Image.Image]):
+class VlmInput(FuserInput[Image.Image]):
     """
     Vision Language Model input handler.
 
@@ -81,9 +81,8 @@ class VlmInput(LoopInput[Image.Image]):
         Message
             Timestamped message containing description
         """
-        # now you can use the `raw_input` variable for something, it is of Type Image
-        # but for simplementationicity let's not bother with the random image,
-        # but just create a string that changes
+        # You can use the `raw_input` variable for something, it is of Type Image
+        # But for simpicity let's just create a string that changes
         num = random.randint(0, 100)
         message = f"DUMMY VLM - FAKE DATA - I see {num} people. Also, I see a rocket."
 

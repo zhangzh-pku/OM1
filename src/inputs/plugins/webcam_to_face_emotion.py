@@ -8,7 +8,7 @@ from typing import Optional
 import cv2
 from deepface import DeepFace
 
-from inputs.base.loop import LoopInput
+from inputs.base.loop import FuserInput
 from providers.io_provider import IOProvider
 
 
@@ -48,7 +48,7 @@ def check_webcam():
     return True
 
 
-class FaceEmotionCapture(LoopInput[cv2.typing.MatLike]):
+class FaceEmotionCapture(FuserInput[cv2.typing.MatLike]):
     """
     Real-time facial emotion recognition using webcam input.
 
