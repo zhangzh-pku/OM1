@@ -27,7 +27,7 @@ dds = [
 ]
 
 [tool.uv.sources]
-omos-modules = { git = "https://github.com/OpenmindAGI/omOS-modules", rev = "1a436840fcfe60ece0f56f075f3c593598035ac1" }
+omos-modules = { git = "https://github.com/OpenmindAGI/omOS-modules", rev = "5b620247d64fb1188d6f0a9120489f9dfda3b5d6" }
 
 [dependency-groups]
 dev = [
