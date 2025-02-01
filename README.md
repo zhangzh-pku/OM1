@@ -4,15 +4,7 @@ Openmind's OM1 is an agent runtime system that enables the creation and executio
 
 ## Quick Start
 
-1. Clone the repo
-
-```bash
-git clone https://github.com/OpenmindAGI/omOS.git
-cd omOS
-git submodule update --init --recursive
-```
-
-2. Install the Rust python package manager `uv`:
+1. Install the Rust python package manager `uv`:
 
 ```bash
 # for linux
@@ -22,7 +14,16 @@ curl -LsSf https://astral.sh/uv/install.sh | sh
 brew install uv
 ```
 
-If you are on Mac, you may need to install `portaudio` and `hidapi` manually:
+2. Clone the repo
+
+```bash
+git clone https://github.com/OpenmindAGI/omOS.git
+cd omOS
+git submodule update --init 
+uv venv
+```
+
+If you are on Mac, you may need to install `portaudio` and `hidapi`:
 ```bash
 brew install portaudio
 brew install hidapi # needed for XBOX game controller support, for robotics
@@ -66,7 +67,7 @@ uv run src/run.py spot
 ```
 
 > [!NOTE]
-> `uv` does many things in the background, such as setting up a good `venv` and downloading any dependencies if needed. Please add new dependencies to `pyproject.toml`.
+> `uv` does many things in the background, such as setting up a `venv` and downloading any dependencies if needed. Please add new dependencies to `pyproject.toml`.
 
 > [!NOTE]
 > If you are running complex models, or need to download dependencies, there may be a delay before the agent starts.
