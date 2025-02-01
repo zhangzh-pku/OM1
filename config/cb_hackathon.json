@@ -23,7 +23,7 @@
   },
   "agent_actions": [
     {
-      "name": "move",
+      "name": "move_safe",
       "implementation": "passthrough",
       "connector": "ros2"
     },
