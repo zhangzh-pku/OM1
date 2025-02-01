@@ -24,7 +24,6 @@ class RacoonSim:
 
         self.name = __class__
         self._initialized = False
-        self.is_macos = platform.system() == 'Darwin'
         
         # Initialize basic attributes
         self.X = 1024
@@ -39,23 +38,12 @@ class RacoonSim:
         self.display = None
         self.animations = {}
         
-        # Set environment variables for macOS
-        if self.is_macos:
-            os.environ['SDL_VIDEODRIVER'] = 'cocoa'
-            os.environ['SDL_THREADSAFE'] = '1'
-            os.environ['PYGAME_HIDE_SUPPORT_PROMPT'] = '1'
-            os.environ['SDL_VIDEO_CENTERED'] = '1'
-        
-        # Initialize pygame in main thread
-        if threading.current_thread() is threading.main_thread():
-            self._initialize_pygame()
-        else:
-            raise RuntimeError("RacoonSim must be initialized in the main thread")
+        # Initialize pygame
+        self._initialize_pygame()
 
     def _initialize_pygame(self):
         """Initialize pygame in the current thread"""
         try:
-            # Environment variables are now handled in run.py
             pygame.init()
             pygame.display.init()
             
