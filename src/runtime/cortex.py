@@ -138,7 +138,7 @@ class CortexRuntime:
         for command in output.commands:
             action_type = command.name
             # action_spec = command.arguments[0].value
-            if action_type != "speech":
+            if action_type != "speak":
                 commands_silent.append(command)
                 logging.info(f"appended: {action_type}")
 

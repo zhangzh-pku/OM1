@@ -63,7 +63,7 @@ class MoveRos2Connector(ActionConnector[MoveInput]):
             logging.info("Unitree AI command: stand up")
             if self.sport_client:
                 self.sport_client.StandUp()
-        elif output_interface.action == "lay down":
+        elif output_interface.action == "sit":
             logging.info("Unitree AI command: lay down")
             if self.sport_client:
                 self.sport_client.StandDown()
@@ -71,8 +71,6 @@ class MoveRos2Connector(ActionConnector[MoveInput]):
             new_msg["thought"] = "pounce"
         elif output_interface.action == "stand still":
             new_msg["thought"] = "stand_still"
-        elif output_interface.action == "sit":
-            new_msg["thought"] = "sit"
         elif output_interface.action == "stretch":
             logging.info("Unitree AI command: stretch")
             if self.sport_client:

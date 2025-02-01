@@ -30,20 +30,20 @@ def load_unitree(config: RuntimeConfig):
         simulation mode.
 
     """
-    unitree_ethernet = os.getenv("UNITREE_WIRED_ETHERNET") or config.unitree_ethernet
-    if unitree_ethernet is not None:
-        logging.info(
-            f"Using {unitree_ethernet} as the Unitree network Ethernet adapter"
-        )
+    # unitree_ethernet = os.getenv("UNITREE_WIRED_ETHERNET") or config.unitree_ethernet
+    # if unitree_ethernet is not None:
+    #     logging.info(
+    #         f"Using {unitree_ethernet} as the Unitree network Ethernet adapter"
+    #     )
 
-        from unitree.unitree_sdk2py.core.channel import ChannelFactoryInitialize
+    #     from unitree.unitree_sdk2py.core.channel import ChannelFactoryInitialize
 
-        if unitree_ethernet != "SIM":
-            try:
-                ChannelFactoryInitialize(0, unitree_ethernet)
-            except Exception as e:
-                logging.error(f"Failed to initialize Unitree Ethernet channel: {e}")
-                raise e
-            logging.info("Booting Unitree and CycloneDDS")
-        else:
-            logging.info("Booting Unitree in simulation mode")
+    #     if unitree_ethernet != "SIM":
+    #         try:
+    #             ChannelFactoryInitialize(0, unitree_ethernet)
+    #         except Exception as e:
+    #             logging.error(f"Failed to initialize Unitree Ethernet channel: {e}")
+    #             raise e
+    #         logging.info("Booting Unitree and CycloneDDS")
+    #     else:
+    #         logging.info("Booting Unitree in simulation mode")

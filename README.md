@@ -35,6 +35,11 @@ sudo apt-get update
 sudo apt-get install portaudio19-dev python-all-dev libhidapi-dev
 ```
 
+
+sudo apt-get install python-dev libusb-1.0-0-dev libudev-dev
+$ sudo pip install --upgrade setuptools
+$ sudo pip install hidapi
+
 > [!NOTE]
 > There is a bug on Mac when installing packages with `brew` - some libraries cannot be found by `uv`. If you get errors such as
 `Unable to load any of the following libraries:libhidapi-hidraw.so` and you are on a Mac, try setting `export DYLD_FALLBACK_LIBRARY_PATH="$HOMEBREW_PREFIX/lib"` in your `.zshenv` or equivalent.
