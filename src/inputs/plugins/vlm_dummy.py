@@ -31,7 +31,7 @@ class DummyVLMInput(FuserInput[Image.Image]):
     """
     Vision Language Model input handler.
 
-    Simluates processing of image inputs and generates dummy text descriptions. 
+    Simluates processing of image inputs and generates dummy text descriptions.
     Maintains a buffer of processed messages.
     """
 
