@@ -11,9 +11,11 @@ class MovementAction(str, Enum):
     STAND_STILL = "stand still"
     DO_NOTHING = "stand still"
 
+
 @dataclass
 class MoveInput:
     action: MovementAction
+
 
 @dataclass
 class Move(Interface[MoveInput, MoveInput]):

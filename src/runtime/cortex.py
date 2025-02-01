@@ -140,10 +140,15 @@ class CortexRuntime:
             # action_spec = command.arguments[0].value
             if action_type != "speak":
                 commands_silent.append(command)
-                logging.info(f"appended: {action_type}")
+                logging.debug(f"appended: {action_type}")
 
-        # Trigger the actions
-        if ("ASRInput" in prompt) or ("WalletCoinbase" in prompt):
+        # Trigger actions
+        if self.config.name == "spot_speak":
+            # spot, the speaking dog
+            await self.action_orchestrator.promise(output.commands)
+        elif ("ASRInput" in prompt) or ("WalletCoinbase" in prompt):
+            # send speech data to loudspeaker
             await self.action_orchestrator.promise(output.commands)
         else:
+            # do not send speech to loudpspear but only to simulator
             await self.action_orchestrator.promise(commands_silent)

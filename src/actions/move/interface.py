@@ -3,6 +3,7 @@ from enum import Enum
 
 from actions.base import Interface
 
+
 class MovementAction(str, Enum):
     STAND_STILL = "stand still"
     SIT = "sit"
@@ -12,10 +13,13 @@ class MovementAction(str, Enum):
     WALK_BACK = "walk back"
     RUN = "run"
     JUMP = "jump"
+    WAG_TAIL = "wag tail"
+
 
 @dataclass
 class MoveInput:
     action: MovementAction
+
 
 @dataclass
 class Move(Interface[MoveInput, MoveInput]):

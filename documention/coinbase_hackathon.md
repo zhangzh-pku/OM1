@@ -42,3 +42,5 @@ Build CycloneDDS. Then, `export CYCLONEDDS_HOME="$HOME/cyclonedds/install"`. The
 uv pip install -r pyproject.toml --extra dds #(only needed first time)
 uv run src/run.py cb_hackathon
 ```
+
+If you do not have a Unitree dog connected, you can still test the code by in sim mode by setting `UNITREE_WIRED_ETHERNET=SIM` in your `.env` file to debug some limited functionality.
