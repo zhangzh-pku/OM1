@@ -15,21 +15,7 @@ from providers.io_provider import IOProvider
 
 
 class RacoonSim:
-    _instance = None
-    _init_lock = threading.Lock()
-    _event_queue = Queue()
-    _main_thread_initialized = threading.Event()
-
-    def __new__(cls):
-        with cls._init_lock:
-            if cls._instance is None:
-                cls._instance = super(RacoonSim, cls).__new__(cls)
-            return cls._instance
-
     def __init__(self):
-        if hasattr(self, '_initialized'):
-            return
-            
         self.messages: list[str] = []
         self.io_provider = IOProvider()
         self.io_provider.fuser_end_time = 0
@@ -53,13 +39,18 @@ class RacoonSim:
         self.display = None
         self.animations = {}
         
+        # Set environment variables for macOS
+        if self.is_macos:
+            os.environ['SDL_VIDEODRIVER'] = 'cocoa'
+            os.environ['SDL_THREADSAFE'] = '1'
+            os.environ['PYGAME_HIDE_SUPPORT_PROMPT'] = '1'
+            os.environ['SDL_VIDEO_CENTERED'] = '1'
+        
         # Initialize pygame in main thread
         if threading.current_thread() is threading.main_thread():
             self._initialize_pygame()
         else:
-            # If not in main thread, queue initialization for main thread
-            self._event_queue.put(('init', None))
-            self._main_thread_initialized.wait()
+            raise RuntimeError("RacoonSim must be initialized in the main thread")
 
     def _initialize_pygame(self):
         """Initialize pygame in the current thread"""
