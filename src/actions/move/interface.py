@@ -10,6 +10,7 @@ class MovementAction(str, Enum):
     SHAKE_PAW = "shake paw"
     STRETCH = "stretch"
 
+
 @dataclass
 class MoveInput:
     action: MovementAction

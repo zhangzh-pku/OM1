@@ -33,12 +33,12 @@ If you are on Linux, you may need to install `portaudio`:
 ```bash
 sudo apt-get update
 sudo apt-get install portaudio19-dev python-all-dev libhidapi-dev
-```
-
-
 sudo apt-get install python-dev libusb-1.0-0-dev libudev-dev
-$ sudo pip install --upgrade setuptools
-$ sudo pip install hidapi
+
+# possibly also
+sudo pip install --upgrade setuptools
+sudo pip install hidapi
+```
 
 > [!NOTE]
 > There is a bug on Mac when installing packages with `brew` - some libraries cannot be found by `uv`. If you get errors such as

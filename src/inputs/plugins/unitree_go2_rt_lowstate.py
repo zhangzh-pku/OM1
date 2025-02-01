@@ -10,8 +10,10 @@ from inputs.base.loop import FuserInput
 from providers.io_provider import IOProvider
 
 try:
-    from unitree.unitree_sdk2py.core.channel import ChannelSubscriber
-    from unitree.unitree_sdk2py.core.channel import ChannelFactoryInitialize
+    from unitree.unitree_sdk2py.core.channel import (
+        ChannelFactoryInitialize,
+        ChannelSubscriber,
+    )
     from unitree.unitree_sdk2py.idl.unitree_go.msg.dds_ import LowState_
 except ImportError:
     logging.warning(
