@@ -1,10 +1,10 @@
 import logging
 
 from actions.base import ActionConnector
-from actions.speech.interface import SpeechInput
+from actions.speak.interface import SpeakInput
 
 
-class SpeechRos2Connector(ActionConnector[SpeechInput]):
-    async def connect(self, output_interface: SpeechInput) -> None:
+class SpeakRos2Connector(ActionConnector[SpeakInput]):
+    async def connect(self, output_interface: SpeakInput) -> None:
         sentence_to_speak = {"sentence": output_interface.sentence}
         logging.info(f"SendThisToROS2: {sentence_to_speak}")

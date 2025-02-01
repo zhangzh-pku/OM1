@@ -17,6 +17,8 @@ class FaceRos2Connector(ActionConnector[FaceInput]):
             new_msg["face"] = "cry"
         elif output_interface.action == "think":
             new_msg["face"] = "think"
+        elif output_interface.action == "joy":
+            new_msg["face"] = "joy"
         else:
             logging.info(f"Unknown face type: {output_interface.action}")
             # raise ValueError(f"Unknown face type: {output_interface.action}")

@@ -31,7 +31,7 @@
       "connector": "ros2"
     },
     {
-      "name": "speech",
+      "name": "speak",
       "implementation": "passthrough",
       "connector": "ros2"
     },

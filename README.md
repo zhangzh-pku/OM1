@@ -8,7 +8,7 @@ Openmind's OM1 is an agent runtime system that enables the creation and executio
 
 ```bash
 git clone https://github.com/OpenmindAGI/omOS.git
-mkdir ./omOS/src/unitree
+cd omOS
 git submodule update --init --recursive
 ```
 
@@ -17,15 +17,21 @@ git submodule update --init --recursive
 ```bash
 # for linux
 curl -LsSf https://astral.sh/uv/install.sh | sh
+
 # for mac
 brew install uv
 ```
 
-If you are on mac, you may need to install `portaudio` and `hidapi` manually:
-
+If you are on Mac, you may need to install `portaudio` and `hidapi` manually:
 ```bash
 brew install portaudio
 brew install hidapi # needed for XBOX game controller support, for robotics
+```
+
+If you are on Linux, you may need to install `portaudio`:
+```bash
+sudo apt-get update
+sudo apt-get install portaudio19-dev python-all-dev libhidapi-dev
 ```
 
 > [!NOTE]
@@ -147,7 +153,7 @@ cmake .. -DCMAKE_INSTALL_PREFIX=../install -DBUILD_EXAMPLES=ON
 cmake --build . --target install
 ```
 
-Then, set the correct `CYCLONEDDS_HOME` via `export CYCLONEDDS_HOME="your_path_here/cyclonedds/install"`. You should add this path to your environment e.g. via your `.zshrc`. For example, on a Mac this might be: `export CYCLONEDDS_HOME="$HOME/Documents/GitHub/cyclonedds/install"`
+Then, set the correct `CYCLONEDDS_HOME` via `export CYCLONEDDS_HOME="your_path_here/cyclonedds/install"`. You should add this path to your environment e.g. via your `.zshrc`. For example, on a Mac this might be: `export CYCLONEDDS_HOME="$HOME/Documents/GitHub/cyclonedds/install"`. On Linux, this might be `export CYCLONEDDS_HOME="$HOME/cyclonedds/install"`.
 
 #### Unitree Go2 Air Ethernet Setup
 

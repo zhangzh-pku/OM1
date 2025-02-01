@@ -36,10 +36,9 @@ COINBASE_API_SECRET="-----BEGIN EC PRIVATE KEY-----\nyour-api-key-private-key\n-
 
 ### Coinbase Hackathon Quadruped Configuration
 
+Build CycloneDDS. Then, `export CYCLONEDDS_HOME="$HOME/cyclonedds/install"`. Then,
+
 ```bash
+uv pip install -r pyproject.toml --extra dds #(only needed first time)
 uv run src/run.py cb_hackathon
 ```
-
-
-
-

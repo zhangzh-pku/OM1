@@ -10,11 +10,6 @@
       "type": "WalletEthereum"
     }
   ],
-  "simulators": [
-    {
-      "type": "RacoonSim"
-    }
-  ],
   "cortex_llm": {
     "type": "OpenAILLM",
     "config": {
