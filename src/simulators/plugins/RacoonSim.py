@@ -1,6 +1,7 @@
 import os
 import re
 import time
+import logging
 from typing import List
 import pygame
 import gif_pygame
@@ -71,7 +72,7 @@ class RacoonSim:
             return True
             
         except Exception as e:
-            print(f"Error initializing pygame: {str(e)}")
+            logging.error(f"Error initializing pygame: {str(e)}")
             if pygame.get_init():
                 pygame.quit()
             return False
@@ -104,7 +105,7 @@ class RacoonSim:
             self.logo = pygame.image.load(logo_path)
             self.logo = pygame.transform.scale(self.logo, (100, 30))  # Adjust size as needed
         except Exception as e:
-            print(f"Error loading logo: {e}")
+            logging.error(f"Error loading logo: {e}")
             self.logo = None
             
         # Load animations
@@ -134,14 +135,14 @@ class RacoonSim:
                 if os.path.exists(filepath):
                     try:
                         self.animations[action] = gif_pygame.load(filepath)
-                        print(f"Loaded animation: {action} from {filepath}")
+                        logging.info(f"Loaded animation: {action} from {filepath}")
                     except Exception as e:
-                        print(f"Failed to load animation {action}: {str(e)}")
+                        logging.error(f"Failed to load animation {action}: {str(e)}")
                 else:
-                    print(f"Missing animation file: {filepath}")
+                    logging.warning(f"Missing animation file: {filepath}")
                     
         except Exception as e:
-            print(f"Error loading animations: {str(e)}")
+            logging.error(f"Error loading animations: {str(e)}")
             self.animations = {}
 
     def _draw_panel(self, surface, rect, color):
@@ -204,7 +205,7 @@ class RacoonSim:
             return final_surface
                 
         except Exception as e:
-            print(f"Animation render error: {e}")
+            logging.error(f"Animation render error: {e}")
             return None
 
     def _render_main_area(self):
@@ -283,7 +284,7 @@ class RacoonSim:
             self.surface_main.blit(text_surface, text_rect)
             
         except Exception as e:
-            print(f"Error in main area render: {e}")
+            logging.error(f"Error in main area render: {e}")
 
     def _render_footer(self):
         """Render footer with OpenMind logo and info"""
@@ -322,7 +323,7 @@ class RacoonSim:
             self.surface_main.blit(text_surface, text_rect)
             
         except Exception as e:
-            print(f"Error rendering footer: {e}")
+            logging.error(f"Error rendering footer: {e}")
 
     def _render_actions_panel(self, x, y, width):
         """Render available actions panel with improved aesthetics"""
@@ -628,7 +629,7 @@ class RacoonSim:
                     self.surface_info = pygame.Surface((300, self.Y))
                     self.surface_main = pygame.Surface((self.X - 300, self.Y))
         except Exception as e:
-            print(f"Error handling events: {e}")
+            logging.error(f"Error handling events: {e}")
 
     def tick(self) -> None:
         """Main update loop"""
@@ -688,7 +689,7 @@ class RacoonSim:
             self.clock.tick(60)
             
         except Exception as e:
-            print(f"Error in tick: {str(e)}")
+            logging.error(f"Error in tick: {str(e)}")
 
     def input_clean(self, input, earliest_time) -> str:
         st = input
@@ -729,7 +730,7 @@ class RacoonSim:
                     self.update_wallet(float(command.arguments[0].value))
             
         except Exception as e:
-            print(f"Error in sim update: {str(e)}")
+            logging.error(f"Error in sim update: {str(e)}")
 
     def cleanup(self):
         """Clean up resources"""
@@ -737,7 +738,7 @@ class RacoonSim:
             if pygame.get_init():
                 pygame.quit()
         except Exception as e:
-            print(f"Error during cleanup: {e}")
+            logging.error(f"Error during cleanup: {e}")
         finally:
             self._initialized = False
 
@@ -757,5 +758,18 @@ class RacoonSim:
         try:
             self.eth_balance = f"{balance:.3f} ETH"
         except Exception as e:
-            print(f"Error updating wallet: {e}")
+            logging.error(f"Error updating wallet: {e}")
             self.eth_balance = "0.000 ETH"
+
+    def __enter__(self):
+        """Initialize platform-specific settings before pygame"""
+        if platform.system() == 'Darwin':
+            os.environ['SDL_VIDEODRIVER'] = 'cocoa'
+            os.environ['SDL_THREADSAFE'] = '1'
+            os.environ['PYGAME_HIDE_SUPPORT_PROMPT'] = '1'
+            os.environ['SDL_VIDEO_CENTERED'] = '1'
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        """Cleanup when exiting context"""
+        self.cleanup()
