@@ -8,6 +8,9 @@
     },
     {
       "type": "WalletEthereum"
+    },
+    {
+      "type": "GovernanceEthereum"
     }
   ],
   "simulators": [

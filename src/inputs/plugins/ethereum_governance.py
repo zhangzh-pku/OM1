@@ -3,16 +3,14 @@ import logging
 import os
 import random
 import time
+import requests
+
 from dataclasses import dataclass
 from typing import List, Optional
-
-from web3 import Web3
 
 from inputs.base import SensorOutputConfig
 from inputs.base.loop import FuserInput
 from providers.io_provider import IOProvider
-
-import requests
 
 @dataclass
 class Message:
@@ -68,14 +66,15 @@ class GovernanceEthereum(FuserInput[float]):
         """
         super().__init__(config)
 
+        self.io_provider = IOProvider()
         self.POLL_INTERVAL = 5
         self.api_endpoint = "https://api.openmind.org/api"
         self.universal_rule_url = f"{self.api_endpoint}/core/rules"
         self.backup_universal_rule = """You are honest, curious, and friendly. Don't hurt people."""
         self.universal_rule = self.load_rules_from_blockchain()
-
-        sevenRule = f"7777 rules: {self.universal_rule}"
-        logging.info(sevenRule)
+        self.messages: list[str] = []
+        
+        logging.info(f"7777 rules: {self.universal_rule}")
 
     async def _poll(self) -> None:
         """
@@ -90,8 +89,7 @@ class GovernanceEthereum(FuserInput[float]):
 
         try:
             self.universal_rule = self.load_rules_from_blockchain()
-            sevenRule = f"7777 rules: {self.universal_rule}"
-            logging.info(sevenRule)
+            logging.info(f"7777 rules: {self.universal_rule}")
         except Exception as e:
             logging.error(f"Error fetching blockchain data: {e}")
 
