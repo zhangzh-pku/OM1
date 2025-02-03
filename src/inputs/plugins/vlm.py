@@ -1,13 +1,15 @@
 import asyncio
-import random
+import json
+import logging
 import time
 from dataclasses import dataclass
-from typing import Optional
+from queue import Empty, Queue
+from typing import Dict, List, Optional
 
-from PIL import Image
-
+from inputs.base import SensorOutputConfig
 from inputs.base.loop import FuserInput
 from providers.io_provider import IOProvider
+from providers.vlm_provider import VLMProvider
 
 
 @dataclass
@@ -27,76 +29,121 @@ class Message:
     message: str
 
 
-class VlmInput(FuserInput[Image.Image]):
+class VLMInput(FuserInput[str]):
     """
     Vision Language Model input handler.
 
-    Processes image inputs and generates text descriptions using a vision
-    language model. Maintains a buffer of processed messages.
+    A class that processes image inputs and generates text descriptions using
+    a vision language model. It maintains an internal buffer of processed messages
+    and interfaces with a VLM provider for image analysis.
+
+    The class handles asynchronous processing of images, maintains message history,
+    and provides formatted output of the latest processed messages.
     """
 
-    def __init__(self):
+    def __init__(self, config: SensorOutputConfig = SensorOutputConfig()):
         """
-        Initialize VLM input handler with empty message buffer.
+        Initialize VLM input handler.
+
+        Sets up the required providers and buffers for handling VLM processing.
+        Initializes connection to the VLM service and registers message handlers.
         """
+        super().__init__(config)
+
         # Track IO
         self.io_provider = IOProvider()
 
-        # Messages buffer
-        self.messages: list[Message] = []
+        # Buffer for storing the final output
+        self.messages: List[Message] = []
 
-    async def _poll(self) -> Image.Image:
-        """
-        Poll for new image input.
+        # Buffer for storing messages
+        self.message_buffer: Queue[str] = Queue()
 
-        Currently generates random colored images for testing.
-        In production, this would interface with camera or sensor.
-
-        Returns
-        -------
-        Image.Image
-            Generated or captured image
-        """
-        await asyncio.sleep(0.5)
-
-        # this could be a camera or other sensor
-        img = Image.new(
-            "RGB",
-            (100, 100),
-            (random.randint(0, 255), random.randint(0, 255), random.randint(0, 255)),
+        # Initialize VLM provider
+        base_url = (
+            self.config.base_url
+            if self.config.base_url
+            else "wss://api-vila.openmind.org"
         )
-        return img
 
-    async def _raw_to_text(self, raw_input: Image.Image) -> Message:
+        self.vlm: VLMProvider = VLMProvider(ws_url=base_url)
+        self.vlm.start()
+        self.vlm.register_message_callback(self._handle_vlm_message)
+
+    def _handle_vlm_message(self, raw_message: str):
         """
-        Process raw image input to generate text description.
+        Process incoming VLM messages.
+
+        Parses JSON messages from the VLM service and adds valid responses
+        to the message buffer for further processing.
 
         Parameters
         ----------
-        raw_input : Image.Image
-            Input image to process
+        raw_message : str
+            Raw JSON message received from the VLM service
+        """
+        try:
+            json_message: Dict = json.loads(raw_message)
+            if "vlm_reply" in json_message:
+                vlm_reply = json_message["vlm_reply"]
+                self.message_buffer.put(vlm_reply)
+                logging.info("Detected VLM message: %s", vlm_reply)
+        except json.JSONDecodeError:
+            pass
+
+    async def _poll(self) -> Optional[str]:
+        """
+        Poll for new messages from the VLM service.
+
+        Checks the message buffer for new messages with a brief delay
+        to prevent excessive CPU usage.
+
+        Returns
+        -------
+        Optional[str]
+            The next message from the buffer if available, None otherwise
+        """
+        await asyncio.sleep(0.5)
+        try:
+            message = self.message_buffer.get_nowait()
+            return message
+        except Empty:
+            return None
+
+    async def _raw_to_text(self, raw_input: str) -> Message:
+        """
+        Process raw input to generate a timestamped message.
+
+        Creates a Message object from the raw input string, adding
+        the current timestamp.
+
+        Parameters
+        ----------
+        raw_input : str
+            Raw input string to be processed
 
         Returns
         -------
         Message
-            Timestamped message containing description
+            A timestamped message containing the processed input
         """
-        # You can use the `raw_input` variable for something, it is of Type Image
-        # But for simpicity let's just create a string that changes
-        num = random.randint(0, 100)
-        message = f"DUMMY VLM - FAKE DATA - I see {num} people. Also, I see a rocket."
+        return Message(timestamp=time.time(), message=raw_input)
 
-        return Message(timestamp=time.time(), message=message)
-
-    async def raw_to_text(self, raw_input: Image.Image):
+    async def raw_to_text(self, raw_input: Optional[str]):
         """
-        Convert raw image to text and update message buffer.
+        Convert raw input to text and update message buffer.
+
+        Processes the raw input if present and adds the resulting
+        message to the internal message buffer.
 
         Parameters
         ----------
-        raw_input : Image.Image
-            Raw image to be processed
+        raw_input : Optional[str]
+            Raw input to be processed, or None if no input is available
         """
+        if raw_input is None:
+            return
+
         pending_message = await self._raw_to_text(raw_input)
 
         if pending_message is not None:
@@ -106,13 +153,16 @@ class VlmInput(FuserInput[Image.Image]):
         """
         Format and clear the latest buffer contents.
 
-        Formats the most recent message with timestamp and class name,
-        adds it to the IO provider, then clears the buffer.
+        Retrieves the most recent message from the buffer, formats it
+        with timestamp and class name, adds it to the IO provider,
+        and clears the buffer.
 
         Returns
         -------
         Optional[str]
-            Formatted string of buffer contents or None if buffer is empty
+            Formatted string containing the latest message and metadata,
+            or None if the buffer is empty
+
         """
         if len(self.messages) == 0:
             return None

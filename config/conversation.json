@@ -15,7 +15,7 @@
   },
   "agent_actions": [
     {
-      "name": "speech",
+      "name": "speak",
       "implementation": "passthrough",
       "connector": "tts"
     }

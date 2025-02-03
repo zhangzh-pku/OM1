@@ -4,29 +4,45 @@ Openmind's OM1 is an agent runtime system that enables the creation and executio
 
 ## Quick Start
 
-1. Clone the repo
-
-```bash
-git clone https://github.com/OpenmindAGI/omOS.git
-mkdir ./omOS/src/unitree
-git submodule update --init --recursive
-```
-
-2. Install the Rust python package manager `uv`:
+1. Install the Rust python package manager `uv`:
 
 ```bash
 # for linux
 curl -LsSf https://astral.sh/uv/install.sh | sh
+
 # for mac
 brew install uv
 ```
 
-If you are on mac, you may need to install `portaudio` and `hidapi` manually:
+2. Clone the repo
 
 ```bash
-brew install portaudio
-brew install hidapi # only needed for XBOX game controller support, for robotics
+git clone https://github.com/OpenmindAGI/omOS.git
+cd omOS
+git submodule update --init 
+uv venv
 ```
+
+If you are on Mac, you may need to install `portaudio` and `hidapi`:
+```bash
+brew install portaudio
+brew install hidapi # needed for XBOX game controller support, for robotics
+```
+
+If you are on Linux, you may need to install `portaudio`:
+```bash
+sudo apt-get update
+sudo apt-get install portaudio19-dev python-all-dev libhidapi-dev
+sudo apt-get install python-dev libusb-1.0-0-dev libudev-dev
+
+# possibly also
+sudo pip install --upgrade setuptools
+sudo pip install hidapi
+```
+
+> [!NOTE]
+> There is a bug on Mac when installing packages with `brew` - some libraries cannot be found by `uv`. If you get errors such as
+`Unable to load any of the following libraries:libhidapi-hidraw.so` and you are on a Mac, try setting `export DYLD_FALLBACK_LIBRARY_PATH="$HOMEBREW_PREFIX/lib"` in your `.zshenv` or equivalent.
 
 3. Set up environment and configuration variables
 
@@ -55,8 +71,10 @@ This basic agent uses webcam data to estimate your emotion, generates a fake VLM
 uv run src/run.py spot
 ```
 
+Add ` --debug` to see more logging information. 
+
 > [!NOTE]
-> `uv` does many things in the background, such as setting up a good `venv` and downloading any dependencies if needed. Please add new dependencies to `pyproject.toml`.
+> `uv` does many things in the background, such as setting up a `venv` and downloading any dependencies if needed. Please add new dependencies to `pyproject.toml`.
 
 > [!NOTE]
 > If you are running complex models, or need to download dependencies, there may be a delay before the agent starts.
@@ -66,50 +84,24 @@ uv run src/run.py spot
 
 ## Examples: Wallets, DeepSeek, and Voice Inputs (conversation)
 
-> [!NOTE]
-> There is a bug on Mac when installing packages with `brew` - some libraries cannot be found by `uv`. If you get errors such as
-`Unable to load any of the following libraries:libhidapi-hidraw.so` and you are on a Mac, try setting `export DYLD_FALLBACK_LIBRARY_PATH="$HOMEBREW_PREFIX/lib"` in your `.zshenv` or equivalent.
-
-## Agent and Robot Examples
-
 ### Example 1 - The Coinbase Wallet
 
 Similar to the `Hello World (Spot)` example, except uses the Coinbase wallet rather than Ethereum Mainnet.
 
 ```bash
 cp .env.example .env
-# then, enter your coinbase credentials into the .env
-# then, run
+# then, enter your coinbase credentials into the .env and run
 uv run src/run.py coinbase
 ```
 
-The agent tracks the balance of testnet ETH in a Coinbase wallet and sends a message when there is a new transaction. The agent can be instructed via the prompt to express appreciation for receiving tokens. See `/config/coinbase.json` for an example for how this is done:
-
-```bash
-"system_prompt": "
-...
-You like receiving ETH. If you receive an ETH transaction, show your appreciation though actions and speech.
-...
-4. If there is a new ETH transaction, you might:\n    Move: 'shake paw'\n    Speak: {{'sentence': 'Thank you I really appreciate the ETH you just sent.'}}\n    Face: 'smile'\n\n
-...",
-```
-
-The Coinbase wallet currently supports Base Sepolia and Base Mainnet networks. The Coinbase Wallet integration requires the following environment variables:
+The Coinbase Wallet integration requires the following environment variables:
 
 - `COINBASE_WALLET_ID`: The ID for the Coinbase Wallet.
 - `COINBASE_API_KEY`: The API key for the Coinbase Project API.
 - `COINBASE_API_SECRET`: The API secret for the Coinbase Project API.
 
-The API_KEY and API_SECRET are generated from the [Coinbase Developer Portal](https://portal.cdp.coinbase.com) by navigating to the "API Keys" tab and then clicking "Create API Key". If you don't already have a Developer-Managed Wallet, you can create one by following [these instructions](https://docs.cdp.coinbase.com/mpc-wallet/docs/quickstart#creating-a-wallet) with the API key and secret you just created. Then, you can get a Wallet ID from the created wallet.
+Please see [Coinbase hackathon](https://github.com/OpenmindAGI/omOS/blob/main/documention/coinbase_hackathon.md) for more information.
 
-These keys are all strings and should look like this:
-```bash
-COINBASE_WALLET_ID="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
-COINBASE_API_KEY="organizations/your-org-id/apiKeys/your-api-key-id"
-COINBASE_API_SECRET="-----BEGIN EC PRIVATE KEY-----\nyour-api-key-private-key\n-----END EC PRIVATE KEY-----\n"
-```
-
-For more details, please see the [Coinbase documentation](https://docs.cdp.coinbase.com/mpc-wallet/docs/wallets).
 
 ### Example 2 - Using DeepSeek or Gemini as the Core LLM
 
@@ -129,17 +121,11 @@ uv run src/run.py conversation
 > [!NOTE]
 > The system is set yo use your default microphone, and your default aurio output (speaker). Please test both your microphone and speaker to make sure they are connrected and working.
 
-### Example 4 - Coinbase Hackathon Configuration
-
-```bash
-uv run src/run.py cb_hackathon
-```
-
 ## Robots
 
 ### Unitree Go2 Air Quadruped ("dog")
 
-You can control a Unitree Go2 Air. This has been tested for Linux Ubunto 22.04 running on an Nvidia Orin, and a Mac laptop running Seqoia 15.2. To do this:
+You can control a Unitree Go2 Air. This has been tested for Linux Ubuntu 22.04 running on an Nvidia Orin, and a Mac laptop running Seqoia 15.2. To do this:
 
 * Connect an `XBOX` controller to your computer.
 * Connect your computer to the Ethernet port of the Unitree Go2 Air, and keep track of the Ethernet port you are using. For example, the port could be `en0`.
@@ -175,7 +161,7 @@ cmake .. -DCMAKE_INSTALL_PREFIX=../install -DBUILD_EXAMPLES=ON
 cmake --build . --target install
 ```
 
-Once you have done this, as stated above, set the correct `CYCLONEDDS_HOME` via `export CYCLONEDDS_HOME="your_path_here/cyclonedds/install"`. You should add this path to your environment e.g. via your `.zshrc`. For example, on a Mac this might be: `export CYCLONEDDS_HOME="$HOME/Documents/GitHub/cyclonedds/install"`
+Then, set the correct `CYCLONEDDS_HOME` via `export CYCLONEDDS_HOME="your_path_here/cyclonedds/install"`. You should add this path to your environment e.g. via your `.zshrc`. For example, on a Mac this might be: `export CYCLONEDDS_HOME="$HOME/Documents/GitHub/cyclonedds/install"`. On Linux, this might be `export CYCLONEDDS_HOME="$HOME/cyclonedds/install"`.
 
 #### Unitree Go2 Air Ethernet Setup
 
@@ -254,7 +240,7 @@ actions/
     ├── implementation/
     │   └── passthrough.py
     └── connector/
-        ├── ros2.py      # Maps OM1 data/commands to other ROS2
+        ├── ros2.py       # Maps OM1 data/commands to hardware layers and robot middleware
         ├── zenoh.py
         └── unitree.py
 ```
@@ -309,7 +295,7 @@ Agents are configured via JSON files in the `config/` directory. Key configurati
 
   - **Type**: Specifies the LLM plugin.
 
-  - **Config**: Configuration for the LLM, including the API endpoint and API key. If you do not change the file, and use the `openmind_free`, the LLM operates with a rate limiter with the OpenMind's public endpoint.
+  - **Config**: Configuration for the LLM, including the API endpoint and API key. If you do not change the file, and use the `openmind_free` api key, the LLM operates with a rate limiter with Openmind's public endpoint.
 
 OpenMind OpenAI Proxy endpoint is [https://api.openmind.org/api/core/openai](https://api.openmind.org/api/core/openai)
 OpenMind DeepSeek Proxy endpoint is [https://api.openmind.org/api/core/deepseek](https://api.openmind.org/api/core/deepseek)
@@ -351,14 +337,6 @@ Defines the agent’s available capabilities, including action names, their impl
 ]
 ```
 
-### Runtime Flow
-
-1. Input plugins collect data (vision, audio, etc.)
-2. The Fuser combines inputs into a prompt
-3. The LLM generates commands based on the prompt
-4. The ActionOrchestrator executes commands through actions
-5. Connectors map OM1 data/commands to external data buses and data distribution systems such as custom APIs, `ROS2`, `Zenoh`, or `CycloneDDS`.
-
 ### Development Tips
 
 1. Use `--debug` flag for detailed logging
@@ -373,9 +351,18 @@ Defines the agent’s available capabilities, including action names, their impl
 - `ETH_ADDRESS`: The Ethereum address of agent, prefixed with `Ox`. Example: `0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045`. Only relevant if your agent has a wallet.
 - `UNITREE_WIRED_ETHERNET`: Your network adapter that is connected to a Unitree robot. Example: `eno0`. Only relevant if your agent has a physical (robot) embodiment. You can set this to "SIM" to debug some limited functionality.
 
-### Core operating principle of the system
+### Core Architecture of the System; Runtime Flow
 
 The system is based on a loop that runs at a fixed frequency of `self.config.hertz`. This loop looks for the most recent data from various sources, fuses the data into a prompt, sends that prompt to one or more LLMs, and then sends the LLM responses to virtual agents or physical robots.
+
+Specific runtime flow:
+
+1. Input plugins collect data (vision, audio, etc.)
+2. The Fuser combines inputs into a prompt
+3. The LLM generates commands based on the prompt
+4. The ActionOrchestrator executes commands through actions
+5. Connectors map OM1 data/commands to external data buses and data distribution systems such as custom APIs, `ROS2`, `Zenoh`, or `CycloneDDS`.
+
 
 ```python
 # cortex.py

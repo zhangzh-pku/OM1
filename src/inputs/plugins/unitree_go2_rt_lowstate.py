@@ -5,11 +5,15 @@ import time
 from dataclasses import dataclass
 from typing import List, Optional
 
+from inputs.base import SensorOutputConfig
 from inputs.base.loop import FuserInput
 from providers.io_provider import IOProvider
 
 try:
-    from unitree.unitree_sdk2py.core.channel import ChannelSubscriber
+    from unitree.unitree_sdk2py.core.channel import (
+        ChannelFactoryInitialize,
+        ChannelSubscriber,
+    )
     from unitree.unitree_sdk2py.idl.unitree_go.msg.dds_ import LowState_
 except ImportError:
     logging.warning(
@@ -37,10 +41,12 @@ class UnitreeGo2Lowstate(FuserInput[str]):
     Maintains a buffer of processed messages.
     """
 
-    def __init__(self):
+    def __init__(self, config: SensorOutputConfig = SensorOutputConfig()):
         """
         Initialize Unitree bridge with empty message buffer.
         """
+        super().__init__(config)
+
         # Track IO
         self.io_provider = IOProvider()
 
@@ -54,7 +60,7 @@ class UnitreeGo2Lowstate(FuserInput[str]):
         self.UNIEN0 = os.getenv("UNITREE_WIRED_ETHERNET")
         if self.UNIEN0 is not None and self.UNIEN0 != "SIM":
             # Set up Unitree subscriber unless adapater is set to "SIM""
-            # ChannelFactoryInitialize(0, self.UNITREE_WIRED_ETHERNET)
+            ChannelFactoryInitialize(0, self.UNIEN0)
             # this can only be done once, at top level
             self.lowstate_subscriber = ChannelSubscriber("rt/lowstate", LowState_)
             self.lowstate_subscriber.Init(self.LowStateMessageHandler, 10)
