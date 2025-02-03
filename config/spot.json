@@ -13,7 +13,7 @@
     },
     {
       "type": "DummyVLMInput"
-    },
+    }
   ],
   "simulators": [
     {
