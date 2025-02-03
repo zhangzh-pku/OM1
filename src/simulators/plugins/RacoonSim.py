@@ -1,5 +1,4 @@
 import os
-import re
 import time
 import logging
 from typing import List
@@ -8,7 +7,6 @@ import gif_pygame
 import platform
 import threading
 import queue
-from queue import Queue
 import sys
 
 from llm.output_model import Command
@@ -25,20 +23,20 @@ class RacoonSim:
 
         self.name = __class__
         self._initialized = False
-        
+
         # Initialize basic attributes
         self.X = 1024
         self.Y = 768
         self.a_s = "idle"
         self.stats = {'fps': 0}
         self.last_time = time.time()
-        
+
         # Initialize surfaces
         self.surface_info = None
         self.surface_main = None
         self.display = None
         self.animations = {}
-        
+
         # Initialize pygame
         self._initialize_pygame()
 
@@ -47,30 +45,30 @@ class RacoonSim:
         try:
             pygame.init()
             pygame.display.init()
-            
+
             # Create window with basic flags
             flags = pygame.DOUBLEBUF | pygame.RESIZABLE
-            
+
             # Create window
             self.display = pygame.display.set_mode((self.X, self.Y), flags)
             pygame.display.set_caption("Racoon AI Assistant")
-            
+
             # Create basic surfaces without alpha for better performance
             self.surface_info = pygame.Surface((300, self.Y))
             self.surface_main = pygame.Surface((self.X - 300, self.Y))
-            
+
             # Initialize components
             self._init_components()
             self._initialized = True
-            
+
             # Set up frame timing
             self.clock = pygame.time.Clock()
             self.frame_count = 0
             self.fps_update_time = time.time()
             self.last_frame = time.time()
-            
+
             return True
-            
+
         except Exception as e:
             logging.error(f"Error initializing pygame: {str(e)}")
             if pygame.get_init():
@@ -95,10 +93,10 @@ class RacoonSim:
         # Initialize fonts
         self.title_font = pygame.font.SysFont("arial", 24, bold=True)
         self.font = pygame.font.SysFont("arial", 16)
-        
+
         # Set up assets path
         self.path = os.path.join(os.path.dirname(__file__), "assets")
-        
+
         # Load logo
         try:
             logo_path = os.path.join(self.path, "openmind_logo.png")
@@ -107,10 +105,10 @@ class RacoonSim:
         except Exception as e:
             logging.error(f"Error loading logo: {e}")
             self.logo = None
-            
+
         # Load animations
         self._load_animations()
-        
+
         self.a_s = "stand still"
         self.stats = {'fps': 0}
         self.last_time = time.time()
@@ -128,7 +126,7 @@ class RacoonSim:
                 "dance": "dance.gif",
                 "jump": "jump.gif",
             }
-            
+
             self.animations = {}
             for action, filename in animation_files.items():
                 filepath = os.path.join(self.path, filename)
@@ -140,7 +138,7 @@ class RacoonSim:
                         logging.error(f"Failed to load animation {action}: {str(e)}")
                 else:
                     logging.warning(f"Missing animation file: {filepath}")
-                    
+
         except Exception as e:
             logging.error(f"Error loading animations: {str(e)}")
             self.animations = {}
@@ -157,11 +155,11 @@ class RacoonSim:
             words = text.split()
             lines = []
             current_line = []
-            
+
             for word in words:
                 test_line = " ".join(current_line + [word])
                 test_surface = font.render(test_line, True, color)
-                
+
                 if test_surface.get_width() > max_width:
                     if current_line:
                         lines.append(" ".join(current_line))
@@ -170,10 +168,10 @@ class RacoonSim:
                         lines.append(word)
                 else:
                     current_line.append(word)
-                    
+
             if current_line:
                 lines.append(" ".join(current_line))
-                
+
             height = 0
             for i, line in enumerate(lines):
                 text_surface = font.render(line, True, color)
@@ -190,20 +188,20 @@ class RacoonSim:
         try:
             if not animation:
                 return None
-                
+
             # Create a temporary surface for the animation frame
             temp_surface = pygame.Surface((dest_rect[2], dest_rect[3]))
             temp_surface.fill(self.colors['bg'])  # Fill with background color
-            
+
             # Render the animation frame directly to temp surface
             animation.render(temp_surface, (0, 0))
-            
+
             # Create a copy to avoid memory issues
             final_surface = temp_surface.copy()
             del temp_surface
-            
+
             return final_surface
-                
+
         except Exception as e:
             logging.error(f"Animation render error: {e}")
             return None
@@ -213,12 +211,12 @@ class RacoonSim:
         try:
             # Clear main surface first
             self.surface_main.fill(self.colors['bg'])
-            
+
             # Draw Input History on the left side
             history_width = 200
             history_x = 20
             history_y = 20
-            
+
             # Input History section
             self._render_text(
                 self.surface_main,
@@ -227,11 +225,11 @@ class RacoonSim:
                 self.colors['primary'],
                 (history_x, history_y)
             )
-            
+
             # Input entries panel
             history_panel = (history_x, history_y + 35, history_width, self.Y - 80)
             self._draw_panel(self.surface_main, history_panel, self.colors['panel'])
-            
+
             # Render input history
             y = history_y + 50
             if self.io_provider.inputs:
@@ -245,7 +243,7 @@ class RacoonSim:
                         (history_x + 15, y)
                     )
                     y += 20
-                    
+
                     y += self._render_text(
                         self.surface_main,
                         f"{action}: {values.input}",
@@ -255,34 +253,34 @@ class RacoonSim:
                         max_width=history_width - 30
                     )
                     y += 15
-            
+
             # Calculate animation area with offset for history panel
             animation_width = 400
             available_width = self.X - 300 - history_width - 60  # Subtract history width and some padding
             animation_x = history_width + 40 + (available_width - animation_width) // 2  # Center in remaining space
-            
+
             # Draw animation area background
             animation_panel = (animation_x, 20, animation_width, animation_width)
             self._draw_panel(self.surface_main, animation_panel, self.colors['panel'])
-            
+
             # Prepare animation frame
             animation = self.animations.get(self.a_s, self.animations["idle"])
             if animation:
-                frame_surface = self._render_animation(animation, 
+                frame_surface = self._render_animation(animation,
                     (0, 0, animation_width - 20, animation_width - 20))
                 if frame_surface:
                     self.surface_main.blit(frame_surface, (animation_x + 10, 30))
                     del frame_surface
-            
+
             # Draw action label
             label_panel = (animation_x, animation_width + 30, animation_width, 40)
             self._draw_panel(self.surface_main, label_panel, self.colors['primary'])
-            
+
             text = f"Current Action: {self.a_s.title()}"
             text_surface = self.font.render(text, True, self.colors['panel'])
             text_rect = text_surface.get_rect(center=(animation_x + animation_width//2, animation_width + 50))
             self.surface_main.blit(text_surface, text_rect)
-            
+
         except Exception as e:
             logging.error(f"Error in main area render: {e}")
 
@@ -291,11 +289,11 @@ class RacoonSim:
         try:
             footer_height = 40
             footer_y = self.Y - footer_height - 10
-            
+
             # Draw footer background
             footer_rect = (0, footer_y, self.X - 300, footer_height)
             self._draw_panel(self.surface_main, footer_rect, self.colors['panel'])
-            
+
             # Draw logo if available
             if hasattr(self, 'logo') and self.logo:
                 logo_y = footer_y + (footer_height - self.logo.get_height()) // 2
@@ -303,9 +301,9 @@ class RacoonSim:
                 text_x = 130  # Adjust based on logo width
             else:
                 text_x = 20
-            
+
             text_y = footer_y + (footer_height - self.font.get_height()) // 2
-            
+
             # Version info
             version_text = "OpenMind AI Assistant v1.0"
             self._render_text(
@@ -315,13 +313,13 @@ class RacoonSim:
                 self.colors['text'],
                 (text_x, text_y)
             )
-            
+
             # Draw right-aligned text
             right_text = "Powered by OpenMind"
             text_surface = self.font.render(right_text, True, self.colors['text_light'])
             text_rect = text_surface.get_rect(right=(self.X - 320, text_y + self.font.get_height()))
             self.surface_main.blit(text_surface, text_rect)
-            
+
         except Exception as e:
             logging.error(f"Error rendering footer: {e}")
 
@@ -334,14 +332,14 @@ class RacoonSim:
             'item_spacing': 18,
             'category_spacing': 30
         }
-        
+
         # Draw main panel
         panel = self._draw_panel(self.surface_main, (x, y, width, height), self.colors['panel'])
-        
+
         # Content layout
         content_x = x + SPACING['panel_padding']
         content_y = y + SPACING['panel_padding']
-        
+
         # Title with shadow
         content_y += self._render_text(
             self.surface_main,
@@ -351,14 +349,14 @@ class RacoonSim:
             (content_x, content_y)
         )
         content_y += SPACING['section_spacing']
-        
+
         # Categories with improved spacing
         categories = [
             ("Movement", ["walk", "run", "jump", "dance", "sit", "shake paw", "walk back"]),
             ("Speech", ["speak", "bark", "howl"]),
             ("Interactions", ["greet", "play", "follow"])
         ]
-        
+
         for category, actions in categories:
             # Category header with shadow
             content_y += self._render_text(
@@ -369,16 +367,16 @@ class RacoonSim:
                 (content_x, content_y)
             )
             content_y += SPACING['item_spacing']
-            
+
             # Actions with improved bullets
             for action in actions:
                 bullet_x = content_x + 10
                 text_x = bullet_x + 15
-                
+
                 # Draw bullet point
                 pygame.draw.circle(self.surface_main, self.colors['accent'],
                                  (bullet_x, content_y + 8), 3)
-                
+
                 # Action text with shadow
                 content_y += self._render_text(
                     self.surface_main,
@@ -388,7 +386,7 @@ class RacoonSim:
                     (text_x, content_y)
                 )
                 content_y += SPACING['item_spacing'] - 5
-            
+
             content_y += SPACING['category_spacing'] - SPACING['item_spacing']
 
     def _render_status_panel(self, x, y, width):
@@ -396,12 +394,12 @@ class RacoonSim:
         # Background panel
         panel_rect = (x, y, width, self.Y - 40)
         self._draw_panel(self.surface_main, panel_rect, self.colors['panel'])
-        
+
         # ETH Balance section
         balance_y = y + 15
         balance_rect = (x + 10, balance_y, width - 20, 80)
         self._draw_panel(self.surface_main, balance_rect, self.colors['success'])
-        
+
         # Balance title
         self._render_text(
             self.surface_main,
@@ -410,7 +408,7 @@ class RacoonSim:
             self.colors['panel'],
             (x + 20, balance_y + 10)
         )
-        
+
         # Balance value with better formatting
         balance_text = self.eth_balance if hasattr(self, 'eth_balance') else "0.000 ETH"
         self._render_text(
@@ -420,12 +418,12 @@ class RacoonSim:
             self.colors['panel'],
             (x + 20, balance_y + 40)
         )
-        
+
         # Last Speech section
         speech_y = balance_y + 100
         speech_rect = (x + 10, speech_y, width - 20, 100)
         self._draw_panel(self.surface_main, speech_rect, self.colors['info'])
-        
+
         # Speech title
         self._render_text(
             self.surface_main,
@@ -434,7 +432,7 @@ class RacoonSim:
             self.colors['panel'],
             (x + 20, speech_y + 10)
         )
-        
+
         # Speech content with word wrap
         speech_text = self.last_speech if hasattr(self, 'last_speech') else "No speech yet"
         self._render_text(
@@ -450,7 +448,7 @@ class RacoonSim:
         actions_y = speech_y + 120
         actions_rect = (x + 10, actions_y, width - 20, 200)
         self._draw_panel(self.surface_main, actions_rect, self.colors['primary'])
-        
+
         # Actions title
         self._render_text(
             self.surface_main,
@@ -459,14 +457,14 @@ class RacoonSim:
             self.colors['panel'],
             (x + 20, actions_y + 10)
         )
-        
+
         # List of common actions
         actions = [
             "Walk", "Run", "Jump",
             "Dance", "Sit", "Shake Paw",
             "Speak", "Bark", "Play"
         ]
-        
+
         action_y = actions_y + 40
         action_x = x + 20
         for action in actions:
@@ -483,13 +481,13 @@ class RacoonSim:
         """Render information sidebar"""
         # Clear sidebar
         self.surface_info.fill(self.colors['panel'])
-        
+
         y = 20
-        
+
         # ETH Balance section - Add this at the top
         balance_panel = (20, y, 260, 80)
         self._draw_panel(self.surface_info, balance_panel, self.colors['success'])
-        
+
         # Balance title
         self._render_text(
             self.surface_info,
@@ -498,7 +496,7 @@ class RacoonSim:
             self.colors['panel'],
             (35, y + 10)
         )
-        
+
         # Balance amount
         balance_text = f"{self.eth_balance if hasattr(self, 'eth_balance') else '0.000 ETH'}"
         self._render_text(
@@ -508,9 +506,9 @@ class RacoonSim:
             self.colors['panel'],
             (35, y + 40)
         )
-        
+
         y += 100  # Move down after balance display
-        
+
         # System Status section
         self._render_text(
             self.surface_info,
@@ -519,7 +517,7 @@ class RacoonSim:
             self.colors['primary'],
             (20, y)
         )
-        
+
         # FPS display
         y += 35
         self._render_text(
@@ -529,7 +527,7 @@ class RacoonSim:
             self.colors['text'],
             (20, y)
         )
-        
+
         # Timing information
         y += 30
         timing_data = [
@@ -538,7 +536,7 @@ class RacoonSim:
             ("Processing:", f"{float(self.io_provider.llm_end_time or 0) - float(self.io_provider.llm_start_time or 0):.3f}s"),
             ("Complete:", f"{float(self.io_provider.llm_end_time or 0) - earliest_time:.3f}s")
         ]
-        
+
         for label, value in timing_data:
             self._render_text(
                 self.surface_info,
@@ -565,7 +563,7 @@ class RacoonSim:
             self.colors['primary'],
             (20, y)
         )
-        
+
         y += 35
         commands = {
             "Movement": [
@@ -588,7 +586,7 @@ class RacoonSim:
                 "bark - Make a bark sound"
             ]
         }
-        
+
         for category, cmd_list in commands.items():
             # Draw category
             self._render_text(
@@ -599,7 +597,7 @@ class RacoonSim:
                 (20, y)
             )
             y += 25
-            
+
             # Draw commands
             for cmd in cmd_list:
                 y += self._render_text(
@@ -616,7 +614,7 @@ class RacoonSim:
         """Process pygame events"""
         if threading.current_thread() is not threading.main_thread():
             return
-            
+
         try:
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
@@ -635,46 +633,42 @@ class RacoonSim:
         """Main update loop"""
         if not self._initialized:
             return
-            
-        # Ensure we're in the main thread
-        if threading.current_thread() is not threading.main_thread():
-            return
-            
+
         try:
             # Handle events first
             self._handle_events()
-            
+
             # Frame timing
             current_time = time.time()
             frame_time = 1.0/60.0  # Target 60 FPS
-            
+
             if current_time - self.last_frame < frame_time:
                 return
-                
+
             # Update FPS counter
             self.frame_count += 1
             if current_time - self.fps_update_time >= 1.0:
                 self.stats['fps'] = self.frame_count
                 self.frame_count = 0
                 self.fps_update_time = current_time
-            
+
             self.last_frame = current_time
-            
+
             # Clear main display once
             self.display.fill(self.colors['bg'])
-            
+
             # Render everything
             self._render_main_area()
             earliest_time = self.get_earliest_time()
             self._render_sidebar(earliest_time)
-            
+
             # Single blit operation for each surface
             self.display.blit(self.surface_main, (0, 0))
             self.display.blit(self.surface_info, (self.X - 300, 0))
-            
+
             # Single flip operation
             pygame.display.flip()
-            
+
             # Process any queued events
             while not self._event_queue.empty():
                 try:
@@ -684,10 +678,10 @@ class RacoonSim:
                         self._main_thread_initialized.set()
                 except queue.Empty:
                     break
-            
+
             # Maintain frame timing
             self.clock.tick(60)
-            
+
         except Exception as e:
             logging.error(f"Error in tick: {str(e)}")
 
@@ -728,7 +722,7 @@ class RacoonSim:
                     self.update_emotion(command.arguments[0].value)
                 elif command.name == "wallet":
                     self.update_wallet(float(command.arguments[0].value))
-            
+
         except Exception as e:
             logging.error(f"Error in sim update: {str(e)}")
 
