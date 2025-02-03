@@ -3,8 +3,8 @@ import threading
 import time
 from typing import Callable, Optional
 
-from omOS_speech import AudioInputStream
-from omOS_utils import ws
+from OM1_speech import AudioInputStream
+from OM1_utils import ws
 
 from .singleton import singleton
 

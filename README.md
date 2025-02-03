@@ -17,8 +17,8 @@ brew install uv
 2. Clone the repo
 
 ```bash
-git clone https://github.com/OpenmindAGI/omOS.git
-cd omOS
+git clone https://github.com/OpenmindAGI/OM1.git
+cd OM1
 git submodule update --init 
 uv venv
 ```
@@ -100,7 +100,7 @@ The Coinbase Wallet integration requires the following environment variables:
 - `COINBASE_API_KEY`: The API key for the Coinbase Project API.
 - `COINBASE_API_SECRET`: The API secret for the Coinbase Project API.
 
-Please see [Coinbase hackathon](https://github.com/OpenmindAGI/omOS/blob/main/documention/coinbase_hackathon.md) for more information.
+Please see [Coinbase hackathon](https://github.com/OpenmindAGI/OM1/blob/main/documention/coinbase_hackathon.md) for more information.
 
 
 ### Example 2 - Using DeepSeek or Gemini as the Core LLM
