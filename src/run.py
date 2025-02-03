@@ -1,6 +1,5 @@
 import asyncio
 import logging
-import platform
 
 import dotenv
 import typer
@@ -10,6 +9,7 @@ from runtime.cortex import CortexRuntime
 from runtime.robotics import load_unitree
 
 app = typer.Typer()
+
 
 @app.command()
 def start(config_name: str, debug: bool = False) -> None:
@@ -22,6 +22,7 @@ def start(config_name: str, debug: bool = False) -> None:
 
     # Run normally using orchestrator's thread management
     asyncio.run(runtime.run())
+
 
 if __name__ == "__main__":
     dotenv.load_dotenv()
