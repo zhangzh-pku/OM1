@@ -1,5 +1,5 @@
 [project]
-name = "OM1"
+name = "om1"
 version = "0.1.0"
 description = "OM1 - a modern agent and robotics runtime system"
 readme = "README.md"
@@ -18,7 +18,7 @@ dependencies = [
     "web3",
     "numpy",
     "cdp-sdk>=0.15.0",
-    "hid"
+    "hid",
 ]
 
 [project.optional-dependencies]
@@ -27,7 +27,7 @@ dds = [
 ]
 
 [tool.uv.sources]
-om1-modules = { git = "https://github.com/OpenmindAGI/OM1-modules", rev = "5b620247d64fb1188d6f0a9120489f9dfda3b5d6" }
+om1-modules = { git = "https://github.com/OpenmindAGI/om1-modules", rev = "8b494791f2ab8b37d63f3a6bf07b6d8a449c3c29" }
 
 [dependency-groups]
 dev = [
