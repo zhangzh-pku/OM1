@@ -15,9 +15,12 @@ app = typer.Typer()
 def start(config_name: str, debug: bool = False) -> None:
     logging.basicConfig(level=logging.DEBUG if debug else logging.INFO)
 
+    # Load configuration
     config = load_config(config_name)
     _ = load_unitree(config)
     runtime = CortexRuntime(config)
+
+    # Run normally using orchestrator's thread management
     asyncio.run(runtime.run())
 
 

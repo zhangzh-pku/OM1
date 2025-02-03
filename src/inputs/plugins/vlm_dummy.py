@@ -6,6 +6,7 @@ from typing import Optional
 
 from PIL import Image
 
+from inputs.base import SensorOutputConfig
 from inputs.base.loop import FuserInput
 from providers.io_provider import IOProvider
 
@@ -35,10 +36,12 @@ class DummyVLMInput(FuserInput[Image.Image]):
     Maintains a buffer of processed messages.
     """
 
-    def __init__(self):
+    def __init__(self, config: SensorOutputConfig = SensorOutputConfig()):
         """
         Initialize VLM input handler with empty message buffer.
         """
+        super().__init__(config)
+
         # Track IO
         self.io_provider = IOProvider()
 
