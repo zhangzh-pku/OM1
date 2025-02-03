@@ -669,16 +669,6 @@ class RacoonSim:
             # Single flip operation
             pygame.display.flip()
 
-            # Process any queued events
-            while not self._event_queue.empty():
-                try:
-                    event_type, data = self._event_queue.get_nowait()
-                    if event_type == 'init':
-                        self._initialize_pygame()
-                        self._main_thread_initialized.set()
-                except queue.Empty:
-                    break
-
             # Maintain frame timing
             self.clock.tick(60)
 
