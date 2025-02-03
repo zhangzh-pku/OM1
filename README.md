@@ -71,6 +71,8 @@ This basic agent uses webcam data to estimate your emotion, generates a fake VLM
 uv run src/run.py spot
 ```
 
+Add ` --debug` to see more logging information. 
+
 > [!NOTE]
 > `uv` does many things in the background, such as setting up a `venv` and downloading any dependencies if needed. Please add new dependencies to `pyproject.toml`.
 
@@ -238,7 +240,7 @@ actions/
     ├── implementation/
     │   └── passthrough.py
     └── connector/
-        ├── ros2.py      # Maps OM1 data/commands to other ROS2
+        ├── ros2.py       # Maps OM1 data/commands to hardware layers and robot middleware
         ├── zenoh.py
         └── unitree.py
 ```
@@ -293,7 +295,7 @@ Agents are configured via JSON files in the `config/` directory. Key configurati
 
   - **Type**: Specifies the LLM plugin.
 
-  - **Config**: Configuration for the LLM, including the API endpoint and API key. If you do not change the file, and use the `openmind_free`, the LLM operates with a rate limiter with the OpenMind's public endpoint.
+  - **Config**: Configuration for the LLM, including the API endpoint and API key. If you do not change the file, and use the `openmind_free` api key, the LLM operates with a rate limiter with Openmind's public endpoint.
 
 OpenMind OpenAI Proxy endpoint is [https://api.openmind.org/api/core/openai](https://api.openmind.org/api/core/openai)
 OpenMind DeepSeek Proxy endpoint is [https://api.openmind.org/api/core/deepseek](https://api.openmind.org/api/core/deepseek)
