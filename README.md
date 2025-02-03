@@ -125,9 +125,9 @@ uv run src/run.py conversation
 
 ### Unitree Go2 Air Quadruped ("dog")
 
-OM1 can control a Unitree Go2 Air. This has been tested on a Mac laptop running Seqoia 15.2. To do this:
+OM1 can control a Unitree Go2 Air. This has been tested on a Mac laptop running Seqoia 15.2. 
 
-* Connect an `XBOX` controller to your computer. On Mac, you may need to install `hidapi` (`brew install hidapi`). Note: There is a bug on Mac when installing packages with `brew` - some libraries cannot be found by `uv`. If you get errors such as
+To do this, xonnect an `XBOX` controller to your computer. On Mac, you may need to install `hidapi` (`brew install hidapi`). Note: There is a bug on Mac when installing packages with `brew` - some libraries cannot be found by `uv`. If you get errors such as
 `Unable to load any of the following libraries:libhidapi-hidraw.so`, try setting `export DYLD_FALLBACK_LIBRARY_PATH="$HOMEBREW_PREFIX/lib"` in your `.zshenv` or equivalent. On Linux, install `hidapi` like this:
 ```bash
 # Linux
@@ -138,7 +138,7 @@ sudo pip install --upgrade setuptools
 sudo pip install hidapi
 ```
 
-* Connect your computer to the Ethernet port of the Unitree Go2 Air, and keep track of the Ethernet port you are using. For example, the port could be `en0`.
+Then, connect your computer to the Ethernet port of the Unitree Go2 Air, and keep track of the Ethernet port you are using. For example, the port could be `en0`.
 
 * Install [`CycloneDDS`](https://index.ros.org/p/cyclonedds/). `CycloneDDS` works on Mac, Linux, and PC. Run:
 ```bash
@@ -149,7 +149,7 @@ cmake --build . --target install
 ```
 Set `CYCLONEDDS_HOME`, for example via `export CYCLONEDDS_HOME="$HOME/cyclonedds/install"`. You should add this path to your environment via your `.zshrc` or equivalent. 
 
-* Then, add the `dds` python module to your codebase: `uv pip install -r pyproject.toml --extra dds`.
+Finally, add the `dds` python module to your codebase: `uv pip install -r pyproject.toml --extra dds`.
 
 When you have all of that, run
 ```bash
