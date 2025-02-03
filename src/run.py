@@ -15,7 +15,6 @@ app = typer.Typer()
 def start(config_name: str, debug: bool = False) -> None:
     logging.basicConfig(level=logging.DEBUG if debug else logging.INFO)
     config = load_config(config_name)
-    send_first_boot_tweet(config)
     runtime = CortexRuntime(config)
     asyncio.run(runtime.run())
 
