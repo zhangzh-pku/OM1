@@ -23,27 +23,6 @@ git submodule update --init
 uv venv
 ```
 
-If you are on Mac, you may need to install `portaudio` and `hidapi`:
-```bash
-brew install portaudio
-brew install hidapi # needed for XBOX game controller support, for robotics
-```
-
-If you are on Linux, you may need to install `portaudio`:
-```bash
-sudo apt-get update
-sudo apt-get install portaudio19-dev python-all-dev libhidapi-dev
-sudo apt-get install python-dev libusb-1.0-0-dev libudev-dev
-
-# possibly also
-sudo pip install --upgrade setuptools
-sudo pip install hidapi
-```
-
-> [!NOTE]
-> There is a bug on Mac when installing packages with `brew` - some libraries cannot be found by `uv`. If you get errors such as
-`Unable to load any of the following libraries:libhidapi-hidraw.so` and you are on a Mac, try setting `export DYLD_FALLBACK_LIBRARY_PATH="$HOMEBREW_PREFIX/lib"` in your `.zshenv` or equivalent.
-
 3. Set up environment and configuration variables
 
 Add your Openmind API key in `/config/spot.json`. You can obtain an free Openmind access key at http://openmind.org/free.
@@ -102,7 +81,6 @@ The Coinbase Wallet integration requires the following environment variables:
 
 Please see [Coinbase hackathon](https://github.com/OpenmindAGI/OM1/blob/main/documention/coinbase_hackathon.md) for more information.
 
-
 ### Example 2 - Using DeepSeek or Gemini as the Core LLM
 
 Similar to the `Hello World (Spot)` example, except uses `DeepSeek` or `Gemini`rather than `OpenAI 4o`.
@@ -121,19 +99,44 @@ uv run src/run.py conversation
 > [!NOTE]
 > The system is set yo use your default microphone, and your default aurio output (speaker). Please test both your microphone and speaker to make sure they are connrected and working.
 
+### Example 4 - Enabling Audio to your system's Audio Hardware
+
+On Mac, you may need to install `portaudio` and `hidapi`:
+```bash
+brew install portaudio
+brew install hidapi # needed for XBOX game controller support, for robotics
+```
+
+On Linux, you may need to install `portaudio`:
+```bash
+sudo apt-get update
+sudo apt-get install portaudio19-dev python-all-dev
+
+sudo apt-get install python-dev libusb-1.0-0-dev libudev-dev libhidapi-dev
+
+# possibly also
+sudo pip install --upgrade setuptools
+sudo pip install hidapi
+```
+
+> [!NOTE]
+> There is a bug on Mac when installing packages with `brew` - some libraries cannot be found by `uv`. If you get errors such as
+`Unable to load any of the following libraries:libhidapi-hidraw.so` and you are on a Mac, try setting `export DYLD_FALLBACK_LIBRARY_PATH="$HOMEBREW_PREFIX/lib"` in your `.zshenv` or equivalent.
+
+Then, try....
+
 ## Robots
 
 ### Unitree Go2 Air Quadruped ("dog")
 
-You can control a Unitree Go2 Air. This has been tested for Linux Ubuntu 22.04 running on an Nvidia Orin, and a Mac laptop running Seqoia 15.2. To do this:
+OM1 can control a Unitree Go2 Air. This has been tested on a Mac laptop running Seqoia 15.2. To do this:
 
 * Connect an `XBOX` controller to your computer.
 * Connect your computer to the Ethernet port of the Unitree Go2 Air, and keep track of the Ethernet port you are using. For example, the port could be `en0`.
-* Install `CycloneDDS`, if you do not already have it on your computer.
-* Set the correct `CYCLONEDDS_HOME` via `export CYCLONEDDS_HOME="your_path_here/cyclonedds/install"`. You should add this path to your environment e.g. via your `.zshrc`.
+* Install `CycloneDDS`, if needed, and set `CYCLONEDDS_HOME`, for example via `export CYCLONEDDS_HOME="$HOME/cyclonedds/install"`. You should add this path to your environment via your `.zshrc` or equivalent. Then, add the `dds` python module to your codebase: `uv pip install -r pyproject.toml --extra dds`.
 
 ```bash
-uv pip install -r pyproject.toml --extra dds
+
 uv run src/run.py unitree
 ```
 
