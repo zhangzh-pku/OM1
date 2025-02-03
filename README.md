@@ -86,13 +86,9 @@ uv run src/run.py spot
 Add ` --debug` to see more logging information. 
 
 > [!NOTE]
-> `uv` does many things in the background, such as setting up a `venv` and downloading any dependencies if needed. Please add new dependencies to `pyproject.toml`.
-
-> [!NOTE]
-> If you are running complex models, or need to download dependencies, there may be a delay before the agent starts.
-
-> [!NOTE]
-> There should be a `pygame` window that pops up when you run `uv run src/run.py spot`. If you do not see `RacoonSim`, the window might be hidden behind all your other open windows - use "show all windows" (or equivalent) to find it.
+> * `uv` does many things in the background, such as setting up a `venv` and downloading any dependencies if needed. Please add new dependencies to `pyproject.toml`.
+> * If you are running complex models, or need to download dependencies, there may be a delay before the agent starts.
+> * There should be a `pygame` window that pops up when you run `uv run src/run.py spot`. If you do not see `RacoonSim`, the window might be hidden behind all your other open windows - use "show all windows" (or equivalent) to find it.
 
 ## Examples: Gemini and Voice Inputs (conversation)
 
