@@ -2,6 +2,41 @@
 
 Openmind's OM1 is an agent runtime system that enables the creation and execution of digital and physical embodied AI agents with modular capabilities like movement, speech, and perception. One benefit of using OM1 is the ease of deploying consistent digital personas across virtual and physical environments.
 
+## Core Architecture and Runtime Flow
+
+The system is based on a loop that runs at a fixed frequency of `self.config.hertz`. This loop looks for the most recent data from various sources, fuses the data into a prompt, sends that prompt to one or more LLMs, and then sends the LLM responses to virtual agents or physical robots.
+
+Specific runtime flow:
+
+1. Input plugins collect data (vision, audio, etc.)
+2. The Fuser combines inputs into a prompt
+3. The LLM generates commands based on the prompt
+4. The ActionOrchestrator executes commands through actions
+5. Connectors map OM1 data/commands to external data buses and data distribution systems such as custom APIs, `ROS2`, `Zenoh`, or `CycloneDDS`.
+
+
+```python
+# cortex.py
+    async def _run_cortex_loop(self) -> None:
+        while True:
+            await asyncio.sleep(1 / self.config.hertz)
+            await self._tick()
+
+    async def _tick(self) -> None:
+        finished_promises, _ = await self.action_orchestrator.flush_promises()
+        prompt = self.fuser.fuse(self.config.agent_inputs, finished_promises)
+        if prompt is None:
+            logging.warning("No prompt to fuse")
+            return
+        output = await self.config.cortex_llm.ask(prompt)
+        if output is None:
+            logging.warning("No output from LLM")
+            return
+
+        logging.debug("I'm thinking... ", output)
+        await self.action_orchestrator.promise(output.commands)
+```
+
 ## Quick Start
 
 1. Install the Rust python package manager `uv`:
@@ -23,49 +58,26 @@ git submodule update --init
 uv venv
 ```
 
-If you are on Mac, you may need to install `portaudio` and `hidapi`:
-```bash
-brew install portaudio
-brew install hidapi # needed for XBOX game controller support, for robotics
-```
-
-If you are on Linux, you may need to install `portaudio`:
-```bash
-sudo apt-get update
-sudo apt-get install portaudio19-dev python-all-dev libhidapi-dev
-sudo apt-get install python-dev libusb-1.0-0-dev libudev-dev
-
-# possibly also
-sudo pip install --upgrade setuptools
-sudo pip install hidapi
-```
-
-> [!NOTE]
-> There is a bug on Mac when installing packages with `brew` - some libraries cannot be found by `uv`. If you get errors such as
-`Unable to load any of the following libraries:libhidapi-hidraw.so` and you are on a Mac, try setting `export DYLD_FALLBACK_LIBRARY_PATH="$HOMEBREW_PREFIX/lib"` in your `.zshenv` or equivalent.
-
 3. Set up environment and configuration variables
 
-Add your Openmind API key in `/config/spot.json`. You can obtain an free Openmind access key at http://openmind.org/free.
+Add your Openmind API key in `/config/spot.json`. You can obtain an free Openmind access key at http://openmind.org/free. If you leave the placeholder, `openmind-free`, you may be rate limited. 
 
 ```bash
 # /config/spot.json`
 ...
-"api_key": "openmind-pat-cnh4d7_example_797wtgy47d"
+"api_key": "openmind-free"
 ...
 ```
 
 > [!NOTE]
-> You can directly access other OpenAI style endpoints by specifying a custom API endpoint in your configuration file. To do this:
-> * provide an alternative `base_url`, such as:
-> - https://api.openai.com/v1
-> - https://api.deepseek.com/v1
-> - https://generativelanguage.googleapis.com/v1beta/openai/
-> * change the configiration file `api_key:` to the OpenAI, DeepSeek, or other keys
+> You can directly access other OpenAI style endpoints by specifying a custom API endpoint in your configuration file. To do this provide an alternative `base_url` and change the configiration file `api_key:` to the OpenAI, DeepSeek, or other keys. Possible `base_url` choices are:
+>   - https://api.openai.com/v1
+>   - https://api.deepseek.com/v1
+>   - https://generativelanguage.googleapis.com/v1beta/openai/
 
-4. Run an Hello World agent
+4. Run Spot, a `Hello World` agent
 
-This basic agent uses webcam data to estimate your emotion, generates a fake VLM caption, and sends those two inputs to a central LLM. The LLM then returns `movement`, `speech`, and `face` commands, which are displayed in `RacoonSim`, a small `pygame` window. `RacooonSim` also shows basic timing and other debug information.
+This basic agent uses webcam data to estimate your emotion, generates a dummy VLM caption (*DUMMY VLM - FAKE DATA - I see {random_int_num} people. Also, I see a rocket.*), looks up an Ethereum wallet balance, and sends those inputs to a central LLM. The LLM then returns `movement`, `speech`, and `face` commands, which are displayed in `RacoonSim`, a small `pygame` window. `RacooonSim` also shows basic timing and other debug information. NOTE: The simulator shows you generated speech, but does not send anything to your computers audio hardware, to reduce the need to install hardware specific modules and drivers. 
 
 ```bash
 uv run src/run.py spot
@@ -74,36 +86,13 @@ uv run src/run.py spot
 Add ` --debug` to see more logging information. 
 
 > [!NOTE]
-> `uv` does many things in the background, such as setting up a `venv` and downloading any dependencies if needed. Please add new dependencies to `pyproject.toml`.
+> * `uv` does many things in the background, such as setting up a `venv` and downloading any dependencies if needed. Please add new dependencies to `pyproject.toml`.
+> * If you are running complex models, or need to download dependencies, there may be a delay before the agent starts.
+> * There should be a `pygame` window that pops up when you run `uv run src/run.py spot`. If you do not see `RacoonSim`, the window might be hidden behind all your other open windows - use "show all windows" (or equivalent) to find it.
 
-> [!NOTE]
-> If you are running complex models, or need to download dependencies, there may be a delay before the agent starts.
+## Examples: Gemini and Voice Inputs (conversation)
 
-> [!NOTE]
-> There should be a `pygame` window that pops up when you run `uv run src/run.py spot`. If you do not see `RacoonSim`, the window might be hidden behind all your other open windows - use "show all windows" (or equivalent) to find it.
-
-## Examples: Wallets, DeepSeek, and Voice Inputs (conversation)
-
-### Example 1 - The Coinbase Wallet
-
-Similar to the `Hello World (Spot)` example, except uses the Coinbase wallet rather than Ethereum Mainnet.
-
-```bash
-cp .env.example .env
-# then, enter your coinbase credentials into the .env and run
-uv run src/run.py coinbase
-```
-
-The Coinbase Wallet integration requires the following environment variables:
-
-- `COINBASE_WALLET_ID`: The ID for the Coinbase Wallet.
-- `COINBASE_API_KEY`: The API key for the Coinbase Project API.
-- `COINBASE_API_SECRET`: The API secret for the Coinbase Project API.
-
-Please see [Coinbase hackathon](https://github.com/OpenmindAGI/OM1/blob/main/documention/coinbase_hackathon.md) for more information.
-
-
-### Example 2 - Using DeepSeek or Gemini as the Core LLM
+### Example 1 - Using DeepSeek or Gemini as the Core LLM
 
 Similar to the `Hello World (Spot)` example, except uses `DeepSeek` or `Gemini`rather than `OpenAI 4o`.
 
@@ -112,29 +101,59 @@ uv run src/run.py deepseek
 uv run src/run.py gemini
 ```
 
-### Example 3 - Using Cloud Endpoints for Voice Inputs
+### Example 2 - Using Cloud Endpoints for Voice Inputs and Text to Speech
 
+The system is set up use your `default` microphone and your `default` audio output (speaker). Please test both your microphone and speaker in your system settings to make sure they are connected and working.
+
+On Mac, you may need to install `portaudio`:
+```bash
+brew install portaudio
+```
+
+On Linux, you may need to install `portaudio`:
+```bash
+sudo apt-get update
+sudo apt-get install portaudio19-dev python-all-dev
+```
+
+Finally, run
 ```bash
 uv run src/run.py conversation
 ```
-
-> [!NOTE]
-> The system is set yo use your default microphone, and your default aurio output (speaker). Please test both your microphone and speaker to make sure they are connrected and working.
 
 ## Robots
 
 ### Unitree Go2 Air Quadruped ("dog")
 
-You can control a Unitree Go2 Air. This has been tested for Linux Ubuntu 22.04 running on an Nvidia Orin, and a Mac laptop running Seqoia 15.2. To do this:
+OM1 can control a Unitree Go2 Air. This has been tested on a Mac laptop running Seqoia 15.2. 
 
-* Connect an `XBOX` controller to your computer.
-* Connect your computer to the Ethernet port of the Unitree Go2 Air, and keep track of the Ethernet port you are using. For example, the port could be `en0`.
-* Install `CycloneDDS`, if you do not already have it on your computer.
-* Set the correct `CYCLONEDDS_HOME` via `export CYCLONEDDS_HOME="your_path_here/cyclonedds/install"`. You should add this path to your environment e.g. via your `.zshrc`.
-
+To do this, xonnect an `XBOX` controller to your computer. On Mac, you may need to install `hidapi` (`brew install hidapi`). Note: There is a bug on Mac when installing packages with `brew` - some libraries cannot be found by `uv`. If you get errors such as
+`Unable to load any of the following libraries:libhidapi-hidraw.so`, try setting `export DYLD_FALLBACK_LIBRARY_PATH="$HOMEBREW_PREFIX/lib"` in your `.zshenv` or equivalent. On Linux, install `hidapi` like this:
 ```bash
-uv pip install -r pyproject.toml --extra dds
-uv run src/run.py unitree
+# Linux
+sudo apt-get update
+sudo apt-get install python-dev libusb-1.0-0-dev libudev-dev libhidapi-dev
+# possibly also
+sudo pip install --upgrade setuptools
+sudo pip install hidapi
+```
+
+Then, connect your computer to the Ethernet port of the Unitree Go2 Air, and keep track of the Ethernet port you are using. For example, the port could be `en0`.
+
+* Install [`CycloneDDS`](https://index.ros.org/p/cyclonedds/). `CycloneDDS` works on Mac, Linux, and PC. Run:
+```bash
+git clone https://github.com/eclipse-cyclonedds/cyclonedds -b releases/0.10.x
+cd cyclonedds && mkdir build install && cd build
+cmake .. -DCMAKE_INSTALL_PREFIX=../install -DBUILD_EXAMPLES=ON
+cmake --build . --target install
+```
+Set `CYCLONEDDS_HOME`, for example via `export CYCLONEDDS_HOME="$HOME/cyclonedds/install"`. You should add this path to your environment via your `.zshrc` or equivalent. 
+
+Finally, add the `dds` python module to your codebase: `uv pip install -r pyproject.toml --extra dds`.
+
+When you have all of that, run
+```bash
+uv run src/run.py robot_wallet_safe
 ```
 
 OM1 will control a safe and limited subset of motions (such as `stretch` and `sit down`). You can also manually control the dog via the game controller. Press:
@@ -145,23 +164,6 @@ OM1 will control a safe and limited subset of motions (such as `stretch` and `si
 * Y to stretch
 
 Allowing the dog to `move`, `pounce`, and `run` requires **you** to add this functionality. **Warning: If you add additional movement capabilities, this is at your own risk. Due to the autonomous nature of the system, we recommend to perform such testing in the absence of squirrels, cats, rabbits, or small children (assuming you are providing a `dog` prompt)**.
-
-#### Installing CycloneDDS
-
-First, build and install `CycloneDDS`. You can read more about CycloneDDS [here](https://index.ros.org/p/cyclonedds/). `CycloneDDS` works on Mac, Linux, and PC.
-
-> [!NOTE]
-> On Mac, you will need `cmake`, which you can install via `brew install cmake`.
-
-To build and install `CycloneDDS`, run:
-```bash
-git clone https://github.com/eclipse-cyclonedds/cyclonedds -b releases/0.10.x
-cd cyclonedds && mkdir build install && cd build
-cmake .. -DCMAKE_INSTALL_PREFIX=../install -DBUILD_EXAMPLES=ON
-cmake --build . --target install
-```
-
-Then, set the correct `CYCLONEDDS_HOME` via `export CYCLONEDDS_HOME="your_path_here/cyclonedds/install"`. You should add this path to your environment e.g. via your `.zshrc`. For example, on a Mac this might be: `export CYCLONEDDS_HOME="$HOME/Documents/GitHub/cyclonedds/install"`. On Linux, this might be `export CYCLONEDDS_HOME="$HOME/cyclonedds/install"`.
 
 #### Unitree Go2 Air Ethernet Setup
 
@@ -178,7 +180,7 @@ Connect the Unitree Go2 Air to your development machine with an Ethernet cable. 
 ping 192.168.123.99
 ```
 
-Assuming you can `ping` the robot, then text the `cycloneDDS` middleware. From `cycloneDDS/build`:
+Assuming you can `ping` the robot, then test the `cycloneDDS` middleware. From `cycloneDDS/build`:
 ```bash
 # send some pings
 ./bin/RoundtripPing 0 0 0
@@ -194,7 +196,9 @@ In another terminal, receive those pings and send them right back:
 
 You should see roundtrip timing data. If all of that works, then open an issue in the repo and we will help you to work though the fault tree to get you started.
 
-## CLI Commands
+## Developer Guide
+
+### CLI Commands
 
 The main entry point is `src/run.py` which provides the following commands:
 
@@ -204,8 +208,6 @@ The main entry point is `src/run.py` which provides the following commands:
   ```
   - `config_name`: Name of the config file (without .json extension) in the config directory
   - `--debug`: Optional flag to enable debug logging
-
-## Developer Guide
 
 ### Project Structure
 
@@ -344,47 +346,12 @@ Defines the agent’s available capabilities, including action names, their impl
 3. Add new LLM integrations in `src/llm/plugins/`
 4. Test actions with the `passthrough` implementation first
 5. Use type hints and docstrings for better code maintainability
-6. Run `uv run ruff check . --fix`, `uv run black .`, and `uv run isort .` to check/format your code.
+6. Run `uv run ruff check . --fix && uv run black . && uv run isort .` to check/format your code.
 
 ## Optional Environment Variables
 
 - `ETH_ADDRESS`: The Ethereum address of agent, prefixed with `Ox`. Example: `0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045`. Only relevant if your agent has a wallet.
 - `UNITREE_WIRED_ETHERNET`: Your network adapter that is connected to a Unitree robot. Example: `eno0`. Only relevant if your agent has a physical (robot) embodiment. You can set this to "SIM" to debug some limited functionality.
-
-### Core Architecture of the System; Runtime Flow
-
-The system is based on a loop that runs at a fixed frequency of `self.config.hertz`. This loop looks for the most recent data from various sources, fuses the data into a prompt, sends that prompt to one or more LLMs, and then sends the LLM responses to virtual agents or physical robots.
-
-Specific runtime flow:
-
-1. Input plugins collect data (vision, audio, etc.)
-2. The Fuser combines inputs into a prompt
-3. The LLM generates commands based on the prompt
-4. The ActionOrchestrator executes commands through actions
-5. Connectors map OM1 data/commands to external data buses and data distribution systems such as custom APIs, `ROS2`, `Zenoh`, or `CycloneDDS`.
-
-
-```python
-# cortex.py
-    async def _run_cortex_loop(self) -> None:
-        while True:
-            await asyncio.sleep(1 / self.config.hertz)
-            await self._tick()
-
-    async def _tick(self) -> None:
-        finished_promises, _ = await self.action_orchestrator.flush_promises()
-        prompt = self.fuser.fuse(self.config.agent_inputs, finished_promises)
-        if prompt is None:
-            logging.warning("No prompt to fuse")
-            return
-        output = await self.config.cortex_llm.ask(prompt)
-        if output is None:
-            logging.warning("No output from LLM")
-            return
-
-        logging.debug("I'm thinking... ", output)
-        await self.action_orchestrator.promise(output.commands)
-```
 
 ## Contributing
 
