@@ -1,6 +1,7 @@
-# OM1 Architecture
-
-## Core Architecture and Runtime Flow
+---
+title: Architecture
+description: "Core architecture and runtime flow"
+---
 
 The system is based on a loop that runs at a fixed frequency of `self.config.hertz`. This loop looks for the most recent data from various sources, fuses the data into a prompt, sends that prompt to one or more LLMs, and then sends the LLM responses to virtual agents or physical robots.
 

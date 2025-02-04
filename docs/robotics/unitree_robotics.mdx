@@ -1,23 +1,16 @@
-# OM1 support for Robots
+---
+title: Unitree Robotics
+description: "Unitree Go2 Air Quadruped (dog)"
+---
 
-- [OM1 support for Robots](#om1-support-for-robots)
-  * [Unitree Go2 Air Quadruped ("dog")](#unitree-go2-air-quadruped---dog--)
-    + [Step 1 - Game controller](#step-1---game-controller)
-    + [Step 2 - Establishing Ethernet and DDS Connectivity](#step-2---establishing-ethernet-and-dds-connectivity)
-    + [Step 3 - Adding the DDS module](#step-3---adding-the-dds-module)
-    + [Step 4 - Controlling the Robot](#step-4---controlling-the-robot)
-    + [Unitree Go2 Air Common Problems](#unitree-go2-air-common-problems)
-    
-## Unitree Go2 Air Quadruped ("dog")
-
-OM1 can control a Unitree Go2 Air. This has been tested on a Mac laptop running Seqoia 15.2. 
+OM1 can control a Unitree Go2 Air. This has been tested on a Mac laptop running Seqoia 15.2.
 
 ### Step 1 - Game controller
 
-Connect an `XBOX` controller to your computer. 
+Connect an `XBOX` controller to your computer.
 
 On Mac, you may need to install `hidapi` (`brew install hidapi`). NOTE: There is a bug on Mac when installing packages with `brew` - some libraries cannot be found by `uv`. If you get errors such as
-`Unable to load any of the following libraries:libhidapi-hidraw.so`, try setting `export DYLD_FALLBACK_LIBRARY_PATH="$HOMEBREW_PREFIX/lib"` in your `.zshenv` or equivalent. 
+`Unable to load any of the following libraries:libhidapi-hidraw.so`, try setting `export DYLD_FALLBACK_LIBRARY_PATH="$HOMEBREW_PREFIX/lib"` in your `.zshenv` or equivalent.
 
 Note: On Linux, install `hidapi` like this:
 
@@ -42,7 +35,7 @@ cd cyclonedds && mkdir build install && cd build
 cmake .. -DCMAKE_INSTALL_PREFIX=../install -DBUILD_EXAMPLES=ON
 cmake --build . --target install
 ```
-Set `CYCLONEDDS_HOME`, for example via `export CYCLONEDDS_HOME="$HOME/cyclonedds/install"`. You should add this path to your environment via your `.zshrc` or equivalent. 
+Set `CYCLONEDDS_HOME`, for example via `export CYCLONEDDS_HOME="$HOME/cyclonedds/install"`. You should add this path to your environment via your `.zshrc` or equivalent.
 
 ### Step 3 - Adding the DDS module
 
@@ -86,7 +79,7 @@ In another terminal, receive those pings and send them right back:
 ./bin/RoundtripPong
 ```
 
-> [!NOTE]
-> On Mac, you will need to `allow incoming connections` for the applications (RoundtripPing and RoundtripPong) - just "allow" the functionality in the security popup at first use.
+
+<Tip> On Mac, you will need to `allow incoming connections` for the applications (RoundtripPing and RoundtripPong) - just "allow" the functionality in the security popup at first use.</Tip>
 
 You should see roundtrip timing data. If all of that works, then open an issue in the repo and we will help you to work though the fault tree to get you started.
