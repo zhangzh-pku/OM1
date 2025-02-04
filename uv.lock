@@ -371,31 +371,6 @@ wheels = [
 ]
 
 [[package]]
-name = "cjm-pil-utils"
-version = "0.0.9"
-source = { registry = "https://pypi.org/simple" }
-dependencies = [
-    { name = "numpy" },
-    { name = "pillow" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/73/d8/e5eeb8eaa0e715c60cbe9157e22746468ae781844ef05a14aaffc5d9eab8/cjm-pil-utils-0.0.9.tar.gz", hash = "sha256:314d75c66aba1efb5061b643ab54086e8bfc35c394cf520ec57667f18cdeec40", size = 8107 }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/fc/0b/adc3d75b0f81233a8825b0da4536241743ece3ce0ae33d65b5c1a9b0e2a2/cjm_pil_utils-0.0.9-py3-none-any.whl", hash = "sha256:e86b78090d40a4a7e5e95d4451be427c36327b3cd519a139ef4e43bc5773c444", size = 8037 },
-]
-
-[[package]]
-name = "cjm-psl-utils"
-version = "0.0.4"
-source = { registry = "https://pypi.org/simple" }
-dependencies = [
-    { name = "tqdm" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/0a/69/a01b731b34adce7613dfbc6cac4ed031667fe0fa6d0dd7a0e06dfb7486f3/cjm-psl-utils-0.0.4.tar.gz", hash = "sha256:eec200f9f2ccfe4e2df01e0f22bd8483afde77377130bd8282e628c6762fe755", size = 5907 }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/cc/90/d2a82488979d96a0bf783c7e51d75a37ce5c06f1641b4b073cf6d9a164b9/cjm_psl_utils-0.0.4-py3-none-any.whl", hash = "sha256:6b1d291d43fa5234b8664a069eb802e91d1aaa40424a814c2d6a2ce15288136d", size = 5852 },
-]
-
-[[package]]
 name = "ckzg"
 version = "2.0.1"
 source = { registry = "https://pypi.org/simple" }
@@ -1481,8 +1456,6 @@ version = "0.1.0"
 source = { virtual = "." }
 dependencies = [
     { name = "cdp-sdk" },
-    { name = "cjm-pil-utils" },
-    { name = "cjm-psl-utils" },
     { name = "cv-bridge" },
     { name = "deepface" },
     { name = "gif-pygame" },
@@ -1519,8 +1492,6 @@ dev = [
 [package.metadata]
 requires-dist = [
     { name = "cdp-sdk", specifier = ">=0.15.0" },
-    { name = "cjm-pil-utils" },
-    { name = "cjm-psl-utils" },
     { name = "cv-bridge" },
     { name = "cyclonedds", marker = "extra == 'dds'", specifier = "==0.10.2" },
     { name = "deepface" },
