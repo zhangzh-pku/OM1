@@ -104,14 +104,14 @@ class UnitreeCameraVLMProvider:
     """
     VLM Provider that handles audio streaming and websocket communication.
 
-     This class implementationements a singleton pattern to manage audio input streaming and websocket
+     This class implements a singleton pattern to manage camera input streaming and websocket
      communication for vlm services. It runs in a separate thread to handle
      continuous vlm processing.
 
      Parameters
      ----------
      ws_url : str
-         The websocket URL for the ASR service connection.
+         The websocket URL for the VLM service connection.
      fps : int
          Frames per second for the video stream.
     """

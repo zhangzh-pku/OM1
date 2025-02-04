@@ -22,8 +22,8 @@ class UnitreeGo2CameraVLM(FuserInput[str]):
     """
     Unitree Go2 Air Camera VLM bridge.
 
-    Takes specific Unitree Go2 Air Camera VLM messages, converts them to
-    text strings, and sends them to the fuser.
+    Takes Unitree Go2 Air Camera images, sends them to a cloud VLM provider, 
+    converts the responses to text strings, and sends them to the fuser.
     """
 
     def __init__(self, config: SensorOutputConfig = SensorOutputConfig()):
@@ -37,6 +37,8 @@ class UnitreeGo2CameraVLM(FuserInput[str]):
 
         # Track IO
         self.io_provider = IOProvider()
+
+        self.descriptor_for_LLM = "Robot Camera Vision"
 
         # Buffer for storing the final output
         self.messages: List[Message] = []
@@ -155,7 +157,7 @@ class UnitreeGo2CameraVLM(FuserInput[str]):
         latest_message = self.messages[-1]
 
         result = f"""
-{self.__class__.__name__} INPUT
+{self.descriptor_for_LLM} INPUT
 // START
 {latest_message.message}
 // END
