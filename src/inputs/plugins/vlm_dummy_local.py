@@ -28,7 +28,7 @@ class Message:
     message: str
 
 
-class DummyVLMInputLocal(FuserInput[Image.Image]):
+class DummyVLMLocal(FuserInput[Image.Image]):
     """
     Vision Language Model input handler.
 

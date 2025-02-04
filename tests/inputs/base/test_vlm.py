@@ -3,7 +3,7 @@ from unittest.mock import Mock, patch
 
 import pytest
 
-from inputs.plugins.vlm import Message, VLMInputCloud
+from inputs.plugins.vlm import Message, VLMCloud
 
 
 @pytest.fixture
@@ -16,7 +16,7 @@ def mock_vlm_provider():
 
 @pytest.fixture
 def vlm_input(mock_vlm_provider):
-    return VLMInputCloud()
+    return VLMCloud()
 
 
 def test_init(vlm_input, mock_vlm_provider):

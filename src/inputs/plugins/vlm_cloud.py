@@ -29,7 +29,7 @@ class Message:
     message: str
 
 
-class VLMInputCloud(FuserInput[str]):
+class VLMCloud(FuserInput[str]):
     """
     Vision Language Model input handler.
 
