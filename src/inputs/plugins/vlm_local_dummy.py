@@ -28,7 +28,7 @@ class Message:
     message: str
 
 
-class DummyVLMInput(FuserInput[Image.Image]):
+class DummyVLMInputLocal(FuserInput[Image.Image]):
     """
     Vision Language Model input handler.
 
@@ -47,6 +47,8 @@ class DummyVLMInput(FuserInput[Image.Image]):
 
         # Messages buffer
         self.messages: list[Message] = []
+
+        self.descriptor_for_LLM = "Vision Language Model"
 
     async def _poll(self) -> Image.Image:
         """
@@ -123,7 +125,7 @@ class DummyVLMInput(FuserInput[Image.Image]):
         latest_message = self.messages[-1]
 
         result = f"""
-{self.__class__.__name__} INPUT
+{self.descriptor_for_LLM} INPUT
 // START
 {latest_message.message}
 // END

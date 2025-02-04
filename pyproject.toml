@@ -19,6 +19,11 @@ dependencies = [
     "numpy",
     "cdp-sdk>=0.15.0",
     "hid",
+    "cv_bridge",
+    "torch",
+    "torchvision",
+    "cjm_pil_utils",
+    "cjm_psl_utils"
 ]
 
 [project.optional-dependencies]

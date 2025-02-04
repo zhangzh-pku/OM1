@@ -29,7 +29,7 @@ class Message:
     message: str
 
 
-class VLMInput(FuserInput[str]):
+class VLMInputCloud(FuserInput[str]):
     """
     Vision Language Model input handler.
 
@@ -69,6 +69,8 @@ class VLMInput(FuserInput[str]):
         self.vlm: VLMProvider = VLMProvider(ws_url=base_url)
         self.vlm.start()
         self.vlm.register_message_callback(self._handle_vlm_message)
+
+        self.descriptor_for_LLM = "Vision Language Model"
 
     def _handle_vlm_message(self, raw_message: str):
         """
@@ -170,7 +172,7 @@ class VLMInput(FuserInput[str]):
         latest_message = self.messages[-1]
 
         result = f"""
-{self.__class__.__name__} INPUT
+{self.descriptor_for_LLM} INPUT
 // START
 {latest_message.message}
 // END

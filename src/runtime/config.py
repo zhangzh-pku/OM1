@@ -88,7 +88,9 @@ def load_config(config_name: str) -> RuntimeConfig:
         raw_config = json.load(f)
 
     # Load Unitree robot communication channel
-    load_unitree(raw_config)
+    UNITREE_WIRED_ETHERNET = os.environ.get("UNITREE_WIRED_ETHERNET")
+    if UNITREE_WIRED_ETHERNET and UNITREE_WIRED_ETHERNET != "SIM":
+        load_unitree(raw_config)
 
     parsed_config = {
         **raw_config,
