@@ -11,7 +11,7 @@ from simulators.orchestrator import SimulatorOrchestrator
 
 class CortexRuntime:
     """
-    The main entry point for the omOS agent runtime environment.
+    The main entry point for the OM1 agent runtime environment.
 
     The CortexRuntime orchestrates communication between memory, fuser,
     actions, and manages inputs/outputs. It controls the agent's execution

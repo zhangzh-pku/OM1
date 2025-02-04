@@ -44,3 +44,58 @@ uv run src/run.py cb_hackathon
 ```
 
 If you do not have a Unitree dog connected, you can still test the code by in sim mode by setting `UNITREE_WIRED_ETHERNET=SIM` in your `.env` file to debug some limited functionality.
+
+
+
+> [!NOTE]
+> There is a bug on Mac when installing packages with `brew` - some libraries cannot be found by `uv`. If you get errors such as
+`Unable to load any of the following libraries:libhidapi-hidraw.so` and you are on a Mac, try setting `export DYLD_FALLBACK_LIBRARY_PATH="$HOMEBREW_PREFIX/lib"` in your `.zshenv` or equivalent.
+
+Then, try....
+
+
+The Coinbase Wallet
+
+Similar to the `Hello World (Spot)` example, except uses the Coinbase wallet rather than Ethereum Mainnet.
+
+```bash
+cp .env.example .env
+# then, enter your coinbase credentials into the .env and run
+uv run src/run.py coinbase
+```
+
+The Coinbase Wallet integration requires the following environment variables:
+
+- `COINBASE_WALLET_ID`: The ID for the Coinbase Wallet.
+- `COINBASE_API_KEY`: The API key for the Coinbase Project API.
+- `COINBASE_API_SECRET`: The API secret for the Coinbase Project API.
+
+Please see [Coinbase hackathon](https://github.com/OpenmindAGI/OM1/blob/main/documention/coinbase_hackathon.md) for more information.
+
+
+
+
+> [!NOTE]
+> There is a bug on Mac when installing packages with `brew` - some libraries cannot be found by `uv`. If you get errors such as
+`Unable to load any of the following libraries:libhidapi-hidraw.so` and you are on a Mac, try setting `export DYLD_FALLBACK_LIBRARY_PATH="$HOMEBREW_PREFIX/lib"` in your `.zshenv` or equivalent.
+
+Then, try....
+
+
+The Coinbase Wallet
+
+Similar to the `Hello World (Spot)` example, except uses the Coinbase wallet rather than Ethereum Mainnet.
+
+```bash
+cp .env.example .env
+# then, enter your coinbase credentials into the .env and run
+uv run src/run.py coinbase
+```
+
+The Coinbase Wallet integration requires the following environment variables:
+
+- `COINBASE_WALLET_ID`: The ID for the Coinbase Wallet.
+- `COINBASE_API_KEY`: The API key for the Coinbase Project API.
+- `COINBASE_API_SECRET`: The API secret for the Coinbase Project API.
+
+Please see [Coinbase hackathon](https://github.com/OpenmindAGI/OM1/blob/main/documention/coinbase_hackathon.md) for more information.

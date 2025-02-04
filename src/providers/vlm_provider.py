@@ -3,8 +3,8 @@ import threading
 import time
 from typing import Callable, Optional
 
-from omOS_utils import ws
-from omOS_vlm import VideoStream
+from om1_utils import ws
+from om1_vlm import VideoStream
 
 from .singleton import singleton
 

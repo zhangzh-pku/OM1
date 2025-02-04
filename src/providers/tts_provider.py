@@ -4,7 +4,7 @@ import time
 from typing import Callable, Optional
 
 import pyaudio
-from omOS_speech import AudioOutputStream
+from om1_speech import AudioOutputStream
 
 from .singleton import singleton
 
