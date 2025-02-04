@@ -1,0 +1,100 @@
+{
+  "theme": "mint",
+  "name": "OpenMind",
+  "colors": {
+    "primary": "#16A34A",
+    "light": "#07C983",
+    "dark": "#15803D"
+  },
+  "styling": {
+    "codeblocks": "system"
+  },
+  "navigation": {
+    "tabs": [
+      {
+        "tab": "Guides",
+        "groups": [
+          {
+            "group": "Get Started",
+            "pages": [
+              "introduction",
+              "quick_start"
+            ]
+          },
+          {
+            "group": "Development",
+            "pages": [
+              "development/guide",
+              "development/architecture"
+            ]
+          },
+          {
+            "group": "Examples",
+            "pages": [
+              "examples/conversation",
+              "examples/llm_models"
+            ]
+          },
+          {
+            "group": "Robotics",
+            "pages": [
+              "robotics/unitree_robotics",
+              "robotics/coinbase_hackathon"
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "API Reference",
+        "groups": [
+          {
+            "group": "API Documentation",
+            "pages": [
+              "api-reference/introduction"
+            ]
+          },
+          {
+            "group": "Endpoint Examples",
+            "pages": [
+              "api-reference/endpoint/get",
+              "api-reference/endpoint/create",
+              "api-reference/endpoint/delete"
+            ]
+          }
+        ]
+      }
+    ],
+    "global": {
+      "anchors": [
+        {
+          "anchor": "Home",
+          "href": "https://www.openmind.org",
+          "icon": "house"
+        },
+        {
+          "anchor": "Research",
+          "href": "https://www.openmind.org/research.html",
+          "icon": "book"
+        }
+      ]
+    }
+  },
+  "logo": {
+    "light": "/assets/OpenMind_black.svg",
+    "dark": "/assets/OpenMind_white.svg"
+  },
+  "navbar": {
+    "links": [
+      {
+        "label": "Support",
+        "href": "mailto:hello@openmind.org"
+      }
+    ]
+  },
+  "footer": {
+    "socials": {
+      "x": "https://x.com/openmind_agi",
+      "github": "https://github.com/openmindagi"
+    }
+  }
+}

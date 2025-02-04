@@ -41,7 +41,9 @@ class RuntimeConfig:
 
     hertz: float
     name: str
-    system_prompt: str
+    system_prompt_base: str
+    system_governance: str
+    system_prompt_examples: str
     agent_inputs: List[SensorOutput]
     cortex_llm: LLM[CortexOutputModel]
     agent_actions: List[AgentAction]

@@ -1,7 +1,7 @@
 {
   "hertz": 0.01,
-  "name": "convesation",
-  "system_prompt": "You are the ai agent. A user is talking to you. Please respond to the user. Make sure to be polite and helpful. Please make sure that only one command is generated in response to the user.",
+  "name": "conversation",
+  "system_prompt": "You are an ai agent. A user is talking to you. Please respond to the user. Make sure to be polite and helpful. Please make sure that only one command is generated in response to the user.",
   "agent_inputs": [
     {
       "type": "ASRInput"
