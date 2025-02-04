@@ -63,7 +63,13 @@ class Fuser:
         self.io_provider.fuser_start_time = time.time()
 
         # Combine all inputs, memories, and configurations into a single prompt
-        system_prompt = self.config.system_prompt_base + "\n" + self.config.system_governance + "\n" + self.config.system_prompt_examples
+        system_prompt = (
+            self.config.system_prompt_base
+            + "\n"
+            + self.config.system_governance
+            + "\n"
+            + self.config.system_prompt_examples
+        )
 
         input_strings = [input.formatted_latest_buffer() for input in inputs]
         logging.debug(f"InputMessageArray: {input_strings}")
