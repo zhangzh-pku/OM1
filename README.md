@@ -346,7 +346,7 @@ Defines the agent’s available capabilities, including action names, their impl
 3. Add new LLM integrations in `src/llm/plugins/`
 4. Test actions with the `passthrough` implementation first
 5. Use type hints and docstrings for better code maintainability
-6. Run `uv run ruff check . --fix`, `uv run black .`, and `uv run isort .` to check/format your code.
+6. Run `uv run ruff check . --fix && uv run black . && uv run isort .` to check/format your code.
 
 ## Optional Environment Variables
 
