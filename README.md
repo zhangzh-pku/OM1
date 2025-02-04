@@ -6,7 +6,7 @@ OM1 enables the creation and execution of digital and physical embodied AI agent
 
 One benefit of using OM1 is the ease of deploying consistent digital personas across virtual and physical environments.
 
-The documentation for OM1 lives in `/docs`, and covers
+The documentation can be accessed at [docs.openmind.org](https://docs.openmind.org/introduction) and also in this repo:
 
 - [Core Architecture and Runtime Flow](./docs/development//architecture.mdx)
 - [Quick Start](./docs/quick_start.mdx)
