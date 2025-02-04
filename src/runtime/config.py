@@ -9,6 +9,7 @@ from inputs import load_input
 from inputs.base import SensorOutput, SensorOutputConfig
 from llm import LLM, LLMConfig, load_llm
 from llm.output_model import CortexOutputModel
+from runtime.robotics import load_unitree
 from simulators import load_simulator
 from simulators.base import Simulator
 
@@ -85,25 +86,29 @@ def load_config(config_name: str) -> RuntimeConfig:
 
     with open(config_path, "r") as f:
         raw_config = json.load(f)
-        parsed_config = {
-            **raw_config,
-            "agent_inputs": [
-                load_input(input["type"])(
-                    config=SensorOutputConfig(**input.get("config", {}))
-                )
-                for input in raw_config.get("agent_inputs", [])
-            ],
-            "cortex_llm": load_llm(raw_config["cortex_llm"]["type"])(
-                config=LLMConfig(**raw_config["cortex_llm"].get("config", {})),
-                output_model=CortexOutputModel,
-            ),
-            "simulators": [
-                load_simulator(simulator["type"])()
-                for simulator in raw_config.get("simulators", [])
-            ],
-            "agent_actions": [
-                load_action(action) for action in raw_config.get("agent_actions", [])
-            ],
-        }
+
+    # Load Unitree robot communication channel
+    load_unitree(raw_config)
+
+    parsed_config = {
+        **raw_config,
+        "agent_inputs": [
+            load_input(input["type"])(
+                config=SensorOutputConfig(**input.get("config", {}))
+            )
+            for input in raw_config.get("agent_inputs", [])
+        ],
+        "cortex_llm": load_llm(raw_config["cortex_llm"]["type"])(
+            config=LLMConfig(**raw_config["cortex_llm"].get("config", {})),
+            output_model=CortexOutputModel,
+        ),
+        "simulators": [
+            load_simulator(simulator["type"])()
+            for simulator in raw_config.get("simulators", [])
+        ],
+        "agent_actions": [
+            load_action(action) for action in raw_config.get("agent_actions", [])
+        ],
+    }
 
     return RuntimeConfig(**parsed_config)
