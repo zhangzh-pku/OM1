@@ -1,0 +1,26 @@
+# Example: Voice Inputs and Outputs (conversation)
+
+## Using Cloud Endpoints for Voice Inputs and Text to Speech
+
+This preconfigured example uses your `default` audio in (microphone) and your `default` audio output (speaker). Please test both your microphone and speaker in your system settings to make sure they are connected and working.
+
+```bash
+uv run src/run.py conversation
+```
+
+You will be able to speak to the LLM, and it will generate voice outputs.
+
+## Hardware audio drivers
+
+On Mac and Linux, you may need to install `portaudio`. 
+
+For Mac:
+```bash
+brew install portaudio
+```
+
+For Linux:
+```bash
+sudo apt-get update 
+sudo apt-get install portaudio19-dev python-all-dev
+```
