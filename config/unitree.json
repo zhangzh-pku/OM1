@@ -9,6 +9,9 @@
     },
     {
       "type": "UnitreeGo2Lowstate"
+    },
+    {
+      "type": "UnitreeGo2Camera"
     }
   ],
   "cortex_llm": {
