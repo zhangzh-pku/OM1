@@ -10,7 +10,7 @@ Welcome to the OpenMind OS (OM1) Developer Guide. This guide provides an overvie
 The main entry point is `src/run.py` which provides the following commands:
 
 - `start`: Start an agent with a specified config
-  ```bash
+  ```bash Start an agent with a specified config
   python src/run.py start [config_name] [--debug]
   ```
   - `config_name`: Name of the config file (without .json extension) in the config directory
@@ -18,7 +18,7 @@ The main entry point is `src/run.py` which provides the following commands:
 
 ## Project Structure
 
-```
+```tree Project Structure
 .
 ├── config/               # Agent configuration files
 ├── src/
@@ -26,7 +26,7 @@ The main entry point is `src/run.py` which provides the following commands:
 │   ├── fuser/            # Input fusion logic
 │   ├── inputs/           # Input plugins (e.g. VLM, audio)
 │   ├── llm/              # LLM integration
-│   ├── providers/        # ????
+│   ├── providers/        # Providers
 │   ├── runtime/          # Core runtime system
 │   ├── simulators/       # Virtual endpoints such as `RacoonSim`
 │   └── run.py            # CLI entry point
@@ -42,7 +42,7 @@ Actions are the core capabilities of an agent. For example, for a robot, these c
 
 Example action structure:
 
-```
+```tree Example Action Structure
 actions/
 └── move_{unique_hardware_id}/
     ├── interface.py      # Defines MoveInput/Output
@@ -62,7 +62,7 @@ In general, each robot will have specific capabilities, and therefore, each acti
 
 Agents are configured via JSON files in the `config/` directory. Key configuration elements:
 
-```json
+```json Configuration
 {
   "hertz": 0.5,
   "name": "agent_name",
@@ -110,7 +110,7 @@ OpenMind OpenAI Proxy endpoint is [https://api.openmind.org/api/core/openai](htt
 OpenMind DeepSeek Proxy endpoint is [https://api.openmind.org/api/core/deepseek](https://api.openmind.org/api/core/deepseek)
 OpenMind Gemini Proxy endpoint is [https://api.openmind.org/api/core/gemini](https://api.openmind.org/api/core/gemini)
 
-```json
+```json LLM Configuration
 "cortex_llm": {
   "type": "OpenAILLM",
   "config": {
@@ -124,7 +124,7 @@ OpenMind Gemini Proxy endpoint is [https://api.openmind.org/api/core/gemini](htt
 
 Lists the simulation modules used by the agent. These define the simulated environment or entities the agent interacts with.
 
-```json
+```json Simulators Configuration
 "simulators": [
   {
     "type": "RacoonSim"
@@ -136,7 +136,7 @@ Lists the simulation modules used by the agent. These define the simulated envir
 
 Defines the agent's available capabilities, including action names, their implementation, and the connector used to execute them.
 
-```json
+```json Agent Actions Configuration
 "agent_actions": [
   {
     "name": "move", // Action name

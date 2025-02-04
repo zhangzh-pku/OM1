@@ -14,7 +14,7 @@ On Mac, you may need to install `hidapi` (`brew install hidapi`). NOTE: There is
 
 Note: On Linux, install `hidapi` like this:
 
-```bash
+```bash Linux hidapi
 # Linux
 sudo apt-get update
 sudo apt-get install python-dev libusb-1.0-0-dev libudev-dev libhidapi-dev
@@ -29,7 +29,7 @@ sudo pip install hidapi
 Connect the Unitree Go2 Air to your development machine with an Ethernet cable. Then, set the network adapter setting. Open the network settings and find the network interface that is connected to the Go2 Air. In IPv4 setting, change the IPv4 mode to `manual`, set the address to `192.168.123.99`, and set the mask to `255.255.255.0`. After completion, click `apply` (or equivalent) and wait for the network to reconnect. Finally provide the name of the network adapter in the `.env`, such as `UNITREE_WIRED_ETHERNET=eno0`. If you do not have a Unitree dog connected, you can still test parts of the code in sim mode by setting `UNITREE_WIRED_ETHERNET=SIM` in your `.env` file.
 
 Then, install [`CycloneDDS`](https://index.ros.org/p/cyclonedds/). `CycloneDDS` works on Mac, Linux, and PC. Run:
-```bash
+```bash CycloneDDS
 git clone https://github.com/eclipse-cyclonedds/cyclonedds -b releases/0.10.x
 cd cyclonedds && mkdir build install && cd build
 cmake .. -DCMAKE_INSTALL_PREFIX=../install -DBUILD_EXAMPLES=ON
@@ -44,7 +44,7 @@ Add the `dds` python module to your codebase: `uv pip install -r pyproject.toml 
 ### Step 4 - Controlling the Robot
 
 Run
-```bash
+```bash Run Robot
 uv run src/run.py robot_wallet_safe
 ```
 
@@ -64,18 +64,18 @@ Allowing the dog to `move`, `pounce`, and `run` requires **you** to add this fun
 *The CycloneDDS library could not be located*: You forgot to install cycloneDDS (see above), or, you did not provide a path to the `/install`, via `export CYCLONEDDS_HOME="$HOME/Documents/GitHub/cyclonedds/install"` or equivalent.
 
 *"nothing is working"* There are dozens of potential reasons "nothing is working". The first step is to test your ability to `ping` the quadruped:
-```bash
+```bash ping
 ping 192.168.123.99
 ```
 
 Assuming you can `ping` the robot, then test the `cycloneDDS` middleware. From `cycloneDDS/build`:
-```bash
+```bash ping
 # send some pings
 ./bin/RoundtripPing 0 0 0
 ```
 
 In another terminal, receive those pings and send them right back:
-```bash
+```bash ping
 ./bin/RoundtripPong
 ```
 

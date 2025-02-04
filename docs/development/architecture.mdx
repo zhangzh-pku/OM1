@@ -13,7 +13,7 @@ Specific runtime flow:
 4. The ActionOrchestrator executes commands through actions
 5. Connectors map OM1 data/commands to external data buses and data distribution systems such as custom APIs, `ROS2`, `Zenoh`, or `CycloneDDS`.
 
-```python
+```python Core Runtime System
 # /src/runtime/cortex.py
 async def _run_cortex_loop(self) -> None:
     while True:
