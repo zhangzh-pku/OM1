@@ -1,6 +1,7 @@
 {
   "theme": "mint",
   "name": "OpenMind",
+  "favicon": "/assets/favicon.png",
   "colors": {
     "primary": "#16A34A",
     "light": "#07C983",
