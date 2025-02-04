@@ -1,6 +1,5 @@
 import asyncio
 import logging
-import os
 import time
 from dataclasses import dataclass
 from typing import List, Optional
@@ -11,7 +10,6 @@ from providers.io_provider import IOProvider
 
 try:
     from unitree.unitree_sdk2py.core.channel import (
-        ChannelFactoryInitialize,
         ChannelSubscriber,
     )
     from unitree.unitree_sdk2py.idl.unitree_go.msg.dds_ import LowState_
@@ -57,13 +55,8 @@ class UnitreeGo2Lowstate(FuserInput[str]):
         self.low_state = None
         self.lowstate_subscriber = None
 
-        self.UNIEN0 = os.getenv("UNITREE_WIRED_ETHERNET")
-        if self.UNIEN0 is not None and self.UNIEN0 != "SIM":
-            # Set up Unitree subscriber unless adapater is set to "SIM""
-            ChannelFactoryInitialize(0, self.UNIEN0)
-            # this can only be done once, at top level
-            self.lowstate_subscriber = ChannelSubscriber("rt/lowstate", LowState_)
-            self.lowstate_subscriber.Init(self.LowStateMessageHandler, 10)
+        self.lowstate_subscriber = ChannelSubscriber("rt/lowstate", LowState_)
+        self.lowstate_subscriber.Init(self.LowStateMessageHandler, 10)
 
         self.latest_v = 0.0
         self.latest_a = 0.0
