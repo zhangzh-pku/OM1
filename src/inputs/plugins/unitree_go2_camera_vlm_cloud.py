@@ -18,7 +18,7 @@ class Message:
     message: str
 
 
-class UnitreeGo2CameraVLM(FuserInput[str]):
+class UnitreeGo2CameraVLMCloud(FuserInput[str]):
     """
     Unitree Go2 Air Camera VLM bridge.
 
