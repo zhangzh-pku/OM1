@@ -9,36 +9,21 @@ from typing import Dict, List, Optional
 from inputs.base import SensorOutputConfig
 from inputs.base.loop import FuserInput
 from providers.io_provider import IOProvider
-from providers.vlm_provider import VLMProvider
+from providers.unitree_camera_vlm_provider import UnitreeCameraVLMProvider
 
 
 @dataclass
 class Message:
-    """
-    Container for timestamped messages.
-
-    Parameters
-    ----------
-    timestamp : float
-        Unix timestamp of the message
-    message : str
-        Content of the message
-    """
-
     timestamp: float
     message: str
 
 
-class VLMInput(FuserInput[str]):
+class UnitreeGo2CameraVLMCloud(FuserInput[str]):
     """
-    Vision Language Model input handler.
+    Unitree Go2 Air Camera VLM bridge.
 
-    A class that processes image inputs and generates text descriptions using
-    a vision language model. It maintains an internal buffer of processed messages
-    and interfaces with a VLM provider for image analysis.
-
-    The class handles asynchronous processing of images, maintains message history,
-    and provides formatted output of the latest processed messages.
+    Takes Unitree Go2 Air Camera images, sends them to a cloud VLM provider,
+    converts the responses to text strings, and sends them to the fuser.
     """
 
     def __init__(self, config: SensorOutputConfig = SensorOutputConfig()):
@@ -53,6 +38,8 @@ class VLMInput(FuserInput[str]):
         # Track IO
         self.io_provider = IOProvider()
 
+        self.descriptor_for_LLM = "Robot Camera Vision"
+
         # Buffer for storing the final output
         self.messages: List[Message] = []
 
@@ -66,7 +53,7 @@ class VLMInput(FuserInput[str]):
             else "wss://api-vila.openmind.org"
         )
 
-        self.vlm: VLMProvider = VLMProvider(ws_url=base_url)
+        self.vlm: UnitreeCameraVLMProvider = UnitreeCameraVLMProvider(ws_url=base_url)
         self.vlm.start()
         self.vlm.register_message_callback(self._handle_vlm_message)
 
@@ -170,7 +157,7 @@ class VLMInput(FuserInput[str]):
         latest_message = self.messages[-1]
 
         result = f"""
-{self.__class__.__name__} INPUT
+{self.descriptor_for_LLM} INPUT
 // START
 {latest_message.message}
 // END
