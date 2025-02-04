@@ -22,7 +22,7 @@ class UnitreeGo2CameraVLM(FuserInput[str]):
     """
     Unitree Go2 Air Camera VLM bridge.
 
-    Takes Unitree Go2 Air Camera images, sends them to a cloud VLM provider, 
+    Takes Unitree Go2 Air Camera images, sends them to a cloud VLM provider,
     converts the responses to text strings, and sends them to the fuser.
     """
 

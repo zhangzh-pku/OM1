@@ -72,16 +72,11 @@ class UnitreeCameraVideoStream(VideoStream):
                         resized_image = cv2.resize(
                             image, (new_width, new_height), interpolation=cv2.INTER_AREA
                         )
-
-                        # Encode to JPEG with reduced quality for smaller size
                         _, buffer = cv2.imencode(
                             ".jpg", resized_image, [cv2.IMWRITE_JPEG_QUALITY, 70]
                         )
-
-                        # Convert to base64 for websocket transmission
                         frame_data = base64.b64encode(buffer).decode("utf-8")
 
-                        # Send through websocket if callback is registered
                         if self.frame_callback:
                             self.frame_callback(frame_data)
                     else:
@@ -182,4 +177,4 @@ class UnitreeCameraVLMProvider:
         if self._thread:
             self.video_stream.stop()
             self.ws_client.stop()
-            self._thread.join(timeout=5)
+            self._thread.join()
