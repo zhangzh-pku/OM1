@@ -8,13 +8,13 @@ One benefit of using OM1 is the ease of deploying consistent digital personas ac
 
 The documentation for OM1 lives in `/documentation`, and covers
 
-- [Core Architecture and Runtime Flow](./docs/architecture.md)
-- [Quick Start](./docs/hello_world.md)
-- [Developer Guide](./docs/developer_guide.md)
-- [Example 1 - Using DeepSeek or Gemini as the Core LLM](./docs/howto_other_models.md)
-- [Example 2 - Using Cloud Endpoints for Voice Inputs and Text to Speech](./docs/howto_conversation.md)
-- [Robots - Unitree Dog](./docs/unitree_robotics.md)
-- [Unitree Dog with Crypto Wallet](./docs/coinbase_hackathon.md)
+- [Core Architecture and Runtime Flow](./docs/development//architecture.mdx)
+- [Quick Start](./docs/quick_start.mdx)
+- [Developer Guide](./docs/development/guide.mdx)
+- [Example 1 - Using DeepSeek or Gemini as the Core LLM](./docs/examples/llm_models.mdx)
+- [Example 2 - Using Cloud Endpoints for Voice Inputs and Text to Speech](./docs/examples/conversation.mdx)
+- [Robots - Unitree Dog](./docs/robotics/unitree_robotics.mdx)
+- [Unitree Dog with Crypto Wallet](./docs/robotics/coinbase_hackathon.mdx)
 
 ## Contributing
 
