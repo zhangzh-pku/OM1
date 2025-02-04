@@ -605,10 +605,10 @@ class RacoonSim:
                 "walk back - Walk backward",
             ],
             "Expressions": [
-                "face: smile - Happy expression",
-                "face: think - Thoughtful look",
-                "face: frown - Sad expression",
-                "face: cry - Crying expression",
+                "smile - Happy expression",
+                "think - Thoughtful look",
+                "frown - Sad expression",
+                "cry - Crying expression",
             ],
             "Speech": ["speech - Speak a message", "bark - Make a bark sound"],
         }

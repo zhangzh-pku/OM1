@@ -42,7 +42,7 @@ class GovernanceEthereum(FuserInput[float]):
     """
 
     def load_rules_from_blockchain(self):
-        logging.info("load_rules_from_blockchain()")
+        logging.info("Loading constitution from Ethereum")
 
         try:
             response = requests.get(self.universal_rule_url)
@@ -66,6 +66,8 @@ class GovernanceEthereum(FuserInput[float]):
         """
         super().__init__(config)
 
+        self.descriptor_for_LLM = "Universal Laws"
+
         self.io_provider = IOProvider()
         self.POLL_INTERVAL = 5
         self.api_endpoint = "https://api.openmind.org/api"
@@ -88,7 +90,7 @@ class GovernanceEthereum(FuserInput[float]):
         await asyncio.sleep(self.POLL_INTERVAL)
 
         try:
-            self.universal_rule = self.load_rules_from_blockchain()
+            self.universal_rule = self.load_rules_from_blockchain()    
             logging.info(f"7777 rules: {self.universal_rule}")
         except Exception as e:
             logging.error(f"Error fetching blockchain data: {e}")
@@ -121,7 +123,11 @@ class GovernanceEthereum(FuserInput[float]):
         pending_message = await self._raw_to_text(raw_input)
 
         if pending_message is not None:
-            self.messages.append(pending_message)
+            if len(self.messages) == 0:
+                self.messages.append(pending_message)
+            # only update if there has been a change
+            elif self.messages[-1] != pending_message:
+                self.messages.append(pending_message)
 
     def formatted_latest_buffer(self) -> Optional[str]:
         """
@@ -138,7 +144,7 @@ class GovernanceEthereum(FuserInput[float]):
         latest_message = self.messages[-1]
 
         result = f"""
-{self.__class__.__name__} INPUT
+{self.descriptor_for_LLM} INPUT
 // START
 {latest_message.message}
 // END
@@ -147,5 +153,5 @@ class GovernanceEthereum(FuserInput[float]):
         self.io_provider.add_input(
             self.__class__.__name__, latest_message.message, latest_message.timestamp
         )
-        self.messages = []
+        # self.messages = []
         return result

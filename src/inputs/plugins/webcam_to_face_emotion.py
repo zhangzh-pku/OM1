@@ -146,7 +146,10 @@ class FaceEmotionCapture(FuserInput[cv2.typing.MatLike]):
             # Determine the dominant emotion
             self.emotion = result[0]["dominant_emotion"]
 
-        message = f"I see a person. Their emotion is {self.emotion}."
+        if self.emotion == "":
+            message = f"I do not see anyone, so I can't estimate their emotion."
+        else:
+            message = f"I see a person. Their emotion is {self.emotion}."
 
         return Message(timestamp=time.time(), message=message)
 
