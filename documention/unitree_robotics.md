@@ -68,7 +68,7 @@ Allowing the dog to `move`, `pounce`, and `run` requires **you** to add this fun
 
 *channel factory init error*: If you see a `channel factory init error`, then you have not set the correct network interface adapter - the one you want to use is the network interface adapter *on your development machine - the computer you are currently sitting in front of* that is plugged into the Unitree quadruped (which has its own internal RockChip computer and network interface, which is *not* relevant to you right now). The ethernet adapter - such as `eno0` or `en0` - needs to be set in the `.env`, for example, `UNITREE_WIRED_ETHERNET=en0`.
 
-*The CycloneDDS library could not be located*: You forgot to install cycloneDDS (see above), or, you did not proavide a path to the `/install`, via `export CYCLONEDDS_HOME="$HOME/Documents/GitHub/cyclonedds/install"` or equivalent.
+*The CycloneDDS library could not be located*: You forgot to install cycloneDDS (see above), or, you did not provide a path to the `/install`, via `export CYCLONEDDS_HOME="$HOME/Documents/GitHub/cyclonedds/install"` or equivalent.
 
 *"nothing is working"* There are dozens of potential reasons "nothing is working". The first step is to test your ability to `ping` the quadruped:
 ```bash

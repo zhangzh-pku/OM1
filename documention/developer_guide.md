@@ -102,7 +102,7 @@ Agents are configured via JSON files in the `config/` directory. Key configurati
 
 * **Name** A unique identifier for the agent.
 
-* **System Prompt** Defines the agent’s personality and behavior. This acts as the system prompt for the agent’s operations.
+* **System Prompt** Defines the agent's personality and behavior. This acts as the system prompt for the agent's operations.
 
 * **Cortex LLM** Configuration for the language model (LLM) used by the agent.
 
@@ -138,7 +138,7 @@ Lists the simulation modules used by the agent. These define the simulated envir
 
 ### Agent Actions
 
-Defines the agent’s available capabilities, including action names, their implementation, and the connector used to execute them.
+Defines the agent's available capabilities, including action names, their implementation, and the connector used to execute them.
 
 ```json
 "agent_actions": [
