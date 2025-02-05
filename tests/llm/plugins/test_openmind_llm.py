@@ -1,4 +1,3 @@
-import os
 from unittest.mock import AsyncMock, MagicMock
 
 import pytest
@@ -11,11 +10,6 @@ from llm.plugins.openai_llm import OpenAILLM
 # Test output model
 class DummyOutputModel(BaseModel):
     test_field: str
-
-
-@pytest.fixture(autouse=True)
-def setup_environment():
-    os.environ["OPENAI_API_KEY"] = ""
 
 
 @pytest.fixture
@@ -44,18 +38,10 @@ async def test_init_with_config(llm, config):
 
 
 @pytest.mark.asyncio
-async def test_init_with_env_api_key(monkeypatch):
+async def test_init_empty_key():
     config = LLMConfig(base_url="test_url")
-    monkeypatch.setenv("OPENAI_API_KEY", "env_key")
-    llm = OpenAILLM(DummyOutputModel, config)
-    assert llm._client.api_key == "env_key"
-
-
-@pytest.mark.asyncio
-async def test_init_fallback_key():
-    config = LLMConfig(base_url="test_url")
-    llm = OpenAILLM(DummyOutputModel, config)
-    assert llm._client.api_key == "openmind-0x"
+    with pytest.raises(ValueError, match="config file missing api_key"):
+        OpenAILLM(DummyOutputModel, config)
 
 
 @pytest.mark.asyncio

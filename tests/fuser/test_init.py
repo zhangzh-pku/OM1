@@ -3,12 +3,12 @@ from typing import List
 from unittest.mock import Mock, patch
 
 from fuser import Fuser
-from inputs.base import AgentInput
+from inputs.base import SensorOutput
 from providers.io_provider import IOProvider
 
 
 @dataclass
-class MockAgentInput(AgentInput):
+class MockSensorOutput(SensorOutput):
     def formatted_latest_buffer(self):
         return "test input"
 
@@ -20,7 +20,9 @@ class MockAction:
 
 @dataclass
 class MockConfig:
-    system_prompt: str = "system prompt"
+    system_prompt_base: str = "system prompt base"
+    system_governance: str = "system governance"
+    system_prompt_examples: str = "system prompt examples"
     agent_actions: List[MockAction] = None
 
     def __post_init__(self):
@@ -53,13 +55,21 @@ def test_fuser_timestamps(mock_time):
 def test_fuser_with_inputs_and_actions(mock_describe):
     mock_describe.return_value = "action description"
     config = MockConfig(agent_actions=[MockAction("action1"), MockAction("action2")])
-    inputs = [MockAgentInput()]
+    inputs = [MockSensorOutput()]
     mock_io = Mock(spec=IOProvider)
 
     with patch("fuser.IOProvider", return_value=mock_io):
         fuser = Fuser(config)
         result = fuser.fuse(inputs, [])
 
-        expected = "system prompt\n\ntest input\n\nAVAILABLE MODULES:\naction description\n\n\naction description\n\nWhat will you do? Command: "
+        system_prompt = (
+            "system prompt base"
+            + "\n"
+            + "system governance"
+            + "\n"
+            + "system prompt examples"
+        )
+
+        expected = f"{system_prompt}\n\ntest input\n\nAVAILABLE MODULES:\naction description\n\n\naction description\n\nWhat will you do? Command: "
         assert result == expected
         assert mock_describe.call_count == 2

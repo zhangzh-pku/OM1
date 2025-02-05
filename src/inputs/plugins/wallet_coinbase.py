@@ -7,7 +7,8 @@ from typing import List, Optional
 
 from cdp import Cdp, Wallet
 
-from inputs.base.loop import LoopInput
+from inputs.base import SensorOutputConfig
+from inputs.base.loop import FuserInput
 from providers.io_provider import IOProvider
 
 
@@ -17,21 +18,26 @@ class Message:
     message: str
 
 
-class WalletCoinbase(LoopInput[float]):
+# TODO(Kyle): Support Cryptos other than ETH
+class WalletCoinbase(FuserInput[float]):
     """
     Queries current ETH balance and reports a balance increase
     """
 
-    def __init__(self):
+    def __init__(self, config: SensorOutputConfig = SensorOutputConfig()):
+        super().__init__(config)
+
         # Track IO
         self.io_provider = IOProvider()
         self.messages: list[str] = []
 
         self.POLL_INTERVAL = 0.5  # seconds between blockchain data updates
         self.COINBASE_WALLET_ID = os.environ.get("COINBASE_WALLET_ID")
-        logging.debug(f"Using {self.COINBASE_WALLET_ID} as the coinbase wallet id")
+        logging.info(f"Using {self.COINBASE_WALLET_ID} as the coinbase wallet id")
 
         # Initialize Wallet
+        # TODO(Kyle): Create Wallet if the wallet ID is not found
+        # TODO(Kyle): Support importing other wallets, following https://docs.cdp.coinbase.com/mpc-wallet/docs/wallets#importing-a-wallet
         API_KEY = os.environ.get("COINBASE_API_KEY")
         API_SECRET = os.environ.get("COINBASE_API_SECRET")
         Cdp.configure(API_KEY, API_SECRET)
@@ -39,7 +45,7 @@ class WalletCoinbase(LoopInput[float]):
         try:
             # fetch wallet data
             self.wallet = Wallet.fetch(self.COINBASE_WALLET_ID)
-            logging.debug(f"Wallet: {self.wallet}")
+            logging.info(f"Wallet: {self.wallet}")
         except Exception as e:
             logging.error(f"Error fetching Coinbase Wallet data: {e}")
 
@@ -66,7 +72,7 @@ class WalletCoinbase(LoopInput[float]):
         #     logging.info(f"WalletCoinbase: Faucet transaction: {faucet_transaction}")
 
         self.wallet = Wallet.fetch(self.COINBASE_WALLET_ID)
-        logging.debug(
+        logging.info(
             f"WalletCoinbase: Wallet refreshed: {self.wallet.balance('eth')}, the current balance is {self.ETH_balance}"
         )
         self.ETH_balance = float(self.wallet.balance("eth"))
@@ -95,6 +101,7 @@ class WalletCoinbase(LoopInput[float]):
 
         if balance_change > 0:
             message = f"{balance_change:.5f}"
+            logging.info(f"\n\nWalletCoinbase balance change: {message}")
         else:
             return None
 
@@ -141,11 +148,11 @@ class WalletCoinbase(LoopInput[float]):
         )
 
         result = f"""
-        {self.__class__.__name__} INPUT
-        // START
-        {result_message.message}
-        // END
-        """
+{self.__class__.__name__} INPUT
+// START
+{result_message.message}
+// END
+"""
 
         self.io_provider.add_input(
             self.__class__.__name__, result_message.message, result_message.timestamp

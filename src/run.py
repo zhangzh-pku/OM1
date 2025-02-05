@@ -14,8 +14,12 @@ app = typer.Typer()
 @app.command()
 def start(config_name: str, debug: bool = False) -> None:
     logging.basicConfig(level=logging.DEBUG if debug else logging.INFO)
+
+    # Load configuration
     config = load_config(config_name)
     runtime = CortexRuntime(config)
+
+    # Start the runtime
     asyncio.run(runtime.run())
 
 

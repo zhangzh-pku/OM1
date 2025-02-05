@@ -6,7 +6,8 @@ from typing import Optional
 
 from PIL import Image
 
-from inputs.base.loop import LoopInput
+from inputs.base import SensorOutputConfig
+from inputs.base.loop import FuserInput
 from providers.io_provider import IOProvider
 
 
@@ -27,23 +28,27 @@ class Message:
     message: str
 
 
-class VlmInput(LoopInput[Image.Image]):
+class DummyVLMLocal(FuserInput[Image.Image]):
     """
     Vision Language Model input handler.
 
-    Processes image inputs and generates text descriptions using a vision
-    language model. Maintains a buffer of processed messages.
+    Simluates processing of image inputs and generates dummy text descriptions.
+    Maintains a buffer of processed messages.
     """
 
-    def __init__(self):
+    def __init__(self, config: SensorOutputConfig = SensorOutputConfig()):
         """
         Initialize VLM input handler with empty message buffer.
         """
+        super().__init__(config)
+
         # Track IO
         self.io_provider = IOProvider()
 
         # Messages buffer
         self.messages: list[Message] = []
+
+        self.descriptor_for_LLM = "Vision Language Model"
 
     async def _poll(self) -> Image.Image:
         """
@@ -81,11 +86,10 @@ class VlmInput(LoopInput[Image.Image]):
         Message
             Timestamped message containing description
         """
-        # now you can use the `raw_input` variable for something, it is of Type Image
-        # but for simplementationicity let's not bother with the random image,
-        # but just create a string that changes
+        # You can use the `raw_input` variable for something, it is of Type Image
+        # But for simpicity let's just create a string that changes
         num = random.randint(0, 100)
-        message = f"I see {num} people. Also, I see a rocket."
+        message = f"DUMMY VLM - FAKE DATA - I see {num} people. Also, I see a rocket."
 
         return Message(timestamp=time.time(), message=message)
 
@@ -121,7 +125,7 @@ class VlmInput(LoopInput[Image.Image]):
         latest_message = self.messages[-1]
 
         result = f"""
-{self.__class__.__name__} INPUT
+{self.descriptor_for_LLM} INPUT
 // START
 {latest_message.message}
 // END

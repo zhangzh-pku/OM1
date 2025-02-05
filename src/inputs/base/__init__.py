@@ -1,11 +1,26 @@
 import typing as T
+from dataclasses import dataclass
 
 R = T.TypeVar("R")
 
 
-class AgentInput(T.Generic[R]):
+@dataclass
+class SensorOutputConfig:
     """
-    Base class for all agent inputs. Provides the interface for converting raw inputs
+    Configuration class for SensorOutput implementations.
+
+    Parameters
+    ----------
+    base_url : int
+        Base URL for the input source
+    """
+
+    base_url: T.Optional[str] = None
+
+
+class SensorOutput(T.Generic[R]):
+    """
+    Base class for all sensor outputs aka agent inputs. Provides the interface for converting raw inputs
     into text format for processing by the fuser.
 
     Type Parameters
@@ -14,10 +29,11 @@ class AgentInput(T.Generic[R]):
         The raw input type that this agent handles
     """
 
-    def __init__(self):
+    def __init__(self, config: SensorOutputConfig):
         """
-        Initialize an AgentInput instance.
+        Initialize an SensorOutput instance.
         """
+        self.config = config
         pass
 
     async def _raw_to_text(self, raw_input: R) -> str:

@@ -1,5 +1,4 @@
 import logging
-import os
 import time
 import typing as T
 
@@ -40,27 +39,17 @@ class DeepSeekLLM(LLM[R]):
         """
         super().__init__(output_model, config)
 
-        base_url = config.base_url if config.base_url else "https://api.deepseek.com/v1"
-        api_key = (
-            os.getenv("OPENAI_API_KEY")
-            or os.getenv("DEEPSEEK_API_KEY")
-            or os.getenv("OPENMIND_API_KEY")
-            or (config.api_key if config else None)
-        )
+        base_url = config.base_url or "https://api.openmind.org/api/core/deepseek"
+
+        if config.api_key is None or config.api_key == "":
+            raise ValueError("config file missing api_key")
+        else:
+            api_key = config.api_key
 
         client_kwargs = {}
-        if base_url:
-            client_kwargs["base_url"] = base_url
-        if api_key:
-            client_kwargs["api_key"] = api_key
+        client_kwargs["base_url"] = base_url
+        client_kwargs["api_key"] = api_key
 
-        if not api_key and base_url:
-            logging.warning(
-                "DeepSeek API key not found. The rate limit may be applied."
-            )
-            client_kwargs["api_key"] = "openmind-0x"
-
-        logging.info(f"Initializing DeepSeek client with {client_kwargs}")
         self._client = openai.OpenAI(**client_kwargs)
 
     async def ask(self, prompt: str) -> R | None:
@@ -79,7 +68,7 @@ class DeepSeekLLM(LLM[R]):
             parsing fails.
         """
         try:
-            logging.debug(f"LLM input: {prompt}")
+            logging.debug(f"DeepSeek LLM input: {prompt}")
             self.io_provider.llm_start_time = time.time()
             self.io_provider.set_llm_prompt(prompt)
 

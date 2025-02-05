@@ -11,7 +11,7 @@ from simulators.orchestrator import SimulatorOrchestrator
 
 class CortexRuntime:
     """
-    The main entry point for the omOS agent runtime environment.
+    The main entry point for the OM1 agent runtime environment.
 
     The CortexRuntime orchestrates communication between memory, fuser,
     actions, and manages inputs/outputs. It controls the agent's execution
@@ -133,5 +133,22 @@ class CortexRuntime:
 
         # Trigger the simulators
         await self.simulator_orchestrator.promise(output.commands)
-        # Trigger the actions
-        await self.action_orchestrator.promise(output.commands)
+
+        commands_silent = []
+        for command in output.commands:
+            action_type = command.name
+            # action_spec = command.arguments[0].value
+            if action_type != "speak":
+                commands_silent.append(command)
+                logging.debug(f"appended: {action_type}")
+
+        # Trigger actions
+        if self.config.name == "spot_speak":
+            # spot, the speaking dog
+            await self.action_orchestrator.promise(output.commands)
+        elif ("ASRInput" in prompt) or ("WalletCoinbase" in prompt):
+            # send speech data to loudspeaker
+            await self.action_orchestrator.promise(output.commands)
+        else:
+            # do not send speech to loudpspear but only to simulator
+            await self.action_orchestrator.promise(commands_silent)

@@ -3,11 +3,11 @@ from unittest.mock import AsyncMock
 
 import pytest
 
-from inputs.base.loop import LoopInput
+from inputs.base.loop import FuserInput
 from inputs.orchestrator import InputOrchestrator
 
 
-class MockInput(LoopInput[str]):
+class MockInput(FuserInput[str]):
     def __init__(self):
         super().__init__()
         self.poll_count = 0

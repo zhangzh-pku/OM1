@@ -8,7 +8,8 @@ from typing import List, Optional
 
 from web3 import Web3
 
-from inputs.base.loop import LoopInput
+from inputs.base import SensorOutputConfig
+from inputs.base.loop import FuserInput
 from providers.io_provider import IOProvider
 
 
@@ -29,7 +30,7 @@ class Message:
     message: str
 
 
-class WalletEthereum(LoopInput[float]):
+class WalletEthereum(FuserInput[float]):
     """
     Ethereum wallet monitor that tracks ETH balance changes.
 
@@ -42,10 +43,12 @@ class WalletEthereum(LoopInput[float]):
         If connection to Ethereum network fails
     """
 
-    def __init__(self):
+    def __init__(self, config: SensorOutputConfig = SensorOutputConfig()):
         """
         Initialize WalletEthereum instance.
         """
+        super().__init__(config)
+
         # Track IO
         self.io_provider = IOProvider()
 

@@ -13,6 +13,7 @@ class MovementAction(str, Enum):
     WALK_BACK = "walk back"
     RUN = "run"
     JUMP = "jump"
+    WAG_TAIL = "wag tail"
 
 
 @dataclass

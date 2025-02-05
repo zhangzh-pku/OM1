@@ -1,14 +1,15 @@
 import json
 import os
 from dataclasses import dataclass
-from typing import List
+from typing import List, Optional
 
 from actions import load_action
 from actions.base import AgentAction
 from inputs import load_input
-from inputs.base import AgentInput
+from inputs.base import SensorOutput, SensorOutputConfig
 from llm import LLM, LLMConfig, load_llm
 from llm.output_model import CortexOutputModel
+from runtime.robotics import load_unitree
 from simulators import load_simulator
 from simulators.base import Simulator
 
@@ -26,7 +27,7 @@ class RuntimeConfig:
         Unique identifier for this configuration
     system_prompt : str
         System prompt used for LLM initialization
-    agent_inputs : List[AgentInput]
+    agent_inputs : List[SensorOutput]
         List of input components for gathering agent data
     cortex_llm : LLM[CortexOutputModel]
         Language model configuration for the agent's cognitive processing
@@ -34,15 +35,22 @@ class RuntimeConfig:
         List of available actions the agent can perform
     simulators : List[Simulator]
         List of simulation components for environment modeling
+    unitree_ethernet : str
+        Ethernet adapter name for Unitree robot communication
     """
 
     hertz: float
     name: str
-    system_prompt: str
-    agent_inputs: List[AgentInput]
+    system_prompt_base: str
+    system_governance: str
+    system_prompt_examples: str
+    agent_inputs: List[SensorOutput]
     cortex_llm: LLM[CortexOutputModel]
     agent_actions: List[AgentAction]
     simulators: List[Simulator]
+
+    # unitree
+    unitree_ethernet: Optional[str] = None
 
 
 def load_config(config_name: str) -> RuntimeConfig:
@@ -78,23 +86,29 @@ def load_config(config_name: str) -> RuntimeConfig:
 
     with open(config_path, "r") as f:
         raw_config = json.load(f)
-        parsed_config = {
-            **raw_config,
-            "agent_inputs": [
-                load_input(input["type"])()
-                for input in raw_config.get("agent_inputs", [])
-            ],
-            "cortex_llm": load_llm(raw_config["cortex_llm"]["type"])(
-                config=LLMConfig(**raw_config["cortex_llm"].get("config", {})),
-                output_model=CortexOutputModel,
-            ),
-            "simulators": [
-                load_simulator(simulator["type"])()
-                for simulator in raw_config.get("simulators", [])
-            ],
-            "agent_actions": [
-                load_action(action) for action in raw_config.get("agent_actions", [])
-            ],
-        }
+
+    # Load Unitree robot communication channel
+    load_unitree(raw_config)
+
+    parsed_config = {
+        **raw_config,
+        "agent_inputs": [
+            load_input(input["type"])(
+                config=SensorOutputConfig(**input.get("config", {}))
+            )
+            for input in raw_config.get("agent_inputs", [])
+        ],
+        "cortex_llm": load_llm(raw_config["cortex_llm"]["type"])(
+            config=LLMConfig(**raw_config["cortex_llm"].get("config", {})),
+            output_model=CortexOutputModel,
+        ),
+        "simulators": [
+            load_simulator(simulator["type"])()
+            for simulator in raw_config.get("simulators", [])
+        ],
+        "agent_actions": [
+            load_action(action) for action in raw_config.get("agent_actions", [])
+        ],
+    }
 
     return RuntimeConfig(**parsed_config)
