@@ -1,16 +1,38 @@
 import asyncio
 import logging
-import os
-import random
 import time
-import requests
-
 from dataclasses import dataclass
 from typing import List, Optional
+
+import requests
 
 from inputs.base import SensorOutputConfig
 from inputs.base.loop import FuserInput
 from providers.io_provider import IOProvider
+
+"""
+RULES are stored on the ETHEREUM HOLESKY testnet
+
+https://holesky.etherscan.io
+
+{
+  "UniversalCharterProxy": "0xE706b7E30e378b89C7B2Ee7bFd8CE2b91959d695",
+  "UniversalCharter": "0x198FA9dd3257c6Aab5DB85e829B0e1953c4b6188",
+  "UniversalIdentityProxy": "0xdD5D41217114199a844c2CD3F1295eE937aB0010",
+  "UniversalIdentity": "0x8764C83d9b3d079fc27496378F7E22cA16903b61",
+  "SystemConfigProxy": "0x16879D54e5689aeBD491CC6ecdE597ECC2E97a15",
+  "SystemConfig": "0xa48A21DbF9d265f508e4f3919463e7DF4E01ded4"
+}
+
+The laws can be directly inspected at 
+
+https://holesky.etherscan.io/address/0x198FA9dd3257c6Aab5DB85e829B0e1953c4b6188#readContract#F4
+
+Openmind provides a convenience API but this is a dangerous design pattern and you are 
+encouraged to directly query the relevant blockchain/contract.
+
+"""
+
 
 @dataclass
 class Message:
@@ -50,8 +72,8 @@ class GovernanceEthereum(FuserInput[float]):
             if response.status_code == 200:
                 data = response.json()
                 logging.info(f"Blockchain data: {data}")
-                if 'rules' in data:
-                    return data['rules']
+                if "rules" in data:
+                    return data["rules"]
                 logging.error("Error: Could not load rules from blockchain")
                 return self.backup_universal_rule
             else:
@@ -72,10 +94,12 @@ class GovernanceEthereum(FuserInput[float]):
         self.POLL_INTERVAL = 5
         self.api_endpoint = "https://api.openmind.org/api"
         self.universal_rule_url = f"{self.api_endpoint}/core/rules"
-        self.backup_universal_rule = """You are honest, curious, and friendly. Don't hurt people."""
+        self.backup_universal_rule = (
+            """You are honest, curious, and friendly. Don't hurt people."""
+        )
         self.universal_rule = self.load_rules_from_blockchain()
         self.messages: list[str] = []
-        
+
         logging.info(f"7777 rules: {self.universal_rule}")
 
     async def _poll(self) -> None:
@@ -90,7 +114,7 @@ class GovernanceEthereum(FuserInput[float]):
         await asyncio.sleep(self.POLL_INTERVAL)
 
         try:
-            self.universal_rule = self.load_rules_from_blockchain()    
+            self.universal_rule = self.load_rules_from_blockchain()
             logging.info(f"7777 rules: {self.universal_rule}")
         except Exception as e:
             logging.error(f"Error fetching blockchain data: {e}")

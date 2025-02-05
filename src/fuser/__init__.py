@@ -64,7 +64,7 @@ class Fuser:
 
         input_strings = [input.formatted_latest_buffer() for input in inputs]
         logging.debug(f"InputMessageArray: {input_strings}")
-        
+
         # Combine all inputs, memories, and configurations into a single prompt
         system_prompt = (
             self.config.system_prompt_base
@@ -77,6 +77,8 @@ class Fuser:
         inputs_fused = " ".join([s for s in input_strings if s is not None])
 
         # if we provide laws from blockchain, these override the locally stored rules
+        # the rules are not provided in the system prompt, but as a separate INPUT,
+        # since they are flowing from the outside world
         if "Universal Laws" in inputs_fused:
             system_prompt = (
                 self.config.system_prompt_base
