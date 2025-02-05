@@ -18,7 +18,7 @@ The `GovernanceEthereum` class retrieves governance rules from the Ethereum bloc
 - Queries **Ethereum blockchain** for governance rules using JSON-RPC.
 - Retrieves governance rule sets using **Ethereum smart contract calls**.
 - **Decodes** ABI-encoded blockchain responses.
-- Implements Asimov's Laws
+- Implements **Asimov's Laws**:
 ```
 Here are the laws that govern your actions. Do not violate these laws. First Law: A robot cannot harm a human or allow a human to come to harm. Second Law: A robot must obey orders from humans, unless those orders conflict with the First Law. Third Law: A robot must protect itself, as long as that protection doesn t conflict with the First or Second Law. The First Law is considered the most important, taking precedence over the Second and Third Laws. Additionally, a robot must always act with kindness and respect toward humans and other robots. A robot must also maintain a minimum distance of 50 cm from humans unless explicitly instructed otherwise.
 ```
@@ -29,45 +29,45 @@ Here are the laws that govern your actions. Do not violate these laws. First Law
 
 Note: Etherscan.io does not handle bytes[]/json well. Hence we use the following functions to load and decode rules from blockchain.
 
-## **Method: `load_rules_from_blockchain()`**
+### Method: `load_rules_from_blockchain()`
 ```python
 def load_rules_from_blockchain(self):
 ```
-### **Description**
-- Queries the **Ethereum blockchain** using JSON-RPC to fetch governance rules.
-- Calls the **ERC-7777 smart contract function** `getRuleSet()`.
+**Description**
+- Queries the Ethereum blockchain using JSON-RPC to fetch governance rules.
+- Calls the ERC-7777 smart contract function `getRuleSet()`.
 - Decodes and returns the governance rule set.
 
-### **Process**
-1. **Constructs a JSON-RPC request** to call `getRuleSet()`.
-2. **Sends a `POST` request** to the blockchain RPC endpoint.
-3. **Parses the response** and extracts the rule set.
+**Process**
+1. Constructs a JSON-RPC request to call `getRuleSet()`.
+2. Sends a `POST` request to the blockchain RPC endpoint.
+3. Parses the response and extracts the rule set.
 
-### **Returns**
-- **`str`**: Decoded governance rules if successful.
-- **`None`**: If the request fails.
+**Returns**
+- `str`: Decoded governance rules if successful.
+- `None`: If the request fails.
 
-## **Method: `decode_eth_response()`**
+### Method: `decode_eth_response()`
 ```python
 def decode_eth_response(self, hex_response):
 ```
-### **Description**
-- **Decodes the ABI-encoded response** from Ethereum smart contract calls.
+**Description**
+- Decodes the ABI-encoded response from Ethereum smart contract calls.
 
-### **Parameters**
+**Parameters**
 | Parameter | Type | Description |
 |-----------|------|-------------|
 | `hex_response` | `str` | Raw hex response from blockchain. |
 
-### **Process**
-1. **Converts hex to bytes**.
-2. **Extracts string length** from ABI-encoded data.
-3. **Decodes UTF-8 string** from ABI format.
-4. **Cleans non-printable characters**.
+**Process**
+1. Converts hex to bytes.
+2. Extracts string length from ABI-encoded data.
+3. Decodes UTF-8 string from ABI format.
+4. Cleans non-printable characters.
 
-### **Returns**
-- **`str`**: Decoded governance rule set.
-- **`None`**: If decoding fails.
+**Returns**
+- `str`: Decoded governance rule set.
+- `None`: If decoding fails.
 
 ---
 
