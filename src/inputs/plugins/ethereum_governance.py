@@ -136,13 +136,6 @@ class GovernanceEthereum(FuserInput[float]):
 
         self.io_provider = IOProvider()
         self.POLL_INTERVAL = 5 # seconds
-        self.backup_universal_rule = """Here are the laws that govern your actions. Do not violate these laws. 
-First Law: A robot cannot harm a human or allow a human to come to harm. 
-Second Law: A robot must obey orders from humans, unless those orders conflict with the First Law. 
-Third Law: A robot must protect itself, as long as that protection does not conflict with the First or Second Law. 
-The First Law is considered the most important, taking precedence over the Second and Third Laws. 
-Additionally, a robot must always act with kindness and respect toward humans and other robots. 
-A robot must also maintain a minimum distance of 50 cm from humans unless explicitly instructed otherwise."""
         self.rpc_url = "https://holesky.gateway.tenderly.co"  # Ethereum RPC URL
         # The samrt contract address of ther ERC-7777 Governance Smart Contract
         self.contract_address = (
