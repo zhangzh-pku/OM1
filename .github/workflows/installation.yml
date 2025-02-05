@@ -26,26 +26,14 @@ jobs:
         python-version: ${{ matrix.python-version }}
         cache: 'pip'
 
-    - name: Install system dependencies (Ubuntu)
-      if: runner.os == 'Linux'
+    - name: Install system dependencies
       run: |
         sudo apt-get update
-        sudo apt-get install -y libhidapi-dev python3-opencv
-
-    - name: Install system dependencies (macOS)
-      if: runner.os == 'macOS'
-      run: |
-        brew install hidapi opencv
-
-    - name: Install system dependencies (Windows)
-      if: runner.os == 'Windows'
-      run: |
-        choco install opencv
+        sudo apt-get install -y libhidapi-dev python3-opencv portaudio19-dev python3-pyaudio
 
     - name: Install pip dependencies
       run: |
         python -m pip install --upgrade pip
-        python -m pip install build pytest
 
     - name: Build package
       run: python -m build
@@ -57,13 +45,3 @@ jobs:
     - name: Test import
       run: |
         python -c "import om1; print('Package imported successfully')"
-
-    - name: Upload test results
-      if: always()
-      uses: actions/upload-artifact@v4
-      with:
-        name: test-results-${{ matrix.os }}-py${{ matrix.python-version }}
-        path: |
-          pytest-results.xml
-          .coverage
-        retention-days: 30
