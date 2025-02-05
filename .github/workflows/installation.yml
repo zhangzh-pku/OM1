@@ -41,4 +41,4 @@ jobs:
 
     - name: Test import
       run: |
-        python -c "import om1; print('Package imported successfully')"
+        python -c "import om1_vlm; import om1_utils; import om1_speech; print('Package imported successfully')"
