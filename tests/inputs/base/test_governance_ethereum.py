@@ -1,8 +1,6 @@
 import pytest
 import logging
-import time
-from unittest.mock import Mock, patch
-from inputs.plugins.ethereum_governance import GovernanceEthereum, Message
+from inputs.plugins.ethereum_governance import GovernanceEthereum
 
 @pytest.fixture
 def governance():

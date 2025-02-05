@@ -5,7 +5,6 @@ from dataclasses import dataclass
 from typing import List, Optional
 
 import requests
-import binascii
 
 from inputs.base import SensorOutputConfig
 from inputs.base.loop import FuserInput
@@ -142,7 +141,7 @@ class GovernanceEthereum(FuserInput[float]):
             response_bytes = bytes.fromhex(hex_response)
 
             # Read offsets and string length
-            offset = int.from_bytes(response_bytes[:32], "big")
+            # offset = int.from_bytes(response_bytes[:32], "big")
             string_length = int.from_bytes(response_bytes[96:128], "big")
 
             # Extract and decode string
