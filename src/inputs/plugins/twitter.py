@@ -5,8 +5,8 @@ from typing import AsyncIterator, List, Optional
 
 import aiohttp
 
-from inputs.base.loop import FuserInput
 from inputs.base import SensorOutputConfig
+from inputs.base.loop import FuserInput
 
 
 class TwitterInput(FuserInput[str]):
@@ -85,24 +85,25 @@ class TwitterInput(FuserInput[str]):
         except Exception as e:
             logging.error(f"Error querying context: {str(e)}")
 
-    async def raw_to_text(self, raw_input):
-        """Convert raw input to processed text and manage buffer"""
-        logging.debug(f"raw_to_text received: {raw_input}")
-        text = await self._raw_to_text(raw_input)
-        logging.debug(f"_raw_to_text returned: {text}")
-
-        if text is not None:
-            logging.debug(f"Adding to buffer: {text}")
-            # If we have text but no context, treat it as a query
-            if not self.context:
-                await self._query_context(text)
-            logging.debug(f"Buffer now contains: {self.buffer}")
-
-    async def _raw_to_text(self, raw_input: str) -> Optional[str]:
-        """Convert raw input to text format and add to buffer"""
+    async def raw_to_text(self, raw_input: Optional[str] = None) -> None:
+        """Convert raw input to text format and add to buffer.
+        
+        Parameters
+        ----------
+        raw_input : Optional[str]
+            Raw input to process. If None, process from message buffer.
+        """
         if raw_input:
-            self.message_buffer.put_nowait(raw_input)  # Add to message buffer
-        return raw_input
+            self.message_buffer.put_nowait(raw_input)
+            
+        if self.message_buffer:
+            try:
+                message = self.message_buffer.get_nowait()
+                if message:
+                    self.buffer.append(message)
+                    logging.debug(f"Added to buffer: {message}")
+            except Empty:
+                pass
 
     async def start(self):
         """Start the input handler with initial query."""
