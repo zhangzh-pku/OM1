@@ -4,7 +4,6 @@ import logging
 import dotenv
 import typer
 
-from actions.tweet.first_boot import send_first_boot_tweet
 from runtime.config import load_config
 from runtime.cortex import CortexRuntime
 
