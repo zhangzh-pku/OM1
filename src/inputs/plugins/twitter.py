@@ -5,27 +5,37 @@ from typing import AsyncIterator, List, Optional
 
 import aiohttp
 
-from inputs.base.loop import LoopInput
+from inputs.base.loop import FuserInput
+from inputs.base import SensorOutputConfig
 
 
-class TwitterInput(LoopInput[str]):
+class TwitterInput(FuserInput[str]):
     """Context query input handler for RAG."""
 
     def __init__(
         self,
-        api_url: str = "https://api.openmind.org/api/core/query",
-        config: dict = None,
+        config: Optional[SensorOutputConfig] = None,
     ):
-        super().__init__()
+        """Initialize TwitterInput with configuration.
+        
+        Parameters
+        ----------
+        config : Optional[SensorOutputConfig]
+            Configuration object from the runtime
+        """
+        if config is None:
+            config = SensorOutputConfig()
+            
+        super().__init__(config)
+        
         self.buffer: List[str] = []
         self.message_buffer: Queue[str] = Queue()
-        self.api_url = api_url
+        self.api_url = "https://api.openmind.org/api/core/query"
         self.session: Optional[aiohttp.ClientSession] = None
         self.context: Optional[str] = None
-        self.config = config or {}
-
-        # Store query from config if provided
-        self.query = self.config.get("query", "What's new in AI and technology?")
+        
+        # Use getattr instead of .get() since config is an object, not a dict
+        self.query = getattr(config, "query", "What's new in AI and technology?")
 
     async def __aenter__(self):
         """Async context manager entry"""
