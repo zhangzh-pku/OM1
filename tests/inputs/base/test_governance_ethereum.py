@@ -1,7 +1,10 @@
-import pytest
 import logging
 from unittest.mock import patch
+
+import pytest
+
 from inputs.plugins.ethereum_governance import GovernanceEthereum
+
 
 @pytest.fixture
 def governance():
