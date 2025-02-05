@@ -96,12 +96,14 @@ class GovernanceEthereum(FuserInput[float]):
                     "to": self.contract_address,
                     "data": f"{self.function_selector}{self.function_argument}",
                 },
-                "latest"
-            ]
+                "latest",
+            ],
         }
 
         try:
-            response = requests.post(self.rpc_url, json=payload, headers={"Content-Type": "application/json"})
+            response = requests.post(
+                self.rpc_url, json=payload, headers={"Content-Type": "application/json"}
+            )
             logging.info(f"Blockchain response status: {response.status_code}")
 
             if response.status_code == 200:
@@ -117,7 +119,9 @@ class GovernanceEthereum(FuserInput[float]):
                 else:
                     logging.error("Error: No valid result in blockchain response")
             else:
-                logging.error(f"Error: Blockchain request failed with status {response.status_code}")
+                logging.error(
+                    f"Error: Blockchain request failed with status {response.status_code}"
+                )
 
         except Exception as e:
             logging.error(f"Error loading rules from blockchain: {e}")
@@ -127,7 +131,7 @@ class GovernanceEthereum(FuserInput[float]):
     def load_rules_from_backup(self):
         logging.warning("Loading backup rules as both blockchain and API failed.")
         return self.backup_universal_rule
-        
+
     def decode_eth_response(self, hex_response):
         """
         Decodes an Ethereum eth_call response.
@@ -145,7 +149,7 @@ class GovernanceEthereum(FuserInput[float]):
             string_length = int.from_bytes(response_bytes[96:128], "big")
 
             # Extract and decode string
-            string_bytes = response_bytes[128:128 + string_length]
+            string_bytes = response_bytes[128 : 128 + string_length]
             decoded_string = string_bytes.decode("utf-8")
 
             # Remove unexpected control characters (like \x19)
@@ -169,12 +173,14 @@ class GovernanceEthereum(FuserInput[float]):
         self.POLL_INTERVAL = 5
         self.api_endpoint = "https://api.openmind.org/api"
         self.universal_rule_url = f"{self.api_endpoint}/core/rules"
-        self.backup_universal_rule = (
-            """Here are the laws that govern your actions. Do not violate these laws. First Law: A robot cannot harm a human or allow a human to come to harm. Second Law: A robot must obey orders from humans, unless those orders conflict with the First Law. Third Law: A robot must protect itself, as long as that protection doesn t conflict with the First or Second Law. The First Law is considered the most important, taking precedence over the Second and Third Laws. Additionally, a robot must always act with kindness and respect toward humans and other robots. A robot must also maintain a minimum distance of 50 cm from humans unless explicitly instructed otherwise."""
-        )
+        self.backup_universal_rule = """Here are the laws that govern your actions. Do not violate these laws. First Law: A robot cannot harm a human or allow a human to come to harm. Second Law: A robot must obey orders from humans, unless those orders conflict with the First Law. Third Law: A robot must protect itself, as long as that protection doesn t conflict with the First or Second Law. The First Law is considered the most important, taking precedence over the Second and Third Laws. Additionally, a robot must always act with kindness and respect toward humans and other robots. A robot must also maintain a minimum distance of 50 cm from humans unless explicitly instructed otherwise."""
         self.rpc_url = "https://holesky.gateway.tenderly.co"  # Ethereum RPC URL
-        self.contract_address = "0xe706b7e30e378b89c7b2ee7bfd8ce2b91959d695"  # Smart contract address
-        self.function_selector = "0x1db3d5ff"  # Function selector (first 4 bytes of Keccak hash)
+        self.contract_address = (
+            "0xe706b7e30e378b89c7b2ee7bfd8ce2b91959d695"  # Smart contract address
+        )
+        self.function_selector = (
+            "0x1db3d5ff"  # Function selector (first 4 bytes of Keccak hash)
+        )
         self.function_argument = "0000000000000000000000000000000000000000000000000000000000000002"  # Argument
 
         self.universal_rule = (
