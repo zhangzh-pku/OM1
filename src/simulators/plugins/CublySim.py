@@ -13,7 +13,7 @@ from llm.output_model import Command
 from providers.io_provider import IOProvider
 
 
-class RacoonSim:
+class CublySim:
     def __init__(self):
         self.messages: list[str] = []
         self.io_provider = IOProvider()
@@ -365,10 +365,11 @@ class RacoonSim:
         categories = [
             (
                 "Movement",
-                ["walk", "run", "jump", "dance", "sit", "shake paw", "walk back"],
+                ["Be Still", "Little Jump", "Medium Jump", "Big Jump"],
             ),
-            ("Speech", ["speak", "bark", "howl"]),
-            ("Interactions", ["greet", "play", "follow"]),
+            (   "Speech", 
+                ["speak"]
+            ),
         ]
 
         for category, actions in categories:
@@ -413,30 +414,6 @@ class RacoonSim:
         panel_rect = (x, y, width, self.Y - 40)
         self._draw_panel(self.surface_main, panel_rect, self.colors["panel"])
 
-        # ETH Balance section
-        balance_y = y + 15
-        balance_rect = (x + 10, balance_y, width - 20, 80)
-        self._draw_panel(self.surface_main, balance_rect, self.colors["success"])
-
-        # Balance title
-        self._render_text(
-            self.surface_main,
-            "ETH Balance",
-            self.title_font,
-            self.colors["panel"],
-            (x + 20, balance_y + 10),
-        )
-
-        # Balance value with better formatting
-        balance_text = self.eth_balance if hasattr(self, "eth_balance") else "0.000 ETH"
-        self._render_text(
-            self.surface_main,
-            balance_text,
-            self.title_font,
-            self.colors["panel"],
-            (x + 20, balance_y + 40),
-        )
-
         # Last Speech section
         speech_y = balance_y + 100
         speech_rect = (x + 10, speech_y, width - 20, 100)
@@ -480,15 +457,10 @@ class RacoonSim:
 
         # List of common actions
         actions = [
-            "Walk",
-            "Run",
-            "Jump",
-            "Dance",
-            "Sit",
-            "Shake Paw",
-            "Speak",
-            "Bark",
-            "Play",
+            "Be Still",
+            "Little Jump",
+            "Medium Jump",
+            "Big Jump"
         ]
 
         action_y = actions_y + 40
@@ -509,33 +481,6 @@ class RacoonSim:
         self.surface_info.fill(self.colors["panel"])
 
         y = 20
-
-        # ETH Balance section - Add this at the top
-        balance_panel = (20, y, 260, 80)
-        self._draw_panel(self.surface_info, balance_panel, self.colors["success"])
-
-        # Balance title
-        self._render_text(
-            self.surface_info,
-            "ETH Balance",
-            self.title_font,
-            self.colors["panel"],
-            (35, y + 10),
-        )
-
-        # Balance amount
-        balance_text = (
-            f"{self.eth_balance if hasattr(self, 'eth_balance') else '0.000 ETH'}"
-        )
-        self._render_text(
-            self.surface_info,
-            balance_text,
-            self.title_font,
-            self.colors["panel"],
-            (35, y + 40),
-        )
-
-        y += 100  # Move down after balance display
 
         # System Status section
         self._render_text(
@@ -596,21 +541,12 @@ class RacoonSim:
         y += 35
         commands = {
             "Movement": [
-                "walk - Walk forward",
-                "run - Run quickly",
-                "jump - Jump up",
-                "dance - Do a dance",
-                "sit - Sit down",
-                "shake paw - Shake paw",
-                "walk back - Walk backward",
+                "be still",
+                "small jump",
+                "medium jump",
+                "big jump"
             ],
-            "Expressions": [
-                "smile - Happy expression",
-                "think - Thoughtful look",
-                "frown - Sad expression",
-                "cry - Crying expression",
-            ],
-            "Speech": ["speech - Speak a message", "bark - Make a bark sound"],
+            "Speech": ["speech - Speak a message"],
         }
 
         for category, cmd_list in commands.items():
@@ -730,10 +666,6 @@ class RacoonSim:
                     self.a_s = command.arguments[0].value
                 elif command.name == "speak":
                     self.update_speech(command.arguments[0].value)
-                elif command.name == "face":
-                    self.update_emotion(command.arguments[0].value)
-                elif command.name == "wallet":
-                    self.update_wallet(float(command.arguments[0].value))
 
         except Exception as e:
             logging.error(f"Error in sim update: {str(e)}")
@@ -754,18 +686,6 @@ class RacoonSim:
     def update_speech(self, text: str):
         """Update the last speech text"""
         self.last_speech = text[:50] + "..." if len(text) > 50 else text
-
-    def update_emotion(self, emotion: str):
-        """Update the current emotion"""
-        self.current_emotion = emotion
-
-    def update_wallet(self, balance: float):
-        """Update the ETH wallet balance"""
-        try:
-            self.eth_balance = f"{balance:.3f} ETH"
-        except Exception as e:
-            logging.error(f"Error updating wallet: {e}")
-            self.eth_balance = "0.000 ETH"
 
     def __enter__(self):
         """Initialize platform-specific settings before pygame"""

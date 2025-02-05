@@ -22,7 +22,7 @@ dependencies = [
     "cv_bridge",
     "torch",
     "torchvision",
-    "serial"
+    "pyserial"
 ]
 
 [project.optional-dependencies]

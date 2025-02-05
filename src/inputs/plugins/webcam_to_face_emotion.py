@@ -151,6 +151,8 @@ class FaceEmotionCapture(FuserInput[cv2.typing.MatLike]):
         else:
             message = f"I see a person. Their emotion is {self.emotion}."
 
+        logging.info(f"EmotionCapture: {message}")
+
         return Message(timestamp=time.time(), message=message)
 
     async def raw_to_text(self, raw_input: cv2.typing.MatLike):

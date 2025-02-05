@@ -6,13 +6,20 @@ from actions.base import ActionConnector
 from actions.move.interface import MoveInput
 
 
+"""
+This only works if you actually have a serial port connected to your computer, such as, via a USB serial dongle. On Mac, you can determine the correct name to use via `ls /dev/cu.usb*`.
+"""
+
 class MoveSerialConnector(ActionConnector[MoveInput]):
 
     def __init__(self):
         super().__init__()
 
         # Open the serial port
-        self.ser = serial.Serial('COM1', 9600)  # Replace 'COM1' with your Arduino's port name
+        self.port = "" # specify your serial port here, such as COM1 or /dev/cu.usbmodem14101
+        self.ser = None
+        if self.port: 
+            self.ser = serial.Serial(self.port, 9600)
 
     async def connect(self, output_interface: MoveInput) -> None:
 
@@ -30,13 +37,15 @@ class MoveSerialConnector(ActionConnector[MoveInput]):
             logging.info(f"Other move type: {output_interface.action}")
             # raise ValueError(f"Unknown move type: {output_interface.action}")
 
-        if self.ser.isOpen():
-            message = f"actuator:{new_msg["move"]}\r\n"
-            # Convert the string to bytes using UTF-8 encoding
-            byte_data = message.encode("utf-8")
+        message = f"actuator:{new_msg["move"]}\r\n"
+        # Convert the string to bytes using UTF-8 encoding
+        byte_data = message.encode("utf-8")
+        
+        if self.ser and self.ser.isOpen():
+            logging.info(f"SendToArduinoSerial: {message}")
             self.ser.write(byte_data)
-
-        logging.info(f"SendToArduinoSerial: {new_msg}")
+        else:
+            logging.info(f"SerialNotOpen - Simulating transmit: {message}")
 
     def tick(self) -> None:
         time.sleep(0.1)
