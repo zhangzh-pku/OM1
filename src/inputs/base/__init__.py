@@ -16,8 +16,9 @@ class SensorOutputConfig:
     **kwargs : dict
         Additional configuration parameters
     """
+
     base_url: T.Optional[str] = None
-    
+
     def __init__(self, base_url: T.Optional[str] = None, **kwargs):
         self.base_url = base_url
         # Store any additional config parameters
