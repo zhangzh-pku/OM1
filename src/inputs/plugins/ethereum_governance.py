@@ -13,24 +13,12 @@ from providers.io_provider import IOProvider
 """
 RULES are stored on the ETHEREUM HOLESKY testnet
 
-https://holesky.etherscan.io
+"GovernanceContract": "0xe706b7e30e378b89c7b2ee7bfd8ce2b91959d695"
 
-{
-  "UniversalCharterProxy": "0xE706b7E30e378b89C7B2Ee7bFd8CE2b91959d695",
-  "UniversalCharter": "0x198FA9dd3257c6Aab5DB85e829B0e1953c4b6188",
-  "UniversalIdentityProxy": "0xdD5D41217114199a844c2CD3F1295eE937aB0010",
-  "UniversalIdentity": "0x8764C83d9b3d079fc27496378F7E22cA16903b61",
-  "SystemConfigProxy": "0x16879D54e5689aeBD491CC6ecdE597ECC2E97a15",
-  "SystemConfig": "0xa48A21DbF9d265f508e4f3919463e7DF4E01ded4"
-}
+https://holesky.etherscan.io/address/0xe706b7e30e378b89c7b2ee7bfd8ce2b91959d695
 
-The laws can be directly inspected at 
-
-https://holesky.etherscan.io/address/0x198FA9dd3257c6Aab5DB85e829B0e1953c4b6188#readContract#F4
-
-Openmind provides a convenience API but this is a dangerous design pattern and you are 
-encouraged to directly query the relevant blockchain/contract.
-
+Note: Etherscan.io does not handle bytes[]/json well. See below for ways to 
+interact with HOLESKY and decode the data, generating an ASCII string.  
 """
 
 
@@ -62,25 +50,6 @@ class GovernanceEthereum(FuserInput[float]):
     Exception
         If connection to Ethereum network fails
     """
-
-    def load_rules_from_api(self):
-        logging.info("Loading constitution from OpenMind API")
-
-        try:
-            response = requests.get(self.universal_rule_url)
-            logging.info(f"OpenMind API response: {response.status_code}")
-            if response.status_code == 200:
-                data = response.json()
-                logging.info(f"OpenMind API data: {data}")
-                if "rules" in data:
-                    return data["rules"]
-                logging.error("Error: Could not load rules from OpenMind API")
-                return None
-            else:
-                return None
-        except Exception as e:
-            logging.error(f"Error: Could not load rules from OpenMind API: {e}")
-            return None
 
     def load_rules_from_blockchain(self):
         logging.info("Loading rules from Ethereum blockchain")
@@ -128,10 +97,6 @@ class GovernanceEthereum(FuserInput[float]):
 
         return None
 
-    def load_rules_from_backup(self):
-        logging.warning("Loading backup rules as both blockchain and API failed.")
-        return self.backup_universal_rule
-
     def decode_eth_response(self, hex_response):
         """
         Decodes an Ethereum eth_call response.
@@ -163,31 +128,36 @@ class GovernanceEthereum(FuserInput[float]):
 
     def __init__(self, config: SensorOutputConfig = SensorOutputConfig()):
         """
-        Initialize WalletEthereum instance.
+        Initialize GovernanceEthereum instance.
         """
         super().__init__(config)
 
         self.descriptor_for_LLM = "Universal Laws"
 
         self.io_provider = IOProvider()
-        self.POLL_INTERVAL = 5
-        self.api_endpoint = "https://api.openmind.org/api"
-        self.universal_rule_url = f"{self.api_endpoint}/core/rules"
-        self.backup_universal_rule = """Here are the laws that govern your actions. Do not violate these laws. First Law: A robot cannot harm a human or allow a human to come to harm. Second Law: A robot must obey orders from humans, unless those orders conflict with the First Law. Third Law: A robot must protect itself, as long as that protection doesn t conflict with the First or Second Law. The First Law is considered the most important, taking precedence over the Second and Third Laws. Additionally, a robot must always act with kindness and respect toward humans and other robots. A robot must also maintain a minimum distance of 50 cm from humans unless explicitly instructed otherwise."""
+        self.POLL_INTERVAL = 5 # seconds
+        self.backup_universal_rule = """Here are the laws that govern your actions. Do not violate these laws. 
+First Law: A robot cannot harm a human or allow a human to come to harm. 
+Second Law: A robot must obey orders from humans, unless those orders conflict with the First Law. 
+Third Law: A robot must protect itself, as long as that protection does not conflict with the First or Second Law. 
+The First Law is considered the most important, taking precedence over the Second and Third Laws. 
+Additionally, a robot must always act with kindness and respect toward humans and other robots. 
+A robot must also maintain a minimum distance of 50 cm from humans unless explicitly instructed otherwise."""
         self.rpc_url = "https://holesky.gateway.tenderly.co"  # Ethereum RPC URL
+        # The samrt contract address of ther ERC-7777 Governance Smart Contract
         self.contract_address = (
-            "0xe706b7e30e378b89c7b2ee7bfd8ce2b91959d695"  # Smart contract address
+            "0xe706b7e30e378b89c7b2ee7bfd8ce2b91959d695"
         )
+        # getRuleSet() Function selector (first 4 bytes of Keccak hash). 
         self.function_selector = (
-            "0x1db3d5ff"  # Function selector (first 4 bytes of Keccak hash)
+            "0x1db3d5ff"  
         )
+        # The current rule rule set can be obtained from 
+        # getLatestRuleSetVersion(0x254e2f1e)
+        # It's currently = 2
         self.function_argument = "0000000000000000000000000000000000000000000000000000000000000002"  # Argument
 
-        self.universal_rule = (
-            self.load_rules_from_blockchain()
-            or self.load_rules_from_api()
-            or self.load_rules_from_backup()
-        )
+        self.universal_rule = self.load_rules_from_blockchain()
         self.messages: list[str] = []
 
         logging.info(f"7777 rules: {self.universal_rule}")
@@ -195,32 +165,18 @@ class GovernanceEthereum(FuserInput[float]):
     async def _poll(self) -> None:
         """
         Poll for Ethereum Governance Law Changes
-
-        Returns
-        -------
-        List[float]
-            [current_balance, balance_change]
         """
         await asyncio.sleep(self.POLL_INTERVAL)
 
         try:
-            self.universal_rule = (
-                self.load_rules_from_blockchain()
-                or self.load_rules_from_api()
-                or self.load_rules_from_backup()
-            )
+            self.universal_rule = self.load_rules_from_blockchain()
             logging.info(f"7777 rules: {self.universal_rule}")
         except Exception as e:
             logging.error(f"Error fetching blockchain data: {e}")
 
-    async def _raw_to_text(self, raw_input: List[float]) -> Optional[str]:
+    async def _raw_to_text(self) -> Optional[str]:
         """
-        Convert balance data to human-readable message.
-
-        Parameters
-        ----------
-        raw_input : List[float]
-            [current_balance, balance_change]
+        Convert self.universal_rule to a human-readable Message.
 
         Returns
         -------
@@ -229,16 +185,12 @@ class GovernanceEthereum(FuserInput[float]):
         """
         return Message(timestamp=time.time(), message=self.universal_rule)
 
-    async def raw_to_text(self, raw_input: float):
+    async def raw_to_text(self):
         """
-        Process balance update and manage message buffer.
+        Process governance rule message buffer.
 
-        Parameters
-        ----------
-        raw_input : float
-            Raw balance data
         """
-        pending_message = await self._raw_to_text(raw_input)
+        pending_message = await self._raw_to_text()
 
         if pending_message is not None:
             if len(self.messages) == 0:
