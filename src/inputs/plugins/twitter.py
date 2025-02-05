@@ -17,7 +17,7 @@ class TwitterInput(FuserInput[str]):
         config: Optional[SensorOutputConfig] = None,
     ):
         """Initialize TwitterInput with configuration.
-        
+
         Parameters
         ----------
         config : Optional[SensorOutputConfig]
@@ -25,15 +25,15 @@ class TwitterInput(FuserInput[str]):
         """
         if config is None:
             config = SensorOutputConfig()
-            
+
         super().__init__(config)
-        
+
         self.buffer: List[str] = []
         self.message_buffer: Queue[str] = Queue()
         self.api_url = "https://api.openmind.org/api/core/query"
         self.session: Optional[aiohttp.ClientSession] = None
         self.context: Optional[str] = None
-        
+
         # Use getattr instead of .get() since config is an object, not a dict
         self.query = getattr(config, "query", "What's new in AI and technology?")
 
@@ -85,25 +85,33 @@ class TwitterInput(FuserInput[str]):
         except Exception as e:
             logging.error(f"Error querying context: {str(e)}")
 
-    async def raw_to_text(self, raw_input: Optional[str] = None) -> None:
+    async def raw_to_text(self, raw_input: Optional[str] = None) -> str:
         """Convert raw input to text format and add to buffer.
-        
+
         Parameters
         ----------
         raw_input : Optional[str]
             Raw input to process. If None, process from message buffer.
+
+        Returns
+        -------
+        str
+            The processed text
         """
         if raw_input:
             self.message_buffer.put_nowait(raw_input)
-            
+
         if self.message_buffer:
             try:
                 message = self.message_buffer.get_nowait()
                 if message:
                     self.buffer.append(message)
                     logging.debug(f"Added to buffer: {message}")
+                    return message
             except Empty:
                 pass
+
+        return ""
 
     async def start(self):
         """Start the input handler with initial query."""
