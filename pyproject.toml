@@ -21,7 +21,8 @@ dependencies = [
     "hid",
     "cv_bridge",
     "torch",
-    "torchvision"
+    "torchvision",
+    "serial"
 ]
 
 [project.optional-dependencies]
