@@ -1,5 +1,6 @@
 import pytest
 import logging
+from unittest.mock import patch
 from inputs.plugins.ethereum_governance import GovernanceEthereum
 
 @pytest.fixture
@@ -20,7 +21,7 @@ def mock_requests_post():
         yield mock
 
 # -------------------------
-# 🚀 TEST: API Rule Loading
+# TEST: API Rule Loading
 # -------------------------
 
 def test_load_rules_from_api_success(governance, mock_requests_get):
@@ -42,7 +43,7 @@ def test_load_rules_from_api_failure(governance, mock_requests_get):
     logging.info("Test API Failure: No rules loaded")
 
 # -------------------------------
-# 🚀 TEST: Blockchain Rule Loading
+# TEST: Blockchain Rule Loading
 # -------------------------------
 
 def test_load_rules_from_blockchain_success(governance, mock_requests_post):
@@ -68,7 +69,7 @@ def test_load_rules_from_blockchain_failure(governance, mock_requests_post):
     logging.info("Test Blockchain Failure: No rules loaded")
 
 # -------------------------
-# 🚀 TEST: Backup Rule Usage
+# TEST: Backup Rule Usage
 # -------------------------
 
 def test_load_rules_from_backup(governance):
@@ -88,7 +89,7 @@ def test_fallback_to_backup(mock_blockchain, mock_api, governance):
     logging.info("Test Fallback to Backup Passed: Backup rule was used.")
 
 # ------------------------
-# 🚀 TEST: Polling Behavior
+# TEST: Polling Behavior
 # ------------------------
 
 @pytest.mark.asyncio
