@@ -367,9 +367,7 @@ class CublySim:
                 "Movement",
                 ["Be Still", "Little Jump", "Medium Jump", "Big Jump"],
             ),
-            (   "Speech", 
-                ["speak"]
-            ),
+            ("Speech", ["speak"]),
         ]
 
         for category, actions in categories:
@@ -415,7 +413,7 @@ class CublySim:
         self._draw_panel(self.surface_main, panel_rect, self.colors["panel"])
 
         # Last Speech section
-        speech_y = balance_y + 100
+        speech_y = 100
         speech_rect = (x + 10, speech_y, width - 20, 100)
         self._draw_panel(self.surface_main, speech_rect, self.colors["info"])
 
@@ -456,12 +454,7 @@ class CublySim:
         )
 
         # List of common actions
-        actions = [
-            "Be Still",
-            "Little Jump",
-            "Medium Jump",
-            "Big Jump"
-        ]
+        actions = ["Be Still", "Little Jump", "Medium Jump", "Big Jump"]
 
         action_y = actions_y + 40
         action_x = x + 20
@@ -540,12 +533,7 @@ class CublySim:
 
         y += 35
         commands = {
-            "Movement": [
-                "be still",
-                "small jump",
-                "medium jump",
-                "big jump"
-            ],
+            "Movement": ["be still", "small jump", "medium jump", "big jump"],
             "Speech": ["speech - Speak a message"],
         }
 

@@ -9,7 +9,8 @@ class MovementAction(str, Enum):
     JUMP_SMALL = "small jump"
     JUMP_MEDIUM = "medium jump"
     JUMP_BIG = "big jump"
-    
+
+
 @dataclass
 class MoveInput:
     action: MovementAction

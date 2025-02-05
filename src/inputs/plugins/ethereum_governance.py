@@ -2,7 +2,7 @@ import asyncio
 import logging
 import time
 from dataclasses import dataclass
-from typing import List, Optional
+from typing import Optional
 
 import requests
 
@@ -135,17 +135,13 @@ class GovernanceEthereum(FuserInput[float]):
         self.descriptor_for_LLM = "Universal Laws"
 
         self.io_provider = IOProvider()
-        self.POLL_INTERVAL = 5 # seconds
+        self.POLL_INTERVAL = 5  # seconds
         self.rpc_url = "https://holesky.gateway.tenderly.co"  # Ethereum RPC URL
         # The samrt contract address of ther ERC-7777 Governance Smart Contract
-        self.contract_address = (
-            "0xe706b7e30e378b89c7b2ee7bfd8ce2b91959d695"
-        )
-        # getRuleSet() Function selector (first 4 bytes of Keccak hash). 
-        self.function_selector = (
-            "0x1db3d5ff"  
-        )
-        # The current rule rule set can be obtained from 
+        self.contract_address = "0xe706b7e30e378b89c7b2ee7bfd8ce2b91959d695"
+        # getRuleSet() Function selector (first 4 bytes of Keccak hash).
+        self.function_selector = "0x1db3d5ff"
+        # The current rule rule set can be obtained from
         # getLatestRuleSetVersion(0x254e2f1e)
         # It's currently = 2
         self.function_argument = "0000000000000000000000000000000000000000000000000000000000000002"  # Argument
