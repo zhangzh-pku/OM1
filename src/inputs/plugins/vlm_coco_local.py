@@ -177,7 +177,7 @@ class VLM_COCO_Local(FuserInput[Image.Image]):
             logging.info(f"VLM_COCO_Local: {sentence}")
 
         if sentence is not None:
-            return Message(timestamp=time.time(), message=sentence)  
+            return Message(timestamp=time.time(), message=sentence)
 
     async def raw_to_text(self, raw_input: Image.Image):
         """
