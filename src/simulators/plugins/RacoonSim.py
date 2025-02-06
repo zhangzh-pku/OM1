@@ -45,6 +45,7 @@ class RacoonSim:
         try:
             pygame.init()
             pygame.display.init()
+            self.clock = pygame.time.Clock()
 
             # Create window with basic flags
             flags = pygame.DOUBLEBUF | pygame.RESIZABLE
@@ -61,8 +62,6 @@ class RacoonSim:
             self._init_components()
             self._initialized = True
 
-            # Set up frame timing
-            self.clock = pygame.time.Clock()
             self.frame_count = 0
             self.fps_update_time = time.time()
             self.last_frame = time.time()
@@ -314,7 +313,7 @@ class RacoonSim:
             text_y = footer_y + (footer_height - self.font.get_height()) // 2
 
             # Version info
-            version_text = "OpenMind AI Assistant v1.0"
+            version_text = "Openmind Simulator"
             self._render_text(
                 self.surface_main,
                 version_text,
@@ -324,7 +323,7 @@ class RacoonSim:
             )
 
             # Draw right-aligned text
-            right_text = "Powered by OpenMind"
+            right_text = "Powered by Openmind"
             text_surface = self.font.render(right_text, True, self.colors["text_light"])
             text_rect = text_surface.get_rect(
                 right=(self.X - 320, text_y + self.font.get_height())
@@ -694,7 +693,7 @@ class RacoonSim:
             pygame.display.flip()
 
             # Maintain frame timing
-            self.clock.tick(60)
+            self.clock.tick(5)
 
         except Exception as e:
             logging.error(f"Error in tick: {str(e)}")

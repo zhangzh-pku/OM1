@@ -137,10 +137,13 @@ class GovernanceEthereum(FuserInput[float]):
         self.io_provider = IOProvider()
         self.POLL_INTERVAL = 5  # seconds
         self.rpc_url = "https://holesky.gateway.tenderly.co"  # Ethereum RPC URL
-        # The samrt contract address of ther ERC-7777 Governance Smart Contract
+        
+        # The smart contract address of ther ERC-7777 Governance Smart Contract
         self.contract_address = "0xe706b7e30e378b89c7b2ee7bfd8ce2b91959d695"
+        
         # getRuleSet() Function selector (first 4 bytes of Keccak hash).
         self.function_selector = "0x1db3d5ff"
+        
         # The current rule rule set can be obtained from
         # getLatestRuleSetVersion(0x254e2f1e)
         # It's currently = 2
@@ -151,19 +154,20 @@ class GovernanceEthereum(FuserInput[float]):
 
         logging.info(f"7777 rules: {self.universal_rule}")
 
-    async def _poll(self) -> None:
+    async def _poll(self) -> Optional[str]:
         """
         Poll for Ethereum Governance Law Changes
         """
         await asyncio.sleep(self.POLL_INTERVAL)
 
         try:
-            self.universal_rule = self.load_rules_from_blockchain()
-            logging.info(f"7777 rules: {self.universal_rule}")
+            rules = self.load_rules_from_blockchain()
+            logging.debug(f"7777 rules: {rules}")
+            return rules
         except Exception as e:
             logging.error(f"Error fetching blockchain data: {e}")
 
-    async def _raw_to_text(self) -> Optional[str]:
+    async def _raw_to_text(self, raw_input: str) -> Message:
         """
         Convert self.universal_rule to a human-readable Message.
 
@@ -172,20 +176,20 @@ class GovernanceEthereum(FuserInput[float]):
         Message
             Timestamped status or transaction notification
         """
-        return Message(timestamp=time.time(), message=self.universal_rule)
+        return Message(timestamp=time.time(), message=raw_input)
 
-    async def raw_to_text(self):
+    async def raw_to_text(self, raw_input: str):
         """
         Process governance rule message buffer.
 
         """
-        pending_message = await self._raw_to_text()
+        pending_message = await self._raw_to_text(raw_input)
 
         if pending_message is not None:
             if len(self.messages) == 0:
                 self.messages.append(pending_message)
             # only update if there has been a change
-            elif self.messages[-1] != pending_message:
+            elif self.messages[-1].message != pending_message.message:
                 self.messages.append(pending_message)
 
     def formatted_latest_buffer(self) -> Optional[str]:
@@ -212,5 +216,6 @@ class GovernanceEthereum(FuserInput[float]):
         self.io_provider.add_input(
             self.__class__.__name__, latest_message.message, latest_message.timestamp
         )
+        # no need to blank because we are only saving rare law changes
         # self.messages = []
         return result
