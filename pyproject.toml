@@ -21,6 +21,7 @@ dependencies = [
     "cv_bridge",
     "torch",
     "torchvision",
+    "pyserial",
     "om1-modules @ git+https://github.com/OpenmindAGI/om1-modules.git@6fd381b1f57a8c8a95aaaa59c189e62759203d1c"
 ]
 
