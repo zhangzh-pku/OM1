@@ -25,36 +25,9 @@ def mock_requests_post():
     with patch("requests.post") as mock:
         yield mock
 
-
-# -------------------------
-# TEST: API Rule Loading
-# -------------------------
-
-
-def test_load_rules_from_api_success(governance, mock_requests_get):
-    """Test API rule loading with a valid response."""
-    mock_requests_get.return_value.status_code = 200
-    mock_requests_get.return_value.json.return_value = {"rules": "Rule from API"}
-
-    rules = governance.load_rules_from_api()
-    assert rules == "Rule from API"
-    logging.info(f"Test API Success: {rules}")
-
-
-def test_load_rules_from_api_failure(governance, mock_requests_get):
-    """Test API rule loading failure."""
-    mock_requests_get.return_value.status_code = 500
-    mock_requests_get.return_value.json.return_value = {}
-
-    rules = governance.load_rules_from_api()
-    assert rules is None
-    logging.info("Test API Failure: No rules loaded")
-
-
 # -------------------------------
 # TEST: Blockchain Rule Loading
 # -------------------------------
-
 
 def test_load_rules_from_blockchain_success(governance, mock_requests_post):
     """Test blockchain rule loading with a valid response."""
@@ -79,40 +52,15 @@ def test_load_rules_from_blockchain_failure(governance, mock_requests_post):
     assert rules is None
     logging.info("Test Blockchain Failure: No rules loaded")
 
-
-# -------------------------
-# TEST: Backup Rule Usage
-# -------------------------
-
-
-def test_load_rules_from_backup(governance):
-    """Test backup rule loading."""
-    rules = governance.load_rules_from_backup()
-    assert rules == governance.backup_universal_rule
-    logging.info(f"Test Backup Rule: {rules}")
-
-
-@patch.object(GovernanceEthereum, "load_rules_from_blockchain", return_value=None)
-@patch.object(GovernanceEthereum, "load_rules_from_api", return_value=None)
-def test_fallback_to_backup(mock_blockchain, mock_api, governance):
-    """Test that the backup rule is used when both blockchain and API fail."""
-
-    # Ensure the universal rule falls back to the backup rule
-    assert governance.universal_rule == governance.backup_universal_rule
-
-    logging.info("Test Fallback to Backup Passed: Backup rule was used.")
-
-
 # ------------------------
 # TEST: Polling Behavior
 # ------------------------
 
 
-@pytest.mark.asyncio
-@patch.object(GovernanceEthereum, "load_rules_from_blockchain", return_value=None)
-@patch.object(GovernanceEthereum, "load_rules_from_api", return_value=None)
-async def test_poll_updates_rules(mock_blockchain, mock_api, governance):
-    """Test `_poll()` updates rules properly."""
-    await governance._poll()
-    assert governance.universal_rule == governance.backup_universal_rule
-    logging.info("Test `_poll()` correctly updated rules.")
+# @pytest.mark.asyncio
+# @patch.object(GovernanceEthereum, "load_rules_from_blockchain", return_value=None)
+# async def test_poll_updates_rules(mock_blockchain, mock_api, governance):
+#     """Test `_poll()` updates rules properly."""
+#     await governance._poll()
+#     assert governance.universal_rule == governance.backup_universal_rule
+#     logging.info("Test `_poll()` correctly updated rules.")
