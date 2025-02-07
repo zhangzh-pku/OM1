@@ -111,7 +111,7 @@ class VLM_COCO_Local(FuserInput[Image.Image]):
             ret, frame = self.cap.read()
             return frame
 
-    async def _raw_to_text(self, raw_input: Image.Image) -> Optional[Message]:
+    async def _raw_to_text(self, raw_input: Optional[Image.Image]) -> Optional[Message]:
         """
         Process raw image input to generate text description.
 
