@@ -150,7 +150,7 @@ class VLM_COCO_Local(FuserInput[Image.Image]):
 
         sentence = None
 
-        if len(filtered_detections) > 0:
+        if filtered_detections and len(filtered_detections) > 0:
             pred_boxes = torch.stack(
                 [detection.bbox for detection in filtered_detections]
             )

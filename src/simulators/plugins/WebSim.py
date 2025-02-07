@@ -629,7 +629,7 @@ class WebSim(Simulator):
                     "inputs": input_rezeroed
                 }
 
-                logging.info(f"Show this {self.state_dict}")
+                logging.info(f"Inputs and LLM Outputs: {self.state_dict}")
 
             if updated:
                 self._last_tick = 0
