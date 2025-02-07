@@ -61,7 +61,7 @@ class VLM_COCO_Local(FuserInput[Image.Image]):
         super().__init__(config)
 
         self.device = "cpu"
-        self.detection_threshold = 0.9
+        self.detection_threshold = 0.7
 
         # Track IO
         self.io_provider = IOProvider()
@@ -91,6 +91,12 @@ class VLM_COCO_Local(FuserInput[Image.Image]):
         self.cap = None
         if self.have_cam:
             self.cap = cv2.VideoCapture(0)
+            self.width = int(self.cap.get(3))  # float `width`
+            self.height = int(self.cap.get(4))  # float `height`
+            self.cam_third = int(self.width / 3)
+            logging.info(
+                f"Webcam pixel dimensions for COCO: {self.width}, {self.height}"
+            )
 
     async def _poll(self) -> Image.Image:
         """
@@ -146,34 +152,44 @@ class VLM_COCO_Local(FuserInput[Image.Image]):
                 )
                 if score >= self.detection_threshold
             ]
-            logging.debug(f"filtered_detections {filtered_detections}")
+            logging.debug(f"COCO filtered_detections {filtered_detections}")
 
         sentence = None
 
         if filtered_detections and len(filtered_detections) > 0:
+
             pred_boxes = torch.stack(
                 [detection.bbox for detection in filtered_detections]
+            )
+            pred_scores = torch.stack(
+                [detection.score for detection in filtered_detections]
             )
             pred_labels = [
                 self.class_labels[detection.label] for detection in filtered_detections
             ]
+            logging.debug(f"COCO labels {pred_labels} scores {pred_scores}")
 
+            # we have a least one detection, and that will have the highest score
             thing = pred_labels[0]
-            # Calculate center coordinates of first object
             x1 = pred_boxes[0, 0]
-            # y1 = pred_boxes[0, 1]
             x2 = pred_boxes[0, 2]
-            # y2 = pred_boxes[0, 3]
-            center_x = (x1 + x2) / 2
-            # center_y = (y1 + y2) / 2
+            center_x = (x1 + x2) / 2  # center of the bbox
 
-            direction = "in front of you."
-            if center_x < 480:
-                direction = "on your left."
-            elif center_x > 960:
-                direction = "on your right."
+            direction = "in front of you"
+            # so if the width is 1920, then the left third runs between 0 and 639
+            # middle is 640 - 1279
+            # right is > 1280
+            if center_x < self.cam_third:
+                direction = "on your left"
+            elif center_x > 2 * self.cam_third:
+                direction = "on your right"
 
-            sentence = f"You see a {thing} {direction}"
+            sentence = f"You see a {thing} {direction}."
+
+            # add at most one more object
+            if len(pred_labels) > 1:
+                other_thing = pred_labels[1]
+                sentence = sentence + f" You also see a {other_thing}."
 
         if sentence is not None:
             return Message(timestamp=time.time(), message=sentence)
