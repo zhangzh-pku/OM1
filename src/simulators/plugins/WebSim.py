@@ -34,9 +34,6 @@ class WebSim(Simulator):
         super().__init__(name="WebSim")
         self.messages: list[str] = []
         self.io_provider = IOProvider()
-        self.io_provider.fuser_end_time = 0
-        self.io_provider.llm_start_time = 0
-        self.io_provider.llm_end_time = 0
 
         self.name = __class__
         self._initialized = False
@@ -44,6 +41,7 @@ class WebSim(Simulator):
         self._last_tick = time.time()
         self._tick_interval = 0.1  # 100ms tick rate
 
+        self.state_dict = {}
         # Initialize state
         self.state = SimulatorState(
             inputs={},
@@ -309,40 +307,12 @@ class WebSim(Simulator):
             return
 
         try:
-            with self._lock:
-                earliest_time = self.get_earliest_time()
-
-                # Process system latency relative to earliest time
-                current_time = time.time()
-                system_latency = {
-                    "fuse_time": self.io_provider.fuser_end_time - self.io_provider.fuser_start_time if self.io_provider.fuser_start_time else 0,
-                    "llm_start": self.io_provider.llm_start_time - self.io_provider.fuser_end_time if self.io_provider.llm_start_time and self.io_provider.fuser_end_time else 0,
-                    "processing": self.io_provider.llm_end_time - self.io_provider.llm_start_time if self.io_provider.llm_end_time and self.io_provider.llm_start_time else 0,
-                    "complete": self.io_provider.llm_end_time - self.io_provider.fuser_start_time if self.io_provider.llm_end_time and self.io_provider.fuser_start_time else 0
-                }
-
-                # Process inputs directly from IOProvider
-                processed_inputs = {}
-                for key, input_obj in self.io_provider.inputs.items():
-                    if input_obj and input_obj.input and input_obj.timestamp is not None:
-                        processed_inputs[key] = {
-                            "timestamp": input_obj.timestamp - earliest_time,
-                            "input": input_obj.input
-                        }
-
-                state_dict = {
-                    "current_action": self.state.current_action,
-                    "last_speech": self.state.last_speech,
-                    "current_emotion": self.state.current_emotion,
-                    "system_latency": system_latency,
-                    "inputs": processed_inputs
-                }
 
             # Broadcast to all clients
             disconnected = []
             for connection in self.active_connections:
                 try:
-                    await connection.send_json(state_dict)
+                    await connection.send_json(self.state_dict)
                 except Exception as e:
                     logging.error(f"Error broadcasting to client: {e}")
                     disconnected.append(connection)
@@ -356,13 +326,16 @@ class WebSim(Simulator):
         except Exception as e:
             logging.error(f"Error in broadcast_state: {e}")
 
-    def get_earliest_time(self) -> float:
+    def get_earliest_time(self, inputs) -> float:
         """Get earliest timestamp from inputs"""
         earliest_time = float("inf")
-        for input_obj in self.io_provider.inputs.values():
-            if input_obj and input_obj.timestamp is not None:
-                if input_obj.timestamp < earliest_time:
-                    earliest_time = input_obj.timestamp
+        for input in inputs:
+            logging.debug(f"GET {input}")
+            if input and input["input_type"] == "GovernanceEthereum":
+                continue
+            if input and input["timestamp"] is not None:
+                if input["timestamp"] < earliest_time:
+                    earliest_time = float(input["timestamp"])
         return earliest_time if earliest_time != float("inf") else 0.0
 
     def tick(self) -> None:
@@ -386,7 +359,7 @@ class WebSim(Simulator):
                 logging.error(f"Error in tick: {e}")
                 time.sleep(0.1)  # Sleep even on error to maintain tick rate
 
-    def sim(self, commands: List[Command]) -> None:
+    def sim(self, inputs, commands: List[Command]) -> None:
         """Handle simulation updates from commands"""
         if not self._initialized:
             logging.warning("WebSim not initialized, skipping sim update")
@@ -395,6 +368,28 @@ class WebSim(Simulator):
         try:
             updated = False
             with self._lock:
+                logging.info(f"SIM inputs: {inputs}")
+                
+                earliest_time = self.get_earliest_time(inputs)
+                logging.info(f"earliest_time: {earliest_time}")
+
+                input_rezeroed = []
+                for input in inputs:
+                    input_zero = input
+                    input_zero["timestamp"] = input_zero["timestamp"] - earliest_time
+                    if input_zero["input_type"] == "GovernanceEthereum":
+                        input_zero["timestamp"] = 0.0
+                    input_rezeroed.append(input_zero)
+                logging.info(f"SIM inputs zeroed: {input_rezeroed}")
+                
+                # Process system latency relative to earliest time                
+                system_latency = {
+                    "fuse_time": self.io_provider.fuser_end_time - earliest_time,
+                    "llm_start": self.io_provider.llm_start_time - earliest_time,
+                    "processing": self.io_provider.llm_end_time - self.io_provider.llm_start_time,
+                    "complete": self.io_provider.llm_end_time - earliest_time
+                }
+
                 for command in commands:
                     if command.name == "move":
                         new_action = command.arguments[0].value
@@ -411,6 +406,16 @@ class WebSim(Simulator):
                         if new_emotion != self.state.current_emotion:
                             self.state.current_emotion = new_emotion
                             updated = True
+
+                self.state_dict = {
+                    "current_action": self.state.current_action,
+                    "last_speech": self.state.last_speech,
+                    "current_emotion": self.state.current_emotion,
+                    "system_latency": system_latency,
+                    "inputs": input_rezeroed
+                }
+
+                logging.info(f"show this {self.state_dict}")
 
             if updated:
                 self._last_tick = 0
