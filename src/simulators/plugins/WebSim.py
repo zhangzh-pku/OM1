@@ -357,7 +357,7 @@ class WebSim(Simulator):
                 
             except Exception as e:
                 logging.error(f"Error in tick: {e}")
-                time.sleep(0.1)  # Sleep even on error to maintain tick rate
+                time.sleep(0.1) # Sleep even on error to maintain tick rate
 
     def sim(self, inputs, commands: List[Command]) -> None:
         """Handle simulation updates from commands"""
@@ -368,10 +368,10 @@ class WebSim(Simulator):
         try:
             updated = False
             with self._lock:
-                logging.info(f"SIM inputs: {inputs}")
+                logging.debug(f"SIM inputs: {inputs}")
                 
                 earliest_time = self.get_earliest_time(inputs)
-                logging.info(f"earliest_time: {earliest_time}")
+                logging.debug(f"earliest_time: {earliest_time}")
 
                 input_rezeroed = []
                 for input in inputs:
@@ -380,7 +380,7 @@ class WebSim(Simulator):
                     if input_zero["input_type"] == "GovernanceEthereum":
                         input_zero["timestamp"] = 0.0
                     input_rezeroed.append(input_zero)
-                logging.info(f"SIM inputs zeroed: {input_rezeroed}")
+                logging.debug(f"SIM inputs zeroed: {input_rezeroed}")
                 
                 # Process system latency relative to earliest time                
                 system_latency = {
@@ -415,7 +415,7 @@ class WebSim(Simulator):
                     "inputs": input_rezeroed
                 }
 
-                logging.info(f"show this {self.state_dict}")
+                logging.info(f"Show this {self.state_dict}")
 
             if updated:
                 self._last_tick = 0
