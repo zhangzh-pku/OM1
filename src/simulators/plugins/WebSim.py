@@ -256,7 +256,7 @@ class WebSim(Simulator):
 
                             React.useEffect(() => {
                                 const ws = new WebSocket(`ws://${window.location.host}/ws`);
-                                
+
                                 ws.onopen = () => {
                                     console.log('Connected to WebSocket');
                                     setConnected(true);
@@ -340,7 +340,7 @@ class WebSim(Simulator):
                                                                         .sort((a, b) => b.timestamp - a.timestamp)
                                                                         .map((message) => (
                                                                             <div key={message.id} className="mb-2">
-                                                                                <div 
+                                                                                <div
                                                                                     className="message-header"
                                                                                     onClick={() => setExpandedMessages(prev => ({
                                                                                         ...prev,
@@ -359,7 +359,7 @@ class WebSim(Simulator):
                                                                                     </span>
                                                                                 </div>
                                                                                 {expandedMessages[message.id] && (
-                                                                                    <div 
+                                                                                    <div
                                                                                         className="message-content"
                                                                                         ref={isResizing === message.id ? resizeRef : null}
                                                                                         style={{ height: messageHeights[message.id] || 'auto', minHeight: '100px' }}
@@ -367,7 +367,7 @@ class WebSim(Simulator):
                                                                                         <div className="message-text">
                                                                                             {message.input}
                                                                                         </div>
-                                                                                        <div 
+                                                                                        <div
                                                                                             className="content-resize-handle"
                                                                                             onMouseDown={(e) => startResizing(message.id, e)}
                                                                                         />
@@ -420,16 +420,16 @@ class WebSim(Simulator):
                                         </div>
                                     </div>
                                     <div className="footer">
-                                        <img 
-                                            src="/assets/OM_Logo_b_transparent.png" 
-                                            alt="OpenMind Logo" 
+                                        <img
+                                            src="/assets/OM_Logo_b_transparent.png"
+                                            alt="OpenMind Logo"
                                             className="footer-logo"
                                         />
                                         <div className="footer-links">
-                                            <a 
-                                                href="https://github.com/OpenmindAGI/OM1" 
-                                                target="_blank" 
-                                                rel="noopener noreferrer" 
+                                            <a
+                                                href="https://github.com/OpenmindAGI/OM1"
+                                                target="_blank"
+                                                rel="noopener noreferrer"
                                                 className="footer-link"
                                             >
                                                 <svg className="github-icon" viewBox="0 0 24 24" fill="currentColor">
@@ -437,10 +437,10 @@ class WebSim(Simulator):
                                                 </svg>
                                                 GitHub
                                             </a>
-                                            <a 
-                                                href="https://docs.openmind.org/introduction" 
-                                                target="_blank" 
-                                                rel="noopener noreferrer" 
+                                            <a
+                                                href="https://docs.openmind.org/introduction"
+                                                target="_blank"
+                                                rel="noopener noreferrer"
                                                 className="footer-link"
                                             >
                                                 Documentation
@@ -571,15 +571,16 @@ class WebSim(Simulator):
                     loop = asyncio.new_event_loop()
                     asyncio.set_event_loop(loop)
 
-                # Broadcast state
-                loop.run_until_complete(self.broadcast_state())
-
-                # Sleep to maintain tick rate
-                time.sleep(0.1)  # 100ms tick rate
+                try:
+                    loop.run_until_complete(self.broadcast_state())
+                except Exception:
+                    loop = asyncio.get_event_loop()
+                    loop.create_task(self.broadcast_state())
 
             except Exception as e:
                 logging.error(f"Error in tick: {e}")
-                time.sleep(0.1)  # Sleep even on error to maintain tick rate
+
+            time.sleep(0.5)
 
     def sim(self, inputs, commands: List[Command]) -> None:
         """Handle simulation updates from commands"""
