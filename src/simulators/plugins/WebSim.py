@@ -473,7 +473,8 @@ class WebSim(Simulator):
             time.sleep(1)
 
             if self.server_thread.is_alive():
-                logging.info("WebSim server started successfully - Open http://localhost:8000 in your browser")
+                # Using ANSI color codes for cyan text and bold
+                logging.info("\033[1;36mWebSim server started successfully - Open http://localhost:8000 in your browser\033[0m")
                 self._initialized = True
             else:
                 logging.error("WebSim server failed to start")
@@ -482,19 +483,37 @@ class WebSim(Simulator):
 
     def _run_server(self):
         """Run the FastAPI server"""
-        logging.info("Starting WebSim server at http://localhost:8000")
-        try:
-            config = uvicorn.Config(
-                app=self.app,
-                host="0.0.0.0",
-                port=8000,
-                log_level="info",
-                access_log=True
-            )
-            server = uvicorn.Server(config)
-            server.run()
-        except Exception as e:
-            logging.error(f"Failed to start WebSim server: {e}")
+        config = uvicorn.Config(
+            app=self.app,
+            host="0.0.0.0",  # Still bind to all interfaces
+            port=8000,
+            log_level="error",
+            server_header=False,
+            # Override the default startup message
+            log_config={
+                "version": 1,
+                "disable_existing_loggers": False,
+                "formatters": {
+                    "default": {
+                        "()": "uvicorn.logging.DefaultFormatter",
+                        "fmt": "%(message)s",
+                    },
+                },
+                "handlers": {
+                    "default": {
+                        "formatter": "default",
+                        "class": "logging.StreamHandler",
+                        "stream": "ext://sys.stderr",
+                    },
+                },
+                "loggers": {
+                    "uvicorn": {"handlers": ["default"], "level": "ERROR"},
+                    "uvicorn.error": {"level": "ERROR"},
+                }
+            }
+        )
+        server = uvicorn.Server(config)
+        server.run()
 
     async def broadcast_state(self):
         """Broadcast current state to all connected clients"""
