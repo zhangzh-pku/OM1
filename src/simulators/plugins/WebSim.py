@@ -188,26 +188,18 @@ class WebSim(Simulator):
                         }
                         .content-resize-handle {
                             position: absolute;
-                            bottom: 0;
-                            left: 0;
-                            right: 0;
-                            height: 4px;
-                            cursor: row-resize;
-                            background-color: #e5e7eb;
-                            display: flex;
-                            align-items: center;
-                            justify-content: center;
-                        }
-                        .content-resize-handle::after {
-                            content: '☰';
-                            font-size: 12px;
-                            color: #9CA3AF;
-                            transform: rotate(90deg);
-                            position: absolute;
+                            right: 4px;
                             bottom: 4px;
+                            width: 12px;
+                            height: 12px;
+                            cursor: nw-resize;
+                            opacity: 0.6;
+                            background-image: radial-gradient(circle, #9CA3AF 1.5px, transparent 1.5px);
+                            background-size: 4px 4px;
+                            transition: opacity 0.2s;
                         }
                         .content-resize-handle:hover {
-                            background-color: #93c5fd;
+                            opacity: 1;
                         }
                     </style>
                 </head>
