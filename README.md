@@ -1,10 +1,10 @@
 # Openmind OS (OM1)
 
-Openmind's OM1 is an AI runtime for agents and robots with modular capabilities like movement, speech, and perception.
+Openmind's OM1 is a modular AI runtime for agents and robots with capabilities including movement and speech.
 
-OM1 allows AI agents to be configured and then deployed in both digital and physical world. You can create *one* AI agent and run it in the cloud but also on physical robot hardware such as quadrupeds, and, soon, TurtleBot 3 and Humanoids. 
+OM1 allows AI agents to be configured and then deployed in both the digital and physical world. You can create *one* AI agent and run it in the cloud but also on physical robot hardware such as Quadrupeds, and, soon, TurtleBot 3 and Humanoids. 
 
-This means that one AI agent with a defined persona can ingest data from multiple sources (the web, X/Twitter, cameras, LIDAR, GPS, the NYSE, ...), and can then Tweet and explore your house, shake you hand, or talk to you. With OM1, you can talk with OpenAI's `gpt-4o` and literally shake hands with it.
+For example, an AI agent built on OM1 can ingest data from multiple sources (the web, X/Twitter, cameras, and LIDAR) and can then Tweet and explore your house, shake your hand, or talk to you. In another example, with OM1, you can talk with OpenAI's `gpt-4o` and literally shake hands with it.
 
 Capabilities of OM1:
 
@@ -13,12 +13,12 @@ Capabilities of OM1:
 * Easy to add new data inputs
 * Easy to support new hardware, such as API endpoints and robots
 * Can be connected to ROS2, Zenoh, and CycloneDDS
-* Includes a simple web-based debug display to watch the system work 
+* Includes a simple web-based debug display to watch the system work (`WebSim` at http://localhost:8000)
 * Preconfigured endpoints for Voice-to-Speech, OpenAI's `gpt-4o`, DeepSeek, and multiple VLMs
 
 ## Hello World
 
-The `Spot` agent uses your webcam to label objects and sends those captions to `OpenAI 4o`. The LLM then returns `movement`, `speech`, and `face` commands, which are displayed in `RacoonSim`. `RacooonSim` also shows basic timing and other debug information.
+The `Spot` agent uses your webcam to label objects and sends those captions to `OpenAI 4o`. The LLM then returns `movement`, `speech`, and `face` commands, which are displayed in `WebSim`. `WebSim` also shows basic timing and other debug information.
 
 1. Clone the repo
 
@@ -46,7 +46,18 @@ Add your Openmind API key in `/config/spot.json`. You can obtain a free access k
 
 ```bash run spot
 uv run src/run.py spot
+
+...
+
+INFO:root:SendThisToROS2: {'move': 'dance'}
+INFO:root:SendThisToROS2: {'speak': "Hello, it's so nice to see you! Let's dance together!"}
+INFO:root:SendThisToROS2: {'face': 'joy'}
+INFO:root:VLM_COCO_Local: You see a person in front of you.
+INFO:httpx:HTTP Request: POST https://api.openmind.org/api/core/openai/chat/completions "HTTP/1.1 200 OK"
+INFO:root:Inputs and LLM Outputs: {'current_action': 'wag tail', 'last_speech': "Hello, new friend! I'm so happy to see you!", 'current_emotion': 'joy', 'system_latency': {'fuse_time': 0.2420651912689209, 'llm_start': 0.24208617210388184, 'processing': 1.4561660289764404, 'complete': 1.6982522010803223}, 'inputs': [{'input_type': 'VLM_COCO_Local', 'timestamp': 0.0, 'input': 'You see a person in front of you.'}]}
 ```
+
+You will see logging information in the terminal, and you can see real time inputs and outputs in a web debug page at http://localhost:8000. 
 
 Add `--debug` to see more logging information.
 
@@ -63,7 +74,7 @@ Highlights:
 - [Example 2 - Using Cloud Endpoints for Voice Inputs and Text to Speech](./docs/examples/conversation.mdx)
 - [Example 3 - An interactive Smart Toy](./docs/examples/smart_toy.mdx)
 - [Robotics - Unitree Dog](./docs/robotics/unitree_robotics.mdx)
-- [Robotics - Unitree Dog with Crypto Wallet](./docs/robotics/coinbase_hackathon.mdx)
+- [Robotics - Unitree Dog with Wallet](./docs/robotics/coinbase_hackathon.mdx)
 
 ## Contributing
 
