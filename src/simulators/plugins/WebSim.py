@@ -58,7 +58,14 @@ class WebSim(Simulator):
 
         # Mount assets directory
         assets_path = os.path.join(os.path.dirname(__file__), "assets")
+        if not os.path.exists(assets_path):
+            os.makedirs(assets_path)
         self.app.mount("/assets", StaticFiles(directory=assets_path), name="assets")
+
+        # Ensure the logo exists in assets directory
+        logo_path = os.path.join(assets_path, "OM_Logo_b_transparent.png")
+        if not os.path.exists(logo_path):
+            logging.warning(f"Logo not found at {logo_path}")
 
         self.active_connections: List[WebSocket] = []
 
@@ -74,6 +81,135 @@ class WebSim(Simulator):
                     <script src="https://unpkg.com/react-dom@17/umd/react-dom.development.js"></script>
                     <script src="https://unpkg.com/babel-standalone@6/babel.min.js"></script>
                     <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+                    <style>
+                        .message-header {
+                            cursor: pointer;
+                            padding: 8px;
+                            border-radius: 4px;
+                            background-color: #f3f4f6;
+                            transition: background-color 0.2s;
+                            display: flex;
+                            justify-content: space-between;
+                            align-items: center;
+                        }
+                        .message-header:hover {
+                            background-color: #e5e7eb;
+                        }
+                        .message-preview {
+                            overflow: hidden;
+                            text-overflow: ellipsis;
+                            white-space: nowrap;
+                            color: #6B7280;
+                            font-size: 0.875rem;
+                            flex: 1;
+                            margin: 0 8px;
+                            position: relative;
+                            padding-right: 24px;
+                        }
+                        .message-arrow {
+                            color: #6B7280;
+                            font-size: 0.875rem;
+                            min-width: 20px;
+                            text-align: center;
+                            transform: rotate(0deg);
+                            transition: transform 0.2s;
+                        }
+                        .message-arrow.expanded {
+                            transform: rotate(90deg);
+                        }
+                        .resize-handle {
+                            color: #9CA3AF;
+                            font-size: 1rem;
+                            cursor: col-resize;
+                            padding: 0 4px;
+                            position: absolute;
+                            right: 0;
+                            top: 50%;
+                            transform: translateY(-50%);
+                        }
+                        .message-timestamp {
+                            color: #9CA3AF;
+                            font-size: 0.75rem;
+                            min-width: 60px;
+                        }
+                        .footer {
+                            position: fixed;
+                            bottom: 0;
+                            left: 0;
+                            right: 0;
+                            padding: 1rem;
+                            background-color: white;
+                            border-top: 1px solid #e5e7eb;
+                            display: flex;
+                            align-items: center;
+                            justify-content: space-between;
+                        }
+                        .footer-logo {
+                            height: 60px;
+                            width: auto;
+                            margin-left: 1rem;
+                        }
+                        .footer-links {
+                            display: flex;
+                            gap: 2rem;
+                            margin-right: 2rem;
+                        }
+                        .footer-link {
+                            color: #3B82F6;
+                            text-decoration: none;
+                            font-size: 1rem;
+                            font-weight: 500;
+                            transition: color 0.2s;
+                            display: flex;
+                            align-items: center;
+                            gap: 0.5rem;
+                        }
+                        .footer-link:hover {
+                            color: #2563EB;
+                        }
+                        .github-icon {
+                            width: 20px;
+                            height: 20px;
+                        }
+                        .message-content {
+                            position: relative;
+                            margin-top: 0.5rem;
+                            background-color: #f9fafb;
+                            border-radius: 0.375rem;
+                            overflow: hidden;
+                        }
+                        .message-text {
+                            white-space: pre-wrap;
+                            word-break: break-word;
+                            font-size: 0.875rem;
+                            color: #374151;
+                            padding: 0.5rem 1rem;
+                            overflow-y: auto;
+                        }
+                        .content-resize-handle {
+                            position: absolute;
+                            bottom: 0;
+                            left: 0;
+                            right: 0;
+                            height: 4px;
+                            cursor: row-resize;
+                            background-color: #e5e7eb;
+                            display: flex;
+                            align-items: center;
+                            justify-content: center;
+                        }
+                        .content-resize-handle::after {
+                            content: '☰';
+                            font-size: 12px;
+                            color: #9CA3AF;
+                            transform: rotate(90deg);
+                            position: absolute;
+                            bottom: 4px;
+                        }
+                        .content-resize-handle:hover {
+                            background-color: #93c5fd;
+                        }
+                    </style>
                 </head>
                 <body class="bg-gray-50">
                     <div id="root"></div>
@@ -93,123 +229,163 @@ class WebSim(Simulator):
                             });
                             const [error, setError] = React.useState(null);
                             const [connected, setConnected] = React.useState(false);
-                            const [isExpanded, setIsExpanded] = React.useState(false);
-                            const historyRef = React.useRef(null);
+                            const [expandedMessages, setExpandedMessages] = React.useState({});
+                            const [messageHeights, setMessageHeights] = React.useState({});
+                            const [isResizing, setIsResizing] = React.useState(null);
+                            const resizeRef = React.useRef(null);
 
-                            const toggleExpand = () => {
-                                setIsExpanded(!isExpanded);
-                            };
-
-                            const scrollToBottom = () => {
-                                if (historyRef.current) {
-                                    historyRef.current.scrollTop = historyRef.current.scrollHeight;
-                                }
-                            };
-
-                            React.useEffect(() => {
-                                if (historyRef.current) {
-                                    scrollToBottom();
-                                }
-                            }, [state.inputs]);
-
-                            React.useEffect(() => {
-                                const connectWebSocket = () => {
-                                    const ws = new WebSocket('ws://localhost:8000/ws');
-
-                                    ws.onopen = () => {
-                                        console.log('Connected to WebSocket');
-                                        setConnected(true);
-                                        setError(null);
-                                    };
-
-                                    ws.onmessage = (event) => {
-                                        try {
-                                            const data = JSON.parse(event.data);
-                                            console.log('Received state:', data);
-                                            setState(data);
-                                            setError(null);
-                                        } catch (e) {
-                                            console.error('Error parsing message:', e);
-                                            setError('Error parsing data from server');
-                                        }
-                                    };
-
-                                    ws.onerror = (event) => {
-                                        console.error('WebSocket error:', event);
-                                        setConnected(false);
-                                        setError('Error connecting to server');
-                                    };
-
-                                    ws.onclose = () => {
-                                        console.log('WebSocket closed, attempting to reconnect...');
-                                        setConnected(false);
-                                        setTimeout(connectWebSocket, 1000);
-                                    };
-
-                                    return () => {
-                                        ws.close();
-                                    };
-                                };
-
-                                connectWebSocket();
+                            const startResizing = React.useCallback((messageId, e) => {
+                                e.stopPropagation();
+                                setIsResizing(messageId);
+                                document.body.classList.add('no-select');
                             }, []);
 
-                            if (error) return (
-                                <div className="min-h-screen flex items-center justify-center">
-                                    <div className="text-red-600 text-xl">{error}</div>
-                                </div>
-                            );
+                            const stopResizing = React.useCallback(() => {
+                                setIsResizing(null);
+                                document.body.classList.remove('no-select');
+                            }, []);
 
-                            if (!connected) return (
-                                <div className="min-h-screen flex items-center justify-center">
-                                    <div className="text-xl">Connecting to simulator...</div>
-                                </div>
-                            );
+                            const handleResize = React.useCallback((e) => {
+                                if (isResizing && resizeRef.current) {
+                                    const container = resizeRef.current;
+                                    const containerRect = container.getBoundingClientRect();
+                                    const newHeight = Math.max(100, e.clientY - containerRect.top);
+                                    setMessageHeights(prev => ({
+                                        ...prev,
+                                        [isResizing]: newHeight
+                                    }));
+                                }
+                            }, [isResizing]);
+
+                            React.useEffect(() => {
+                                const ws = new WebSocket(`ws://${window.location.host}/ws`);
+                                
+                                ws.onopen = () => {
+                                    console.log('Connected to WebSocket');
+                                    setConnected(true);
+                                };
+
+                                ws.onmessage = (event) => {
+                                    const data = JSON.parse(event.data);
+                                    setState(data);
+                                };
+
+                                ws.onerror = (error) => {
+                                    console.error('WebSocket error:', error);
+                                    setError('Failed to connect to server');
+                                };
+
+                                ws.onclose = () => {
+                                    setConnected(false);
+                                    setError('Connection lost. Reconnecting...');
+                                    setTimeout(() => window.location.reload(), 2000);
+                                };
+
+                                return () => ws.close();
+                            }, []);
+
+                            React.useEffect(() => {
+                                if (isResizing) {
+                                    window.addEventListener('mousemove', handleResize);
+                                    window.addEventListener('mouseup', stopResizing);
+                                    return () => {
+                                        window.removeEventListener('mousemove', handleResize);
+                                        window.removeEventListener('mouseup', stopResizing);
+                                    };
+                                }
+                            }, [isResizing, handleResize, stopResizing]);
+
+                            const groupedMessages = React.useMemo(() => {
+                                const groups = {};
+                                Object.entries(state.inputs || {}).forEach(([key, value]) => {
+                                    const inputType = value.input_type || 'Unknown';
+                                    if (!groups[inputType]) {
+                                        groups[inputType] = [];
+                                    }
+                                    groups[inputType].push({ id: key, ...value });
+                                });
+                                return groups;
+                            }, [state.inputs]);
+
+                            if (error) {
+                                return (
+                                    <div className="min-h-screen flex items-center justify-center">
+                                        <div className="text-red-600">{error}</div>
+                                    </div>
+                                );
+                            }
+
+                            if (!connected) {
+                                return (
+                                    <div className="min-h-screen flex items-center justify-center">
+                                        <div>Connecting...</div>
+                                    </div>
+                                );
+                            }
 
                             return (
-                                <div className="min-h-screen p-4">
+                                <div className="min-h-screen p-4 pb-16">
                                     <div className="container mx-auto">
-                                        <div className="grid grid-cols-12 gap-4">
+                                        <div className="flex">
                                             {/* Input History */}
-                                            <div className="col-span-4 bg-white rounded-lg shadow p-4">
-                                                <div className="flex justify-between items-center mb-4">
-                                                    <h2 className="text-xl font-bold">Input History</h2>
-                                                    <button
-                                                        onClick={toggleExpand}
-                                                        className="px-3 py-1 bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors text-sm flex items-center"
-                                                    >
-                                                        {isExpanded ? "Collapse ↑" : "Expand ↓"}
-                                                    </button>
-                                                </div>
-                                                <div
-                                                    ref={historyRef}
-                                                    className="overflow-auto transition-all duration-300 ease-in-out"
-                                                    style={{ maxHeight: isExpanded ? 'calc(100vh - 200px)' : 'calc(100vh - 300px)' }}
-                                                >
+                                            <div className="bg-white rounded-lg shadow p-4" style={{ width: '33%' }}>
+                                                <div className="flex flex-col">
+                                                    <h2 className="text-xl font-bold mb-4">Input History</h2>
                                                     <div className="space-y-2">
-                                                        {Object.entries(state.inputs || {})
-                                                            .sort((a, b) => b[1].timestamp - a[1].timestamp)
-                                                            .map(([key, value]) => (
-                                                            <div key={key} className="bg-gray-50 p-3 rounded hover:bg-gray-100 transition-colors">
-                                                                <div className="flex justify-between items-start">
-                                                                    <div className="text-sm text-blue-600 font-medium">
-                                                                        {key.toUpperCase()}
-                                                                    </div>
-                                                                    <div className="text-xs text-gray-500 ml-2">
-                                                                        {value.timestamp.toFixed(3)}s
-                                                                    </div>
+                                                        {Object.entries(groupedMessages)
+                                                            .sort(([a], [b]) => a.localeCompare(b))
+                                                            .map(([inputType, messages]) => (
+                                                                <div key={inputType}>
+                                                                    <h3 className="text-sm font-semibold text-gray-700 mb-2">
+                                                                        {inputType}
+                                                                    </h3>
+                                                                    {messages
+                                                                        .sort((a, b) => b.timestamp - a.timestamp)
+                                                                        .map((message) => (
+                                                                            <div key={message.id} className="mb-2">
+                                                                                <div 
+                                                                                    className="message-header"
+                                                                                    onClick={() => setExpandedMessages(prev => ({
+                                                                                        ...prev,
+                                                                                        [message.id]: !prev[message.id]
+                                                                                    }))}
+                                                                                >
+                                                                                    <span className={`message-arrow ${expandedMessages[message.id] ? 'expanded' : ''}`}>
+                                                                                        ▶
+                                                                                    </span>
+                                                                                    <span className="message-timestamp">
+                                                                                        {message.timestamp.toFixed(3)}s
+                                                                                    </span>
+                                                                                    <span className="message-preview">
+                                                                                        {message.input.substring(0, 50)}
+                                                                                        {message.input.length > 50 ? '...' : ''}
+                                                                                    </span>
+                                                                                </div>
+                                                                                {expandedMessages[message.id] && (
+                                                                                    <div 
+                                                                                        className="message-content"
+                                                                                        ref={isResizing === message.id ? resizeRef : null}
+                                                                                        style={{ height: messageHeights[message.id] || 'auto', minHeight: '100px' }}
+                                                                                    >
+                                                                                        <div className="message-text">
+                                                                                            {message.input}
+                                                                                        </div>
+                                                                                        <div 
+                                                                                            className="content-resize-handle"
+                                                                                            onMouseDown={(e) => startResizing(message.id, e)}
+                                                                                        />
+                                                                                    </div>
+                                                                                )}
+                                                                            </div>
+                                                                        ))}
                                                                 </div>
-                                                                <div className="mt-2 text-gray-900 text-sm whitespace-pre-wrap break-words">
-                                                                    {value.input}
-                                                                </div>
-                                                            </div>
-                                                        ))}
+                                                            ))}
                                                     </div>
                                                 </div>
                                             </div>
 
                                             {/* Main Display */}
-                                            <div className="col-span-8">
+                                            <div className="flex-1 ml-4">
                                                 <div className="bg-white rounded-lg shadow p-4 mb-4">
                                                     <h2 className="text-xl font-bold mb-4">Current State</h2>
                                                     <div className="space-y-4">
@@ -246,6 +422,34 @@ class WebSim(Simulator):
                                             </div>
                                         </div>
                                     </div>
+                                    <div className="footer">
+                                        <img 
+                                            src="/assets/OM_Logo_b_transparent.png" 
+                                            alt="OpenMind Logo" 
+                                            className="footer-logo"
+                                        />
+                                        <div className="footer-links">
+                                            <a 
+                                                href="https://github.com/OpenmindAGI/OM1" 
+                                                target="_blank" 
+                                                rel="noopener noreferrer" 
+                                                className="footer-link"
+                                            >
+                                                <svg className="github-icon" viewBox="0 0 24 24" fill="currentColor">
+                                                    <path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/>
+                                                </svg>
+                                                GitHub
+                                            </a>
+                                            <a 
+                                                href="https://docs.openmind.org/introduction" 
+                                                target="_blank" 
+                                                rel="noopener noreferrer" 
+                                                className="footer-link"
+                                            >
+                                                Documentation
+                                            </a>
+                                        </div>
+                                    </div>
                                 </div>
                             );
                         }
@@ -255,7 +459,6 @@ class WebSim(Simulator):
                 </body>
             </html>
             """)
-
 
         @self.app.websocket("/ws")
         async def websocket_endpoint(websocket: WebSocket):
