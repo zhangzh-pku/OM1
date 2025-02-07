@@ -128,7 +128,7 @@ class VLM_COCO_Local(FuserInput[Image.Image]):
 
         filtered_detections = None
 
-        if raw_input:
+        if raw_input is not None:
             image = raw_input.copy().transpose((2, 0, 1))
             batch_image = np.expand_dims(image, axis=0)
             tensor_image = torch.tensor(
