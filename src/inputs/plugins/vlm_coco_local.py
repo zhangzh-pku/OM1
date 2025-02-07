@@ -174,7 +174,7 @@ class VLM_COCO_Local(FuserInput[Image.Image]):
                 direction = "on your right."
 
             sentence = f"You see a {thing} {direction}"
-            
+
         if sentence is not None:
             return Message(timestamp=time.time(), message=sentence)
 

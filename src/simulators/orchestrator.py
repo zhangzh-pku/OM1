@@ -71,6 +71,8 @@ class SimulatorOrchestrator:
     async def _promise_simulator(
         self, simulator: Simulator, inputs, commands: T.List[Command]
     ) -> T.Any:
-        logging.debug(f"Calling simulator {simulator.name} with inputs {inputs} commands {commands}")
+        logging.debug(
+            f"Calling simulator {simulator.name} with inputs {inputs} commands {commands}"
+        )
         simulator.sim(inputs, commands)
         return None

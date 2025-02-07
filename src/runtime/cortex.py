@@ -4,10 +4,10 @@ import logging
 from actions.orchestrator import ActionOrchestrator
 from fuser import Fuser
 from inputs.orchestrator import InputOrchestrator
+from providers.io_provider import IOProvider
 from providers.sleep_ticker_provider import SleepTickerProvider
 from runtime.config import RuntimeConfig
 from simulators.orchestrator import SimulatorOrchestrator
-from providers.io_provider import IOProvider
 
 
 class CortexRuntime:
@@ -131,11 +131,13 @@ class CortexRuntime:
         processed_inputs = []
         for key, input_obj in self.io_provider.inputs.items():
             if input_obj and input_obj.input and input_obj.timestamp is not None:
-                processed_inputs.append({
-                    "input_type": key,
-                    "timestamp": input_obj.timestamp,
-                    "input": input_obj.input
-                })
+                processed_inputs.append(
+                    {
+                        "input_type": key,
+                        "timestamp": input_obj.timestamp,
+                        "input": input_obj.input,
+                    }
+                )
         logging.debug(f"inputs: {processed_inputs}")
 
         # if there is a prompt, send to the AIs

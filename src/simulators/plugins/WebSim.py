@@ -1,16 +1,15 @@
-import logging
 import asyncio
-import json
+import logging
 import os
-from typing import List, Optional
-from dataclasses import dataclass, asdict
-from fastapi import FastAPI, WebSocket
-from fastapi.staticfiles import StaticFiles
-from fastapi.responses import HTMLResponse
-import uvicorn
 import threading
-from datetime import datetime
 import time
+from dataclasses import asdict, dataclass
+from typing import List
+
+import uvicorn
+from fastapi import FastAPI, WebSocket
+from fastapi.responses import HTMLResponse
+from fastapi.staticfiles import StaticFiles
 
 from llm.output_model import Command
 from providers.io_provider import IOProvider
@@ -48,7 +47,12 @@ class WebSim(Simulator):
             current_action="idle",
             last_speech="",
             current_emotion="",
-            system_latency={"fuse_time": 0, "llm_start": 0, "processing": 0, "complete": 0}
+            system_latency={
+                "fuse_time": 0,
+                "llm_start": 0,
+                "processing": 0,
+                "complete": 0,
+            },
         )
 
         logging.info("Initializing WebSim...")
@@ -72,7 +76,8 @@ class WebSim(Simulator):
         # Setup routes
         @self.app.get("/")
         async def get_index():
-            return HTMLResponse("""
+            return HTMLResponse(
+                """
             <!DOCTYPE html>
             <html>
                 <head>
@@ -450,7 +455,8 @@ class WebSim(Simulator):
                     </script>
                 </body>
             </html>
-            """)
+            """
+            )
 
         @self.app.websocket("/ws")
         async def websocket_endpoint(websocket: WebSocket):
@@ -474,7 +480,9 @@ class WebSim(Simulator):
 
             if self.server_thread.is_alive():
                 # Using ANSI color codes for cyan text and bold
-                logging.info("\033[1;36mWebSim server started successfully - Open http://localhost:8000 in your browser\033[0m")
+                logging.info(
+                    "\033[1;36mWebSim server started successfully - Open http://localhost:8000 in your browser\033[0m"
+                )
                 self._initialized = True
             else:
                 logging.error("WebSim server failed to start")
@@ -509,8 +517,8 @@ class WebSim(Simulator):
                 "loggers": {
                     "uvicorn": {"handlers": ["default"], "level": "ERROR"},
                     "uvicorn.error": {"level": "ERROR"},
-                }
-            }
+                },
+            },
         )
         server = uvicorn.Server(config)
         server.run()
@@ -565,13 +573,13 @@ class WebSim(Simulator):
 
                 # Broadcast state
                 loop.run_until_complete(self.broadcast_state())
-                
+
                 # Sleep to maintain tick rate
                 time.sleep(0.1)  # 100ms tick rate
-                
+
             except Exception as e:
                 logging.error(f"Error in tick: {e}")
-                time.sleep(0.1) # Sleep even on error to maintain tick rate
+                time.sleep(0.1)  # Sleep even on error to maintain tick rate
 
     def sim(self, inputs, commands: List[Command]) -> None:
         """Handle simulation updates from commands"""
@@ -583,7 +591,7 @@ class WebSim(Simulator):
             updated = False
             with self._lock:
                 logging.debug(f"SIM inputs: {inputs}")
-                
+
                 earliest_time = self.get_earliest_time(inputs)
                 logging.debug(f"earliest_time: {earliest_time}")
 
@@ -595,13 +603,14 @@ class WebSim(Simulator):
                         input_zero["timestamp"] = 0.0
                     input_rezeroed.append(input_zero)
                 logging.debug(f"SIM inputs zeroed: {input_rezeroed}")
-                
-                # Process system latency relative to earliest time                
+
+                # Process system latency relative to earliest time
                 system_latency = {
                     "fuse_time": self.io_provider.fuser_end_time - earliest_time,
                     "llm_start": self.io_provider.llm_start_time - earliest_time,
-                    "processing": self.io_provider.llm_end_time - self.io_provider.llm_start_time,
-                    "complete": self.io_provider.llm_end_time - earliest_time
+                    "processing": self.io_provider.llm_end_time
+                    - self.io_provider.llm_start_time,
+                    "complete": self.io_provider.llm_end_time - earliest_time,
                 }
 
                 for command in commands:
@@ -626,7 +635,7 @@ class WebSim(Simulator):
                     "last_speech": self.state.last_speech,
                     "current_emotion": self.state.current_emotion,
                     "system_latency": system_latency,
-                    "inputs": input_rezeroed
+                    "inputs": input_rezeroed,
                 }
 
                 logging.info(f"Inputs and LLM Outputs: {self.state_dict}")
