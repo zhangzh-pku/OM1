@@ -11,7 +11,7 @@ import torch
 from PIL import Image
 from torchvision.models import detection as detection_model
 
-from inputs.base import SensorOutputConfig
+from inputs.base import SensorConfig
 from inputs.base.loop import FuserInput
 from providers.io_provider import IOProvider
 
@@ -54,7 +54,7 @@ class VLM_COCO_Local(FuserInput[Image.Image]):
     Bounding Boxes use image convention, ie center.y = 0 means top of image.
     """
 
-    def __init__(self, config: SensorOutputConfig = SensorOutputConfig()):
+    def __init__(self, config: SensorConfig = SensorConfig()):
         """
         Initialize VLM input handler with empty message buffer.
         """
