@@ -3,10 +3,10 @@ from unittest.mock import Mock, patch
 import pytest
 
 from inputs import load_input
-from inputs.base import SensorOutput
+from inputs.base import Sensor
 
 
-class MockInput(SensorOutput):
+class MockInput(Sensor):
     async def raw_to_text(self, raw_input):
         pass
 
@@ -51,10 +51,10 @@ def test_load_input_multiple_plugins():
         mock_listdir.return_value = ["input1.py", "input2.py"]
 
         mock_module1 = Mock()
-        mock_module1.Input1 = type("Input1", (SensorOutput,), {})
+        mock_module1.Input1 = type("Input1", (Sensor,), {})
 
         mock_module2 = Mock()
-        mock_module2.Input2 = type("Input2", (SensorOutput,), {})
+        mock_module2.Input2 = type("Input2", (Sensor,), {})
 
         mock_import.side_effect = [mock_module1, mock_module2]
 
