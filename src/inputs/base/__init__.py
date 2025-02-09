@@ -11,17 +11,12 @@ class SensorConfig:
 
     Parameters
     ----------
-    base_url : str, optional
-        Base URL for the input source
     **kwargs : dict
         Additional configuration parameters
     """
 
-    base_url: T.Optional[str] = None
-
-    def __init__(self, base_url: T.Optional[str] = None, **kwargs):
-        self.base_url = base_url
-        # Store any additional config parameters
+    def __init__(self, **kwargs):
+        # Store any config parameters
         for key, value in kwargs.items():
             setattr(self, key, value)
 

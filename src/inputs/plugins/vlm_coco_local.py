@@ -35,15 +35,19 @@ class Message:
     message: str
 
 
-def check_webcam():
+# if working on Mac, please disable continuity camera on your iphone
+# Settings > General > AirPlay & Continuity, and tunr off Continuity
+
+
+def check_webcam(index_to_check):
     """
     Checks if a webcam is available and returns True if found, False otherwise.
     """
-    cap = cv2.VideoCapture(0)  # 0 is the default camera index
+    cap = cv2.VideoCapture(index_to_check)  # 0 is the default camera index
     if not cap.isOpened():
-        logging.info("No webcam found")
+        logging.info(f"ERROR: COCO did not find cam: {index_to_check}")
         return False
-    logging.info("Found cam(0)")
+    logging.info(f"COCO found cam: {index_to_check}")
     return True
 
 
@@ -63,13 +67,18 @@ class VLM_COCO_Local(FuserInput[Image.Image]):
         self.device = "cpu"
         self.detection_threshold = 0.7
 
+        self.camera_index = 0  # default to default webcam unless specified otherwsie
+        if self.config.camera_index:
+            self.camera_index = self.config.camera_index
+
         # Track IO
         self.io_provider = IOProvider()
 
         # Messages buffer
         self.messages: list[Message] = []
 
-        self.descriptor_for_LLM = "COCO Object Detector"
+        # Simple description of sensor output to help LLM understand its importance and utility
+        self.descriptor_for_LLM = "Object Detector"
 
         # Low resolution Faster R-CNN model with a MobileNetV3-Large backbone tuned for mobile use cases.
         self.model = detection_model.fasterrcnn_mobilenet_v3_large_320_fpn(
@@ -85,12 +94,12 @@ class VLM_COCO_Local(FuserInput[Image.Image]):
         self.model.eval()
         logging.info("COCO Object Detector Started")
 
-        self.have_cam = check_webcam()
+        self.have_cam = check_webcam(self.camera_index)
 
         # Start capturing video, if we have a webcam
         self.cap = None
         if self.have_cam:
-            self.cap = cv2.VideoCapture(0)
+            self.cap = cv2.VideoCapture(self.camera_index)
             self.width = int(self.cap.get(3))  # float `width`
             self.height = int(self.cap.get(4))  # float `height`
             self.cam_third = int(self.width / 3)
