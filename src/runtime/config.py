@@ -93,10 +93,10 @@ def load_config(config_name: str) -> RuntimeConfig:
     parsed_config = {
         **raw_config,
         "agent_inputs": [
-            load_input(input["type"])(
-                config=SensorOutputConfig(**input.get("config", {}))
+            load_input(sensor["type"])(
+                config=SensorOutputConfig(**sensor.get("config", {}))
             )
-            for input in raw_config.get("agent_inputs", [])
+            for sensor in raw_config.get("agent_inputs", [])
         ],
         "cortex_llm": load_llm(raw_config["cortex_llm"]["type"])(
             config=LLMConfig(**raw_config["cortex_llm"].get("config", {})),
