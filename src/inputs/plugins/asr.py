@@ -33,11 +33,10 @@ class ASRInput(FuserInput[str]):
         self.message_buffer: Queue[str] = Queue()
 
         # Initialize ASR provider
-        base_url = (
-            self.config.base_url
-            if self.config.base_url
-            else "wss://api-asr.openmind.org"
-        )
+        base_url = "wss://api-asr.openmind.org"
+
+        if hasattr(self.config, "base_url"):
+            base_url = self.config.base_url
 
         self.asr: ASRProvider = ASRProvider(ws_url=base_url)
         self.asr.start()
