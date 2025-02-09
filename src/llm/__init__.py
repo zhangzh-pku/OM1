@@ -18,7 +18,7 @@ class LLMConfig(BaseModel):
     ----------
     base_url : str, optional
         Base URL for the LLM API endpoint
-    openmind_api_key : str, optional
+    api_key : str, optional
         Authentication key for the LLM service
     """
 
