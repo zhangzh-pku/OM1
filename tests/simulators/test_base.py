@@ -22,4 +22,4 @@ def test_simulator_config_kwargs():
     config = SimulatorConfig(name="test_sim", host="localhost", port=8000)
     assert config.name == "test_sim"
     assert config.host == "localhost"
-    assert config.port == 8000  # Removed trailing whitespace
+    assert config.port == 8000

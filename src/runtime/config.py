@@ -16,28 +16,7 @@ from simulators.base import Simulator, SimulatorConfig
 
 @dataclass
 class RuntimeConfig:
-    """
-    Runtime configuration container.
-
-    Parameters
-    ----------
-    hertz : float
-        The frequency at which the runtime loop operates
-    name : str
-        Unique identifier for this configuration
-    system_prompt : str
-        System prompt used for LLM initialization
-    agent_inputs : List[Sensor]
-        List of input components for gathering agent data
-    cortex_llm : LLM[CortexOutputModel]
-        Language model configuration for the agent's cognitive processing
-    agent_actions : List[AgentAction]
-        List of available actions the agent can perform
-    simulators : List[Simulator]
-        List of simulation components for environment modeling
-    unitree_ethernet : str
-        Ethernet adapter name for Unitree robot communication
-    """
+    """Runtime configuration for the agent."""
 
     hertz: float
     name: str
@@ -45,12 +24,14 @@ class RuntimeConfig:
     system_governance: str
     system_prompt_examples: str
     agent_inputs: List[Sensor]
-    cortex_llm: LLM[CortexOutputModel]
-    agent_actions: List[AgentAction]
+    cortex_llm: LLM
     simulators: List[Simulator]
+    agent_actions: List[AgentAction]
 
-    # unitree
-    unitree_ethernet: Optional[str] = None
+    @classmethod
+    def load(cls, config_name: str) -> "RuntimeConfig":
+        """Load a runtime configuration from a file."""
+        return load_config(config_name)
 
 
 def load_config(config_name: str) -> RuntimeConfig:
@@ -102,7 +83,9 @@ def load_config(config_name: str) -> RuntimeConfig:
         ),
         "simulators": [
             load_simulator(simulator["type"])(
-                config=SimulatorConfig(name=simulator["type"], **simulator.get("config", {}))
+                config=SimulatorConfig(
+                    name=simulator["type"], **simulator.get("config", {})
+                )
             )
             for simulator in raw_config.get("simulators", [])
         ],
