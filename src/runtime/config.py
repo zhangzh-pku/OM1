@@ -1,7 +1,7 @@
 import json
 import os
 from dataclasses import dataclass
-from typing import List, Optional
+from typing import List
 
 from actions import load_action
 from actions.base import AgentAction
