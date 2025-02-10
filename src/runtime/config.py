@@ -11,7 +11,7 @@ from llm import LLM, LLMConfig, load_llm
 from llm.output_model import CortexOutputModel
 from runtime.robotics import load_unitree
 from simulators import load_simulator
-from simulators.base import Simulator
+from simulators.base import Simulator, SimulatorConfig
 
 
 @dataclass
@@ -101,7 +101,9 @@ def load_config(config_name: str) -> RuntimeConfig:
             output_model=CortexOutputModel,
         ),
         "simulators": [
-            load_simulator(simulator["type"])()
+            load_simulator(simulator["type"])(
+                config=SimulatorConfig(name=simulator["type"], **simulator.get("config", {}))
+            )
             for simulator in raw_config.get("simulators", [])
         ],
         "agent_actions": [
