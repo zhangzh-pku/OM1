@@ -8,7 +8,7 @@ from inputs.base import Sensor, SensorConfig
 from llm import LLM
 from llm.output_model import CortexOutputModel
 from runtime.config import RuntimeConfig, load_config
-from simulators.base import Simulator, SimulatorConfig
+from simulators.base import Simulator
 
 
 @pytest.fixture

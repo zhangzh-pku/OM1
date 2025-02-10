@@ -1,4 +1,3 @@
-import pytest
 from simulators.base import Simulator, SimulatorConfig
 
 
