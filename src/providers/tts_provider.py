@@ -3,7 +3,6 @@ import threading
 import time
 from typing import Callable, Optional
 
-import pyaudio
 from om1_speech import AudioOutputStream
 
 from .singleton import singleton
@@ -23,7 +22,7 @@ class TTSProvider:
         The URL endpoint for the TTS service
     """
 
-    def __init__(self, url: str):
+    def __init__(self, url: str, device_id: Optional[int] = None):
         """
         Initialize the TTS provider with given URL.
 
@@ -34,14 +33,8 @@ class TTSProvider:
         """
         self.running: bool = False
 
-        p = pyaudio.PyAudio()
-        SPEAKER = p.get_default_output_device_info()
-        logging.info(
-            f"SYSTEM DEFAULT SPEAKER: idx:{SPEAKER["index"]} name:{SPEAKER["name"]}"
-        )
-
         self.audio_stream: AudioOutputStream = AudioOutputStream(
-            url=url, device=int(SPEAKER["index"])
+            url=url, device=device_id
         )
         self._thread: Optional[threading.Thread] = None
 
