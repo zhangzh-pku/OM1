@@ -1,6 +1,5 @@
 from simulators.base import Simulator, SimulatorConfig
 
-
 def test_simulator_init():
     """Test simulator initialization with config."""
     config = SimulatorConfig(name="test_sim")
