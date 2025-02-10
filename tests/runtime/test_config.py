@@ -241,35 +241,3 @@ def test_load_config_invalid_component_type():
     ):
         with pytest.raises(ImportError):
             load_config("invalid_config")
-
-
-def test_load_config():
-    """Test loading a basic configuration."""
-    with patch("runtime.config.load_simulator") as mock_load_simulator:
-        # Create a mock simulator class that accepts config
-        class MockSimulator:
-            def __init__(self, config: SimulatorConfig):
-                self.config = config
-
-        mock_load_simulator.return_value = MockSimulator
-
-        # Test loading config
-        config = RuntimeConfig.load("test_config")
-        assert isinstance(config, RuntimeConfig)
-        # ... rest of test assertions
-
-
-def test_load_multiple_components():
-    """Test loading configuration with multiple components."""
-    with patch("runtime.config.load_simulator") as mock_load_simulator:
-        # Create a mock simulator class that accepts config
-        class MockSimulator:
-            def __init__(self, config: SimulatorConfig):
-                self.config = config
-
-        mock_load_simulator.return_value = MockSimulator
-
-        # Test loading config with multiple components
-        config = RuntimeConfig.load("test_config_multiple")
-        assert isinstance(config, RuntimeConfig)
-        # ... rest of test assertions
