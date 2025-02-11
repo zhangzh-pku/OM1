@@ -23,7 +23,10 @@
       "name": "speak",
       "implementation": "passthrough",
       "connector": "tts",
-      "speaker_name": "USB PnP Audio Device"
+      "config": {
+        "microphone_name": "USB PnP Audio Device",
+        "speaker_name": "USB PnP Audio Deviceo"
+      }
     }
   ]
 }
