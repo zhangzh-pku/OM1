@@ -1,27 +1,24 @@
 from unittest.mock import MagicMock, Mock, patch
+import sys
 
 import pytest
 
 from providers.singleton import singleton
-from providers.tts_provider import TTSProvider
+
+# Mock both om1_speech and pyaudio modules before importing TTSProvider
+mock_modules = {
+    'om1_speech': MagicMock(),
+    'pyaudio': MagicMock()
+}
+
+with patch.dict('sys.modules', mock_modules):
+    from providers.tts_provider import TTSProvider
 
 
 @pytest.fixture(autouse=True)
 def reset_singleton():
     singleton.instances = {}
     yield
-
-
-@pytest.fixture(autouse=True)
-def mock_pyaudio():
-    with patch("pyaudio.PyAudio") as mock:
-        mock_instance = MagicMock()
-        mock_instance.get_default_output_device_info.return_value = {
-            "name": "Mock Speaker",
-            "index": 0,
-        }
-        mock.return_value = mock_instance
-        yield mock
 
 
 @pytest.fixture(autouse=True)
@@ -43,11 +40,12 @@ def test_singleton_behavior():
     assert provider1 is provider2
 
 
-def test_initialization(mock_audio_stream, mock_pyaudio):
-    provider = TTSProvider(url="test_url")
+def test_initialization(mock_audio_stream):
+    """Test TTSProvider initialization."""
+    provider = TTSProvider(url="test_url")  # Not specifying device, so it should be None
     assert provider.running is False
     assert provider._thread is None
-    mock_audio_stream.assert_called_once_with(url="test_url", device=0)
+    mock_audio_stream.assert_called_once_with(url="test_url", device=None)
 
 
 def test_start_stop(mock_audio_stream):
