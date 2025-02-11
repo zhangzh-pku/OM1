@@ -18,41 +18,51 @@ class SpeakRos2Connector(ActionConnector[SpeakInput]):
         numdevices = info.get("deviceCount")
 
         # i do not know how to access configuration info from an action
-        self.config = {}
-        self.config["speaker_name"] = "USB PnP Audio Device"
-        self.config["microphone_name"] = "USB PnP Audio Device"
+        # self.config = {
+        #     "speaker_name": "USB PnP Audio Device",
+        #     "microphone_name": "USB PnP Audio Device"
+        # }
+
+        class config_dummy:
+            speaker_name = "USB PnP Audio Device"
+            microphone_name = "USB PnP Audio Device"
+
+        self.config = config_dummy()
+
+        # self.config["speaker_name"] = "USB PnP Audio Device"
+        # self.config["microphone_name"] = "USB PnP Audio Device"
+
+        # for i in range(0, numdevices):
+        #     dev = p.get_device_info_by_host_api_device_index(0, i)
+        #     name = dev.get("name")
+        #     channels = dev.get("maxInputChannels")
+        #     logging.info(f"TTS.PY: Audio device '{name}' at ID:{i} with {channels} InputChannels")
 
         mic_device_id = None
         if hasattr(self.config, "microphone_name"):
             microphone_name = self.config.microphone_name
+            logging.info(f"TTS.PY: looking for microphone '{microphone_name}'")
             for i in range(0, numdevices):
-                if (
-                    p.get_device_info_by_host_api_device_index(0, i).get(
-                        "maxInputChannels"
-                    )
-                ) > 0:
-                    name = p.get_device_info_by_host_api_device_index(0, i).get("name")
-                    if microphone_name in name:
+                dev = p.get_device_info_by_host_api_device_index(0, i)
+                if (dev.get("maxInputChannels")) > 0:  # this is a microphone
+                    if microphone_name in dev.get("name"):
                         mic_device_id = i
                         logging.info(
-                            f"ASR: Found microphone specified in .json as '{name}' at ID:{mic_device_id}"
+                            f"TTS.PY: Found microphone specified in .json as '{microphone_name}' at ID:{mic_device_id}"
                         )
                         break
 
         speaker_device_id = None
         if hasattr(self.config, "speaker_name"):
             speaker_name = self.config.speaker_name
+            logging.info(f"TTS.PY: looking for speaker '{speaker_name}'")
             for i in range(0, numdevices):
-                if (
-                    p.get_device_info_by_host_api_device_index(0, i).get(
-                        "maxInputChannels"
-                    )
-                ) > 0:
-                    name = p.get_device_info_by_host_api_device_index(0, i).get("name")
-                    if speaker_name in name:
+                dev = p.get_device_info_by_host_api_device_index(0, i)
+                if (dev.get("maxOutputChannels")) > 0:  # this is a speaker
+                    if speaker_name in dev.get("name"):
                         speaker_device_id = i
                         logging.info(
-                            f"TTS: Found speaker specified in .json as '{name}' at ID:{speaker_device_id}"
+                            f"TTS.PY: Found speaker specified in .json as '{speaker_name}' at ID:{speaker_device_id}"
                         )
                         break
 
