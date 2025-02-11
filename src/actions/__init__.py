@@ -47,9 +47,12 @@ def load_action(action_config: dict[str, str]) -> AgentAction:
             interface = obj
     if interface is None:
         raise ValueError(f"No interface found for action {action_config['name']}")
-    implementation = importlib.import_module(
-        f"actions.{action_config['name']}.implementation.{action_config['implementation']}"
-    )
+    if action_config["implementation"] == "passthrough":
+        implementation = importlib.import_module("actions.passthrough")
+    else:
+        implementation = importlib.import_module(
+            f"actions.{action_config['name']}.implementation.{action_config['implementation']}"
+        )
     connector = importlib.import_module(
         f"actions.{action_config['name']}.connector.{action_config['connector']}"
     )
