@@ -20,9 +20,18 @@ class TTSProvider:
     ----------
     url : str
         The URL endpoint for the TTS service
+    device : int, optional
+        The audio device index for audio output (default is None)
+    speaker_name : str, optional
+        The name of the speaker for audio output (default is None)
     """
 
-    def __init__(self, url: str, device: Optional[int] = None):
+    def __init__(
+        self,
+        url: str,
+        device_id: Optional[int] = None,
+        speaker_name: Optional[str] = None,
+    ):
         """
         Initialize the TTS provider with given URL.
 
@@ -34,7 +43,7 @@ class TTSProvider:
         self.running: bool = False
         self._thread: Optional[threading.Thread] = None
         self._audio_stream: AudioOutputStream = AudioOutputStream(
-            url=url, device=device
+            url=url, device=device_id, device_name=speaker_name
         )
 
     def register_tts_state_callback(self, tts_state_callback: Optional[Callable]):

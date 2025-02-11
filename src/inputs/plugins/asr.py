@@ -37,29 +37,19 @@ class ASRInput(FuserInput[str]):
         if hasattr(self.config, "base_url"):
             base_url = self.config.base_url
 
-        device_id = None
+        microphone_device_id = None
+        if hasattr(self.config, "microphone_device_id"):
+            microphone_device_id = self.config.microphone_device_id
+
+        microphone_name = None
         if hasattr(self.config, "microphone_name"):
             microphone_name = self.config.microphone_name
-            import pyaudio
 
-            p = pyaudio.PyAudio()
-            info = p.get_host_api_info_by_index(0)
-            numdevices = info.get("deviceCount")
-            for i in range(0, numdevices):
-                if (
-                    p.get_device_info_by_host_api_device_index(0, i).get(
-                        "maxInputChannels"
-                    )
-                ) > 0:
-                    name = p.get_device_info_by_host_api_device_index(0, i).get("name")
-                    if microphone_name in name:
-                        device_id = i
-                        logging.info(
-                            f"ASR: Found microphone specified in .json as '{name}' at ID:{device_id}"
-                        )
-                        break
-
-        self.asr: ASRProvider = ASRProvider(ws_url=base_url, device_id=device_id)
+        self.asr: ASRProvider = ASRProvider(
+            ws_url=base_url,
+            device_id=microphone_device_id,
+            microphone_name=microphone_name,
+        )
         self.asr.start()
         self.asr.register_message_callback(self._handle_asr_message)
 

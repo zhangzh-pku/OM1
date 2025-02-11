@@ -8,36 +8,6 @@ OT = T.TypeVar("OT")
 
 
 @dataclass
-class ActionConfig:
-    """
-    Configuration for an action.
-
-    Parameters
-    ----------
-    name : str
-        Name of the action
-    implementation : str
-        Implementation type for the action
-    interface : str
-        Interface type for the action
-    connector : str
-        Connector type for the action
-    config : dict
-        Additional configuration parameters
-    """
-
-    name: str
-    implementation: str
-    interface: str
-    connector: str
-    config: dict = None
-
-    def __post_init__(self):
-        if self.config is None:
-            self.config = {}
-
-
-@dataclass
 class Interface(T.Generic[IT, OT]):
     """
     An interface for a action.
@@ -48,6 +18,9 @@ class Interface(T.Generic[IT, OT]):
 
 
 class ActionImplementation(ABC, T.Generic[IT, OT]):
+    def __init__(self, config: T.Dict[str, str]):
+        self.config = config
+
     @abstractmethod
     async def execute(self, input_protocol: IT) -> OT:
         pass
@@ -62,6 +35,9 @@ class ActionImplementation(ABC, T.Generic[IT, OT]):
 
 
 class ActionConnector(ABC, T.Generic[OT]):
+    def __init__(self, config: T.Dict[str, str]):
+        self.config = config
+
     @abstractmethod
     async def connect(self, input_protocol: OT) -> None:
         pass
@@ -74,10 +50,7 @@ class ActionConnector(ABC, T.Generic[OT]):
 class AgentAction:
     """Base class for agent actions"""
 
-    config: ActionConfig
+    name: str
     interface: T.Type[Interface]
     implementation: ActionImplementation
     connector: ActionConnector
-
-    def __post_init__(self):
-        self.name = self.config.name
