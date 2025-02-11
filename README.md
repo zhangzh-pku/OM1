@@ -9,7 +9,6 @@ OM1 enables the creation and deployment of AI agents across both digital and phy
 
 For example, an AI agent built on OM1 can ingest data from multiple sources (the web, X/Twitter, cameras, and LIDAR) and can then Tweet and explore your house, shake your hand, or talk to you. In another example, with OM1, you can talk with OpenAI's `gpt-4o` and literally shake hands with it.
 
-
 ## Capabilities of OM1
 
 * Simple, modular architecture
@@ -17,16 +16,15 @@ For example, an AI agent built on OM1 can ingest data from multiple sources (the
 * Easy to add new data inputs
 * Easy to support new hardware via plugins for API endpoints and specific robot hardware
 * Can be connected to `ROS2`, `Zenoh`, and `CycloneDDS`
-* Includes a simple web-based debug display to watch the system work (`WebSim` at http://localhost:8000)
-* Preconfigured endpoints for Voice-to-Speech, OpenAI's `gpt-4o`, DeepSeek, and multiple VLMs
+* Includes a web-based debug display to watch the system work (`WebSim` at http://localhost:8000)
+* Preconfigured endpoints for Text-To-Speech (TTS), Speech-To-Text (ASR), OpenAI's `gpt-4o`, DeepSeek, and multiple VLMs
 
 ## Architecture Overview
   ![Artboard 1@4x 1 (1)](https://github.com/user-attachments/assets/14e9b916-4df7-4700-9336-2983c85be311)
 
-
 ## Hello World
 
-The `Spot` agent uses your webcam to label objects and sends those captions to `OpenAI 4o`. The LLM then returns `movement`, `speech`, and `face` commands, which are displayed in `WebSim`. `WebSim` also shows basic timing and other debug information.
+The `Spot` agent uses your webcam to label objects and sends those captions to `OpenAI 4o`. The LLM returns `movement`, `speech`, and `face` commands, which are displayed in `WebSim`. `WebSim` also shows basic timing and other debug information.
 
 1. Clone the repo
 
@@ -38,6 +36,8 @@ uv venv
 ```
 
 Note: If you don't have the Rust python package manager `uv`, please install it via `brew install uv` (for Mac) and `curl -LsSf https://astral.sh/uv/install.sh | sh` for Linux.
+
+Note: If your system doesn't have `portaudio`, you can install it via `brew install portaudio` (Mac) or `sudo apt-get install libasound-dev` (Linux).
 
 2. Set configuration variables
 
@@ -52,12 +52,13 @@ Add your Openmind API key in `/config/spot.json`. You can obtain a free access k
 
 3. Run Spot, a `Hello World` agent
 
-If your system doesn't have `portaudio`, you can install it via `brew install portaudio` (Mac) or `sudo apt-get install libasound-dev` (Linux).
-
 ```bash run spot
 uv run src/run.py spot
-...
+```
 
+After a short delay, you can see real time inputs and outputs in the web debug page at http://localhost:8000 and logging information in the terminal:
+
+```bash
 INFO:root:SendThisToROS2: {'move': 'dance'}
 INFO:root:SendThisToROS2: {'speak': "Hello, it's so nice to see you! Let's dance together!"}
 INFO:root:SendThisToROS2: {'face': 'joy'}
@@ -79,13 +80,13 @@ INFO:root:Inputs and LLM Outputs: {
 	}
 ```
 
-Success! You have now used OM1 to run your first agent. You can see real time inputs and outputs in a web debug page at http://localhost:8000, and logging information in the terminal.
+Success! You have now used OM1 to run your first agent.
 
 Add `--debug` to see more logging information.
 
 ## Detailed Documentation
 
-More detailed documentation can be accessed at [docs.openmind.org](https://docs.openmind.org/introduction) and in this repo:
+More detailed documentation can be accessed at [docs.openmind.org](https://docs.openmind.org/introduction) and in this repo.
 
 Highlights:
 
@@ -94,7 +95,7 @@ Highlights:
 - [Developer Guide](./docs/development/guide.mdx)
 - [Example 1 - Using DeepSeek or Gemini as the Core LLM](./docs/examples/llm_models.mdx)
 - [Example 2 - Using Cloud Endpoints for Voice Inputs and Text to Speech](./docs/examples/conversation.mdx)
-- [Example 3 - An interactive Smart Toy](./docs/examples/smart_toy.mdx)
+- [Example 3 - An Interactive Smart Toy](./docs/examples/smart_toy.mdx)
 - [Robotics - Unitree Dog](./docs/robotics/unitree_robotics.mdx)
 - [Robotics - Unitree Dog with Wallet](./docs/robotics/coinbase_hackathon.mdx)
 
