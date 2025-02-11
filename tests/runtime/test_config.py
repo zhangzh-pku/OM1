@@ -3,7 +3,13 @@ from unittest.mock import mock_open, patch
 
 import pytest
 
-from actions.base import AgentAction
+from actions.base import (
+    ActionConfig,
+    ActionConnector,
+    ActionImplementation,
+    AgentAction,
+    Interface,
+)
 from inputs.base import Sensor, SensorConfig
 from llm import LLM
 from llm.output_model import CortexOutputModel
@@ -39,12 +45,31 @@ def mock_dependencies():
             super().__init__(config)
 
     class MockAction(AgentAction):
-        def __init__(self):
+        def __init__(self, config=None):
+            if config is None:
+                config = ActionConfig(
+                    name="mock_action",
+                    implementation="mock_implementation",
+                    interface="mock_interface",
+                    connector="mock_connector",
+                )
+
+            class MockInterface(Interface):
+                pass
+
+            class MockImplementation(ActionImplementation):
+                async def execute(self, input_protocol):
+                    pass
+
+            class MockConnector(ActionConnector):
+                async def connect(self, input_protocol):
+                    pass
+
             super().__init__(
-                name="mock_action",
-                implementation="mock_implementation",
-                interface="mock_interface",
-                connector="mock_connector",
+                config=config,
+                interface=MockInterface,
+                implementation=MockImplementation(),
+                connector=MockConnector(),
             )
 
     class MockSimulator(Simulator):

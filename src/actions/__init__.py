@@ -2,7 +2,13 @@ import importlib
 import typing as T
 from enum import Enum
 
-from actions.base import ActionConnector, ActionImplementation, AgentAction, Interface
+from actions.base import (
+    ActionConfig,
+    ActionConnector,
+    ActionImplementation,
+    AgentAction,
+    Interface,
+)
 
 
 def describe_action(action_name: str) -> str:
@@ -40,19 +46,36 @@ def describe_action(action_name: str) -> str:
 
 
 def load_action(action_config: dict[str, str]) -> AgentAction:
+    """
+    Load an action from configuration.
+
+    Parameters
+    ----------
+    action_config : dict
+        Action configuration dictionary
+
+    Returns
+    -------
+    AgentAction
+        Instantiated action with loaded components
+    """
+    config = ActionConfig(**action_config)
+
     interface = None
-    action = importlib.import_module(f"actions.{action_config['name']}.interface")
+    action = importlib.import_module(f"actions.{config.name}.interface")
     for _, obj in action.__dict__.items():
         if isinstance(obj, type) and issubclass(obj, Interface) and obj != Interface:
             interface = obj
     if interface is None:
-        raise ValueError(f"No interface found for action {action_config['name']}")
+        raise ValueError(f"No interface found for action {config.name}")
+
     implementation = importlib.import_module(
-        f"actions.{action_config['name']}.implementation.{action_config['implementation']}"
+        f"actions.{config.name}.implementation.{config.implementation}"
     )
     connector = importlib.import_module(
-        f"actions.{action_config['name']}.connector.{action_config['connector']}"
+        f"actions.{config.name}.connector.{config.connector}"
     )
+
     implementation_class = None
     connector_class = None
     for _, obj in implementation.__dict__.items():
@@ -61,16 +84,18 @@ def load_action(action_config: dict[str, str]) -> AgentAction:
     for _, obj in connector.__dict__.items():
         if isinstance(obj, type) and issubclass(obj, ActionConnector):
             connector_class = obj
+
     if implementation_class is None:
         raise ValueError(
-            f"No implementation found for action {action_config['name']} implementation {action_config['implementation']}"
+            f"No implementation found for action {config.name} implementation {config.implementation}"
         )
     if connector_class is None:
         raise ValueError(
-            f"No connector found for action {action_config['name']} connector {action_config['connector']}"
+            f"No connector found for action {config.name} connector {config.connector}"
         )
+
     return AgentAction(
-        name=action_config["name"],
+        config=config,
         interface=interface,
         implementation=implementation_class(),
         connector=connector_class(),
