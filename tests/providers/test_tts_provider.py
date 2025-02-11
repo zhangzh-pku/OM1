@@ -41,7 +41,9 @@ def test_initialization(mock_audio_stream):
     provider = TTSProvider(url="test_url")
     assert provider.running is False
     assert provider._thread is None
-    mock_audio_stream.assert_called_once_with(url="test_url", device=None)
+    mock_audio_stream.assert_called_once_with(
+        url="test_url", device=None, device_name=None
+    )
 
 
 def test_start_stop(mock_audio_stream):

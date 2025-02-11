@@ -2,7 +2,13 @@ import importlib
 import typing as T
 from enum import Enum
 
-from actions.base import ActionConnector, ActionImplementation, AgentAction, Interface
+from actions.base import (
+    ActionConfig,
+    ActionConnector,
+    ActionImplementation,
+    AgentAction,
+    Interface,
+)
 
 
 def describe_action(action_name: str) -> str:
@@ -74,7 +80,7 @@ def load_action(
         raise ValueError(
             f"No connector found for action {action_config['name']} connector {action_config['connector']}"
         )
-    config = action_config.get("config", {})
+    config = ActionConfig(**action_config.get("config", {}))
     return AgentAction(
         name=action_config["name"],
         interface=interface,

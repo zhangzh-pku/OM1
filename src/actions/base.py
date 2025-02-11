@@ -8,6 +8,22 @@ OT = T.TypeVar("OT")
 
 
 @dataclass
+class ActionConfig:
+    """
+    Configuration class for Action implementations.
+
+    Parameters
+    ----------
+    **kwargs : dict
+        Additional configuration parameters
+    """
+
+    def __init__(self, **kwargs):
+        for key, value in kwargs.items():
+            setattr(self, key, value)
+
+
+@dataclass
 class Interface(T.Generic[IT, OT]):
     """
     An interface for a action.
@@ -18,8 +34,9 @@ class Interface(T.Generic[IT, OT]):
 
 
 class ActionImplementation(ABC, T.Generic[IT, OT]):
-    def __init__(self, config: T.Dict[str, str]):
+    def __init__(self, config: ActionConfig):
         self.config = config
+        pass
 
     @abstractmethod
     async def execute(self, input_protocol: IT) -> OT:
@@ -35,7 +52,7 @@ class ActionImplementation(ABC, T.Generic[IT, OT]):
 
 
 class ActionConnector(ABC, T.Generic[OT]):
-    def __init__(self, config: T.Dict[str, str]):
+    def __init__(self, config: ActionConfig):
         self.config = config
 
     @abstractmethod

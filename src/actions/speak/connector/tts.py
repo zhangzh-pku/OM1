@@ -1,6 +1,4 @@
-import typing as T
-
-from actions.base import ActionConnector
+from actions.base import ActionConfig, ActionConnector
 from actions.speak.interface import SpeakInput
 from providers.asr_provider import ASRProvider
 from providers.tts_provider import TTSProvider
@@ -8,24 +6,24 @@ from providers.tts_provider import TTSProvider
 
 class SpeakRos2Connector(ActionConnector[SpeakInput]):
 
-    def __init__(self, config: T.Dict[str, str]):
+    def __init__(self, config: ActionConfig):
         super().__init__(config)
 
         microphone_device_id = None
-        if "microphone_device_id" in config:
-            microphone_device_id = config["microphone_device_id"]
+        if hasattr(self.config, "microphone_device_id"):
+            microphone_device_id = self.config.microphone_device_id
 
         speaker_device_id = None
-        if "speaker_device_id" in config:
-            speaker_device_id = config["speaker_device_id"]
+        if hasattr(self.config, "speaker_device_id"):
+            speaker_device_id = self.config.speaker_device
 
         microphone_name = None
-        if "microphone_name" in config:
-            microphone_name = config["microphone_name"]
+        if hasattr(self.config, "microphone_name"):
+            microphone_name = self.config.microphone_name
 
         speaker_name = None
-        if "speaker_name" in config:
-            speaker_name = config["speaker_name"]
+        if hasattr(self.config, "speaker_name"):
+            speaker_name = self.config.speaker_name
 
         # Initialize ASR and TTS providers
         self.asr = ASRProvider(
