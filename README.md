@@ -3,9 +3,9 @@
 
 <p align="center">  <a href="https://arxiv.org/abs/2412.18588">Technical Paper</a> |  <a href="https://docs.openmind.org/examples/conversation">Documentation</a> |  <a href="https://x.com/openmind_agi">X</a> </p>
 
-**Openmind's OM1 is a modular AI runtime for agents and robots with capabilities including movement and speech.**
+**Openmind's OM1 is a modular AI runtime for agents and robots with multimodal capabilities including movement and speech.**
 
-OM1 allows AI agents to be configured and then deployed in both the digital and physical world. You can create *one* AI agent and run it in the cloud but also on physical robot hardware such as Quadrupeds, and, soon, TurtleBot 3 and Humanoids. 
+OM1 enables the creation and deployment of AI agents across both digital and physical environments. This means you can design a single AI agent and deploy it not only in the cloud but also on a variety of physical robot platforms, including Quadrupeds, with future support for TurtleBot 3 and Humanoids. This flexibility allows for seamless integration and testing of AI capabilities across different domains, from simulation to real-world applications.
 
 For example, an AI agent built on OM1 can ingest data from multiple sources (the web, X/Twitter, cameras, and LIDAR) and can then Tweet and explore your house, shake your hand, or talk to you. In another example, with OM1, you can talk with OpenAI's `gpt-4o` and literally shake hands with it.
 
@@ -52,6 +52,8 @@ Add your Openmind API key in `/config/spot.json`. You can obtain a free access k
 
 3. Run Spot, a `Hello World` agent
 
+If your system doesn't have `portaudio`, you can install it via `brew install portaudio` (Mac) or `sudo apt-get install libasound-dev` (Linux).
+
 ```bash run spot
 uv run src/run.py spot
 ...
@@ -77,7 +79,7 @@ INFO:root:Inputs and LLM Outputs: {
 	}
 ```
 
-You will see logging information in the terminal and you can see real time inputs and outputs in a web debug page at http://localhost:8000. 
+Success! You have now used OM1 to run your first agent. You can see real time inputs and outputs in a web debug page at http://localhost:8000, and logging information in the terminal.
 
 Add `--debug` to see more logging information.
 
@@ -98,11 +100,13 @@ Highlights:
 
 ## Contributing
 
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Submit a pull request
+To contribute to this project, follow these steps:
+
+1. **Fork the repository**: Go to the project's GitHub page and click the "Fork" button in the top-right corner. This will create a copy of the project in your own GitHub account.
+2. **Create a feature branch**: In your forked repository, create a new branch for your changes. This branch should be named something like `feature/your-feature-name` or `fix/your-fix-name`. This helps to keep your changes organized and makes it easier to manage multiple contributions.
+3. **Make your changes**: Make the necessary changes to the code in your feature branch. Ensure that your changes are well-documented and follow OM1's coding style.
+4. **Submit a pull request**: Once you've made your changes, submit a pull request to the original repository. This will notify the maintainers of your changes and allow them to review and discuss your contribution.
 
 ## License
 
-This project is licensed under the terms of the MIT license.
+This project is licensed under the terms of the MIT License, which is a permissive free software license that allows users to freely use, modify, and distribute the software. The MIT License is a widely used and well-established license that is known for its simplicity and flexibility. By using the MIT License, this project aims to encourage collaboration, modification, and distribution of the software.
