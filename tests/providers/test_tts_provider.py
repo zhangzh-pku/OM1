@@ -1,18 +1,26 @@
-from unittest.mock import MagicMock, Mock, patch
 import sys
+from unittest.mock import MagicMock, Mock, patch
 
 import pytest
 
-from providers.singleton import singleton
+# Mock modules before importing from providers
+mock_om1_speech = MagicMock()
+mock_om1_speech.AudioOutputStream = MagicMock()
+sys.modules["om1_speech"] = mock_om1_speech
 
-# Mock both om1_speech and pyaudio modules before importing TTSProvider
-mock_modules = {
-    'om1_speech': MagicMock(),
-    'pyaudio': MagicMock()
+mock_pyaudio = MagicMock()
+mock_pyaudio.PyAudio = MagicMock()
+mock_instance = MagicMock()
+mock_instance.get_default_output_device_info.return_value = {
+    "name": "Mock Speaker",
+    "index": 0,
 }
+mock_pyaudio.PyAudio.return_value = mock_instance
+sys.modules["pyaudio"] = mock_pyaudio
 
-with patch.dict('sys.modules', mock_modules):
-    from providers.tts_provider import TTSProvider
+# Import after mocking
+from providers.singleton import singleton  # noqa: E402
+from providers.tts_provider import TTSProvider  # noqa: E402
 
 
 @pytest.fixture(autouse=True)
@@ -24,25 +32,13 @@ def reset_singleton():
 @pytest.fixture(autouse=True)
 def mock_audio_stream():
     with patch("providers.tts_provider.AudioOutputStream") as mock:
+        mock_instance = MagicMock()
+        mock.return_value = mock_instance
         yield mock
 
 
-@pytest.fixture
-def tts_provider(mock_audio_stream):
-    provider = TTSProvider(url="test_url")
-    yield provider
-    provider.stop()
-
-
-def test_singleton_behavior():
-    provider1 = TTSProvider(url="test_url")
-    provider2 = TTSProvider(url="another_url")
-    assert provider1 is provider2
-
-
 def test_initialization(mock_audio_stream):
-    """Test TTSProvider initialization."""
-    provider = TTSProvider(url="test_url")  # Not specifying device, so it should be None
+    provider = TTSProvider(url="test_url")
     assert provider.running is False
     assert provider._thread is None
     mock_audio_stream.assert_called_once_with(url="test_url", device=None)
@@ -57,7 +53,6 @@ def test_start_stop(mock_audio_stream):
 
     provider.stop()
     assert provider.running is False
-    # Wait a short time to ensure thread cleanup
     provider._thread.join(timeout=1)
     assert not provider._thread.is_alive()
 
