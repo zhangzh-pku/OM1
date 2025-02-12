@@ -27,6 +27,9 @@ def mock_config_data():
                 "name": "test_action",
                 "implementation": "test_implementation",
                 "connector": "test_connector",
+                "config": {
+                    "arg1": "val1",
+                },
             }
         ],
     }

@@ -34,11 +34,22 @@ class ASRInput(FuserInput[str]):
 
         # Initialize ASR provider
         base_url = "wss://api-asr.openmind.org"
-
         if hasattr(self.config, "base_url"):
             base_url = self.config.base_url
 
-        self.asr: ASRProvider = ASRProvider(ws_url=base_url)
+        microphone_device_id = None
+        if hasattr(self.config, "microphone_device_id"):
+            microphone_device_id = self.config.microphone_device_id
+
+        microphone_name = None
+        if hasattr(self.config, "microphone_name"):
+            microphone_name = self.config.microphone_name
+
+        self.asr: ASRProvider = ASRProvider(
+            ws_url=base_url,
+            device_id=microphone_device_id,
+            microphone_name=microphone_name,
+        )
         self.asr.start()
         self.asr.register_message_callback(self._handle_asr_message)
 
