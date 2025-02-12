@@ -9,7 +9,7 @@ from typing import Dict, List, Optional
 from inputs.base import SensorConfig
 from inputs.base.loop import FuserInput
 from providers.io_provider import IOProvider
-from providers.vlm_provider import VLMProvider
+from providers.vlm_websocket_provider import VLMWebSocketProvider
 
 
 @dataclass
@@ -62,7 +62,7 @@ class VLMCloud(FuserInput[str]):
         # Initialize VLM provider
         base_url = getattr(self.config, "base_url", "wss://api-vila.openmind.org")
 
-        self.vlm: VLMProvider = VLMProvider(ws_url=base_url)
+        self.vlm: VLMWebSocketProvider = VLMWebSocketProvider(ws_url=base_url)
         self.vlm.start()
         self.vlm.register_message_callback(self._handle_vlm_message)
 

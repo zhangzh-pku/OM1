@@ -8,7 +8,7 @@ from inputs.plugins.vlm_cloud import Message, VLMCloud
 
 @pytest.fixture
 def mock_vlm_provider():
-    with patch("inputs.plugins.vlm_cloud.VLMProvider") as mock:
+    with patch("inputs.plugins.vlm_cloud.VLMWebSocketProvider") as mock:
         mock_instance = Mock()
         mock.return_value = mock_instance
         yield mock_instance
