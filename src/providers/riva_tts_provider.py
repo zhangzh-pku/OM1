@@ -49,7 +49,7 @@ class RivaTTSProvider:
             url=url,
             device=device_id,
             device_name=speaker_name,
-            api_key={"x-api-key": api_key} if api_key else None,
+            headers={"x-api-key": api_key} if api_key else None,
         )
 
     def register_tts_state_callback(self, tts_state_callback: Optional[Callable]):
