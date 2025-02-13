@@ -19,8 +19,8 @@ mock_pyaudio.PyAudio.return_value = mock_instance
 sys.modules["pyaudio"] = mock_pyaudio
 
 # Import after mocking
+from providers.riva_tts_provider import TTSProvider  # noqa: E402
 from providers.singleton import singleton  # noqa: E402
-from providers.tts_provider import TTSProvider  # noqa: E402
 
 
 @pytest.fixture(autouse=True)
