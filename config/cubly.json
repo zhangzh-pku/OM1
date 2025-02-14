@@ -30,7 +30,7 @@
     {
       "name": "speak",
       "implementation": "passthrough",
-      "connector": "tts"
+      "connector": "elevenlabs_tts"
     }
   ]
 }
