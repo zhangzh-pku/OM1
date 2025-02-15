@@ -42,8 +42,7 @@ _Note 2:_ If your system doesn't have `portaudio`, you should install it to run 
 * On Linux, use `sudo apt-get install libasound-dev`
 Similarily, you may need `ffmpeg`.
 
-2. Set the configuration variables. \
-Locate the `config` folder and add your Openmind API key in `/config/spot.json`. If you do not already have one, you can obtain a free access key at https://portal.openmind.org/.  
+2. Set the configuration variables. Locate the `config` folder and add your Openmind API key in `/config/spot.json`. If you do not already have one, you can obtain a free access key at https://portal.openmind.org/.  
 
 _Note:_ Using the placeholder key **openmind-free** will generate errors.
 
@@ -95,6 +94,20 @@ Congratulations!, you just got started with OM1 and can now explore its capabili
 * Add new `inputs` and `actions`.
 * Design custom agents and robots by creating your own json config file with different combinations of inputs and actions, based on your needs.
 * Change the system prompts in the configuration files (located in `/config/`) to create new behaviors.
+
+## Interfacing with New Robot Hardware
+
+OM1 assumes that robot hardware provides a high-level SDK that accepts elemental movement and ac tion commands such as `backflip`, `run`, `gently pick up the red apple`, `move(0.37, 0, 0)`, and `smile`. An example is provided in `actions/move_safe/connector/ros2.py`:
+
+```
+...
+elif output_interface.action == "shake paw":
+    if self.sport_client:
+        self.sport_client.Hello()
+...
+```
+
+If your robot hardware does not yet provide a suitable HAL (hardware absttration layer), tradtional robotics approaches such as RL (reinforment learning) in concert with suitalbe simulatorion enviorments (Unity, Gazebo), sensors (such as hand mounted Zev depth cameras), and custom VLAs will be needed for you to create one. It is further assumed that your HAL accepts motion trajectories, provides all battery and thermal maangment and moniotirng, and calibtates and tunes sensors such as IMUs, LIDARS, and magetomoters.
 
 ## Detailed Documentation
 
