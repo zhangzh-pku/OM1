@@ -119,8 +119,8 @@ If your robot hardware does not yet provide a suitable HAL (hardware abstraction
 OM1 is developed on:
 
 * Jetson AGX Orin 64GB (running Ubuntu 22.04 and JetPack 6.1)
-* Mac Studio with Apple M2 Ultra with 48 GB unified memory (running macOS Seqoia)
-* Mac Mini with Apple M4 Pro with 48 GB unified memory (running macOS Seqoia)
+* Mac Studio with Apple M2 Ultra with 48 GB unified memory (running macOS Sequoia)
+* Mac Mini with Apple M4 Pro with 48 GB unified memory (running macOS Sequoia)
 * Generic Linux machines (running Ubuntu 22.04)
 
 OM1 _should_ run on other platforms (such as Windows) and microcontrollers such as the Raspberry Pi 5 16GB.
