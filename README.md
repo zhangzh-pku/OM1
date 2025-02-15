@@ -109,6 +109,17 @@ elif output_interface.action == "shake paw":
 
 If your robot hardware does not yet provide a suitable HAL (hardware abstraction layer), traditional robotics approaches such as RL (reinforcement learning) in concert with suitable simulation environments (Unity, Gazebo), sensors (such as hand mounted ZED depth cameras), and custom VLAs will be needed for you to create one. It is further assumed that your HAL accepts motion trajectories, provides all battery and thermal management/monitoring, and calibrates and tunes sensors such as IMUs, LIDARs, and magnetometers. OM1 can interface with your HAL via USB, serial, ROS2, CycloneDDS, Zenoh, or websockets. For an example of an advanced humanoid HAL, please see [Unitree's C++ SDK](https://github.com/unitreerobotics/unitree_sdk2/blob/adee312b081c656ecd0bb4e936eed96325546296/example/g1/high_level/g1_loco_client_example.cpp#L159). Frequently, a HAL, especially ROS2 code, will be dockerized and can then interface with OM1 through DDS middleware or websockets.   
 
+## Recommended Development Platforms
+
+OM1 is developed on:
+
+* Jetson AGX Orin 64GB (running Ubuntu 22.04 and JetPack 6.1)
+* Mac Studio with Apple M2 Ultra with 48 GB unified memory (running macOS Seqoia)
+* Mac Mini with Apple M4 Pro with 48 GB unified memory (running macOS Seqoia)
+* Generic Linux machines (running Ubuntu 22.04)
+
+OM1 _should_ run on other platforms (such as Windows) and microcontrollers such as the Raspberry Pi 5 16GB.
+
 ## Detailed Documentation
 
 More detailed documentation can be accessed at [docs.openmind.org](https://docs.openmind.org/introduction) and in this repo.
