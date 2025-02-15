@@ -37,7 +37,7 @@ uv venv
 
 Note: If you don't have the Rust python package manager `uv`, please install it via `brew install uv` (for Mac) and `curl -LsSf https://astral.sh/uv/install.sh | sh` for Linux.
 
-Note: If your system doesn't have `portaudio`, you can install it via `brew install portaudio` (Mac) or `sudo apt-get install libasound-dev` (Linux).
+Note: Depending on your system, you may also need other packages, such as `portaudio` and `ffmpeg`. You can install them via `brew install portaudio` (Mac) or `sudo apt-get install libasound-dev` (Linux), and `brew install ffmpeg` or similar commands).
 
 2. Set configuration variables
 
