@@ -33,23 +33,24 @@ git submodule update --init
 uv venv
 ```
 
-_Note 1:_ You will need to have the Rust Python package manager `uv` installed to run the program.
-* To install on MAC OS X, type the command using Homebrew `brew install uv`.
-* On Linux, type the shell command `curl -LsSf https://astral.sh/uv/install.sh | sh`.
+_Note 1:_ You will need the Rust Python package manager `uv`.
+* To install on Mac, use `brew install uv`.
+* On Linux, use `curl -LsSf https://astral.sh/uv/install.sh | sh`.
 
 _Note 2:_ If your system doesn't have `portaudio`, you should install it to run the program.
-* To install on MAC OS X, type the command using Homebrew `brew install portaudio`
-* On Linux, type the shell command `sudo apt-get install libasound-dev`
+* To install on Mac, use `brew install portaudio`
+* On Linux, use `sudo apt-get install libasound-dev`
+Similarily, you may need `ffmpeg`.
 
 2. Set the configuration variables. \
 Locate the `config` folder and add your Openmind API key in `/config/spot.json`. If you do not already have one, you can obtain a free access key at https://portal.openmind.org/.  
 
-_Note:_ Using the placeholder key **openmind-free** may be rate-limited.
+_Note:_ Using the placeholder key **openmind-free** will generate errors.
 
 ```bash set api key
 # /config/spot.json
 ...
-"api_key": "openmind_om1_pat_2f1cf005af........."
+"api_key": "2f1cf005af........."
 ...
 ```
 
