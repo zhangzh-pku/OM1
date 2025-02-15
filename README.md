@@ -22,7 +22,7 @@ An AI agent built on OM1 is capable of ingesting data from multiple sources (the
 
 ## Hands-On with OM1: 'Hello World' program
 
-In this example program, _Hello World_, let's create an AI agent named Spot. This program enables the '_Spot_' agent to access your webcam to capture and label objects. These label captions are then sent to `OpenAI 4o`, a large language model (LLM) which returns commands like `movement`, `speech` and `face`. These commands are displayed on WebSim along with basic timing and other debugging information.
+Let's create an AI agent named Spot. The Spot agent uses your webcam to capture and label objects. These text captions are then sent to `OpenAI 4o`, a large language model (LLM) which then returns `movement`, `speech` and `face` action commands. These commands are displayed on WebSim along with basic timing and other debugging information.
 
 1. Clone the repo.
 
@@ -40,9 +40,12 @@ _Note 1:_ You will need the Rust Python package manager `uv`.
 _Note 2:_ If your system doesn't have `portaudio`, you should install it to run the program.
 * To install on Mac, use `brew install portaudio`
 * On Linux, use `sudo apt-get install libasound-dev`
+
 Similarily, you may need `ffmpeg`.
 
-2. Set the configuration variables. Locate the `config` folder and add your Openmind API key in `/config/spot.json`. If you do not already have one, you can obtain a free access key at https://portal.openmind.org/.  
+2. Set the configuration variables. 
+
+Locate the `config` folder and add your Openmind API key in `/config/spot.json`. If you do not already have one, you can obtain a free access key at https://portal.openmind.org/.  
 
 _Note:_ Using the placeholder key **openmind-free** will generate errors.
 
@@ -53,7 +56,7 @@ _Note:_ Using the placeholder key **openmind-free** will generate errors.
 ...
 ```
 
-3. Run the `spot` "Hello World" agent.
+3. Run the `spot` agent.
 
 ```bash run spot
 uv run src/run.py spot
@@ -82,11 +85,13 @@ INFO:root:Inputs and LLM Outputs: {
 		'input': 'You see a person in front of you.'}]
 	}
 ```
-4. Go to [http://localhost:8000](http://localhost:8000) to see real time logs along with 
- the input and output in the terminal. \
-For easy debugging, add `--debug` to see additional logging information.
 
-Congratulations!, you just got started with OM1 and can now explore its capabilities.
+4. WebSim
+
+Go to [http://localhost:8000](http://localhost:8000) to see real time logs along with 
+ the input and output in the terminal. For easy debugging, add `--debug` to see additional logging information.
+
+Congratulations! - you just got started with OM1 and can now explore its capabilities.
 
 ## What's Next?
 
