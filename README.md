@@ -97,7 +97,7 @@ Congratulations!, you just got started with OM1 and can now explore its capabili
 
 ## Interfacing with New Robot Hardware
 
-OM1 assumes that robot hardware provides a high-level SDK that accepts elemental movement and ac tion commands such as `backflip`, `run`, `gently pick up the red apple`, `move(0.37, 0, 0)`, and `smile`. An example is provided in `actions/move_safe/connector/ros2.py`:
+OM1 assumes that robot hardware provides a high-level SDK that accepts elemental movement and action commands such as `backflip`, `run`, `gently pick up the red apple`, `move(0.37, 0, 0)`, and `smile`. An example is provided in `actions/move_safe/connector/ros2.py`:
 
 ```
 ...
@@ -107,7 +107,7 @@ elif output_interface.action == "shake paw":
 ...
 ```
 
-If your robot hardware does not yet provide a suitable HAL (hardware absttration layer), tradtional robotics approaches such as RL (reinforment learning) in concert with suitalbe simulatorion enviorments (Unity, Gazebo), sensors (such as hand mounted Zev depth cameras), and custom VLAs will be needed for you to create one. It is further assumed that your HAL accepts motion trajectories, provides all battery and thermal maangment and moniotirng, and calibtates and tunes sensors such as IMUs, LIDARS, and magetomoters.
+If your robot hardware does not yet provide a suitable HAL (hardware abstraction layer), traditional robotics approaches such as RL (reinforcement learning) in concert with suitable simulation environments (Unity, Gazebo), sensors (such as hand mounted ZED depth cameras), and custom VLAs will be needed for you to create one. It is further assumed that your HAL accepts motion trajectories, provides all battery and thermal management/monitoring, and calibrates and tunes sensors such as IMUs, LIDARS, and magnetometers. OM1 can interface with your HAL via USB, serial, ROS2, CycloneDDS, Zenoh, or websockets. For an example of an advanced humanoid HAL, please see [Unitree's C++ SDK](https://github.com/unitreerobotics/unitree_sdk2/blob/adee312b081c656ecd0bb4e936eed96325546296/example/g1/high_level/g1_loco_client_example.cpp#L159) 
 
 ## Detailed Documentation
 
