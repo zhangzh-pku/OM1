@@ -50,11 +50,11 @@ _Note:_ Using the placeholder key **openmind-free** will generate errors.
 ```bash set api key
 # /config/spot.json
 ...
-"api_key": "2f1cf005af........."
+"api_key": "om1_live_e4252f1cf005af..."
 ...
 ```
 
-3. Run the program with `Spot`, a `Hello World` agent we created.
+3. Run the `spot` "Hello World" agent.
 
 ```bash run spot
 uv run src/run.py spot
@@ -88,6 +88,13 @@ INFO:root:Inputs and LLM Outputs: {
 For easy debugging, add `--debug` to see additional logging information.
 
 Congratulations!, you just got started with OM1 and can now explore its capabilities.
+
+## What's Next?
+
+* Try out more examples, such as `uv run src/run.py conversation`.
+* Add new `inputs` and `actions`.
+* Design custom agents and robots by creating your own json config file with different combinations of inputs and actions, based on your needs.
+* Change the system prompts in the configuration files (located in `/config/`) to create new behaviors.
 
 ## Detailed Documentation
 
