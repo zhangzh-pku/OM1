@@ -92,6 +92,13 @@ class UnitreeG1Basic(FuserInput[str]):
         self.latest_v = 0.0
         self.latest_a = 0.0
 
+        """
+        Battery:
+        Might be 13 cells? = 54.6 at full charge?
+        Charger spec is 54V 5A  
+        So nominal (3.6V each) would be 3.60*13 = 46.8
+        """
+
         self.g1_lowbatt = 47.0  # confirm this
         self.descriptor_for_LLM = "Basic State"
 
