@@ -3,6 +3,17 @@ title: Unitree Robotics
 description: "Unitree G1 Humanoid"
 ---
 
+## Useful links and reading 
+
+https://support.unitree.com/home/en/G1_developer
+https://github.com/unitreerobotics/avp_teleoperate
+
+C++ SDK
+https://github.com/unitreerobotics/unitree_sdk2
+
+Python SDK
+https://github.com/unitreerobotics/unitree_sdk2_python
+
 ## Basic commands
 
 Run
@@ -13,74 +24,88 @@ uv run src/run.py unitree_g1
 
 ## System Description
 
-Humanoid Network Architecture
-
-* operation and control computing unit
-* development computing unit
-
 Your computer will be at `192.168.123.99`
-The factory ip address of the LIDAR is set to `192.168.123.120`
-The internal control computer (RockChip) will be at `192.168.123.161`
-The internal development computer (Orin 16GB) will be at `192.168.123.164`
+The factory ip address of the LIDAR is `192.168.123.120`
+The internal control computer (RockChip, aka the `operation and control computing unit`) is at `192.168.123.161`
+The internal development computer (Orin 16GB, aka the `development computing unit`) is at `192.168.123.164`
 
 ## Check CycloneDDS
 
 ./ddsperf sanity
 
 ## Turn the wifi on/off
+```
 sudo nmcli radio wifi on
+```
 
 ## Join network
-sudo nmcli device wifi connect Toucan password g=tudv4qr#jp
+```
+sudo nmcli device wifi connect XXXXX password XXXXX
+```
 
 ## Set time via NTP
+```
 sudo timedatectl set-ntp yes
+```
 
-## Controls via controller
+## Control via hand controller
 
-Hang Iris on gantry
+Hang G1 on gantry
+
 Turn on (short press, long press)
+
 Wait for boot to complete
-Press L2+R2 -> Enter DEVELOP STATE 
-Press L2+A  -> Diagnostic Posture (Arms bent)
-Press L2+B  -> Relax arms, damping state 
 
-Now you are all set for development 
+When the G1 boots, it is in `damp` state.
 
+Use the hand controller to command "L1+A" and "L1+UP", the system is ready to move using the `ai_sport` client. The system will respond to manual controller and SDK commands.
 
-Login to Orin, 
+* Press "L1+A" -> EMERGENCY DAMP / SINK TO FLOOR
+* Press "L1+UP" -> Stand firmly (aka "lock stand")
+* Press "Start" to switch back and forth between `stand` and `step in place`. 
+* SELECT + Y -> Wave Hand. Alternates sides
+* SELECT + A -> Handshake. Wait 3s and press again to relax arm to initial state 
+* SELECT + Click X -> Turn around and wave hand
 
-ssh to Orin via `ssh unitree@192.168.123.164`
+Use the joysticks to move forwards and backwards, and to rotate/turn
 
-password is 123
+## Special DEBUG state
 
-Result: 
+Avoid this mode since it disables all high level motion since it turns off the `ai_sport` client.
+
+* Press L2+R2 -> Enter DEBUG STATE 
+* Press L2+A  -> Diagnostic Posture (Arms bent)
+* Press L2+B  -> Relax arms, damping state 
+
+To exit this mode, reboot the G1.
+
+## Using the internal Orin
+
+SSH to Orin via 
+
+```
+ssh unitree@192.168.123.164
+```
+
+The default password is `123` but you should obviously change this. Result:
+
+``` 
 Welcome to Ubuntu 20.04.6 LTS (GNU/Linux 5.10.104-tegra aarch64)
 Last login: Thu Jan  1 08:30:46 1970
 ros:foxy(1) noetic(2) ?
+```
 
 Select `foxy(1)`.
-
-Then you will get a login prompt 
-
-
-
-
-
-
 
 ## Install CycloneDDS on Orin
 
 Follow all instructions at https://github.com/unitreerobotics/unitree_ros2.
+
 ```
 export CYCLONEDDS_HOME="$HOME/unitree_ros2/cyclonedds_ws/install"
 ```
-You will need to correct the setting in `.bashrc`.
-```
-vim setup.sh
-```
 
-Set `~/unitree_ros2/setup.sh` to
+You will need to correct the setting in `.bashrc` and in `setup.sh`. Set `~/unitree_ros2/setup.sh` to
 
 ```bash
 #!/bin/bash
@@ -93,17 +118,9 @@ export CYCLONEDDS_URI='<CycloneDDS><Domain><General><Interfaces>
 </Interfaces></General></Domain></CycloneDDS>'
 ```
 
-and then source it: `source ~/unitree_ros2/setup.sh`.
+and then source it: `source ~/unitree_ros2/setup.sh`. Finally, 
 
-Finally, 
-
-```bash
-ros2 topic list
-ros2 topic type lowstate
-ros2 topic echo lowstate
-```
-
-```
+```bash ros2 topic echo lowstate
 ros2 topic echo lowcmd
 mode_pr: 0
 mode_machine: 4
@@ -117,9 +134,7 @@ motor_cmd:
   reserve: 0
 ```
 
-```bash
-## Topics:
-
+```bash ros2 topic list
 /EstimatorData
 /SymState
 /SymState_back
@@ -169,54 +184,50 @@ motor_cmd:
 /wirelesscontroller
 ```
 
-Something is then retransmitting various topics...
+rt/dex3/right/state unitree_hg::msg::dds_::HandState_
+rt/lf/dex3/right/state unitree_hg::msg::dds_::HandState_
+rt/dex3/right/cmd unitree_hg::msg::dds_::HandCmd_
+rt/EstimatorData unitree_go::msg::dds_::EstimatorData_
+rt/SymState_back unitree_go::msg::dds_::SymState_
+rt/odommodestate unitree_go::msg::dds_::SportModeState_
+rt/lf/odommodestate unitree_go::msg::dds_::SportModeState_
+rt/lowstate unitree_hg::msg::dds_::LowState_
+rt/SymState unitree_go::msg::dds_::SymState_
+rt/api/bashrunner/response unitree_api::msg::dds_::Response_
+rt/selftest std_msgs::msg::dds_::String_
+rt/api/bashrunner/request unitree_api::msg::dds_::Request_
+rt/lf/lowstate unitree_hg::msg::dds_::LowState_
+rt/api/motion_switcher/response unitree_api::msg::dds_::Response_
+rt/api/motion_switcher/request unitree_api::msg::dds_::Request_
+rt/config_change_status unitree_go::msg::dds_::ConfigChangeStatus_
+rt/api/config/response unitree_api::msg::dds_::Response_
+rt/api/config/request unitree_api::msg::dds_::Request_
+rt/api/robot_state/response unitree_api::msg::dds_::Response_
+rt/api/robot_state/request unitree_api::msg::dds_::Request_
+rt/servicestate std_msgs::msg::dds_::String_
+rt/multiplestate std_msgs::msg::dds_::String_
+rt/public_network_status std_msgs::msg::dds_::String_
+rt/gnss std_msgs::msg::dds_::String_
+rt/lf/bmsstate unitree_hg::msg::dds_::BmsState_
+rt/lf/mainboardstate unitree_hg::msg::dds_::MainBoardState_
+rt/webrtcreq std_msgs::msg::dds_::String_
+rt/webrtcres std_msgs::msg::dds_::String_
+rt/lowcmd unitree_hg::msg::dds_::LowCmd_
+rt/lowstate_doubleimu unitree_hg_doubleimu::msg::dds_::doubleIMUState_
+rt/lf/lowstate_doubleimu unitree_hg_doubleimu::msg::dds_::doubleIMUState_
+rt/wirelesscontroller unitree_go::msg::dds_::WirelessController_
+rt/frontvideostream unitree_go::msg::dds_::Go2FrontVideoData_
+rt/audiosender unitree_go::msg::dds_::AudioData_
+rt/servicestateactivate std_msgs::msg::dds_::String_
+rt/rtc_status std_msgs::msg::dds_::String_
+rt/videohub/inner std_msgs::msg::dds_::String_
+rt/rtc/state std_msgs::msg::dds_::String_
+rt/api/bashrunner/request unitree_api::msg::dds_::Request_
+rt/lf/dex3/left/state unitree_hg::msg::dds_::HandState_
+rt/dex3/left/state unitree_hg::msg::dds_::HandState_
+rt/dex3/left/cmd unitree_hg::msg::dds_::HandCmd_
 
-Topics availible:
-
-alive: 41ac0d30:35f82484:e68370e8:04b03a12 rt/dex3/right/state unitree_hg::msg::dds_::HandState_
-alive: c2d9ef7f:58d4ee5b:ac52c37c:0f0e9d16 rt/lf/dex3/right/state unitree_hg::msg::dds_::HandState_
-alive: e64780d0:42d74c30:5dec4c3a:d3034d1d rt/dex3/right/cmd unitree_hg::msg::dds_::HandCmd_
-alive: 5e70f9cc:6dca079c:ef89027d:64adfe50 rt/EstimatorData unitree_go::msg::dds_::EstimatorData_
-alive: 00e07b52:0dba68f0:09d295d7:a31455c7 rt/SymState_back unitree_go::msg::dds_::SymState_
-alive: ae0946ae:5289a58d:3d3e4b87:e5113954 rt/odommodestate unitree_go::msg::dds_::SportModeState_
-alive: 68dba6e2:bdcd23dd:9716a351:533beae4 rt/lf/odommodestate unitree_go::msg::dds_::SportModeState_
-alive: 7ba8db62:f4e8a162:eb6cdedc:d33c7b58 rt/lowstate unitree_hg::msg::dds_::LowState_
-alive: 7969316b:eb06ae3a:a78d0232:b80ceacc rt/SymState unitree_go::msg::dds_::SymState_
-alive: c2bd3891:436200a6:bcf7d9fe:67115b31 rt/api/bashrunner/response unitree_api::msg::dds_::Response_
-alive: c0acff0c:48bc2d73:b9c0bc78:9a39ac86 rt/selftest std_msgs::msg::dds_::String_
-alive: 22066ccf:337367fe:bfc8f45d:07cb2de6 rt/api/bashrunner/request unitree_api::msg::dds_::Request_
-alive: 2bd43aae:49a5cd9f:804b77bf:54adeb29 rt/lf/lowstate unitree_hg::msg::dds_::LowState_
-alive: c3a612c2:99b329c6:22510d3d:d385e1e6 rt/api/motion_switcher/response unitree_api::msg::dds_::Response_
-alive: 78b1db7f:622f2dfe:fb4d9e8f:987083f0 rt/api/motion_switcher/request unitree_api::msg::dds_::Request_
-alive: e553c276:3cdb6d66:52898f8b:59b25a8c rt/config_change_status unitree_go::msg::dds_::ConfigChangeStatus_
-alive: 243d1a9a:beb73e99:a7438b89:8881ba7a rt/api/config/response unitree_api::msg::dds_::Response_
-alive: 9c38174a:b9719d10:5ceaf5d6:58cad182 rt/api/config/request unitree_api::msg::dds_::Request_
-alive: 42c7a686:b0e92d30:fe95d5c0:9af26c6f rt/api/robot_state/response unitree_api::msg::dds_::Response_
-alive: 09866cdd:dd97fa27:978c004f:3624dace rt/api/robot_state/request unitree_api::msg::dds_::Request_
-alive: fb0e8c0f:5f108434:e87e9cf7:7848477d rt/servicestate std_msgs::msg::dds_::String_
-alive: 6e9b68c3:8cb0df52:98603f8c:b934b1f6 rt/multiplestate std_msgs::msg::dds_::String_
-alive: 0582765e:bebc0d3c:31f2aa76:849d52d7 rt/public_network_status std_msgs::msg::dds_::String_
-alive: 5a1e209f:77622587:dff56d06:100b934a rt/gnss std_msgs::msg::dds_::String_
-alive: ab5bfc11:bde0355c:45e04f82:f09a69ff rt/lf/bmsstate unitree_hg::msg::dds_::BmsState_
-alive: 4bdecf17:03fb40fe:9647c6f7:41f716e5 rt/lf/mainboardstate unitree_hg::msg::dds_::MainBoardState_
-alive: 699e3ec7:13005f67:4165667f:a84d4593 rt/webrtcreq std_msgs::msg::dds_::String_
-alive: 921b611e:2649a718:a59ee5cd:22dc2309 rt/webrtcres std_msgs::msg::dds_::String_
-alive: ae15e7a8:2970c55d:efc5fd14:4994f569 rt/lowcmd unitree_hg::msg::dds_::LowCmd_
-alive: b179af32:ee8f9ae2:b57d67a2:f0db7843 rt/lowstate_doubleimu unitree_hg_doubleimu::msg::dds_::doubleIMUState_
-alive: 58deeec5:a8b422ad:5f8783ce:5ea1cc83 rt/lf/lowstate_doubleimu unitree_hg_doubleimu::msg::dds_::doubleIMUState_
-alive: 06f05795:ebf8f837:fb736321:16cd723d rt/wirelesscontroller unitree_go::msg::dds_::WirelessController_
-alive: 1c3b1069:4aa20466:30a3036b:c6b59fa8 rt/frontvideostream unitree_go::msg::dds_::Go2FrontVideoData_
-alive: 6f564b14:8d2a936a:e3ac501c:d0fa740f rt/audiosender unitree_go::msg::dds_::AudioData_
-alive: edf34ede:ec71ed87:ff6d918b:fd6177f9 rt/servicestateactivate std_msgs::msg::dds_::String_
-alive: 8a575fb2:ad676bfd:a3b20683:ae69b9af rt/rtc_status std_msgs::msg::dds_::String_
-alive: b998bf1b:6930232f:a9a62e3e:b1785122 rt/videohub/inner std_msgs::msg::dds_::String_
-alive: e7a31796:64c222e8:a8f3e215:22e11e24 rt/rtc/state std_msgs::msg::dds_::String_
-alive: 05d38f9b:d5113e6e:14601dbc:42e800ca rt/api/bashrunner/request unitree_api::msg::dds_::Request_
-alive: b1fd6a78:2139da03:870cbe3a:18a82a82 rt/lf/dex3/left/state unitree_hg::msg::dds_::HandState_
-alive: d20da079:760ed522:e74cd708:a96da07a rt/dex3/left/state unitree_hg::msg::dds_::HandState_
-alive: df64df8a:7bc8b2d4:548d2b78:49bee491 rt/dex3/left/cmd unitree_hg::msg::dds_::HandCmd_
-
-## CycloneDDS Testinmg on your host computer
+## CycloneDDS Testing on your host computer
 
 From `cycloneDDS/build`:
 
@@ -235,7 +246,6 @@ List all topics visible on your computer
 ./bin/listtopics
 ```
 For that to work, the `CYCLONEDDS_URI` needs to be set correctly 
-rt/lowstate
 
 export CYCLONEDDS_URI='
 <CycloneDDS><Domain>
@@ -245,130 +255,3 @@ export CYCLONEDDS_URI='
 	<Discovery><EnableTopicDiscoveryEndpoints>true</EnableTopicDiscoveryEndpoints></Discovery>
 	</Domain>
 </CycloneDDS>'  
-
-Here is an example of a cycloneDDS config file.
-
-<?xml version="1.0" encoding="utf-8"?>
- 2<CycloneDDS
- 3  xmlns="https://cdds.io/config"
- 4  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
- 5  xsi:schemaLocation="https://cdds.io/config https://raw.githubusercontent.com/eclipse-cyclonedds/cyclonedds/master/etc/cyclonedds.xsd"
- 6>
- 7  <Domain Id="any">
- 8    <General>
- 9      <Interfaces>
-10        <NetworkInterface autodetermine="true" priority="default"
-11        multicast="default" />
-12      </Interfaces>
-13      <AllowMulticast>default</AllowMulticast>
-14      <MaxMessageSize>65500B</MaxMessageSize>
-15    </General>
-16    <Tracing>
-17      <Verbosity>config</Verbosity>
-18      <OutputFile>
-19        ${HOME}/dds/log/cdds.log.${CYCLONEDDS_PID}
-20      </OutputFile>
-21    </Tracing>
-22  </Domain>
-23</CycloneDDS>
-
-https://github.com/unitreerobotics/avp_teleoperate
-
-Copy image_server.py in the avp_teleoperate/teleop/image_server directory to the Development Computing Unit PC2 of Unitree Robot (G1/H1/H1_2/etc.), and execute the following command in the PC2:
-
-# p.s.1 You can transfer image_server.py to PC2 via the scp command and then use ssh to remotely login to PC2 to execute it.
-# Assuming the IP address of the development computing unit PC2 is 192.168.123.164, the transmission process is as follows:
-# log in to PC2 via SSH and create the folder for the image server
-(tv) unitree@Host:~$ ssh unitree@192.168.123.164 "mkdir -p ~/image_server"
-# Copy the local image_server.py to the ~/image_server directory on PC2
-(tv) unitree@Host:~$ scp ~/avp_teleoperate/teleop/image_server/image_server.py unitree@192.168.123.164:~/image_server/
-
-
-# p.s.2 Currently, this image transmission program supports two methods for reading images: OpenCV and Realsense SDK. Please refer to the comments in the `ImageServer` class within `image_server.py` to configure your image transmission service according to your camera hardware.
-# Now located in Unitree Robot PC2 terminal
-unitree@PC2:~/image_server$ python image_server.py
-# You can see the terminal output as follows:
-# {'fps': 30, 'head_camera_type': 'opencv', 'head_camera_image_shape': [480, 1280], 'head_camera_id_numbers': [0]}
-# [Image Server] Head camera 0 resolution: 480.0 x 1280.0
-# [Image Server] Image server has started, waiting for client connections...
-
-## OLD
-
-OM1 can control a Unitree Go2 Air. This has been tested on a Mac laptop running Seqoia 15.2.
-
-### Step 1 - Game controller
-
-Connect an `XBOX` controller to your computer.
-
-On Mac, you may need to install `hidapi` (`brew install hidapi`). NOTE: There is a bug on Mac when installing packages with `brew` - some libraries cannot be found by `uv`. If you get errors such as `Unable to load any of the following libraries:libhidapi-hidraw.so`, try setting `export DYLD_FALLBACK_LIBRARY_PATH="$HOMEBREW_PREFIX/lib"` in your `.zshenv` or equivalent.
-
-On Linux, install `hidapi` like this:
-
-```bash Linux hidapi
-# Linux
-sudo apt-get update
-sudo apt-get install python-dev libusb-1.0-0-dev libudev-dev libhidapi-dev
-
-# possibly also
-sudo pip install --upgrade setuptools
-sudo pip install hidapi
-```
-
-### Step 2 - Establishing Ethernet and DDS Connectivity
-
-Connect the Unitree Go2 Air to your development machine with an Ethernet cable. Then, set the network adapter setting. Open the network settings and find the network interface that is connected to the Go2 Air. In IPv4 setting, change the IPv4 mode to `manual`, set the address to `192.168.123.99`, and set the mask to `255.255.255.0`. After completion, click `apply` (or equivalent) and wait for the network to reconnect. Finally provide the name of the network adapter in the `.env`, such as `UNITREE_WIRED_ETHERNET=eno0`. If you do not have a Unitree dog connected, you can still test parts of the code in sim mode by setting `UNITREE_WIRED_ETHERNET=SIM` in your `.env` file.
-
-Then, install [`CycloneDDS`](https://index.ros.org/p/cyclonedds/). `CycloneDDS` works on Mac, Linux, and PC. Run:
-```bash
-git clone https://github.com/eclipse-cyclonedds/cyclonedds -b releases/0.10.x
-cd cyclonedds && mkdir build install && cd build
-cmake .. -DCMAKE_INSTALL_PREFIX=../install -DBUILD_EXAMPLES=ON
-cmake --build . --target install
-```
-Set `CYCLONEDDS_HOME`, for example via `export CYCLONEDDS_HOME="$HOME/cyclonedds/install"`. You should add this path to your environment via your `.zshrc` or equivalent.
-
-### Step 3 - Adding the DDS module
-
-Add the `dds` python module to your codebase: `uv pip install -r pyproject.toml --extra dds`.
-
-### Step 4 - Controlling the Robot
-
-Run
-```bash Run Robot
-uv run src/run.py robot_wallet_safe
-```
-
-OM1 will control a safe and limited subset of motions (such as `stretch` and `sit down`). You can also manually control the dog via the game controller. Press:
-
-* A to stand up
-* B to sit down
-* X to shake paw
-* Y to stretch
-
-Allowing the dog to `move`, `pounce`, and `run` requires **you** to add this functionality. **Warning: If you add additional movement capabilities, this is at your own risk. Due to the autonomous nature of the system, we recommend to perform such testing in the absence of squirrels, cats, rabbits, or small children (assuming you are providing a `dog` prompt)**.
-
-### Unitree Go2 Air Common Problems
-
-*channel factory init error*: If you see a `channel factory init error`, then you have not set the correct network interface adapter - the one you want to use is the network interface adapter *on your development machine - the computer you are currently sitting in front of* that is plugged into the Unitree quadruped (which has its own internal RockChip computer and network interface, which is *not* relevant to you right now). The ethernet adapter - such as `eno0` or `en0` - needs to be set in the `.env`, for example, `UNITREE_WIRED_ETHERNET=en0`.
-
-*The CycloneDDS library could not be located*: You forgot to install cycloneDDS (see above), or, you did not provide a path to the `/install`, via `export CYCLONEDDS_HOME="$HOME/Documents/GitHub/cyclonedds/install"` or equivalent.
-
-*"nothing is working"* There are dozens of potential reasons "nothing is working". The first step is to test your ability to `ping` the quadruped:
-```bash ping
-ping 192.168.123.99
-```
-
-Assuming you can `ping` the robot, then test the `cycloneDDS` middleware. From `cycloneDDS/build`:
-```bash ping
-# send some pings
-./bin/RoundtripPing 0 0 0
-```
-
-In another terminal, receive those pings and send them right back:
-```bash ping
-./bin/RoundtripPong
-```
-
-<Tip> On Mac, you will need to `allow incoming connections` for the applications (RoundtripPing and RoundtripPong) - just "allow" the functionality in the security popup at first use.</Tip>
-
-You should see roundtrip timing data. If all of that works, then open an issue in the repo and we will help you to work though the fault tree to get you started.

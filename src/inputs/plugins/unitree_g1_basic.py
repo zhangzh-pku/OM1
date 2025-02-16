@@ -1,7 +1,6 @@
 import asyncio
 import logging
 import time
-
 from dataclasses import dataclass
 from typing import List, Optional
 
@@ -9,17 +8,9 @@ from inputs.base import SensorOutputConfig
 from inputs.base.loop import FuserInput
 from providers.io_provider import IOProvider
 
-# [unitree_go/msg/LowState, unitree_hg/msg/LowState]
-# ok, the thing is transmitting unitree_hg/msg/LowState
-
 try:
     from unitree.unitree_sdk2py.core.channel import ChannelSubscriber
-    from unitree.unitree_sdk2py.g1.audio.g1_audio_client import AudioClient
-    from unitree.unitree_sdk2py.g1.loco.g1_loco_client import LocoClient
-    from unitree.unitree_sdk2py.idl.default import unitree_hg_msg_dds__LowState_
-    from unitree.unitree_sdk2py.idl.unitree_hg.msg.dds_ import LowState_
-    from unitree.unitree_sdk2py.idl.default import unitree_hg_msg_dds__BmsState_
-    from unitree.unitree_sdk2py.idl.unitree_hg.msg.dds_ import BmsState_
+    from unitree.unitree_sdk2py.idl.unitree_hg.msg.dds_ import BmsState_, LowState_
 except ImportError:
     logging.warning(
         "Unitree SDK not found. Please install the Unitree SDK to use this plugin."
@@ -41,7 +32,8 @@ class UnitreeG1Basic(FuserInput[str]):
     Takes specific Unitree CycloneDDS Lowstate messages, converts them to
     text strings, and sends them to the fuser.
 
-    Processes Unitree Lowstate information. These are things like joint position and battery charge.
+    Processes Unitree Lowstate information.
+    These are things like joint position and battery charge.
 
     Maintains a buffer of processed messages.
     """
@@ -62,58 +54,30 @@ class UnitreeG1Basic(FuserInput[str]):
         self.low_state = None
         self.lowstate_subscriber = None
 
+        # Joint angles e.g.
         self.lowstate_subscriber = ChannelSubscriber("rt/lowstate", LowState_)
         self.lowstate_subscriber.Init(self.LowStateHandler, 10)
 
+        # Battery specific data
         self.bmsstate_subscriber = ChannelSubscriber("rt/lf/bmsstate", BmsState_)
         self.bmsstate_subscriber.Init(self.BMSStateHandler, 10)
 
         self.latest_v = 0.0
         self.latest_a = 0.0
 
-        # audio_client = AudioClient()
-        # audio_client.SetTimeout(10.0)
-        # audio_client.Init()
-
-        # sport_client = LocoClient()
-        # sport_client.SetTimeout(10.0)
-        # sport_client.Init()
-
-        # ret = audio_client.GetVolume()
-        # logging.info(f"Iris GetVolume initial {ret}")
-        # audio_client.SetVolume(85)
-
-        # ret = audio_client.GetVolume()
-        # logging.info(f"Iris GetVolume adjusted {ret}")
-
-        # sport_client.WaveHand()
-
-        # audio_client.TtsMaker("Hello Everyone！Nice to meet you!",0)
-        # time.sleep(2)
-
-        # # Next, test the face light strip
-        # audio_client.TtsMaker("Testing the LEDs",0)
-        # time.sleep(1)
-        # audio_client.LedControl(255,0,0)
-        # time.sleep(1)
-        # audio_client.LedControl(0,255,0)
-        # time.sleep(1)
-        # audio_client.LedControl(0,0,255)
-
-        # time.sleep(3)
-
-        # # "Testing completed, thank you everyone!"
-        # audio_client.TtsMaker("Booting complete. ",0)
+        self.g1_lowbatt = 47.0  # confirm this
+        self.descriptor_for_LLM = "Basic State"
 
     def BMSStateHandler(self, msg: BmsState_):
         self.bms_state = msg
-        #logging.info(f"BmsState_: {msg}")
+        logging.info(f"BmsState_: {msg}")
+
         self.latest_v = float(msg.bmsvoltage[0])
         self.latest_a = float(msg.current)
 
     def LowStateHandler(self, msg: LowState_):
         self.low_state = msg
-        #logging.info(f"LowState_: {msg}")
+        logging.info(f"LowState_: {msg}")
 
     async def _poll(self) -> List[float]:
         """
@@ -125,8 +89,6 @@ class UnitreeG1Basic(FuserInput[str]):
             list of floats
         """
 
-        # Does the complexity of this seem confusing and kinda pointless to you?
-        # It's on our radar and your patience is appreciated
         await asyncio.sleep(2.0)
 
         logging.info(f"Battery voltage: {self.latest_v} current: {self.latest_a}")
@@ -148,10 +110,12 @@ class UnitreeG1Basic(FuserInput[str]):
             Timestamped message containing description
         """
         battery_voltage = raw_input[0]
-        if battery_voltage < 26.0:
+        if battery_voltage < self.g1_lowbatt:
             message = "WARNING: You are low on energy. SIT DOWN NOW."
             return Message(timestamp=time.time(), message=message)
-        elif battery_voltage < 27.2:
+        elif (
+            battery_voltage < self.g1_lowbatt + 1.0
+        ):  # the + 1.0V is an emergency reserve
             message = "WARNING: You are low on energy. Consider sitting down."
             return Message(timestamp=time.time(), message=message)
 
@@ -187,7 +151,7 @@ class UnitreeG1Basic(FuserInput[str]):
         latest_message = self.messages[-1]
 
         result = f"""
-{self.__class__.__name__} INPUT
+{self.descriptor_for_LLM} INPUT
 // START
 {latest_message.message}
 // END
