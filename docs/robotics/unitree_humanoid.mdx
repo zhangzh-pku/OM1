@@ -25,13 +25,17 @@ uv run src/run.py unitree_g1
 ## System Description
 
 Your computer will be at `192.168.123.99`
-The factory ip address of the LIDAR is `192.168.123.120`
+
+The LIDAR is `192.168.123.120`
+
 The internal control computer (RockChip, aka the `operation and control computing unit`) is at `192.168.123.161`
+
 The internal development computer (Orin 16GB, aka the `development computing unit`) is at `192.168.123.164`
 
 ## Check CycloneDDS
-
+```
 ./ddsperf sanity
+```
 
 ## Turn the wifi on/off
 ```
@@ -99,13 +103,17 @@ Select `foxy(1)`.
 
 ## Install CycloneDDS on Orin
 
-Follow all instructions at https://github.com/unitreerobotics/unitree_ros2.
+The default installation of CycloneDDS on the G1 Orin is broken, since it does not support the newer `unitree_hg` IDL data format for the G1. 
 
-```
+Solution: remove the default CycloneDDS installation on the Orin and reinstall following the [Unitree ROS2 installation instructions](https://github.com/unitreerobotics/unitree_ros2). 
+
+The `unitree_hg` bug was fixed in early Dec. 2024 in this commit: unitreerobotics/unitree_ros2@b34fdf7
+
+You will need to export suitable env variables and correct the setting in `.bashrc` and in `setup.sh`. Set `~/unitree_ros2/setup.sh` to
+
+```bash
 export CYCLONEDDS_HOME="$HOME/unitree_ros2/cyclonedds_ws/install"
 ```
-
-You will need to correct the setting in `.bashrc` and in `setup.sh`. Set `~/unitree_ros2/setup.sh` to
 
 ```bash
 #!/bin/bash
@@ -118,7 +126,7 @@ export CYCLONEDDS_URI='<CycloneDDS><Domain><General><Interfaces>
 </Interfaces></General></Domain></CycloneDDS>'
 ```
 
-and then source it: `source ~/unitree_ros2/setup.sh`. Finally, 
+Source the `setup.sh` via `source ~/unitree_ros2/setup.sh`. Finally, you should start to see data. 
 
 ```bash ros2 topic echo lowstate
 ros2 topic echo lowcmd
