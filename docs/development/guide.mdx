@@ -28,9 +28,14 @@ The main entry point is `src/run.py` which provides the following commands:
 │   ├── llm/              # LLM integration
 │   ├── providers/        # Providers
 │   ├── runtime/          # Core runtime system
-│   ├── simulators/       # Virtual endpoints such as `RacoonSim`
+│   ├── simulators/       # Virtual endpoints such as `WebSim`
 │   └── run.py            # CLI entry point
 ```
+
+## Lint and Unittesting
+
+* To unittest the system, run `uv run pytest --log-cli-level=DEBUG -s`
+* To lint the code, run `uv run ruff check . --fix && uv run black . && uv run isort .`
 
 ## Adding New Actions
 
@@ -66,6 +71,7 @@ Agents are configured via JSON files in the `config/` directory. Key configurati
 {
   "hertz": 0.5,
   "name": "agent_name",
+  "api_key": "your_key_here",
   "system_prompt": "...",
   "agent_inputs": [
     {
@@ -75,13 +81,13 @@ Agents are configured via JSON files in the `config/` directory. Key configurati
   "cortex_llm": {
     "type": "OpenAILLM",
     "config": {
-      "base_url": "",
-      "api_key": "your_key_here"
+      "base_url": "", // Optional: URL of the LLM endpoint
+      "api_key": "your_key_here" // Optional: Override the default API key
     }
   },
   "simulators": [
     {
-      "type": "RacoonSim"
+      "type": "WebSim"
     }
   ],
   "agent_actions": [
@@ -115,7 +121,7 @@ OpenMind Gemini Proxy endpoint is [https://api.openmind.org/api/core/gemini](htt
   "type": "OpenAILLM",
   "config": {
     "base_url": "...", // Optional: URL of the LLM endpoint
-    "api_key": "..."   // Required: API key from OpenMind or OpenAI
+    "api_key": "..."   // Optional: Override the default API key
   }
 }
 ```
@@ -127,7 +133,7 @@ Lists the simulation modules used by the agent. These define the simulated envir
 ```json Simulators Configuration
 "simulators": [
   {
-    "type": "RacoonSim"
+    "type": "WebSim"
   }
 ]
 ```
