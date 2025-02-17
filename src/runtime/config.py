@@ -95,14 +95,14 @@ def load_config(config_name: str) -> RuntimeConfig:
         "agent_inputs": [
             load_input(input["type"])(
                 config=SensorConfig(
-                    **add_api_key(input.get("config", {}), g_api_key, g_ut_eth)
+                    **add_meta(input.get("config", {}), g_api_key, g_ut_eth)
                 )
             )
             for input in raw_config.get("agent_inputs", [])
         ],
         "cortex_llm": load_llm(raw_config["cortex_llm"]["type"])(
             config=LLMConfig(
-                **add_api_key(
+                **add_meta(
                     raw_config["cortex_llm"].get("config", {}), g_api_key, g_ut_eth
                 )
             ),
@@ -112,7 +112,7 @@ def load_config(config_name: str) -> RuntimeConfig:
             load_simulator(simulator["type"])(
                 config=SimulatorConfig(
                     name=simulator["type"],
-                    **add_api_key(simulator.get("config", {}), g_api_key, g_ut_eth),
+                    **add_meta(simulator.get("config", {}), g_api_key, g_ut_eth),
                 )
             )
             for simulator in raw_config.get("simulators", [])
@@ -121,7 +121,7 @@ def load_config(config_name: str) -> RuntimeConfig:
             load_action(
                 {
                     **action,
-                    "config": add_api_key(action.get("config", {}), g_api_key, g_ut_eth),
+                    "config": add_meta(action.get("config", {}), g_api_key, g_ut_eth),
                 }
             )
             for action in raw_config.get("agent_actions", [])
