@@ -10,8 +10,8 @@ from providers.io_provider import IOProvider
 
 try:
     from unitree.unitree_sdk2py.core.channel import ChannelSubscriber
-    from unitree_sdk2py.idl.default import unitree_hg_msg_dds__LowState_
-    from unitree_sdk2py.idl.default import unitree_hg_msg_dds__BmsState_
+    from unitree.unitree_sdk2py.idl.default import unitree_hg_msg_dds__LowState_
+    from unitree.unitree_sdk2py.idl.default import unitree_hg_msg_dds__BmsState_
     from unitree.unitree_sdk2py.idl.unitree_hg.msg.dds_ import BmsState_
     from unitree.unitree_sdk2py.idl.unitree_hg.msg.dds_ import LowState_
 except ImportError:

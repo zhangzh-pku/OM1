@@ -19,8 +19,19 @@ https://github.com/unitreerobotics/unitree_sdk2_python
 Run
 
 ```bash Run Robot
-uv run src/run.py unitree_g1
+uv run src/run.py iris
 ```
+
+###
+
+Add Python CycloneDDS:
+
+```bash
+export CYCLONEDDS_HOME=/home/unitree/unitree_ros2/cyclonedds_ws/install/cyclonedds
+uv pip install -r pyproject.toml --extra dds
+```
+
+Note: make sure `CYCLONEDDS_HOME` actually points to /lib
 
 ## System Description
 
@@ -78,12 +89,8 @@ Other actions:
 
 Use the joysticks to move forwards and backwards, and to rotate/turn
 
-97%
-
-bmsvoltage:
-- 53041
-- 53039
-
+97% 53041
+64% 49843
 
 ## Special DEBUG state
 
@@ -121,10 +128,10 @@ Solution: remove the default CycloneDDS installation on the Orin and reinstall f
 
 The `unitree_hg` bug was fixed in early Dec. 2024 in this commit: unitreerobotics/unitree_ros2@b34fdf7
 
-You will need to export suitable env variables and correct the setting in `.bashrc` and in `setup.sh`. Set `~/unitree_ros2/setup.sh` to
+You will need to export suitable env variables and correct the setting in `.bashrc` and in `~/unitree_ros2/setup.sh`. Set `setup.sh` to
 
 ```bash
-export CYCLONEDDS_HOME="$HOME/unitree_ros2/cyclonedds_ws/install"
+export CYCLONEDDS_HOME="$HOME/unitree_ros2/cyclonedds_ws/install/cyclonedds"
 ```
 
 ```bash
