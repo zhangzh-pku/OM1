@@ -15,7 +15,10 @@
     },
     {
       "type": "UnitreeG1Basic"
-    }
+    },
+    {
+      "type": "UnitreeG1CameraVLMCloud"
+    },
   ],
   "cortex_llm": {
     "type": "OpenAILLM"
