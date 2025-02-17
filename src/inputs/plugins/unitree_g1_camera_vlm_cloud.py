@@ -47,13 +47,10 @@ class UnitreeG1CameraVLMCloud(FuserInput[str]):
         self.message_buffer: Queue[str] = Queue()
 
         # Initialize VLM provider
-        # base_url = (
-        #     self.config.base_url
-        #     if self.config.base_url
-        #     else "wss://api-vila.openmind.org"
-        # )
         base_url = getattr(self.config, "base_url", "wss://api-vila.openmind.org")
-        self.vlm: UnitreeCameraVLMProvider = UnitreeRealSenseDevVLMProvider(ws_url=base_url)
+        self.vlm: UnitreeRealSenseDevVLMProvider = UnitreeRealSenseDevVLMProvider(
+            ws_url=base_url
+        )
         self.vlm.start()
         self.vlm.register_message_callback(self._handle_vlm_message)
 

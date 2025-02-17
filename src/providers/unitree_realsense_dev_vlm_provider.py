@@ -2,7 +2,6 @@ import base64
 import glob
 import logging
 import os
-import platform
 import threading
 import time
 from typing import Callable, Optional
@@ -16,10 +15,11 @@ from .singleton import singleton
 root_package_name = __name__.split(".")[0] if "." in __name__ else __name__
 logger = logging.getLogger(root_package_name)
 
+
 def find_rgb_device():
     """Finds the RGB camera device by checking supported formats."""
     try:
-        video_devices = sorted(glob.glob('/dev/video*'))  # List all /dev/videoX devices
+        video_devices = sorted(glob.glob("/dev/video*"))  # List all /dev/videoX devices
     except Exception as e:
         logger.error("Failed to list video devices: %s", e)
         return None
@@ -142,7 +142,6 @@ class UnitreeRealSenseDevVLMProvider:
             self.ws_client.send_message, fps=fps
         )
         self._thread: Optional[threading.Thread] = None
-
 
     def register_message_callback(self, message_callback: Optional[Callable]):
         """
