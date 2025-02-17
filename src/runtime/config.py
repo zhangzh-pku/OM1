@@ -79,7 +79,7 @@ def load_config(config_name: str) -> RuntimeConfig:
     load_unitree(raw_config)
 
     g_api_key = raw_config.get("api_key", None)
-    if g_api_key is None or global_api_key == "":
+    if g_api_key is None or g_api_key == "":
         logging.warning(
             "No global API key found in the configuration. Rate limits may apply."
         )
