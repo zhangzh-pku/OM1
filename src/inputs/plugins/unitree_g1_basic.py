@@ -100,8 +100,8 @@ class UnitreeG1Basic(FuserInput[str]):
         So nominal (3.6V each) would be 3.60*13 = 46.8
         """
 
-        self.g1_lowbatt = 47.0  # confirm this
-        self.descriptor_for_LLM = "Basic State"
+        self.g1_lowbatt_percent = 20.0 # percent
+        self.descriptor_for_LLM = "Energy Level"
 
     def BMSStateHandler(self, msg: BmsState_):
         self.bms_state = msg
@@ -147,19 +147,19 @@ class UnitreeG1Basic(FuserInput[str]):
         battery_voltage = raw_input[0]
 
         diff = battery_voltage - 43600 
-        battery_percent = 0
+        battery_percent = 0.00
 
         if diff > 0:
-            battery_percent = diff / 96.9 
+            battery_percent = roundf(diff / 96.9, 2) 
 
-        logging.info(f"Battery voltage: {self.latest_v}, current: {self.latest_a}, percent: {battery_percent}")
+        logging.info(f"Battery:{self.latest_v}mV, {self.latest_a}mA, percent:{battery_percent}")
 
-        if battery_voltage < self.g1_lowbatt:
+        if battery_percent < self.g1_lowbatt_percent:
             message = "WARNING: You are low on energy. SIT DOWN NOW."
             return Message(timestamp=time.time(), message=message)
         elif (
-            battery_voltage < self.g1_lowbatt + 1.0
-        ):  # the + 1.0V is an emergency reserve
+            battery_percent < self.g1_lowbatt_percent + 10.0
+        ):  # the +10% is an emergency reserve
             message = "WARNING: You are low on energy. Consider sitting down."
             return Message(timestamp=time.time(), message=message)
 
