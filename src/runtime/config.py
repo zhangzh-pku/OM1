@@ -32,6 +32,9 @@ class RuntimeConfig:
     # Optional API key for the runtime configuration
     api_key: Optional[str] = None
 
+    # Optional Ethernet adapter setting for Unitree Robots
+    unitree_ethernet: Optional[str] = None
+
     @classmethod
     def load(cls, config_name: str) -> "RuntimeConfig":
         """Load a runtime configuration from a file."""
