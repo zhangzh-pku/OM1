@@ -33,6 +33,12 @@ uv pip install -r pyproject.toml --extra dds
 
 Note: make sure `CYCLONEDDS_HOME` actually points to /lib
 
+Also, install `v4l-utils`
+
+```
+sudo apt-get update
+sudo apt-get install v4l-utils
+```
 ## System Description
 
 Your computer will be at `192.168.123.99`
@@ -182,10 +188,6 @@ range_obstacle:
 - 0.0
 - 0.0
 - 0.0
-
-
-
-
 
 ```bash ros2 topic list
 /EstimatorData

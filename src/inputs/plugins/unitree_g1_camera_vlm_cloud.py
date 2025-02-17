@@ -38,7 +38,7 @@ class UnitreeG1CameraVLMCloud(FuserInput[str]):
         # Track IO
         self.io_provider = IOProvider()
 
-        self.descriptor_for_LLM = "Robot Camera Vision"
+        self.descriptor_for_LLM = "Your Eyes"
 
         # Buffer for storing the final output
         self.messages: List[Message] = []
