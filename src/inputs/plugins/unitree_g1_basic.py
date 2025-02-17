@@ -4,7 +4,7 @@ import time
 from dataclasses import dataclass
 from typing import List, Optional
 
-from inputs.base import SensorOutputConfig
+from inputs.base import SensorConfig
 from inputs.base.loop import FuserInput
 from providers.io_provider import IOProvider
 
@@ -51,7 +51,6 @@ class LowState_(idl.IdlStruct, typename="unitree_hg.msg.dds_.LowState_"):
     wireless_remote: types.array[types.uint8, 40]
 """
 
-
 class UnitreeG1Basic(FuserInput[str]):
     """
     Unitree G1 Basic Functionality.
@@ -65,7 +64,7 @@ class UnitreeG1Basic(FuserInput[str]):
     Maintains a buffer of processed messages.
     """
 
-    def __init__(self, config: SensorOutputConfig = SensorOutputConfig()):
+    def __init__(self, config: SensorConfig = SensorConfig()):
         """
         Initialize Unitree bridge with empty message buffer.
         """
