@@ -150,7 +150,7 @@ class UnitreeG1Basic(FuserInput[str]):
         battery_percent = 0.00
 
         if diff > 0:
-            battery_percent = roundf(diff / 96.9, 2) 
+            battery_percent = round(diff / 96.9, 2) 
 
         logging.info(f"Battery:{self.latest_v}mV, {self.latest_a}mA, percent:{battery_percent}")
 
