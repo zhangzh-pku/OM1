@@ -12,6 +12,9 @@
       "config": {
         "microphone_name": "USB PnP Audio Device"
       }
+    },
+    {
+      "type": "UnitreeG1Basic"
     }
   ],
   "cortex_llm": {
