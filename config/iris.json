@@ -32,6 +32,12 @@
         "microphone_name": "USB PnP Audio Device",
         "speaker_name": "USB PnP Audio Device"
       }
-    }
+    },
+    {
+      "name": "humanoid_emotion",
+      "implementation": "passthrough",
+      "connector": "unitree_sdk"
+    },
+
   ]
 }
