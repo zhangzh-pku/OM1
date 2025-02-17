@@ -65,13 +65,25 @@ When the G1 boots, it is in `damp` state.
 Use the hand controller to command "L1+A" and "L1+UP", the system is ready to move using the `ai_sport` client. The system will respond to manual controller and SDK commands.
 
 * Press "L1+A" -> EMERGENCY DAMP / SINK TO FLOOR
-* Press "L1+UP" -> Stand firmly (aka "lock stand")
+* Press "L1+UP" -> Stand firmly (aka "lock stand"). The arms will move slightly. The system is now in the "ready" state.
+* Lower the G1 to the ground.
+* Press "R2+X" -> Start motion control. The arms will jump outwards.
 * Press "Start" to switch back and forth between `stand` and `step in place`. 
-* SELECT + Y -> Wave Hand. Alternates sides
-* SELECT + A -> Handshake. Wait 3s and press again to relax arm to initial state 
-* SELECT + Click X -> Turn around and wave hand
+
+Other actions:
+
+* "SELECT + Y" -> Wave Hand. Alternates sides
+* "SELECT + A" -> Handshake. Hold for movmement to complete. Wait 3s and press again to relax arm to initial state 
+* "SELECT + X" -> Turn around and wave hand
 
 Use the joysticks to move forwards and backwards, and to rotate/turn
+
+97%
+
+bmsvoltage:
+- 53041
+- 53039
+
 
 ## Special DEBUG state
 
@@ -141,6 +153,32 @@ motor_cmd:
   kd: 0.0
   reserve: 0
 ```
+
+
+ros2 topic echo odommodestate
+
+ros2 topic echo odommodestate
+
+foot_raise_height: 0.0
+position:
+- -0.0020605064928531647
+- 0.053126491606235504
+- 0.7184482216835022
+body_height: 0.0
+velocity:
+- 5.038951940150582e-07
+- 2.6171483114012517e-06
+- 0.00015149918908718973
+yaw_speed: -0.0017453291220590472
+range_obstacle:
+- 0.0
+- 0.0
+- 0.0
+- 0.0
+
+
+
+
 
 ```bash ros2 topic list
 /EstimatorData
