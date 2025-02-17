@@ -16,33 +16,6 @@ root_package_name = __name__.split(".")[0] if "." in __name__ else __name__
 logger = logging.getLogger(root_package_name)
 
 
-def find_rgb_device():
-    """Finds the RGB camera device by checking supported formats."""
-    try:
-        video_devices = sorted(glob.glob("/dev/video*"))  # List all /dev/videoX devices
-    except Exception as e:
-        logger.error("Failed to list video devices: %s", e)
-        return None
-
-    for device in video_devices:
-        try:
-            cmd = f"v4l2-ctl --device={device} --list-formats"
-            formats = os.popen(cmd).read()
-        except Exception as e:
-            logger.error("Failed to run command '%s': %s", cmd, e)
-            continue
-
-        try:
-            if "MJPG" in formats or "YUYV" in formats:
-                logger.info("Found RGB device at %s with formats: %s", device, formats)
-                return device  # Return the first detected RGB stream
-        except Exception as e:
-            logger.error("Error processing formats for device %s: %s", device, e)
-
-    logger.warning("No RGB device found")
-    return None
-
-
 class UnitreeRealSenseDevVideoStream(VideoStream):
     """
     Manages video capture and streaming from a camera device.
@@ -75,7 +48,7 @@ class UnitreeRealSenseDevVideoStream(VideoStream):
             If video streaming encounters an error
         """
 
-        camindex = find_rgb_device()
+        camindex = self._find_rgb_device()
         logger.info(f"Using camera: {camindex}")
 
         self._cap = cv2.VideoCapture(camindex)
@@ -108,6 +81,43 @@ class UnitreeRealSenseDevVideoStream(VideoStream):
             if self._cap:
                 self._cap.release()
                 logger.info("Released video capture device")
+
+    def _find_rgb_device(self):
+        """
+        Helper function to find the RGB camera device by scanning for the first device supporting common RGB formats.
+
+        Raises
+        ------
+        Exception
+            If errors are encountered while scanning for the device.
+        """
+        try:
+            video_devices = sorted(
+                glob.glob("/dev/video*")
+            )  # List all /dev/videoX devices
+        except Exception as e:
+            logger.error("Failed to list video devices: %s", e)
+            return None
+
+        for device in video_devices:
+            try:
+                cmd = f"v4l2-ctl --device={device} --list-formats"
+                formats = os.popen(cmd).read()
+            except Exception as e:
+                logger.error("Failed to run command '%s': %s", cmd, e)
+                continue
+
+            try:
+                if "MJPG" in formats or "YUYV" in formats:
+                    logger.info(
+                        "Found RGB device at %s with formats: %s", device, formats
+                    )
+                    return device  # Return the first detected RGB stream
+            except Exception as e:
+                logger.error("Error processing formats for device %s: %s", device, e)
+
+        logger.warning("No RGB device found")
+        return None
 
 
 @singleton
