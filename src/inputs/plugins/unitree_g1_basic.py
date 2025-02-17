@@ -105,14 +105,14 @@ class UnitreeG1Basic(FuserInput[str]):
 
     def BMSStateHandler(self, msg: BmsState_):
         self.bms_state = msg
-        logging.info(f"BmsState_: {msg}")
+        logging.debug(f"BmsState_: {msg}")
 
         self.latest_v = float(msg.bmsvoltage[0])
         self.latest_a = float(msg.current)
 
     def LowStateHandler(self, msg: LowState_):
         self.low_state = msg
-        logging.info(f"LowState_: {msg}")
+        logging.debug(f"LowState_: {msg}")
 
     async def _poll(self) -> List[float]:
         """
@@ -126,7 +126,7 @@ class UnitreeG1Basic(FuserInput[str]):
 
         await asyncio.sleep(2.0)
 
-        logging.info(f"Battery voltage: {self.latest_v} current: {self.latest_a}")
+        # logging.info(f"Battery voltage: {self.latest_v} current: {self.latest_a}")
 
         return [self.latest_v, self.latest_a]
 
@@ -145,6 +145,15 @@ class UnitreeG1Basic(FuserInput[str]):
             Timestamped message containing description
         """
         battery_voltage = raw_input[0]
+
+        diff = battery_voltage - 43600 
+        battery_percent = 0
+
+        if diff > 0:
+            battery_percent = diff / 96.9 
+
+        logging.info(f"Battery voltage: {self.latest_v}, current: {self.latest_a}, percent: {battery_percent}")
+
         if battery_voltage < self.g1_lowbatt:
             message = "WARNING: You are low on energy. SIT DOWN NOW."
             return Message(timestamp=time.time(), message=message)
