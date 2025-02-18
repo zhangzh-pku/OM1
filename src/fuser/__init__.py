@@ -86,9 +86,15 @@ class Fuser:
                 + self.config.system_prompt_examples
             )
 
+
+
+        logging.info(
+            f"using {self.config.agent_actions}"
+        )
+
         # descriptions of various possible actions
         actions_fused = "\n\n\n".join(
-            [describe_action(action.name) for action in self.config.agent_actions]
+            [describe_action(action.name, action.llm_label) for action in self.config.agent_actions]
         )
 
         question_prompt = "What will you do? Command: "

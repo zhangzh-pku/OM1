@@ -81,24 +81,23 @@ class UnitreeG1Basic(FuserInput[str]):
         # create subscriber
         self.low_state = None
         self.lowstate_subscriber = None
+        self.bmsstate_subscriber = None
+
+        g_ut_eth = getattr(self.config, "g_ut_eth", None)
+        logging.info(f"UnitreeG1Basic using ethernet: {g_ut_eth}")
 
         # Joint angles e.g.
-        self.lowstate_subscriber = ChannelSubscriber("rt/lowstate", LowState_)
-        self.lowstate_subscriber.Init(self.LowStateHandler, 10)
+        if g_ut_eth and g_ut_eth != "":
+            # only set up if we are connected to a robot
+            self.lowstate_subscriber = ChannelSubscriber("rt/lowstate", LowState_)
+            self.lowstate_subscriber.Init(self.LowStateHandler, 10)
 
-        # Battery specific data
-        self.bmsstate_subscriber = ChannelSubscriber("rt/lf/bmsstate", BmsState_)
-        self.bmsstate_subscriber.Init(self.BMSStateHandler, 10)
+            # Battery specific data
+            self.bmsstate_subscriber = ChannelSubscriber("rt/lf/bmsstate", BmsState_)
+            self.bmsstate_subscriber.Init(self.BMSStateHandler, 10)
 
         self.latest_v = 0.0
         self.latest_a = 0.0
-
-        """
-        Battery:
-        Might be 13 cells? = 54.6 at full charge?
-        Charger spec is 54V 5A  
-        So nominal (3.6V each) would be 3.60*13 = 46.8
-        """
 
         self.g1_lowbatt_percent = 20.0 # percent
         self.descriptor_for_LLM = "Energy Level"

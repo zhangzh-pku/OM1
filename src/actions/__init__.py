@@ -83,6 +83,7 @@ def load_action(
     config = ActionConfig(**action_config.get("config", {}))
     return AgentAction(
         name=action_config["name"],
+        llm_label=action_config["llm_label"],
         interface=interface,
         implementation=implementation_class(config),
         connector=connector_class(config),

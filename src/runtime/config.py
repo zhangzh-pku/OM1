@@ -75,9 +75,6 @@ def load_config(config_name: str) -> RuntimeConfig:
     with open(config_path, "r") as f:
         raw_config = json.load(f)
 
-    # Load Unitree robot communication channel
-    load_unitree(raw_config)
-
     g_api_key = raw_config.get("api_key", None)
     if g_api_key is None or g_api_key == "":
         logging.warning(
@@ -89,6 +86,9 @@ def load_config(config_name: str) -> RuntimeConfig:
         logging.info(
             "No robot hardware config provided."
         )
+    else:
+        # Load Unitree robot communication channel, if needed
+        load_unitree(g_ut_eth)
 
     parsed_config = {
         **raw_config,
