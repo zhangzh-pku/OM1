@@ -28,6 +28,7 @@ class EmotionUnitreeConnector(ActionConnector[EmotionInput]):
             self.ao_client = AudioClient()  
             self.ao_client.SetTimeout(10.0)
             self.ao_client.Init()
+            self.ao_client.LedControl(0,255,0)
 
     async def connect(self, output_interface: EmotionInput) -> None:
 
