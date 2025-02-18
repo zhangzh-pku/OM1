@@ -81,6 +81,54 @@ class OpenAILLM(LLM[R]):
         logging.debug(f"Initializing OpenAI client with {client_kwargs}")
         self._client = openai.AsyncClient(**client_kwargs)
 
+    def summarize_inputs(self, prompt: str) -> str | None:
+        # extract the prompt inputs
+        # import re
+        # string = "// START\nWARNING: You are low on energy. SIT DOWN NOW.\n// END\n\n// START\nYou just saw a red dog.\n// END"
+        # pattern = '// START\n(.*?)\n// END'
+        # result = re.findall(pattern, string) 
+        # print(result)
+
+        pattern = '// START\n(.*?)\n// END'
+        state_inputs = re.findall(pattern, prompt) 
+        separator = " "
+        state_inputs = separator.join(state_inputs)
+        logging.debug(f"state_inputs: {state_inputs}")
+        return state_inputs
+
+    def add_to_history(self, summary: str, response):
+        
+        action_string = ""
+        
+        for command in response.commands:
+            #logging.info(f"command: {command}")
+            action_type = command.name
+            #logging.info(f"parse: {command.arguments[0].value}")
+            if action_type == "emotion":
+                emotion = command.arguments[0].value
+                #logging.info(f"emotion: {emotion}")
+                action_string += f"You felt: {emotion}. "
+            elif action_type == "speak":
+                sentence = command.arguments[0].value
+                #logging.info(f"sentence: {sentence}")
+                action_string += f"You said: {sentence} "
+            elif action_type == "move":
+                motion = command.arguments[0].value
+                #logging.info(f"movement: {movement}")
+                action_string += f"You performed this motion: {motion}. "
+                
+        final_history = "Your inputs were: " + summary + " You decided: " + action_string
+
+        elapsed_time = round(time.time() - self.start_time, 1)
+
+        interaction = History(timestamp=elapsed_time, interaction=final_history)
+        
+        self.history.append(interaction)
+        if len(self.history) > self.history_length:
+            self.history.pop(0)
+
+        logging.info(f"History:\n{self.history}")
+
     async def ask(self, prompt: str) -> R | None:
         """
         Send a prompt to the OpenAI API and get a structured response.
@@ -98,22 +146,10 @@ class OpenAILLM(LLM[R]):
         """
         try:
             logging.debug(f"OpenAI LLM input: {prompt}")
+            
             self.io_provider.llm_start_time = time.time()
             self.io_provider.set_llm_prompt(prompt)
 
-            # extract the prompt inputs
-            # import re
-            # string = "// START\nWARNING: You are low on energy. SIT DOWN NOW.\n// END\n\n// START\nYou just saw a red dog.\n// END"
-            # pattern = '// START\n(.*?)\n// END'
-            # result = re.findall(pattern, string) 
-            # print(result)
-
-            pattern = '// START\n(.*?)\n// END'
-            state_inputs = re.findall(pattern, prompt) 
-            separator = " "
-            state_inputs = separator.join(state_inputs)
-            logging.debug(f"state_inputs: {state_inputs}")
-            
             parsed_response = await self._client.beta.chat.completions.parse(
                 model=(
                     "gpt-4o-mini" if self._config.model is None else self._config.model
@@ -131,36 +167,8 @@ class OpenAILLM(LLM[R]):
                 )
                 logging.debug(f"LLM output: {parsed_response}")
 
-                action_string = ""
-
-                for command in parsed_response.commands:
-                    #logging.info(f"command: {command}")
-                    action_type = command.name
-                    #logging.info(f"parse: {command.arguments[0].value}")
-                    if action_type == "emotion":
-                        emotion = command.arguments[0].value
-                        #logging.info(f"emotion: {emotion}")
-                        action_string += f"You felt: {emotion}. "
-                    elif action_type == "speak":
-                        sentence = command.arguments[0].value
-                        #logging.info(f"sentence: {sentence}")
-                        action_string += f"You said: {sentence} "
-                    elif action_type == "move":
-                        motion = command.arguments[0].value
-                        #logging.info(f"movement: {movement}")
-                        action_string += f"You performed this motion: {motion}. "
-                        
-                final_history = "Your inputs were: " + state_inputs + " You decided: " + action_string
-
-                elapsed_time = round(time.time() - self.start_time, 1)
-
-                interaction = History(timestamp=elapsed_time, interaction=final_history)
-                
-                self.history.append(interaction)
-                if len(self.history) > self.history_length:
-                    self.history.pop(0)
-
-                logging.info(f"History:\n{self.history}")
+                summary = self.summarize_inputs(prompt)
+                self.add_to_history(summary, parsed_response)
 
                 return parsed_response
             except Exception as e:
