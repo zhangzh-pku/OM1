@@ -27,7 +27,7 @@ class LLMConfig(BaseModel):
     base_url: T.Optional[str] = None
     api_key: T.Optional[str] = None
     model: T.Optional[str] = None
-
+    history_length: T.Optional[int] = 0
 
 class LLM(T.Generic[R]):
     """

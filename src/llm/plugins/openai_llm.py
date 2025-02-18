@@ -1,14 +1,32 @@
 import logging
 import time
 import typing as T
+import re
 
 import openai
 from pydantic import BaseModel
+
+from dataclasses import dataclass
 
 from llm import LLM, LLMConfig
 
 R = T.TypeVar("R", bound=BaseModel)
 
+@dataclass
+class History:
+    """
+    Container for timestamped interactions.
+
+    Parameters
+    ----------
+    timestamp : float
+        Unix timestamp of the interaction
+    interaction : str
+        The input/action pair
+    """
+
+    timestamp: float
+    interaction: str
 
 class OpenAILLM(LLM[R]):
     """
@@ -38,6 +56,11 @@ class OpenAILLM(LLM[R]):
             Configuration settings for the LLM.
         """
         super().__init__(output_model, config)
+        logging.debug(f"Config OpenAI client with config: {config}")
+
+        self.history_length = 0
+        if config.history_length:
+            self.history_length = config.history_length
 
         base_url = config.base_url or "https://api.openmind.org/api/core/openai"
 
@@ -46,11 +69,16 @@ class OpenAILLM(LLM[R]):
         else:
             api_key = config.api_key
 
+        # Messages buffer
+        self.history: list[History] = []
+
+        self.start_time = time.time()
+
         client_kwargs = {}
         client_kwargs["base_url"] = base_url
         client_kwargs["api_key"] = api_key
 
-        logging.info(f"Initializing OpenAI client with {client_kwargs}")
+        logging.debug(f"Initializing OpenAI client with {client_kwargs}")
         self._client = openai.AsyncClient(**client_kwargs)
 
     async def ask(self, prompt: str) -> R | None:
@@ -73,6 +101,19 @@ class OpenAILLM(LLM[R]):
             self.io_provider.llm_start_time = time.time()
             self.io_provider.set_llm_prompt(prompt)
 
+            # extract the prompt inputs
+            # import re
+            # string = "// START\nWARNING: You are low on energy. SIT DOWN NOW.\n// END\n\n// START\nYou just saw a red dog.\n// END"
+            # pattern = '// START\n(.*?)\n// END'
+            # result = re.findall(pattern, string) 
+            # print(result)
+
+            pattern = '// START\n(.*?)\n// END'
+            state_inputs = re.findall(pattern, prompt) 
+            separator = " "
+            state_inputs = separator.join(state_inputs)
+            logging.debug(f"state_inputs: {state_inputs}")
+            
             parsed_response = await self._client.beta.chat.completions.parse(
                 model=(
                     "gpt-4o-mini" if self._config.model is None else self._config.model
@@ -89,6 +130,38 @@ class OpenAILLM(LLM[R]):
                     message_content
                 )
                 logging.debug(f"LLM output: {parsed_response}")
+
+                action_string = ""
+
+                for command in parsed_response.commands:
+                    #logging.info(f"command: {command}")
+                    action_type = command.name
+                    #logging.info(f"parse: {command.arguments[0].value}")
+                    if action_type == "emotion":
+                        emotion = command.arguments[0].value
+                        #logging.info(f"emotion: {emotion}")
+                        action_string += f"You felt: {emotion}. "
+                    elif action_type == "speak":
+                        sentence = command.arguments[0].value
+                        #logging.info(f"sentence: {sentence}")
+                        action_string += f"You said: {sentence} "
+                    elif action_type == "move":
+                        motion = command.arguments[0].value
+                        #logging.info(f"movement: {movement}")
+                        action_string += f"You performed this motion: {motion}. "
+                        
+                final_history = "Your inputs were: " + state_inputs + " You decided: " + action_string
+
+                elapsed_time = round(time.time() - self.start_time, 1)
+
+                interaction = History(timestamp=elapsed_time, interaction=final_history)
+                
+                self.history.append(interaction)
+                if len(self.history) > self.history_length:
+                    self.history.pop(0)
+
+                logging.info(f"History:\n{self.history}")
+
                 return parsed_response
             except Exception as e:
                 logging.error(f"Error parsing response: {e}")

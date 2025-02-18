@@ -90,6 +90,9 @@ def load_config(config_name: str) -> RuntimeConfig:
         # Load Unitree robot communication channel, if needed
         load_unitree(g_ut_eth)
 
+    conf = raw_config["cortex_llm"].get("config", {})
+    logging.info(f"config {conf}")
+
     parsed_config = {
         **raw_config,
         "agent_inputs": [
@@ -132,7 +135,7 @@ def load_config(config_name: str) -> RuntimeConfig:
 
 
 def add_meta(config: Dict, 
-    global_api_key: Optional[str], 
+    g_api_key: Optional[str], 
     g_ut_eth: Optional[str]) -> dict:
     """
     Add an API key and Robot configuration to a runtime configuration.
@@ -151,8 +154,11 @@ def add_meta(config: Dict,
     dict
         The updated runtime configuration.
     """
-    if "api_key" not in config and global_api_key is not None:
-        config["api_key"] = global_api_key
+
+    logging.info(f"config before {config}")
+    if "api_key" not in config and g_api_key is not None:
+        config["api_key"] = g_api_key
     if "unitree_ethernet" not in config and g_ut_eth is not None:
         config["unitree_ethernet"] = g_ut_eth
+    logging.info(f"config after {config}")
     return config
