@@ -91,7 +91,7 @@ def load_config(config_name: str) -> RuntimeConfig:
         load_unitree(g_ut_eth)
 
     conf = raw_config["cortex_llm"].get("config", {})
-    logging.info(f"config {conf}")
+    logging.debug(f"config {conf}")
 
     parsed_config = {
         **raw_config,
@@ -155,10 +155,10 @@ def add_meta(config: Dict,
         The updated runtime configuration.
     """
 
-    logging.info(f"config before {config}")
+    #logging.info(f"config before {config}")
     if "api_key" not in config and g_api_key is not None:
         config["api_key"] = g_api_key
     if "unitree_ethernet" not in config and g_ut_eth is not None:
         config["unitree_ethernet"] = g_ut_eth
-    logging.info(f"config after {config}")
+    #logging.info(f"config after {config}")
     return config
