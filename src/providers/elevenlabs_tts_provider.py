@@ -95,7 +95,7 @@ class ElevenLabsTTSProvider:
         device_id: Optional[int] = None,
         speaker_name: Optional[str] = None,
         voice_id: Optional[str] = "JBFqnCBsd6RMkjVDRZzb",
-        model_id: Optional[str] = "eleven_multilingual_v2",
+        model_id: Optional[str] = "eleven_flash_v2_5",
         output_format: Optional[str] = "mp3_44100_128",
     ):
         """
