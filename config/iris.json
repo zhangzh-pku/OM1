@@ -26,6 +26,7 @@
   "agent_actions": [
     {
       "name": "speak",
+      "llm_label": "speak",
       "implementation": "passthrough",
       "connector": "elevenlabs_tts",
       "config": {
@@ -35,6 +36,7 @@
     },
     {
       "name": "emotion",
+      "llm_label": "emotion",
       "implementation": "passthrough",
       "connector": "unitree_sdk"
     }

@@ -26,11 +26,13 @@
   "agent_actions": [
     {
       "name": "move_safe",
+      "llm_label": "move",
       "implementation": "passthrough",
       "connector": "ros2"
     },
     {
       "name": "speak",
+      "llm_label": "speak",
       "implementation": "passthrough",
       "connector": "elevenlabs_tts"
     }
