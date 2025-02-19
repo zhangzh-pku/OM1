@@ -10,7 +10,7 @@ from openai import ChatCompletion
 from inputs.base import SensorConfig
 from inputs.base.loop import FuserInput
 from providers.io_provider import IOProvider
-from providers.vlm_openai_provider import VlmOpenAIProvider
+from providers.vlm_openai_provider import VLMOpenAIProvider
 
 
 @dataclass
@@ -30,7 +30,7 @@ class Message:
     message: str
 
 
-class VlmOpenAI(FuserInput[str]):
+class VLMOpenAI(FuserInput[str]):
     """
     Vision Language Model input handler.
 
@@ -69,7 +69,7 @@ class VlmOpenAI(FuserInput[str]):
         if api_key is None or api_key == "":
             raise ValueError("config file missing api_key")
 
-        self.vlm: VlmOpenAIProvider = VlmOpenAIProvider(
+        self.vlm: VLMOpenAIProvider = VLMOpenAIProvider(
             base_url=base_url, api_key=api_key
         )
         self.vlm.start()

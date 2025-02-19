@@ -2,7 +2,7 @@ from unittest.mock import Mock, patch
 
 import pytest
 
-from providers.vlm_gemini_provider import VlmGeminiProvider
+from providers.vlm_gemini_provider import VLMGeminiProvider
 
 
 @pytest.fixture
@@ -22,7 +22,7 @@ def api_key():
 
 @pytest.fixture(autouse=True)
 def reset_singleton():
-    VlmGeminiProvider._instance = None
+    VLMGeminiProvider._instance = None
     yield
 
 
@@ -37,7 +37,7 @@ def mock_dependencies():
 
 def test_initialization(base_url, api_key, fps, mock_dependencies):
     mock_client, mock_video_stream = mock_dependencies
-    provider = VlmGeminiProvider(base_url, api_key, fps=fps)
+    provider = VLMGeminiProvider(base_url, api_key, fps=fps)
 
     mock_client.assert_called_once_with(api_key=api_key, base_url=base_url)
     mock_video_stream.assert_called_once_with(
@@ -51,8 +51,8 @@ def test_initialization(base_url, api_key, fps, mock_dependencies):
 
 
 def test_singleton_pattern(base_url, api_key, fps):
-    provider1 = VlmGeminiProvider(base_url, api_key, fps=fps)
-    provider2 = VlmGeminiProvider(base_url, api_key, fps=fps)
+    provider1 = VLMGeminiProvider(base_url, api_key, fps=fps)
+    provider2 = VLMGeminiProvider(base_url, api_key, fps=fps)
 
     assert provider1 is provider2
     assert provider1.api_client is provider2.api_client
@@ -60,7 +60,7 @@ def test_singleton_pattern(base_url, api_key, fps):
 
 
 def test_register_message_callback(base_url, api_key, fps, mock_dependencies):
-    provider = VlmGeminiProvider(base_url, api_key, fps=fps)
+    provider = VLMGeminiProvider(base_url, api_key, fps=fps)
     callback = Mock()
 
     provider.register_message_callback(callback)
@@ -69,7 +69,7 @@ def test_register_message_callback(base_url, api_key, fps, mock_dependencies):
 
 @pytest.mark.asyncio
 async def test_start(base_url, api_key, fps, mock_dependencies):
-    provider = VlmGeminiProvider(base_url, api_key, fps=fps)
+    provider = VLMGeminiProvider(base_url, api_key, fps=fps)
     provider.start()
 
     assert provider.running
@@ -85,7 +85,7 @@ async def test_start(base_url, api_key, fps, mock_dependencies):
 
 
 def test_start_already_running(base_url, api_key, fps, mock_dependencies):
-    provider = VlmGeminiProvider(base_url, api_key, fps=fps)
+    provider = VLMGeminiProvider(base_url, api_key, fps=fps)
     provider.start()
     initial_thread = provider._thread
 
@@ -94,7 +94,7 @@ def test_start_already_running(base_url, api_key, fps, mock_dependencies):
 
 
 def test_stop(base_url, api_key, fps, mock_dependencies):
-    provider = VlmGeminiProvider(base_url, api_key, fps=fps)
+    provider = VLMGeminiProvider(base_url, api_key, fps=fps)
     provider.start()
     provider.stop()
 

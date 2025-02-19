@@ -10,7 +10,7 @@ from .singleton import singleton
 
 
 @singleton
-class VlmGeminiProvider:
+class VLMGeminiProvider:
     """
     VLM Provider that handles video streaming and Gemini API communication.
 
