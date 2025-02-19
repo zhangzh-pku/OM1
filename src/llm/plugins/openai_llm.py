@@ -75,8 +75,7 @@ class OpenAILLM(LLM[R]):
         """
         try:
             logging.debug(f"OpenAI LLM input: {prompt}")
-
-            print(messages)
+            logging.debug(f"OpenAI LLM messages: {messages}")
 
             self.io_provider.llm_start_time = time.time()
             self.io_provider.set_llm_prompt(prompt)

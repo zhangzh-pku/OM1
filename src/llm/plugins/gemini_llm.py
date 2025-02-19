@@ -72,6 +72,7 @@ class GeminiLLM(LLM[R]):
         """
         try:
             logging.debug(f"Gemini LLM input: {prompt}")
+            logging.debug(f"Gemini LLM messages: {messages}")
 
             self.io_provider.llm_start_time = time.time()
             self.io_provider.set_llm_prompt(prompt)

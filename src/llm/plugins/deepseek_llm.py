@@ -73,6 +73,8 @@ class DeepSeekLLM(LLM[R]):
         """
         try:
             logging.debug(f"DeepSeek LLM input: {prompt}")
+            logging.debug(f"DeepSeek LLM messages: {messages}")
+
             self.io_provider.llm_start_time = time.time()
             self.io_provider.set_llm_prompt(prompt)
 
