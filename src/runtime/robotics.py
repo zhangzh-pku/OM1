@@ -1,6 +1,4 @@
 import logging
-import os
-from typing import Any, Dict
 
 
 def load_unitree(unitree_ethernet: str):

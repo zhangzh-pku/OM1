@@ -10,16 +10,17 @@ from providers.io_provider import IOProvider
 
 try:
     from unitree.unitree_sdk2py.core.channel import ChannelSubscriber
-    from unitree.unitree_sdk2py.idl.default import unitree_hg_msg_dds__LowState_
-    from unitree.unitree_sdk2py.idl.default import unitree_hg_msg_dds__BmsState_
-    from unitree.unitree_sdk2py.idl.unitree_hg.msg.dds_ import BmsState_
-    from unitree.unitree_sdk2py.idl.unitree_hg.msg.dds_ import LowState_
+    from unitree.unitree_sdk2py.idl.default import unitree_hg_msg_dds__BmsState_  # F401
+    from unitree.unitree_sdk2py.idl.default import unitree_hg_msg_dds__LowState_  # F401
+    from unitree.unitree_sdk2py.idl.unitree_hg.msg.dds_ import BmsState_, LowState_
 except ImportError:
     logging.warning(
         "Unitree SDK not found. Please install the Unitree SDK to use this plugin."
     )
     LowState_ = None
+    BmsState_ = None
     ChannelSubscriber = None
+
 
 @dataclass
 class Message:
@@ -52,6 +53,7 @@ class LowState_(idl.IdlStruct, typename="unitree_hg.msg.dds_.LowState_"):
     motor_state: types.array['unitree.unitree_sdk2py.idl.unitree_hg.msg.dds_.MotorState_', 35]
     wireless_remote: types.array[types.uint8, 40]
 """
+
 
 class UnitreeG1Basic(FuserInput[str]):
     """
@@ -99,7 +101,7 @@ class UnitreeG1Basic(FuserInput[str]):
         self.latest_v = 0.0
         self.latest_a = 0.0
 
-        self.g1_lowbatt_percent = 20.0 # percent
+        self.g1_lowbatt_percent = 20.0  # percent
         self.descriptor_for_LLM = "Energy Level"
 
     def BMSStateHandler(self, msg: BmsState_):
@@ -145,13 +147,15 @@ class UnitreeG1Basic(FuserInput[str]):
         """
         battery_voltage = raw_input[0]
 
-        diff = battery_voltage - 43600 
+        diff = battery_voltage - 43600
         battery_percent = 0.00
 
         if diff > 0:
-            battery_percent = round(diff / 96.9, 2) 
+            battery_percent = round(diff / 96.9, 2)
 
-        logging.info(f"Battery:{self.latest_v}mV, {self.latest_a}mA, percent:{battery_percent}")
+        logging.info(
+            f"Battery:{self.latest_v}mV, {self.latest_a}mA, percent:{battery_percent}"
+        )
 
         if battery_percent < self.g1_lowbatt_percent:
             message = "WARNING: You are low on energy. SIT DOWN NOW."
@@ -201,7 +205,7 @@ class UnitreeG1Basic(FuserInput[str]):
 """
 
         self.io_provider.add_input(
-            self.__class__.__name__, latest_message.message, latest_message.timestamp
+            self.descriptor_for_LLM, latest_message.message, latest_message.timestamp
         )
         self.messages = []
 

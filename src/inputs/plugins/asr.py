@@ -1,12 +1,14 @@
 import asyncio
 import json
 import logging
+import time
 from queue import Empty, Queue
 from typing import Dict, List, Optional
 
 from inputs.base import SensorConfig
 from inputs.base.loop import FuserInput
 from providers.asr_provider import ASRProvider
+from providers.io_provider import IOProvider
 from providers.sleep_ticker_provider import SleepTickerProvider
 
 
@@ -27,7 +29,9 @@ class ASRInput(FuserInput[str]):
         # Buffer for storing the final output
         self.messages: List[str] = []
 
+        # Set IO Provider
         self.descriptor_for_LLM = "Voice Input"
+        self.io_provider = IOProvider()
 
         # Buffer for storing messages
         self.message_buffer: Queue[str] = Queue()
@@ -137,5 +141,8 @@ class ASRInput(FuserInput[str]):
 {self.messages[-1]}
 // END
 """
+        self.io_provider.add_input(
+            self.descriptor_for_LLM, self.messages[-1], time.time()
+        )
         self.messages = []
         return result

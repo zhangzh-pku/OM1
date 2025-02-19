@@ -83,9 +83,7 @@ def load_config(config_name: str) -> RuntimeConfig:
 
     g_ut_eth = raw_config.get("unitree_ethernet", None)
     if g_ut_eth is None or g_ut_eth == "":
-        logging.info(
-            "No robot hardware config provided."
-        )
+        logging.info("No robot hardware config provided.")
     else:
         # Load Unitree robot communication channel, if needed
         load_unitree(g_ut_eth)
@@ -134,9 +132,7 @@ def load_config(config_name: str) -> RuntimeConfig:
     return RuntimeConfig(**parsed_config)
 
 
-def add_meta(config: Dict, 
-    g_api_key: Optional[str], 
-    g_ut_eth: Optional[str]) -> dict:
+def add_meta(config: Dict, g_api_key: Optional[str], g_ut_eth: Optional[str]) -> dict:
     """
     Add an API key and Robot configuration to a runtime configuration.
 
@@ -155,10 +151,10 @@ def add_meta(config: Dict,
         The updated runtime configuration.
     """
 
-    #logging.info(f"config before {config}")
+    # logging.info(f"config before {config}")
     if "api_key" not in config and g_api_key is not None:
         config["api_key"] = g_api_key
     if "unitree_ethernet" not in config and g_ut_eth is not None:
         config["unitree_ethernet"] = g_ut_eth
-    #logging.info(f"config after {config}")
+    # logging.info(f"config after {config}")
     return config
