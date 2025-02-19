@@ -71,7 +71,9 @@ class ElevenLabsAudioOutputStream(AudioOutputStream):
                 raw_data[i : i + chunk_size], exception_on_underflow=False
             )
 
+        self.stream.stop_stream()
         self._tts_callback(False)
+        self.stream.start_stream()
 
 
 @singleton
