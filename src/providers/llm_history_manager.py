@@ -6,33 +6,38 @@ from typing import Any, Awaitable, Callable, List, Optional, TypeVar, Union
 
 import openai
 
+from llm import LLMConfig
+
 from .io_provider import IOProvider
 
-R = TypeVar('R')
+R = TypeVar("R")
+
 
 @dataclass
 class ChatMessage:
     role: str
     content: str
 
+
 ACTION_MAP = {
     "emotion": "You felt: {}. ",
     "speak": "You said: {} ",
-    "move": "You performed this motion: {}. "
+    "move": "You performed this motion: {}. ",
 }
+
 
 class LLMHistoryManager:
     def __init__(
-            self,
-            client: Union[openai.AsyncClient, openai.OpenAI],
-            history_length: int = 0,
-            system_prompt: str = "You are a helpful assistant that summarizes conversations accurately and concisely.",
-            summary_prompt: str = "Please summarize the following conversation while preserving key information:\n\n"
-        ):
+        self,
+        config: LLMConfig,
+        client: Union[openai.AsyncClient, openai.OpenAI],
+        system_prompt: str = "You are a helpful assistant that summarizes conversations accurately and concisely.",
+        summary_prompt: str = "Please summarize the following conversation while preserving key information:\n\n",
+    ):
         self.client = client
 
         # configuration
-        self.history_length = history_length
+        self.config = config
         self.system_prompt = system_prompt
         self.summary_prompt = summary_prompt
 
@@ -54,16 +59,18 @@ class LLMHistoryManager:
             for msg in messages:
                 summary_prompt = self.summary_prompt + f"{msg.role}: {msg.content}\n"
 
-            response = await self.client.beta.chat.completions.parse(
-                model="gpt-4o-mini",
+            response = await self.client.chat.completions.create(
+                model=self.config.model,
                 messages=[
                     {"role": "system", "content": self.system_prompt},
-                    {"role": "user", "content": summary_prompt}
-                ]
+                    {"role": "user", "content": summary_prompt},
+                ],
             )
 
             summary = response.choices[0].message.content
-            return ChatMessage(role="system", content=f"Previous conversation summary: {summary}")
+            return ChatMessage(
+                role="system", content=f"Previous conversation summary: {summary}"
+            )
 
         except Exception as e:
             logging.error(f"Error summarizing messages: {e}")
@@ -108,7 +115,7 @@ class LLMHistoryManager:
         def decorator(func: Callable[..., Awaitable[R]]) -> Callable[..., Awaitable[R]]:
             @functools.wraps(func)
             async def wrapper(self: Any, prompt: str, *args, **kwargs) -> R:
-                if self.history_length == 0:
+                if self._config.history_length == 0:
                     return await func(self, prompt, [], *args, **kwargs)
 
                 formatted_inputs = f"State Input: {" | ".join(f"{input_type}: {input_info.input}" for input_type, input_info in self.io_provider.inputs.items())}"
@@ -122,25 +129,29 @@ class LLMHistoryManager:
                 if response is not None:
                     assistant_message = "Action Output: " + (
                         " | ".join(
-                            ACTION_MAP[command.name].format(command.arguments[0].value if command.arguments else "")
-                            for command in response.commands if command.name in ACTION_MAP
+                            ACTION_MAP[command.name].format(
+                                command.arguments[0].value if command.arguments else ""
+                            )
+                            for command in response.commands
+                            if command.name in ACTION_MAP
                         )
                     )
 
-                    self.history_manager.history.append(ChatMessage(
-                        role="system",
-                        content=assistant_message
-                    ))
+                    self.history_manager.history.append(
+                        ChatMessage(role="assistant", content=assistant_message)
+                    )
 
-                    if self.history_manager.history_length > 0 and len(self.history_manager.history) > self.history_manager.history_length:
-                        await self.history_manager.start_summary_task(self.history_manager.history)
-
-                else:
-                    self.history_manager.history.append(ChatMessage(
-                        role="system",
-                        content="Error processing action."
-                    ))
+                    if (
+                        self.history_manager.config.history_length > 0
+                        and len(self.history_manager.history)
+                        > self.history_manager.config.history_length
+                    ):
+                        await self.history_manager.start_summary_task(
+                            self.history_manager.history
+                        )
 
                 return response
+
             return wrapper
+
         return decorator

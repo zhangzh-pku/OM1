@@ -1,7 +1,6 @@
 import logging
 import time
 import typing as T
-from dataclasses import dataclass
 
 import openai
 from pydantic import BaseModel
@@ -10,23 +9,6 @@ from llm import LLM, LLMConfig
 from providers.llm_history_manager import LLMHistoryManager
 
 R = T.TypeVar("R", bound=BaseModel)
-
-
-@dataclass
-class History:
-    """
-    Container for timestamped interactions.
-
-    Parameters
-    ----------
-    timestamp : float
-        Unix timestamp of the interaction
-    interaction : str
-        The input/action pair
-    """
-
-    timestamp: float
-    interaction: str
 
 
 class OpenAILLM(LLM[R]):
@@ -40,12 +22,12 @@ class OpenAILLM(LLM[R]):
     ----------
     output_model : Type[R]
         A Pydantic BaseModel subclass defining the expected response structure.
-    config : LLMConfig, optional
+    config : LLMConfig
         Configuration object containing API settings. If not provided, defaults
         will be used.
     """
 
-    def __init__(self, output_model: T.Type[R], config: T.Optional[LLMConfig] = None):
+    def __init__(self, output_model: T.Type[R], config: LLMConfig = LLMConfig()):
         """
         Initialize the OpenAI LLM instance.
 
@@ -57,32 +39,19 @@ class OpenAILLM(LLM[R]):
             Configuration settings for the LLM.
         """
         super().__init__(output_model, config)
-        logging.debug(f"Config OpenAI client with config: {config}")
 
-        base_url = config.base_url or "https://api.openmind.org/api/core/openai"
-
-        if config.api_key is None or config.api_key == "":
+        if not config.api_key:
             raise ValueError("config file missing api_key")
-        else:
-            api_key = config.api_key
+        if not config.model:
+            self._config.model = "gpt-4o-mini"
 
-        # Messages buffer
-        self.history: list[History] = []
-
-        self.start_time = time.time()
-
-        client_kwargs = {}
-        client_kwargs["base_url"] = base_url
-        client_kwargs["api_key"] = api_key
-
-        logging.debug(f"Initializing OpenAI client with {client_kwargs}")
-        self._client = openai.AsyncClient(**client_kwargs)
+        self._client = openai.AsyncClient(
+            base_url=config.base_url or "https://api.openmind.org/api/core/openai",
+            api_key=config.api_key,
+        )
 
         # Initialize history manager
-        self.history_length = (
-            config.history_length if config and config.history_length else 0
-        )
-        self.history_manager = LLMHistoryManager(self._client, self.history_length)
+        self.history_manager = LLMHistoryManager(self._config, self._client)
 
     @LLMHistoryManager.update_history()
     async def ask(
@@ -95,6 +64,8 @@ class OpenAILLM(LLM[R]):
         ----------
         prompt : str
             The input prompt to send to the model.
+        messages : List[Dict[str, str]]
+            List of message dictionaries to send to the model.
 
         Returns
         -------
@@ -110,26 +81,24 @@ class OpenAILLM(LLM[R]):
             self.io_provider.llm_start_time = time.time()
             self.io_provider.set_llm_prompt(prompt)
 
-            parsed_response = await self._client.beta.chat.completions.parse(
-                model=(
-                    "gpt-4o-mini" if self._config.model is None else self._config.model
-                ),
+            response = await self._client.beta.chat.completions.parse(
+                model=self._config.model,
                 messages=[*messages, {"role": "user", "content": prompt}],
                 response_format=self._output_model,
             )
 
-            message_content = parsed_response.choices[0].message.content
+            message_content = response.choices[0].message.content
             self.io_provider.llm_end_time = time.time()
 
             try:
                 parsed_response = self._output_model.model_validate_json(
                     message_content
                 )
-                logging.debug(f"LLM output: {parsed_response}")
+                logging.debug(f"OpenAI LLM output: {parsed_response}")
                 return parsed_response
             except Exception as e:
-                logging.error(f"Error parsing response: {e}")
+                logging.error(f"Error parsing OpenAI response: {e}")
                 return None
         except Exception as e:
-            logging.error(f"Error asking LLM: {e}")
+            logging.error(f"OpenAI API error: {e}")
             return None
