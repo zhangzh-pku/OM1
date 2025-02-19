@@ -11,7 +11,10 @@
     }
   ],
   "cortex_llm": {
-    "type": "OpenAILLM"
+    "type": "OpenAILLM",
+    "config": {
+      "history_length": 10
+    }
   },
   "agent_actions": [
     {
