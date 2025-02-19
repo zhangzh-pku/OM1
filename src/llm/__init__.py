@@ -22,12 +22,15 @@ class LLMConfig(BaseModel):
         Authentication key for the LLM service
     model : str, optional
         Name of the LLM model to use
+    history_length : int, optional
+        Number of interactions to store in the history buffer
     """
 
     base_url: T.Optional[str] = None
     api_key: T.Optional[str] = None
     model: T.Optional[str] = None
     history_length: T.Optional[int] = 0
+
 
 class LLM(T.Generic[R]):
     """
