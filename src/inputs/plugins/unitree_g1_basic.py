@@ -10,10 +10,7 @@ from providers.io_provider import IOProvider
 
 try:
     from unitree.unitree_sdk2py.core.channel import ChannelSubscriber
-    from unitree.unitree_sdk2py.idl.unitree_hg.msg.dds_ import (
-        BmsState_,
-        LowState_,
-    )
+    from unitree.unitree_sdk2py.idl.unitree_hg.msg.dds_ import BmsState_, LowState_
 except ImportError:
     logging.warning(
         "Unitree SDK not found. Please install the Unitree SDK to use this plugin."
