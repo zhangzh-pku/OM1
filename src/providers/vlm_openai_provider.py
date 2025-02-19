@@ -10,7 +10,7 @@ from .singleton import singleton
 
 
 @singleton
-class VlmOpenAiProvider:
+class VlmOpenAIProvider:
     """
     VLM Provider that handles video streaming and OpenAI API communication.
 

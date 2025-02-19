@@ -89,7 +89,9 @@ class VlmGemini(FuserInput[str]):
         raw_message : str
             Raw JSON message received from the VLM service
         """
-        logging.info(f"VLM Gemini received message: {raw_message.choices[0].message.content}")
+        logging.info(
+            f"VLM Gemini received message: {raw_message.choices[0].message.content}"
+        )
         self.message_buffer.put(raw_message.choices[0].message.content)
 
     async def _poll(self) -> Optional[str]:
