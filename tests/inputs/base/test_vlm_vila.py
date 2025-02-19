@@ -3,12 +3,12 @@ from unittest.mock import Mock, patch
 
 import pytest
 
-from inputs.plugins.vlm_cloud import Message, VLMCloud
+from inputs.plugins.vlm_vila import Message, VLMVila
 
 
 @pytest.fixture
 def mock_vlm_provider():
-    with patch("inputs.plugins.vlm_cloud.VLMWebSocketProvider") as mock:
+    with patch("inputs.plugins.vlm_vila.VLMVilaProvider") as mock:
         mock_instance = Mock()
         mock.return_value = mock_instance
         yield mock_instance
@@ -16,7 +16,7 @@ def mock_vlm_provider():
 
 @pytest.fixture
 def vlm_input(mock_vlm_provider):
-    return VLMCloud()
+    return VLMVila()
 
 
 def test_init(vlm_input, mock_vlm_provider):
