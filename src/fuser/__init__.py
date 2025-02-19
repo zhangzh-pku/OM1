@@ -86,15 +86,12 @@ class Fuser:
                 + self.config.system_prompt_examples
             )
 
-
-
-        logging.info(
-            f"using {self.config.agent_actions}"
-        )
-
         # descriptions of various possible actions
         actions_fused = "\n\n\n".join(
-            [describe_action(action.name, action.llm_label) for action in self.config.agent_actions]
+            [
+                describe_action(action.name, action.llm_label)
+                for action in self.config.agent_actions
+            ]
         )
 
         question_prompt = "What will you do? Command: "
@@ -106,7 +103,7 @@ class Fuser:
         # (4) a (typically) fixed system prompt requesting commands to be generated
         fused_prompt = f"{system_prompt}\n\n{inputs_fused}\n\nAVAILABLE ACTIONS:\n{actions_fused}\n\n{question_prompt}"
 
-        logging.info(f"FINAL PROMPT: {fused_prompt}")
+        logging.debug(f"FINAL PROMPT: {fused_prompt}")
 
         # Record the timestamp of the output
         self.io_provider.fuser_end_time = time.time()
