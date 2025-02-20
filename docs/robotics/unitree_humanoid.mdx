@@ -24,34 +24,32 @@ uv run src/run.py iris
 
 ### Installation
 
-Add Python CycloneDDS:
+On your control computer, you will need:
+* ffmpeg (for audio to work)
+* v4l-utils  (for video to work)
+* CycloneDDS (for DDS comms to the G1)
+
+Set the correct `CYCLONEDDS_HOME` env var. This is where the actual CycloneDDS is installed on your computer:
+```bash
+export CYCLONEDDS_HOME="$HOME/unitree_ros2/cyclonedds_ws/install/cyclonedds"
+```
+If you do not do this correctly, installation of the Python CycloneDDS, a later step, will fail since it cannot find the correct libraries. Note: make absolutely sure `CYCLONEDDS_HOME` actually points to the CycloneDDS install /lib. This can be confusing, since if you install indirectly via `unitree_ros2`, then the location of the CycloneDDS libraries will be in slightly different location than if you install directly, via `git clone https://github.com/eclipse-cyclonedds/cyclonedds`.
+
+Once you have all of those, then install the optional Python CycloneDDS module:
 
 ```bash
 uv pip install -r pyproject.toml --extra dds
 ```
-Set the correct `CYCLONEDDS_HOME` env var. This is where the actual CycloneDDS is installed on your computer, and has nothing to do with the Python libraries:
-```bash
-export CYCLONEDDS_HOME="$HOME/unitree_ros2/cyclonedds_ws/install/cyclonedds"
-```
-If you do not do this correctly, installation of the Python CycloneDDS will fail since it cannot find the correct libraries. 
-
-Note: make absolutely sure `CYCLONEDDS_HOME` actually points to the CycloneDDS install /lib.
 
 Note: on first invocation, the system sometimes cannot find the Unitree libraries. This should resolve by itself quickly. 
 
-Note: Install `ffmpeg` otherwise the audio out will not work due to missing `ffprobe`:
+Note: Install `ffmpeg` otherwise the audio out will not work due to missing `ffprobe`.
+Note: Install `v4l-utils` for `/src/providers/unitree_realsense_dev_vlm_provider/_find_rgb_device()` to work.
 ```bash
 sudo apt-get update
-sudo apt-get install ffmpeg
+sudo apt-get install ffmpeg v4l-utils
 ```
-
-Note: Install `v4l-utils` to help debug video problems:
-```bash
-sudo apt-get update
-sudo apt-get install v4l-utils
-```
-
-**WARNING**: The camera system, if not correctly configured, has a tendency to bring down the entire USB bus. FIX: reboot the humanoid.
+v4l-utils is also useful to debug video problems. **WARNING**: The camera system, if not correctly configured, has a tendency to bring down the entire USB bus. FIX: reboot the humanoid.
 
 ## System Description
 
