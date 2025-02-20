@@ -65,7 +65,7 @@ class ASRInput(FuserInput[str]):
             json_message: Dict = json.loads(raw_message)
             if "asr_reply" in json_message:
                 asr_reply = json_message["asr_reply"]
-                if len(asr_reply) > 1:
+                if len(asr_reply) > 1 and len(asr_reply.split()) > 1:
                     self.message_buffer.put(asr_reply)
                     logging.info("Detected ASR message: %s", asr_reply)
         except json.JSONDecodeError:
