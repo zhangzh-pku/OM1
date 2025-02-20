@@ -3,11 +3,7 @@ import json
 import os
 from typing import Type
 
-from actions.base import (
-    ActionConnector,
-    ActionImplementation,
-    Interface,
-)
+from actions.base import ActionConnector, ActionImplementation, Interface
 from runtime.config import load_input, load_llm, load_simulator
 
 
