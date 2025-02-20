@@ -40,6 +40,12 @@ def test_handle_asr_message(asr_input):
     assert asr_input.message_buffer.get_nowait() == "test speech"
 
 
+def test_handle_asr_message_single_word(asr_input):
+    test_message = json.dumps({"asr_reply": "test"})
+    asr_input._handle_asr_message(test_message)
+    assert asr_input.message_buffer.empty()
+
+
 def test_handle_invalid_json(asr_input):
     invalid_json = "invalid json"
     asr_input._handle_asr_message(invalid_json)
