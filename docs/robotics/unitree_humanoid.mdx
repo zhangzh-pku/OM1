@@ -22,23 +22,37 @@ Run
 uv run src/run.py iris
 ```
 
-###
+### Installation
 
 Add Python CycloneDDS:
 
 ```bash
-export CYCLONEDDS_HOME=/home/unitree/unitree_ros2/cyclonedds_ws/install/cyclonedds
 uv pip install -r pyproject.toml --extra dds
 ```
-
-Note: make sure `CYCLONEDDS_HOME` actually points to /lib
-
-Also, install `v4l-utils`
-
+Set the correct `CYCLONEDDS_HOME` env var. This is where the actual CycloneDDS is installed on your computer, and has nothing to do with the Python libraries:
+```bash
+export CYCLONEDDS_HOME="$HOME/unitree_ros2/cyclonedds_ws/install/cyclonedds"
 ```
+If you do not do this correctly, installation of the Python CycloneDDS will fail since it cannot find the correct libraries. 
+
+Note: make absolutely sure `CYCLONEDDS_HOME` actually points to the CycloneDDS install /lib.
+
+Note: on first invocation, the system sometimes cannot find the Unitree libraries. This should resolve by itself quickly. 
+
+Note: Install `ffmpeg` otherwise the audio out will not work due to missing `ffprobe`:
+```bash
+sudo apt-get update
+sudo apt-get install ffmpeg
+```
+
+Note: Install `v4l-utils` to help debug video problems:
+```bash
 sudo apt-get update
 sudo apt-get install v4l-utils
 ```
+
+**WARNING**: The camera system, if not correctly configured, has a tendency to bring down the entire USB bus. FIX: reboot the humanoid.
+
 ## System Description
 
 Your computer will be at `192.168.123.99`
@@ -90,7 +104,7 @@ Use the hand controller to command "L1+A" and "L1+UP", the system is ready to mo
 Other actions:
 
 * "SELECT + Y" -> Wave Hand. Alternates sides
-* "SELECT + A" -> Handshake. Hold for movmement to complete. Wait 3s and press again to relax arm to initial state 
+* "SELECT + A" -> Handshake. Hold for movement to complete. Wait 3s and press again to relax arm to initial state 
 * "SELECT + X" -> Turn around and wave hand
 
 Use the joysticks to move forwards and backwards, and to rotate/turn
@@ -108,11 +122,11 @@ Avoid this mode since it disables all high level motion since it turns off the `
 
 To exit this mode, reboot the G1.
 
-## Using the internal Orin
+## Using the Internal Orin
 
 SSH to Orin via 
 
-```
+```bash
 ssh unitree@192.168.123.164
 ```
 
@@ -128,21 +142,19 @@ Select `foxy(1)`.
 
 ## Install CycloneDDS on Orin
 
-The default installation of CycloneDDS on the G1 Orin is broken, since it does not support the newer `unitree_hg` IDL data format for the G1. 
+The default installation of CycloneDDS on the G1 Orin is broken, since it does not support the newer `unitree_hg` IDL data format for the G1. Solution: remove the default CycloneDDS installation and reinstall following the [Unitree ROS2 installation instructions](https://github.com/unitreerobotics/unitree_ros2). The `unitree_hg` bug was fixed in early Dec. 2024 in this commit: unitreerobotics/unitree_ros2@b34fdf7. 
 
-Solution: remove the default CycloneDDS installation on the Orin and reinstall following the [Unitree ROS2 installation instructions](https://github.com/unitreerobotics/unitree_ros2). 
-
-The `unitree_hg` bug was fixed in early Dec. 2024 in this commit: unitreerobotics/unitree_ros2@b34fdf7
-
-You will need to export suitable env variables and correct the setting in `.bashrc` and in `~/unitree_ros2/setup.sh`. Set `setup.sh` to
+You will need to export suitable env variables and correct the setting in `.bashrc` and in `$HOME/unitree_ros2/setup.sh`. Add this to the `.bashrc`:
 
 ```bash
 export CYCLONEDDS_HOME="$HOME/unitree_ros2/cyclonedds_ws/install/cyclonedds"
 ```
 
+Set `$HOME/unitree_ros2/setup.sh` to
+
 ```bash
 #!/bin/bash
-echo "Setup unitree ros2 environment"
+echo "Setup Unitree ROS2 Environment"
 source /opt/ros/foxy/setup.bash
 source $HOME/unitree_ros2/cyclonedds_ws/install/setup.bash
 export RMW_IMPLEMENTATION=rmw_cyclonedds_cpp
@@ -154,7 +166,12 @@ export CYCLONEDDS_URI='<CycloneDDS><Domain><General><Interfaces>
 Source the `setup.sh` via `source ~/unitree_ros2/setup.sh`. Finally, you should start to see data. 
 
 ```bash ros2 topic echo lowstate
-ros2 topic echo lowcmd
+
+ToDo
+
+```
+
+```bash ros2 topic echo lowcmd
 mode_pr: 0
 mode_machine: 4
 motor_cmd:
@@ -167,11 +184,7 @@ motor_cmd:
   reserve: 0
 ```
 
-
-ros2 topic echo odommodestate
-
-ros2 topic echo odommodestate
-
+```bash ros2 topic echo odommodestate
 foot_raise_height: 0.0
 position:
 - -0.0020605064928531647
@@ -188,6 +201,7 @@ range_obstacle:
 - 0.0
 - 0.0
 - 0.0
+```
 
 ```bash ros2 topic list
 /EstimatorData
@@ -239,6 +253,8 @@ range_obstacle:
 /wirelesscontroller
 ```
 
+Here is what will be visible on an external development machine at `.99`, for example, using `./bin/listtopics`:
+```bash
 rt/dex3/right/state unitree_hg::msg::dds_::HandState_
 rt/lf/dex3/right/state unitree_hg::msg::dds_::HandState_
 rt/dex3/right/cmd unitree_hg::msg::dds_::HandCmd_
@@ -281,6 +297,7 @@ rt/api/bashrunner/request unitree_api::msg::dds_::Request_
 rt/lf/dex3/left/state unitree_hg::msg::dds_::HandState_
 rt/dex3/left/state unitree_hg::msg::dds_::HandState_
 rt/dex3/left/cmd unitree_hg::msg::dds_::HandCmd_
+```
 
 ## CycloneDDS Testing on your host computer
 

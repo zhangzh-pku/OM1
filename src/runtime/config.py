@@ -83,7 +83,7 @@ def load_config(config_name: str) -> RuntimeConfig:
 
     g_ut_eth = raw_config.get("unitree_ethernet", None)
     if g_ut_eth is None or g_ut_eth == "":
-        logging.info("No robot hardware config provided.")
+        logging.info("No robot hardware ethernet port provided.")
     else:
         # Load Unitree robot communication channel, if needed
         load_unitree(g_ut_eth)
