@@ -164,9 +164,50 @@ export CYCLONEDDS_URI='<CycloneDDS><Domain><General><Interfaces>
 Source the `setup.sh` via `source ~/unitree_ros2/setup.sh`. Finally, you should start to see data. 
 
 ```bash ros2 topic echo lowstate
-
-ToDo
-
+version:
+- 0
+- 0
+mode_pr: 0
+mode_machine: 4
+tick: 1120016
+imu_state:
+  quaternion:
+  - 0.9940093159675598
+  - 0.0074933432042598724
+  - -0.0023974007926881313
+  - -0.10901317745447159
+  gyroscope:
+  - -0.00523598724976182
+  - -0.00523598724976182
+  - -0.0017453291220590472
+  accelerometer:
+  - 0.009999999776482582
+  - -0.05000000074505806
+  - 9.829999923706055
+  rpy:
+  - 0.015420285053551197
+  - -0.003132336074486375
+  - -0.21849146485328674
+  temperature: 78
+motor_state:
+- mode: 1
+  q: -0.008177042007446289
+  dq: 0.0
+  ddq: 0.0
+  tau_est: -0.11186079680919647
+  temperature:
+  - 29
+  - 28
+  vol: 49.0
+  sensor:
+  - 0
+  - 0
+  motorstate: 0
+  reserve:
+  - 0
+  - 1142
+  - 4
+  - 0
 ```
 
 ```bash ros2 topic echo lowcmd
@@ -183,18 +224,75 @@ motor_cmd:
 ```
 
 ```bash ros2 topic echo odommodestate
+stamp:
+  sec: 0
+  nanosec: 0
+error_code: 0
+imu_state:
+  quaternion:
+  - 0.9981062412261963
+  - 0.007613412104547024
+  - -0.0016289741033688188
+  - -0.06102222576737404
+  gyroscope:
+  - 0.0
+  - 0.0
+  - 0.0
+  accelerometer:
+  - 0.0
+  - 0.0
+  - 0.0
+  rpy:
+  - 0.01539743971079588
+  - -0.002322605811059475
+  - -0.12214189022779465
+  temperature: 0
+mode: 0
+progress: 0.0
+gait_type: 0
 foot_raise_height: 0.0
 position:
-- -0.0020605064928531647
-- 0.053126491606235504
-- 0.7184482216835022
+- 0.0013194791972637177
+- -0.018103253096342087
+- 0.7247929573059082
 body_height: 0.0
 velocity:
-- 5.038951940150582e-07
-- 2.6171483114012517e-06
-- 0.00015149918908718973
-yaw_speed: -0.0017453291220590472
+- 6.116795248090057e-07
+- -1.2412459682309418e-06
+- -4.238392648403533e-05
+yaw_speed: 0.0017453291220590472
 range_obstacle:
+- 0.0
+- 0.0
+- 0.0
+- 0.0
+foot_force:
+- 0
+- 0
+- 0
+- 0
+foot_position_body:
+- 0.0
+- 0.0
+- 0.0
+- 0.0
+- 0.0
+- 0.0
+- 0.0
+- 0.0
+- 0.0
+- 0.0
+- 0.0
+- 0.0
+foot_speed_body:
+- 0.0
+- 0.0
+- 0.0
+- 0.0
+- 0.0
+- 0.0
+- 0.0
+- 0.0
 - 0.0
 - 0.0
 - 0.0

@@ -83,11 +83,11 @@ class UnitreeG1Basic(FuserInput[str]):
         self.lowstate_subscriber = None
         self.bmsstate_subscriber = None
 
-        g_ut_eth = getattr(self.config, "g_ut_eth", None)
-        logging.info(f"UnitreeG1Basic using ethernet: {g_ut_eth}")
+        unitree_ethernet = getattr(self.config, "unitree_ethernet", None)
+        logging.info(f"UnitreeG1Basic using ethernet: {unitree_ethernet}")
 
         # Joint angles e.g.
-        if g_ut_eth and g_ut_eth != "":
+        if unitree_ethernet and unitree_ethernet != "":
             # only set up if we are connected to a robot
             self.lowstate_subscriber = ChannelSubscriber("rt/lowstate", LowState_)
             self.lowstate_subscriber.Init(self.LowStateHandler, 10)

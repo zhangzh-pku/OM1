@@ -16,14 +16,14 @@ class EmotionUnitreeConnector(ActionConnector[EmotionInput]):
         # create audio_optical client
         self.ao_client = None
 
-        self.g_ut_eth = getattr(self.config, "g_ut_eth", None)
-        logging.info(f"EmotionUnitreeConnector using ethernet: {self.g_ut_eth}")
+        self.unitree_ethernet = getattr(self.config, "unitree_ethernet", None)
+        logging.info(f"EmotionUnitreeConnector using ethernet: {self.unitree_ethernet}")
 
-        if self.g_ut_eth and self.g_ut_eth != "":
+        if self.unitree_ethernet and self.unitree_ethernet != "":
             # ChannelFactoryInitialize(0, self.UNITREE_WIRED_ETHERNET)
             # this can only be done once, at top level
             logging.info(
-                f"Emotion system using {self.g_ut_eth} as the network Ethernet adapter"
+                f"Emotion system using {self.unitree_ethernet} as the network Ethernet adapter"
             )
             self.ao_client = AudioClient()
             self.ao_client.SetTimeout(10.0)

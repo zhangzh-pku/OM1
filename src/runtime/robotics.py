@@ -26,7 +26,7 @@ def load_unitree(unitree_ethernet: str):
     """
     if unitree_ethernet is not None:
         logging.info(
-            f"Using {unitree_ethernet} as the Unitree network Ethernet adapter"
+            f"Using {unitree_ethernet} as the Unitree Network Ethernet Adapter"
         )
 
         from unitree.unitree_sdk2py.core.channel import ChannelFactoryInitialize
