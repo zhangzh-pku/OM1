@@ -78,6 +78,8 @@ class OpenAILLM(LLM[R]):
             logging.debug(f"OpenAI LLM messages: {messages}")
 
             self.io_provider.llm_start_time = time.time()
+
+            # this saves all the input information
             self.io_provider.set_llm_prompt(prompt)
 
             response = await self._client.beta.chat.completions.parse(
