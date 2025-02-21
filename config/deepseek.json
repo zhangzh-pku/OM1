@@ -15,7 +15,7 @@
   ],
   "simulators": [
     {
-      "type": "RacoonSim"
+      "type": "WebSim"
     }
   ],
   "cortex_llm": {
