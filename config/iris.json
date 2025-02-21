@@ -17,7 +17,7 @@
       "type": "UnitreeG1Basic"
     },
     {
-      "type": "UnitreeG1CameraVLMCloud"
+      "type": "VLMVila"
     }
   ],
   "cortex_llm": {
