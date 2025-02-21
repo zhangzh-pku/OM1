@@ -20,27 +20,26 @@ class ChatMessage:
 
 
 ACTION_MAP = {
-    "emotion": "You felt: {}.",
-    "speak": "You said: {}",
-    "move": "You performed this motion: {}.",
+    "emotion": "**** felt: {}.",
+    "speak": "**** said: {}",
+    "move": "**** performed this motion: {}.",
 }
-
 
 class LLMHistoryManager:
     def __init__(
         self,
         config: LLMConfig,
         client: Union[openai.AsyncClient, openai.OpenAI],
-        system_prompt: str = "You are a helpful assistant that summarizes a succession of events and interactions accurately and concisely. You are watching a humanoid robot named Iris interact with people and the world. Your goal is help Iris remember what she felt, saw, and heard, and how she responsed to those inputs.",
-        summary_prompt: str = "Please summarize the following interaction, emphasizing the overall situtation, the people that are present, and the main theme of any conversation:\n\n",
+        system_prompt: str = "You are a helpful assistant that summarizes a succession of events and interactions accurately and concisely. You are watching a humanoid robot named **** interact with people and the world. Your goal is to help **** remember what she felt, saw, and heard, and how she responded to those inputs.",
+        summary_command: str = "\nConsidering the new information, write an updated summary of the situation for ****. Emphasize information that **** needs to know to respond to people and situations in the best possible and most compelling way.",
     ):
         self.client = client
 
         # configuration
         self.config = config
-        self.system_prompt = system_prompt
-        self.summary_prompt = summary_prompt
-        self.message_index = 0
+        self.agent_name = 'IRIS'
+        self.system_prompt = system_prompt.replace("****", self.agent_name)
+        self.summary_command = summary_command.replace("****", self.agent_name)
 
         # task executor
         self._summary_task: Optional[asyncio.Task] = None
@@ -58,13 +57,29 @@ class LLMHistoryManager:
         """
         try:
 
-            logging.info(f"all info: {messages}")
+            logging.debug(f"All raw info: {messages} len{len(messages)}")
 
-            summary_prompt = self.summary_prompt
-            for msg in messages:
-                summary_prompt += f"{msg.role}: {msg.content}\n"
+            summary_prompt = ""
 
-            logging.info(f"information to summarize: {summary_prompt}")
+            if len(messages) == 4:
+                # the normal case - previous summary and new data
+                # the previous summary
+                summary_prompt += f"{messages[0].content}\n"
+                # actions - already part of the summary - no need to add
+                # summary_prompt += f"{messages[1].content}\n"
+                summary_prompt += "\nNow, the following new information has arrived. "
+                summary_prompt += f"{messages[2].content}\n"
+                summary_prompt += f"{messages[3].content}\n"  
+            else:
+                for msg in messages:
+                    summary_prompt += f"{msg.content}\n"
+
+            summary_prompt += self.summary_command
+
+            # insert actual robot name
+            summary_prompt = summary_prompt.replace("****", self.agent_name)
+
+            logging.info(f"Information to summarize:\n{summary_prompt}")
 
             response = await self.client.chat.completions.create(
                 model=self.config.model,
@@ -76,12 +91,12 @@ class LLMHistoryManager:
 
             summary = response.choices[0].message.content
             return ChatMessage(
-                role="assistant", content=f"Previous state summary: {summary}"
+                role="assistant", content=f"Previously, {summary}"
             )
 
         except Exception as e:
             logging.error(f"Error summarizing messages: {e}")
-            return ChatMessage(role="system", content="Error summarizing state.")
+            return ChatMessage(role="system", content="Error summarizing state")
 
     async def start_summary_task(self, messages: List[ChatMessage]):
         """
@@ -130,9 +145,10 @@ class LLMHistoryManager:
                     return await func(self, prompt, [], *args, **kwargs)
 
                 cycle = self.frame_index
+                logging.debug(f"LLM Tasking cycle debug tracker: {cycle}")
 
-                formatted_inputs = f"State {cycle}. You sensed the following: {" | ".join(f"{input_type}: {input_info.input}" for input_type, input_info in self.io_provider.inputs.items())}"
-                inputs = ChatMessage(role="inputs", content=formatted_inputs)
+                formatted_inputs = f"**** sensed the following: {" | ".join(f"{input_type}: {input_info.input}" for input_type, input_info in self.io_provider.inputs.items())}"
+                inputs = ChatMessage(role="user", content=formatted_inputs)
 
                 self.history_manager.history.append(inputs)
 
@@ -141,7 +157,7 @@ class LLMHistoryManager:
                 response = await func(self, prompt, messages, *args, **kwargs)
 
                 if response is not None:
-                    action_message = f"{cycle} Given that information, you took these actions: " + (
+                    action_message = "Given that information, **** took these actions: " + (
                         " | ".join(
                             ACTION_MAP[command.name].format(
                                 command.arguments[0].value if command.arguments else ""
@@ -152,7 +168,7 @@ class LLMHistoryManager:
                     )
 
                     self.history_manager.history.append(
-                        ChatMessage(role="actions", content=action_message)
+                        ChatMessage(role="user", content=action_message)
                     )
 
                     if (
