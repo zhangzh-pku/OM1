@@ -5,13 +5,25 @@ description: "Core architecture and runtime flow"
 
 The system is based on a loop that runs at a fixed frequency of `self.config.hertz`. This loop looks for the most recent data from various sources, fuses the data into a prompt, sends that prompt to one or more LLMs, and then sends the LLM responses to virtual agents or physical robots.
 
-Specific runtime flow:
+## Specific runtime flow:
 
 1. Input plugins collect sensor data (vision, audio, social media, etc.)
 2. The Fuser combines inputs into a prompt
 3. The LLM generates commands based on the prompt
 4. The ActionOrchestrator executes commands through actions
 5. Connectors map OM1 data/commands to external data buses and data distribution systems such as custom APIs, `ROS2`, `Zenoh`, or `CycloneDDS`.
+
+<img
+  className="block dark:hidden"
+  src="/assets/flow.png"
+  alt="Hero Light"
+/>
+<img
+  className="hidden dark:block"
+  src="/assets/flow.png"
+  alt="Hero Dark"
+/>
+
 
 ```python Core Runtime System
 # /src/runtime/cortex.py
