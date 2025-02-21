@@ -91,7 +91,7 @@ class LLMHistoryManager:
                 try:
                     if not task.cancelled():
                         summary_message = task.result()
-                        if summary_message.role == "assitant":
+                        if summary_message.role == "assistant":
                             messages.clear()
                             messages.append(summary_message)
                             logging.info("Successfully summarized and updated history")
