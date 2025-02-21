@@ -7,7 +7,7 @@ description: "Get started with Openmind OS (OM1)"
 
 The `Spot` agent uses your webcam to label objects and sends those captions to `OpenAI 4o`. The LLM then returns `movement`, `speech`, and `face` commands, which are displayed in `WebSim`. `WebSim` also shows basic timing and other debug information.
 
-1. Clone the repo
+#### 1. Clone the repo
 
 ```bash clone repo
 git clone https://github.com/OpenmindAGI/OM1.git
@@ -16,11 +16,16 @@ git submodule update --init
 uv venv
 ```
 
-Note: If you don't have the Rust python package manager `uv`, please install it via `brew install uv` (for Mac) and `curl -LsSf https://astral.sh/uv/install.sh | sh` for Linux.
+<Note>
+If you don't have the Rust python package manager `uv`, please install it via `brew install uv` (for Mac) and `curl -LsSf https://astral.sh/uv/install.sh | sh` for Linux.
+</Note>
 
-2. Set configuration variables
 
-Add your Openmind API key in `/config/spot.json`. You can obtain a free access key at https://portal.openmind.org/. If you use the placeholder key, `openmind-free`, you may be rate limited.
+#### 2. Set configuration variables
+
+Add your Openmind API key in `/config/spot.json`. You can obtain a free access key at [openmind](https://portal.openmind.org/). If you use the placeholder key, `openmind-free`, you may be rate limited. Then run Spot, a `Hello World` agent
+
+<CodeGroup>
 
 ```bash set api key
 # /config/spot.json`
@@ -28,8 +33,6 @@ Add your Openmind API key in `/config/spot.json`. You can obtain a free access k
 "api_key": "openmind_om1_pat_2f1cf005af........."
 ...
 ```
-
-3. Run Spot, a `Hello World` agent
 
 ```bash run spot
 uv run src/run.py spot
@@ -56,7 +59,9 @@ INFO:root:Inputs and LLM Outputs: {
 	}
 ```
 
-You will see logging information in the terminal and you can see real time inputs and outputs in a web debug page at http://localhost:8000. 
+</CodeGroup>
+
+You will see logging information in the terminal and you can see real time inputs and outputs in a web debug page at `http://localhost:8000`. 
 
 Add `--debug` to see more logging information.
 
