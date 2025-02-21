@@ -1,5 +1,5 @@
 {
-  "hertz": 1,
+  "hertz": 10,
   "name": "conversation",
   "unitree_ethernet": "",
   "api_key": "om1_live_4aa270d69af2d949ffcc874174a8ff16a7b8430e5bcd75d87e6a53bcb9e4de7d413e1a513fb5f89e",
@@ -23,7 +23,7 @@
   "cortex_llm": {
     "type": "OpenAILLM",
     "config": {
-      "history_length": 6
+      "history_length": 20
     }
   },
   "agent_actions": [
@@ -33,6 +33,7 @@
       "implementation": "passthrough",
       "connector": "elevenlabs_tts",
       "config": {
+        "voice_id": "i4CzbCVWoqvD0P1QJCUL",
         "microphone_name": "USB PnP Audio Device",
         "speaker_name": "USB PnP Audio Device"
       }

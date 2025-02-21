@@ -69,7 +69,7 @@ class LLMHistoryManager:
 
             summary = response.choices[0].message.content
             return ChatMessage(
-                role="system", content=f"Previous conversation summary: {summary}"
+                role="assistant", content=f"Previous conversation summary: {summary}"
             )
 
         except Exception as e:
@@ -91,9 +91,12 @@ class LLMHistoryManager:
                 try:
                     if not task.cancelled():
                         summary_message = task.result()
-                        messages.clear()
-                        messages.append(summary_message)
-                        logging.info("Successfully summarized and updated history")
+                        if summary_message.role == "assitant":
+                            messages.clear()
+                            messages.append(summary_message)
+                            logging.info("Successfully summarized and updated history")
+                        else:
+                            raise Exception("Failed to summarize the chat history.")
                 except Exception as e:
                     logging.error(f"Error in summary task callback: {e}")
                     messages.pop(0) if messages else None

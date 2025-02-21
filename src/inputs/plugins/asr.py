@@ -80,7 +80,7 @@ class ASRInput(FuserInput[str]):
         Optional[str]
             Message from the buffer if available, None otherwise
         """
-        await asyncio.sleep(0.5)
+        await asyncio.sleep(0.1)
         try:
             message = self.message_buffer.get_nowait()
             return message

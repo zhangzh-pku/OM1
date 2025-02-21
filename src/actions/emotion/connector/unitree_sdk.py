@@ -38,25 +38,21 @@ class EmotionUnitreeConnector(ActionConnector[EmotionInput]):
 
         if output_interface.action == "happy":
             logging.info("Unitree: happy")  # green
-            self.ao_client.LedControl(0, 255, 0)
-            time.sleep(2)
+            self.ao_client.LedControlNoReply(0, 255, 0)
         elif output_interface.action == "sad":
             logging.info("Unitree: sad")  # yellow
-            self.ao_client.LedControl(255, 255, 0)
-            time.sleep(2)
+            self.ao_client.LedControlNoReply(255, 255, 0)
         elif output_interface.action == "mad":
             logging.info("Unitree: mad")  # red
-            self.ao_client.LedControl(255, 0, 0)
-            time.sleep(2)
+            self.ao_client.LedControlNoReply(255, 0, 0)
         elif output_interface.action == "curious":
             logging.info("Unitree: curious")  # blue
-            self.ao_client.LedControl(0, 0, 255)
-            time.sleep(2)
+            self.ao_client.LedControlNoReply(0, 0, 255)
         else:
             logging.info(f"Unknown emotion: {output_interface.action}")
 
         logging.info(f"SendThisToUTClient: {output_interface.action}")
 
     def tick(self) -> None:
-        time.sleep(0.1)
+        time.sleep(5)
         # logging.info("MoveRos2Connector Tick")
