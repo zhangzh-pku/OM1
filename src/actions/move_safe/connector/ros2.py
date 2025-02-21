@@ -2,7 +2,13 @@ import logging
 import os
 import time
 
-import hid
+try:
+    import hid
+except ImportError:
+    logging.warning(
+        "HID library not found. Please install the HIDAPI library to use this plugin."
+    )
+    hid = None
 
 from actions.base import ActionConfig, ActionConnector
 from actions.move_safe.interface import MoveInput
