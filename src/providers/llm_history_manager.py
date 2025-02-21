@@ -20,9 +20,9 @@ class ChatMessage:
 
 
 ACTION_MAP = {
-    "emotion": "You felt: {}. ",
-    "speak": "You said: {} ",
-    "move": "You performed this motion: {}. ",
+    "emotion": "You felt: {}.",
+    "speak": "You said: {}",
+    "move": "You performed this motion: {}.",
 }
 
 
@@ -31,8 +31,8 @@ class LLMHistoryManager:
         self,
         config: LLMConfig,
         client: Union[openai.AsyncClient, openai.OpenAI],
-        system_prompt: str = "You are a helpful assistant that summarizes conversations accurately and concisely.",
-        summary_prompt: str = "Please summarize the following conversation while preserving key information:\n\n",
+        system_prompt: str = "You are a helpful assistant that summarizes a succession of events and interactions accurately and concisely. You are watching a humanoid robot named Iris interact with people and the world. Your goal is help Iris remember what she felt, saw, and heard, and how she responsed to those inputs.",
+        summary_prompt: str = "Please summarize the following interaction, emphasizing the overall situtation, the people that are present, and the main theme of any conversation:\n\n",
     ):
         self.client = client
 
@@ -40,6 +40,7 @@ class LLMHistoryManager:
         self.config = config
         self.system_prompt = system_prompt
         self.summary_prompt = summary_prompt
+        self.message_index = 0
 
         # task executor
         self._summary_task: Optional[asyncio.Task] = None
@@ -56,8 +57,14 @@ class LLMHistoryManager:
         Returns a new message containing the summary.
         """
         try:
+
+            logging.info(f"all info: {messages}")
+
+            summary_prompt = self.summary_prompt
             for msg in messages:
-                summary_prompt = self.summary_prompt + f"{msg.role}: {msg.content}\n"
+                summary_prompt += f"{msg.role}: {msg.content}\n"
+
+            logging.info(f"information to summarize: {summary_prompt}")
 
             response = await self.client.chat.completions.create(
                 model=self.config.model,
@@ -69,12 +76,12 @@ class LLMHistoryManager:
 
             summary = response.choices[0].message.content
             return ChatMessage(
-                role="assistant", content=f"Previous conversation summary: {summary}"
+                role="assistant", content=f"Previous state summary: {summary}"
             )
 
         except Exception as e:
             logging.error(f"Error summarizing messages: {e}")
-            return ChatMessage(role="system", content="Error summarizing conversation.")
+            return ChatMessage(role="system", content="Error summarizing state.")
 
     async def start_summary_task(self, messages: List[ChatMessage]):
         """
@@ -94,9 +101,9 @@ class LLMHistoryManager:
                         if summary_message.role == "assistant":
                             messages.clear()
                             messages.append(summary_message)
-                            logging.info("Successfully summarized and updated history")
+                            logging.info("Successfully summarized the state")
                         else:
-                            raise Exception("Failed to summarize the chat history.")
+                            raise Exception("Failed to summarize the state")
                 except Exception as e:
                     logging.error(f"Error in summary task callback: {e}")
                     messages.pop(0) if messages else None
@@ -118,19 +125,23 @@ class LLMHistoryManager:
         def decorator(func: Callable[..., Awaitable[R]]) -> Callable[..., Awaitable[R]]:
             @functools.wraps(func)
             async def wrapper(self: Any, prompt: str, *args, **kwargs) -> R:
+                
                 if self._config.history_length == 0:
                     return await func(self, prompt, [], *args, **kwargs)
 
-                formatted_inputs = f"State Input: {" | ".join(f"{input_type}: {input_info.input}" for input_type, input_info in self.io_provider.inputs.items())}"
-                user_message = ChatMessage(role="user", content=formatted_inputs)
+                cycle = self.frame_index
 
-                self.history_manager.history.append(user_message)
+                formatted_inputs = f"State {cycle}. You sensed the following: {" | ".join(f"{input_type}: {input_info.input}" for input_type, input_info in self.io_provider.inputs.items())}"
+                inputs = ChatMessage(role="inputs", content=formatted_inputs)
+
+                self.history_manager.history.append(inputs)
 
                 messages = self.history_manager.get_messages()
+                # this advances the frame index
                 response = await func(self, prompt, messages, *args, **kwargs)
 
                 if response is not None:
-                    assistant_message = "Action Output: " + (
+                    action_message = f"{cycle} Given that information, you took these actions: " + (
                         " | ".join(
                             ACTION_MAP[command.name].format(
                                 command.arguments[0].value if command.arguments else ""
@@ -141,7 +152,7 @@ class LLMHistoryManager:
                     )
 
                     self.history_manager.history.append(
-                        ChatMessage(role="assistant", content=assistant_message)
+                        ChatMessage(role="actions", content=action_message)
                     )
 
                     if (

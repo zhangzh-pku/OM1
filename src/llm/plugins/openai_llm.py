@@ -53,6 +53,8 @@ class OpenAILLM(LLM[R]):
         # Initialize history manager
         self.history_manager = LLMHistoryManager(self._config, self._client)
 
+        self.frame_index = 0
+
     @LLMHistoryManager.update_history()
     async def ask(
         self, prompt: str, messages: T.List[T.Dict[str, str]] = []
@@ -78,6 +80,8 @@ class OpenAILLM(LLM[R]):
             logging.debug(f"OpenAI LLM messages: {messages}")
 
             self.io_provider.llm_start_time = time.time()
+
+            # this saves all the input information
             self.io_provider.set_llm_prompt(prompt)
 
             response = await self._client.beta.chat.completions.parse(
@@ -88,6 +92,8 @@ class OpenAILLM(LLM[R]):
 
             message_content = response.choices[0].message.content
             self.io_provider.llm_end_time = time.time()
+
+            self.frame_index += 1
 
             try:
                 parsed_response = self._output_model.model_validate_json(
