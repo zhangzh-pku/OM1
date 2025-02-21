@@ -41,6 +41,9 @@ class LLMHistoryManager:
         self.system_prompt = system_prompt.replace("****", self.agent_name)
         self.summary_command = summary_command.replace("****", self.agent_name)
 
+        # frame index
+        self.frame_index = 0
+
         # task executor
         self._summary_task: Optional[asyncio.Task] = None
 
@@ -69,7 +72,7 @@ class LLMHistoryManager:
                 # summary_prompt += f"{messages[1].content}\n"
                 summary_prompt += "\nNow, the following new information has arrived. "
                 summary_prompt += f"{messages[2].content}\n"
-                summary_prompt += f"{messages[3].content}\n"  
+                summary_prompt += f"{messages[3].content}\n"
             else:
                 for msg in messages:
                     summary_prompt += f"{msg.content}\n"
@@ -140,11 +143,13 @@ class LLMHistoryManager:
         def decorator(func: Callable[..., Awaitable[R]]) -> Callable[..., Awaitable[R]]:
             @functools.wraps(func)
             async def wrapper(self: Any, prompt: str, *args, **kwargs) -> R:
-                
-                if self._config.history_length == 0:
-                    return await func(self, prompt, [], *args, **kwargs)
 
-                cycle = self.frame_index
+                if self._config.history_length == 0:
+                    await func(self, prompt, [], *args, **kwargs)
+                    self.history_manager.frame_index += 1
+                    return
+
+                cycle = self.history_manager.frame_index
                 logging.debug(f"LLM Tasking cycle debug tracker: {cycle}")
 
                 formatted_inputs = f"**** sensed the following: {" | ".join(f"{input_type}: {input_info.input}" for input_type, input_info in self.io_provider.inputs.items())}"
@@ -179,6 +184,8 @@ class LLMHistoryManager:
                         await self.history_manager.start_summary_task(
                             self.history_manager.history
                         )
+
+                self.history_manager.frame_index += 1
 
                 return response
 
