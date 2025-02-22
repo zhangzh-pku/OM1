@@ -1,5 +1,5 @@
 import logging
-import os
+import threading
 import time
 
 try:
@@ -29,31 +29,71 @@ class MoveRos2Connector(ActionConnector[MoveInput]):
 
         self.cb: list[str] = []
 
-        for device in hid.enumerate():
-            logging.debug(f"device {device['product_string']}")
-            if "Xbox Wireless Controller" in device["product_string"]:
-                self.vendor_id = device["vendor_id"]
-                self.product_id = device["product_id"]
-                self.gamepad = hid.Device(self.vendor_id, self.product_id)
-                logging.info(
-                    f"Connected {device['product_string']} {self.vendor_id} {self.product_id}"
-                )
-                break
+        if hid is not None:
+            for device in hid.enumerate():
+                logging.debug(f"device {device['product_string']}")
+                if "Xbox Wireless Controller" in device["product_string"]:
+                    self.vendor_id = device["vendor_id"]
+                    self.product_id = device["product_id"]
+                    self.gamepad = hid.Device(self.vendor_id, self.product_id)
+                    logging.info(
+                        f"Connected {device['product_string']} {self.vendor_id} {self.product_id}"
+                    )
+                    break
 
         # create sport client
         self.sport_client = None
-
-        self.UNIEN0 = os.getenv("UNITREE_WIRED_ETHERNET")
-        if self.UNIEN0 is not None and self.UNIEN0 != "SIM":
-            # Set up Unitree subscriber unless adapater is set to "SIM""
-            # ChannelFactoryInitialize(0, self.UNITREE_WIRED_ETHERNET)
-            # this can only be done once, at top level
-            logging.info(
-                f"Move system using {self.UNIEN0} as the network Ethernet adapter"
-            )
+        try:
             self.sport_client = SportClient()
             self.sport_client.SetTimeout(10.0)
             self.sport_client.Init()
+            logging.info("Unitree sport client initialized")
+        except Exception as e:
+            logging.error(f"Error initializing Unitree sport client: {e}")
+
+        self.thread_lock = threading.Lock()
+
+    def _execute_command_thread(self, command: str) -> None:
+        try:
+            getattr(self.sport_client, command)()
+        except Exception as e:
+            logging.error(f"Error in command thread {command}: {e}")
+        finally:
+            self.thread_lock.release()
+
+    def _execute_sport_command_sync(self, command: str) -> None:
+        if not self.sport_client:
+            return
+
+        if not self.thread_lock.acquire(blocking=False):
+            logging.info("Action already in progress, skipping")
+            return
+
+        try:
+            thread = threading.Thread(
+                target=self._execute_command_thread, args=(command,), daemon=True
+            )
+            thread.start()
+        except Exception as e:
+            logging.error(f"Error executing Unitree command {command}: {e}")
+            self.thread_lock.release()
+
+    async def _execute_sport_command(self, command: str) -> None:
+        if not self.sport_client:
+            return
+
+        if not self.thread_lock.acquire(blocking=False):
+            logging.info("Action already in progress, skipping")
+            return
+
+        try:
+            thread = threading.Thread(
+                target=self._execute_command_thread, args=(command,), daemon=True
+            )
+            thread.start()
+        except Exception as e:
+            logging.error(f"Error executing Unitree command {command}: {e}")
+            self.thread_lock.release()
 
     async def connect(self, output_interface: MoveInput) -> None:
 
@@ -65,27 +105,21 @@ class MoveRos2Connector(ActionConnector[MoveInput]):
 
         if output_interface.action == "stand up":
             logging.info("Unitree AI command: stand up")
-            if self.sport_client:
-                self.sport_client.StandUp()
+            await self._execute_sport_command("StandUp")
         elif output_interface.action == "sit":
             logging.info("Unitree AI command: lay down")
-            if self.sport_client:
-                self.sport_client.StandDown()
+            await self._execute_sport_command("StandDown")
         elif output_interface.action == "shake paw":
             logging.info("Unitree AI command: shake paw")
-            if self.sport_client:
-                self.sport_client.Hello()
+            await self._execute_sport_command("Hello")
         else:
             logging.info(f"Unknown move type: {output_interface.action}")
-            # raise ValueError(f"Unknown move type: {output_interface.action}")
 
         logging.info(f"SendThisToROS2: {output_interface.action}")
 
     def tick(self) -> None:
 
         time.sleep(0.1)
-
-        # logging.info("MoveRos2Connector Tick")
 
         if self.gamepad:
 
@@ -100,40 +134,17 @@ class MoveRos2Connector(ActionConnector[MoveInput]):
                 # to prevent this, we only act when the button state changes from
                 # 0 to > 0
                 if button_now == 1:
-                    if len(self.cb) == 0 or self.cb[-1] != "game_a":
-                        self.cb.append("game_a")
+                    self._execute_sport_command_sync("StandUp")
+                    logging.info("Controller unitree: stand_up")
                 elif button_now == 2:
-                    if len(self.cb) == 0 or self.cb[-1] != "game_b":
-                        self.cb.append("game_b")
+                    self._execute_sport_command_sync("StandDown")
+                    logging.info("Controller unitree: lay_down")
                 elif button_now == 8:
-                    if len(self.cb) == 0 or self.cb[-1] != "game_x":
-                        self.cb.append("game_x")
+                    self._execute_sport_command_sync("Hello")
+                    logging.info("Controller unitree: say_hello")
                 elif button_now == 16:
-                    if len(self.cb) == 0 or self.cb[-1] != "game_y":
-                        self.cb.append("game_y")
-                logging.info(f"Gamepad button depressed edge {self.cb}")
+                    self._execute_sport_command_sync("Stretch")
+                    logging.info("Controller unitree: stretch")
+                logging.info(f"Gamepad button depressed edge {button_now}")
 
             self.button_previous = button_now
-
-        if len(self.cb) > 0:
-
-            if self.cb[-1] == "game_a":
-                logging.info("ROS2 unitree: stand_up")
-                if self.sport_client:
-                    self.sport_client.StandUp()
-                del self.cb[-1]
-            elif self.cb[-1] == "game_b":
-                if self.sport_client:
-                    self.sport_client.StandDown()
-                logging.info("ROS2 unitree: lay_down")
-                del self.cb[-1]
-            elif self.cb[-1] == "game_x":
-                if self.sport_client:
-                    self.sport_client.Hello()
-                logging.info("ROS2 unitree: say_hello")
-                del self.cb[-1]
-            elif self.cb[-1] == "game_y":
-                if self.sport_client:
-                    self.sport_client.Stretch()
-                logging.info("ROS2 unitree: stretch")
-                del self.cb[-1]
