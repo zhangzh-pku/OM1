@@ -40,9 +40,9 @@ _Note 1:_ You will need the Rust Python package manager `uv`.
 
 _Note 2:_ If your system doesn't have `portaudio`, you should install it to run the program.
 * To install on Mac, use `brew install portaudio`
-* On Linux, use `sudo apt-get install libasound-dev`
+* On Linux, use `sudo apt-get install portaudio19-dev python-all-dev`
 
-Similarily, you may need `ffmpeg`.
+Similarily, you may need `ffmpeg`, and/or other modules, depending on your system.
 
 2. Set the configuration variables. 
 

@@ -11,7 +11,7 @@ from actions.base import (
 )
 
 
-def describe_action(action_name: str) -> str:
+def describe_action(action_name: str, llm_label: str) -> str:
     interface = None
     action = importlib.import_module(f"actions.{action_name}.interface")
     for _, obj in action.__dict__.items():
@@ -42,7 +42,7 @@ def describe_action(action_name: str) -> str:
 
     # Format the full docstring
     type_hints = "\n".join(f"    {name}: {desc}" for name, desc in hints.items())
-    return f"command: {action_name}\n{doc}\nArguments:\n{type_hints}"
+    return f"command: {llm_label}\n{doc}\nArguments:\n{type_hints}"
 
 
 def load_action(
@@ -83,6 +83,7 @@ def load_action(
     config = ActionConfig(**action_config.get("config", {}))
     return AgentAction(
         name=action_config["name"],
+        llm_label=action_config["llm_label"],
         interface=interface,
         implementation=implementation_class(config),
         connector=connector_class(config),

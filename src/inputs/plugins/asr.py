@@ -1,12 +1,14 @@
 import asyncio
 import json
 import logging
+import time
 from queue import Empty, Queue
 from typing import Dict, List, Optional
 
 from inputs.base import SensorConfig
 from inputs.base.loop import FuserInput
 from providers.asr_provider import ASRProvider
+from providers.io_provider import IOProvider
 from providers.sleep_ticker_provider import SleepTickerProvider
 
 
@@ -27,7 +29,9 @@ class ASRInput(FuserInput[str]):
         # Buffer for storing the final output
         self.messages: List[str] = []
 
+        # Set IO Provider
         self.descriptor_for_LLM = "Voice Input"
+        self.io_provider = IOProvider()
 
         # Buffer for storing messages
         self.message_buffer: Queue[str] = Queue()
@@ -61,8 +65,9 @@ class ASRInput(FuserInput[str]):
             json_message: Dict = json.loads(raw_message)
             if "asr_reply" in json_message:
                 asr_reply = json_message["asr_reply"]
-                self.message_buffer.put(asr_reply)
-                logging.info("Detected ASR message: %s", asr_reply)
+                if len(asr_reply.split()) > 1:
+                    self.message_buffer.put(asr_reply)
+                    logging.info("Detected ASR message: %s", asr_reply)
         except json.JSONDecodeError:
             pass
 
@@ -75,7 +80,7 @@ class ASRInput(FuserInput[str]):
         Optional[str]
             Message from the buffer if available, None otherwise
         """
-        await asyncio.sleep(0.5)
+        await asyncio.sleep(0.1)
         try:
             message = self.message_buffer.get_nowait()
             return message
@@ -137,5 +142,8 @@ class ASRInput(FuserInput[str]):
 {self.messages[-1]}
 // END
 """
+        self.io_provider.add_input(
+            self.descriptor_for_LLM, self.messages[-1], time.time()
+        )
         self.messages = []
         return result
