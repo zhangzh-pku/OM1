@@ -38,7 +38,7 @@ class LLMHistoryManager:
 
         # configuration
         self.config = config
-        self.agent_name = "IRIS"
+        self.agent_name = self.config.agent_name
         self.system_prompt = system_prompt.replace("****", self.agent_name)
         self.summary_command = summary_command.replace("****", self.agent_name)
 
