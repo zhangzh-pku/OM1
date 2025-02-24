@@ -1,6 +1,7 @@
 import logging
 import threading
 import time
+from enum import Enum
 
 try:
     import hid
@@ -15,10 +16,17 @@ from actions.move_safe.interface import MoveInput
 from unitree.unitree_sdk2py.go2.sport.sport_client import SportClient
 
 
+class RobotState(Enum):
+    STANDING = "standing"
+    SITTING = "sitting"
+
+
 class MoveRos2Connector(ActionConnector[MoveInput]):
 
     def __init__(self, config: ActionConfig):
         super().__init__(config)
+
+        self.current_state = RobotState.STANDING
 
         self.joysticks = []
 
@@ -55,7 +63,21 @@ class MoveRos2Connector(ActionConnector[MoveInput]):
 
     def _execute_command_thread(self, command: str) -> None:
         try:
-            getattr(self.sport_client, command)()
+            if command == "StandUp" and self.current_state == RobotState.STANDING:
+                logging.info("Already standing, skipping command")
+                return
+            elif command == "StandDown" and self.current_state == RobotState.SITTING:
+                logging.info("Already sitting, skipping command")
+                return
+
+            code = getattr(self.sport_client, command)()
+            logging.info(f"Unitree command {command} executed with code {code}")
+
+            if command == "StandUp":
+                self.current_state = RobotState.STANDING
+            elif command == "StandDown":
+                self.current_state = RobotState.SITTING
+
         except Exception as e:
             logging.error(f"Error in command thread {command}: {e}")
         finally:
@@ -112,6 +134,12 @@ class MoveRos2Connector(ActionConnector[MoveInput]):
         elif output_interface.action == "shake paw":
             logging.info("Unitree AI command: shake paw")
             await self._execute_sport_command("Hello")
+        elif output_interface.action == "stretch":
+            logging.info("Unitree AI command: stretch")
+            await self._execute_sport_command("Stretch")
+        elif output_interface.action == "dance":
+            logging.info("Unitree AI command: dance")
+            await self._execute_sport_command("Dance1")
         else:
             logging.info(f"Unknown move type: {output_interface.action}")
 
