@@ -9,7 +9,7 @@ from typing import Dict, List, Optional
 from inputs.base import SensorConfig
 from inputs.base.loop import FuserInput
 from providers.io_provider import IOProvider
-from providers.unitree_camera_vlm_provider import UnitreeCameraVLMProvider
+from providers.unitree_realsense_dev_vlm_provider import UnitreeRealSenseDevVLMProvider
 
 
 @dataclass
@@ -18,11 +18,11 @@ class Message:
     message: str
 
 
-class UnitreeGo2CameraVLMCloud(FuserInput[str]):
+class UnitreeG1CameraVLMCloud(FuserInput[str]):
     """
-    Unitree Go2 Air Camera VLM bridge.
+    Unitree G1 Camera VLM bridge.
 
-    Takes Unitree Go2 Air Camera images, sends them to a cloud VLM provider,
+    Takes Unitree G1 Camera images, sends them to a cloud VLM provider,
     converts the responses to text strings, and sends them to the fuser.
     """
 
@@ -38,7 +38,7 @@ class UnitreeGo2CameraVLMCloud(FuserInput[str]):
         # Track IO
         self.io_provider = IOProvider()
 
-        self.descriptor_for_LLM = "Robot Camera Vision"
+        self.descriptor_for_LLM = "Your Eyes"
 
         # Buffer for storing the final output
         self.messages: List[Message] = []
@@ -47,13 +47,10 @@ class UnitreeGo2CameraVLMCloud(FuserInput[str]):
         self.message_buffer: Queue[str] = Queue()
 
         # Initialize VLM provider
-        base_url = (
-            self.config.base_url
-            if self.config.base_url
-            else "wss://api-vila.openmind.org"
+        base_url = getattr(self.config, "base_url", "wss://api-vila.openmind.org")
+        self.vlm: UnitreeRealSenseDevVLMProvider = UnitreeRealSenseDevVLMProvider(
+            ws_url=base_url
         )
-
-        self.vlm: UnitreeCameraVLMProvider = UnitreeCameraVLMProvider(ws_url=base_url)
         self.vlm.start()
         self.vlm.register_message_callback(self._handle_vlm_message)
 

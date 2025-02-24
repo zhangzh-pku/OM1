@@ -11,11 +11,15 @@
     }
   ],
   "cortex_llm": {
-    "type": "OpenAILLM"
+    "type": "OpenAILLM",
+    "config": {
+      "history_length": 10
+    }
   },
   "agent_actions": [
     {
       "name": "speak",
+      "llm_label": "speak",
       "implementation": "passthrough",
       "connector": "elevenlabs_tts"
     }

@@ -23,6 +23,7 @@
   "agent_actions": [
     {
       "name": "move_safe",
+      "llm_label": "move",
       "implementation": "passthrough",
       "connector": "ros2"
     }
