@@ -555,7 +555,7 @@ class WebSim(Simulator):
         """Get earliest timestamp from inputs"""
         earliest_time = float("inf")
         for input_type, input_info in inputs.items():
-            logging.debug(f"GET {input_info} {input_type}")
+            logging.debug(f"GET {input_info}")
             if input_type == "GovernanceEthereum":
                 continue
             if input_type == "Universal Laws":
@@ -612,7 +612,6 @@ class WebSim(Simulator):
                         }
                     )
 
-                logging.debug(f"input_rezeroed: {input_rezeroed}")
                 # Process system latency relative to earliest time
                 system_latency = {
                     "fuse_time": self.io_provider.fuser_end_time - earliest_time,
@@ -647,7 +646,7 @@ class WebSim(Simulator):
                     "inputs": input_rezeroed,
                 }
 
-                logging.debug(f"Inputs and LLM Outputs: {self.state_dict}")
+                logging.info(f"Inputs and LLM Outputs: {self.state_dict}")
 
             if updated:
                 self._last_tick = 0
