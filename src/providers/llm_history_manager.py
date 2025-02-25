@@ -83,7 +83,7 @@ class LLMHistoryManager:
             # insert actual robot name
             summary_prompt = summary_prompt.replace("****", self.agent_name)
 
-            logging.debug(f"Information to summarize:\n{summary_prompt}")
+            logging.info(f"Information to summarize:\n{summary_prompt}")
 
             response = await self.client.chat.completions.create(
                 model=self.config.model,
