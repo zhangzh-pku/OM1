@@ -10,7 +10,7 @@
     {
       "type": "ASRInput",
       "config": {
-        "microphone_name": "Studio Display Microphone"
+        "microphone_name": "USB PnP Audio Device"
       }
     },
     {
@@ -34,8 +34,8 @@
       "connector": "elevenlabs_tts",
       "config": {
         "voice_id": "i4CzbCVWoqvD0P1QJCUL",
-        "microphone_name": "Studio Display Microphone",
-        "speaker_name": "Bose Flex 2 SoundLink"
+        "microphone_name": "USB PnP Audio Device",
+        "speaker_name": "USB PnP Audio Device"
       }
     },
     {
