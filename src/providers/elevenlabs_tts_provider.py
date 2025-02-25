@@ -22,7 +22,7 @@ class ElevenLabsAudioOutputStream(AudioOutputStream):
     def __init__(
         self,
         url,
-        rate=8000, # used to be 8000 for basic iris
+        rate=44100, # used to be 8000 for basic iris
         device=None,
         device_name=None,
         tts_state_callback=None,
