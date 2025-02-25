@@ -144,9 +144,9 @@ class LLMHistoryManager:
             async def wrapper(self: Any, prompt: str, *args, **kwargs) -> R:
 
                 if self._config.history_length == 0:
-                    await func(self, prompt, [], *args, **kwargs)
+                    result = await func(self, prompt, [], *args, **kwargs)
                     self.history_manager.frame_index += 1
-                    return
+                    return result
 
                 cycle = self.history_manager.frame_index
                 logging.debug(f"LLM Tasking cycle debug tracker: {cycle}")

@@ -48,19 +48,19 @@ async def test_init_empty_key():
         DeepSeekLLM(DummyOutputModel, config)
 
 
-# @pytest.mark.asyncio
-# async def test_ask_success(llm, mock_response):
-#     """Test successful API request and response parsing"""
-#     with pytest.MonkeyPatch.context() as m:
-#         m.setattr(
-#             llm._client.chat.completions,
-#             "create",
-#             MagicMock(return_value=mock_response),
-#         )
+@pytest.mark.asyncio
+async def test_ask_success(llm, mock_response):
+    """Test successful API request and response parsing"""
+    with pytest.MonkeyPatch.context() as m:
+        m.setattr(
+            llm._client.chat.completions,
+            "create",
+            MagicMock(return_value=mock_response),
+        )
 
-#         result = await llm.ask("test prompt")
-#         assert isinstance(result, DummyOutputModel)
-#         assert result.test_field == "success"
+        result = await llm.ask("test prompt")
+        assert isinstance(result, DummyOutputModel)
+        assert result.test_field == "success"
 
 
 @pytest.mark.asyncio

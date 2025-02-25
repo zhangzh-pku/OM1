@@ -1,4 +1,4 @@
-from unittest.mock import MagicMock
+from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 from pydantic import BaseModel
@@ -75,20 +75,20 @@ async def test_init_with_config(llm, config):
     assert llm._config.model == config.model
 
 
-# @pytest.mark.asyncio
-# async def test_ask_success(llm, mock_response):
-#     """Test successful API request and response parsing"""
-#     with pytest.MonkeyPatch.context() as m:
-#         m.setattr(
-#             llm._client.chat.completions,
-#             "create",
-#             AsyncMock(return_value=mock_response),
-#         )
+@pytest.mark.asyncio
+async def test_ask_success(llm, mock_response):
+    """Test successful API request and response parsing"""
+    with pytest.MonkeyPatch.context() as m:
+        m.setattr(
+            llm._client.chat.completions,
+            "create",
+            AsyncMock(return_value=mock_response),
+        )
 
-#         result = await llm.ask("test prompt")
-#         print("result", result)
-#         assert isinstance(result, DummyOutputModel)
-#         assert result.test_field == "success"
+        result = await llm.ask("test prompt")
+        print("result", result)
+        assert isinstance(result, DummyOutputModel)
+        assert result.test_field == "success"
 
 
 @pytest.mark.asyncio
