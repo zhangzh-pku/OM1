@@ -555,8 +555,10 @@ class WebSim(Simulator):
         """Get earliest timestamp from inputs"""
         earliest_time = float("inf")
         for input_type, input_info in inputs.items():
-            logging.debug(f"GET {input_info}")
+            logging.debug(f"GET {input_info} {input_type}")
             if input_type == "GovernanceEthereum":
+                continue
+            if input_type == "Universal Laws":
                 continue
             if input_info.timestamp is not None:
                 if input_info.timestamp < earliest_time:
@@ -610,6 +612,7 @@ class WebSim(Simulator):
                         }
                     )
 
+                logging.debug(f"input_rezeroed: {input_rezeroed}")
                 # Process system latency relative to earliest time
                 system_latency = {
                     "fuse_time": self.io_provider.fuser_end_time - earliest_time,
@@ -620,18 +623,18 @@ class WebSim(Simulator):
                 }
 
                 for command in commands:
-                    if command.name == "move":
-                        new_action = command.arguments[0].value
+                    if command.type == "move":
+                        new_action = command.value
                         if new_action != self.state.current_action:
                             self.state.current_action = new_action
                             updated = True
-                    elif command.name == "speak":
-                        new_speech = command.arguments[0].value
+                    elif command.type == "speak":
+                        new_speech = command.value
                         if new_speech != self.state.last_speech:
                             self.state.last_speech = new_speech
                             updated = True
-                    elif command.name == "face":
-                        new_emotion = command.arguments[0].value
+                    elif command.type == "emotion":
+                        new_emotion = command.value
                         if new_emotion != self.state.current_emotion:
                             self.state.current_emotion = new_emotion
                             updated = True
@@ -644,7 +647,7 @@ class WebSim(Simulator):
                     "inputs": input_rezeroed,
                 }
 
-                logging.info(f"Inputs and LLM Outputs: {self.state_dict}")
+                logging.debug(f"Inputs and LLM Outputs: {self.state_dict}")
 
             if updated:
                 self._last_tick = 0
