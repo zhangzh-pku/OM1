@@ -19,6 +19,10 @@ class ElevenLabsAudioOutputStream(AudioOutputStream):
     additional functionality for the Eleven Labs TTS service.
     """
 
+# 44100 allows the G81 and the Bose to work
+#  8000 allows the internal audio card to work 
+
+
     def __init__(
         self,
         url,
