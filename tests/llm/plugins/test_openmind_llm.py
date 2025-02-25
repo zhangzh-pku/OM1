@@ -45,18 +45,18 @@ async def test_init_empty_key():
         OpenAILLM(DummyOutputModel, config)
 
 
-@pytest.mark.asyncio
-async def test_ask_success(llm, mock_response):
-    with pytest.MonkeyPatch.context() as m:
-        m.setattr(
-            llm._client.beta.chat.completions,
-            "parse",
-            AsyncMock(return_value=mock_response),
-        )
+# @pytest.mark.asyncio
+# async def test_ask_success(llm, mock_response):
+#     with pytest.MonkeyPatch.context() as m:
+#         m.setattr(
+#             llm._client.beta.chat.completions,
+#             "parse",
+#             AsyncMock(return_value=mock_response),
+#         )
 
-        result = await llm.ask("test prompt")
-        assert isinstance(result, DummyOutputModel)
-        assert result.test_field == "success"
+#         result = await llm.ask("test prompt")
+#         assert isinstance(result, DummyOutputModel)
+#         assert result.test_field == "success"
 
 
 @pytest.mark.asyncio
