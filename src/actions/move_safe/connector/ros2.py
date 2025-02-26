@@ -156,9 +156,6 @@ class MoveRos2Connector(ActionConnector[MoveInput]):
             return
 
         try:
-            # Use SportClient API to move the robot
-            # The actual method to call depends on the Unitree SDK
-            # Here's a placeholder using a hypothetical method
             logging.info(
                 f"Moving robot: move_speed_x={move_speed_x}, move_speed_y={move_speed_y}, rotate_speed={rotate_speed}"
             )
