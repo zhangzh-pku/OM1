@@ -38,7 +38,7 @@ class LLMHistoryManager:
 
         # configuration
         self.config = config
-        self.agent_name = "IRIS"
+        self.agent_name = self.config.agent_name
         self.system_prompt = system_prompt.replace("****", self.agent_name)
         self.summary_command = summary_command.replace("****", self.agent_name)
 
@@ -144,34 +144,42 @@ class LLMHistoryManager:
             async def wrapper(self: Any, prompt: str, *args, **kwargs) -> R:
 
                 if self._config.history_length == 0:
-                    result = await func(self, prompt, [], *args, **kwargs)
+                    response = await func(self, prompt, [], *args, **kwargs)
                     self.history_manager.frame_index += 1
-                    return result
+                    return response
 
                 cycle = self.history_manager.frame_index
                 logging.debug(f"LLM Tasking cycle debug tracker: {cycle}")
 
-                formatted_inputs = f"**** sensed the following: {" | ".join(f"{input_type}: {input_info.input}" for input_type, input_info in self.io_provider.inputs.items())}"
+                formatted_inputs = "**** sensed the following: "
+                for input_type, input_info in self.io_provider.inputs.items():
+                    logging.info(f"LLM: {input_type}")
+                    logging.info(f"LLM: {input_info}")
+                    formatted_inputs += f"{input_type}: {input_info.input} | "
+
+                # formatted_inputs = f"**** sensed the following: {" | ".join(f"{input_type}: {input_info.input}" for input_type, input_info in self.io_provider.inputs.items())}"
                 inputs = ChatMessage(role="user", content=formatted_inputs)
 
+                logging.debug(f"Inputs: {inputs}")
                 self.history_manager.history.append(inputs)
 
                 messages = self.history_manager.get_messages()
+                logging.debug(f"messages:\n{messages}")
                 # this advances the frame index
                 response = await func(self, prompt, messages, *args, **kwargs)
+                logging.debug(f"Response to parse:\n{response}")
 
                 if response is not None:
+
                     action_message = (
                         "Given that information, **** took these actions: "
                         + (
                             " | ".join(
-                                ACTION_MAP[command.name].format(
-                                    command.arguments[0].value
-                                    if command.arguments
-                                    else ""
+                                ACTION_MAP[command.type].format(
+                                    command.value if command.value else ""
                                 )
                                 for command in response.commands
-                                if command.name in ACTION_MAP
+                                if command.type in ACTION_MAP
                             )
                         )
                     )
