@@ -7,6 +7,7 @@ from om1_speech import AudioOutputStream
 
 from .singleton import singleton
 
+
 @singleton
 class ElevenLabsTTSProvider:
     """

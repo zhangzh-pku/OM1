@@ -91,7 +91,9 @@ class MockInput(FuserInput[str]):
         except Exception as e:
             logging.error(f"Failed to start Mock Input webSocket server: {e}")
 
-    async def _handle_client(self, websocket, path):
+    async def _handle_client(
+        self, websocket: websockets.WebSocketClientProtocol, path: str
+    ):
         """
         Handle a client connection.
 
