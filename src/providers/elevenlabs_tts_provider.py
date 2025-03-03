@@ -1,75 +1,79 @@
+import base64
+import io
 import logging
 import threading
 import time
 from typing import Callable, Optional
 
+import audiosegment
 from om1_speech import AudioOutputStream
 
 from .singleton import singleton
 
-# class ElevenLabsAudioOutputStream(AudioOutputStream):
-#     """
-#     Audio output stream for Eleven Labs TTS service.
 
-#     This class extends the base AudioOutputStream class to provide
-#     additional functionality for the Eleven Labs TTS service.
-#     """
+class ElevenLabsAudioOutputStream(AudioOutputStream):
+    """
+    Audio output stream for Eleven Labs TTS service.
 
-#     def __init__(
-#         self,
-#         url,
-#         rate=8000,
-#         device=None,
-#         device_name=None,
-#         tts_state_callback=None,
-#         headers=None,
-#     ):
-#         super().__init__(url, rate, device, device_name, tts_state_callback, headers)
+    This class extends the base AudioOutputStream class to provide
+    additional functionality for the Eleven Labs TTS service.
+    """
 
-#     def _write_audio(self, audio_data: bytes):
-#         """
-#         Override the base class method to write audio data from the Eleven Labs TTS service.
-#         """
+    def __init__(
+        self,
+        url,
+        rate=8000,
+        device=None,
+        device_name=None,
+        tts_state_callback=None,
+        headers=None,
+    ):
+        super().__init__(url, rate, device, device_name, tts_state_callback, headers)
 
-#         self._tts_callback(True)
+    def _write_audio(self, audio_data: bytes):
+        """
+        Override the base class method to write audio data from the Eleven Labs TTS service.
+        """
 
-#         audio_bytes = base64.b64decode(audio_data)
+        self._tts_callback(True)
 
-#         audio_segment = AudioSegment.from_mp3(io.BytesIO(audio_bytes))
-#         raw_data = audio_segment.raw_data
+        audio_bytes = base64.b64decode(audio_data)
 
-#         current_format = self.stream._format
-#         needed_format = self._audio_interface.get_format_from_width(
-#             audio_segment.sample_width
-#         )
-#         audio_chunk = int(audio_segment.frame_rate * 0.1)  # 100ms of audio
+        audio_segment = audiosegment.from_mp3(io.BytesIO(audio_bytes))
+        raw_data = audio_segment.raw_data
 
-#         if (
-#             current_format != needed_format
-#             or self.stream._channels != audio_segment.channels
-#             or self.stream._rate != audio_segment.frame_rate
-#         ):
-#             self.stream.stop_stream()
-#             self.stream.close()
+        current_format = self.stream._format
+        needed_format = self._audio_interface.get_format_from_width(
+            audio_segment.sample_width
+        )
+        audio_chunk = int(audio_segment.frame_rate * 0.1)  # 100ms of audio
 
-#             # Reopen the stream with the new format
-#             self.stream = self._audio_interface.open(
-#                 output_device_index=self._device,
-#                 format=needed_format,
-#                 channels=audio_segment.channels,
-#                 rate=audio_segment.frame_rate,
-#                 output=True,
-#                 frames_per_buffer=audio_chunk,
-#             )
+        if (
+            current_format != needed_format
+            or self.stream._channels != audio_segment.channels
+            or self.stream._rate != audio_segment.frame_rate
+        ):
+            self.stream.stop_stream()
+            self.stream.close()
 
-#         for i in range(0, len(raw_data), audio_chunk):
-#             self.stream.write(
-#                 raw_data[i : i + audio_chunk], exception_on_underflow=False
-#             )
+            # Reopen the stream with the new format
+            self.stream = self._audio_interface.open(
+                output_device_index=self._device,
+                format=needed_format,
+                channels=audio_segment.channels,
+                rate=audio_segment.frame_rate,
+                output=True,
+                frames_per_buffer=audio_chunk,
+            )
 
-#         self.stream.stop_stream()
-#         self.stream.start_stream()
-#         self._tts_callback(False)
+        for i in range(0, len(raw_data), audio_chunk):
+            self.stream.write(
+                raw_data[i : i + audio_chunk], exception_on_underflow=False
+            )
+
+        self.stream.stop_stream()
+        self.stream.start_stream()
+        self._tts_callback(False)
 
 
 @singleton
