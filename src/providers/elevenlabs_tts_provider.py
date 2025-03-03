@@ -46,7 +46,7 @@ class ElevenLabsAudioOutputStream(AudioOutputStream):
         needed_format = self._audio_interface.get_format_from_width(
             audio_segment.sample_width
         )
-        audio_chunk = int(audio_segment.frame_rate * 0.1) # 100ms of audio
+        audio_chunk = int(audio_segment.frame_rate * 0.1)  # 100ms of audio
 
         if (
             current_format != needed_format
