@@ -1,15 +1,14 @@
 import asyncio
-import random
+import logging
 import time
 from dataclasses import dataclass
 from typing import Optional
 
+import serial
+
 from inputs.base import SensorConfig
 from inputs.base.loop import FuserInput
 from providers.io_provider import IOProvider
-
-import serial
-import logging
 
 """
 
@@ -28,6 +27,7 @@ simple code example to ingest serial data written by an Arduino, such as:
 #       }
 
 """
+
 
 @dataclass
 class Message:
@@ -92,8 +92,8 @@ class SerialReader(FuserInput[str]):
         """
 
         await asyncio.sleep(0.5)
-        
-        data = self.ser.readline().decode('utf-8').strip()  
+
+        data = self.ser.readline().decode("utf-8").strip()
         # Read a line, decode, and remove whitespace
 
         if data:
@@ -119,7 +119,7 @@ class SerialReader(FuserInput[str]):
             value = raw_input.split(" ")
             message = f"The child's grip strength is {value[1]}."
         else:
-            message = f"No serial data."
+            message = "No serial data."
 
         return Message(timestamp=time.time(), message=message)
 
