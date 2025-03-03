@@ -98,12 +98,14 @@ class LLMHistoryManager:
                         {"role": "user", "content": summary_prompt},
                     ],
                 ),
-                timeout=timeout
+                timeout=timeout,
             )
 
             if not response or not response.choices:
                 logging.error("Invalid API response format")
-                return ChatMessage(role="system", content="Error: Received invalid response from API")
+                return ChatMessage(
+                    role="system", content="Error: Received invalid response from API"
+                )
 
             summary = response.choices[0].message.content
             return ChatMessage(role="assistant", content=f"Previously, {summary}")
@@ -113,10 +115,14 @@ class LLMHistoryManager:
             return ChatMessage(role="system", content="Error: API request timed out")
         except openai.APIError as e:
             logging.error(f"OpenAI API error: {e}")
-            return ChatMessage(role="system", content=f"Error: API service unavailable: {str(e)}")
+            return ChatMessage(
+                role="system", content=f"Error: API service unavailable: {str(e)}"
+            )
         except openai.APIConnectionError as e:
             logging.error(f"OpenAI API connection error: {e}")
-            return ChatMessage(role="system", content="Error: Could not connect to API service")
+            return ChatMessage(
+                role="system", content="Error: Could not connect to API service"
+            )
         except openai.RateLimitError as e:
             logging.error(f"OpenAI API rate limit error: {e}")
             return ChatMessage(role="system", content="Error: API rate limit exceeded")
@@ -131,23 +137,25 @@ class LLMHistoryManager:
         if not messages:
             logging.warning("No messages to summarize in start_summary_task")
             return
-            
+
         try:
             # Check if previous task is still running
             if self._summary_task and not self._summary_task.done():
                 logging.info("Previous summary task still running")
                 return
-                
+
             # Make a copy of messages to prevent modification during summarization
             messages_copy = messages.copy()
-            self._summary_task = asyncio.create_task(self.summarize_messages(messages_copy))
+            self._summary_task = asyncio.create_task(
+                self.summarize_messages(messages_copy)
+            )
 
             def callback(task):
                 try:
                     if task.cancelled():
                         logging.warning("Summary task was cancelled")
                         return
-                        
+
                     summary_message = task.result()
                     if summary_message.role == "assistant":
                         # Only modify messages if they haven't changed during summarization
@@ -155,22 +163,33 @@ class LLMHistoryManager:
                             messages.clear()
                             messages.append(summary_message)
                             logging.info("Successfully summarized the state")
-                    elif summary_message.role == "system" and "Error" in summary_message.content:
-                        logging.error(f"Summarization failed: {summary_message.content}")
+                    elif (
+                        summary_message.role == "system"
+                        and "Error" in summary_message.content
+                    ):
+                        logging.error(
+                            f"Summarization failed: {summary_message.content}"
+                        )
                         # Keep existing messages but try to reduce size if too large
                         if len(messages) > 10:
-                            # Remove oldest messages to keep size manageable
-                            while len(messages) > 5:
-                                messages.pop(0)
-                            logging.info("Kept existing messages but reduced history size")
+                            # Remove two oldest conversations to keep size manageable
+                            messages.pop(0)
+                            messages.pop(0)
+                            logging.info(
+                                "Kept existing messages but reduced history size"
+                            )
                     else:
                         logging.warning(f"Unexpected summary result: {summary_message}")
                 except asyncio.CancelledError:
                     logging.warning("Summary task callback cancelled")
                 except Exception as e:
-                    logging.error(f"Error in summary task callback: {type(e).__name__}: {e}")
-                    # Prevent history loss by keeping at least some recent messages
-                    while len(messages) > 5 and len(messages) > 0:
+                    logging.error(
+                        f"Error in summary task callback: {type(e).__name__}: {e}"
+                    )
+                    # Prevent history loss by removing two oldest messages
+                    if len(messages) > 0:
+                        messages.pop(0)
+                    if len(messages) > 0:
                         messages.pop(0)
 
             self._summary_task.add_done_callback(callback)
@@ -180,11 +199,12 @@ class LLMHistoryManager:
         except Exception as e:
             logging.error(f"Error starting summary task: {type(e).__name__}: {e}")
             # Add retry mechanism for critical failures
-            if "messages" in str(e).lower() or "history" in str(e).lower():
-                logging.info("Attempting to recover from history error")
-                # Preserve some history in case of error
-                while len(messages) > 3 and len(messages) > 0:
-                    messages.pop(0)
+            logging.info("Attempting to recover from history error")
+            # Preserve history by removing only two oldest messages
+            if len(messages) > 0:
+                messages.pop(0)
+            if len(messages) > 0:
+                messages.pop(0)
 
     def get_messages(self) -> List[dict]:
         """
