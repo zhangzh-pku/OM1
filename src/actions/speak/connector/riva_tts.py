@@ -2,7 +2,6 @@ from actions.base import ActionConfig, ActionConnector
 from actions.speak.interface import SpeakInput
 from providers.asr_provider import ASRProvider
 from providers.riva_tts_provider import RivaTTSProvider
-import logging
 
 
 class SpeakRivaTTSConnector(ActionConnector[SpeakInput]):
@@ -34,14 +33,7 @@ class SpeakRivaTTSConnector(ActionConnector[SpeakInput]):
         self.tts.start()
 
     async def connect(self, output_interface: SpeakInput) -> None:
-        try:
-            # Block ASR until TTS is done
-            self.tts.register_tts_state_callback(self.asr.audio_stream.on_tts_state_change)
-            # Add pending message to TTS
-            if output_interface and output_interface.action:
-                self.tts.add_pending_message(output_interface.action)
-            else:
-                logging.warning("Empty speech action received")
-        except Exception as e:
-            logging.error(f"Error in speak action: {e}")
-            # Continue operation even if speak fails
+        # Block ASR until TTS is done
+        self.tts.register_tts_state_callback(self.asr.audio_stream.on_tts_state_change)
+        # Add pending message to TTS
+        self.tts.add_pending_message(output_interface.action)
