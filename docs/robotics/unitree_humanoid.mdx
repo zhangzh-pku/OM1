@@ -81,6 +81,33 @@ sudo nmcli device wifi connect XXXXX password XXXXX
 sudo timedatectl set-ntp yes
 ```
 
+## Set default input and output devices
+
+### List available devices
+
+```
+pactl list sources short     # List input (microphone) devices
+pactl list sinks short       # List output (speaker) devices
+```
+
+### Set default output device
+
+```
+pactl set-default-sink [SINK_NAME || SINK_ID] 
+```
+
+### Set default input device
+
+```
+pactl set-default-source [SOURCE_NAME || SOURCE_ID]
+```
+
+## Set default output volume
+
+```
+pactl set-sink-volume @DEFAULT_SINK@ 70%
+```
+
 ## Control via hand controller
 
 Hang G1 on gantry
