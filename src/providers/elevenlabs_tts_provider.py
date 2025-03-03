@@ -71,6 +71,7 @@ from .singleton import singleton
 #         self.stream.start_stream()
 #         self._tts_callback(False)
 
+
 @singleton
 class ElevenLabsTTSProvider:
     """
