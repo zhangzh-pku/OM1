@@ -139,12 +139,10 @@ class LLMHistoryManager:
             return
 
         try:
-            # Check if previous task is still running
             if self._summary_task and not self._summary_task.done():
                 logging.info("Previous summary task still running")
                 return
 
-            # Make a copy of messages to prevent modification during summarization
             messages_copy = messages.copy()
             self._summary_task = asyncio.create_task(
                 self.summarize_messages(messages_copy)
@@ -158,11 +156,9 @@ class LLMHistoryManager:
 
                     summary_message = task.result()
                     if summary_message.role == "assistant":
-                        # Only modify messages if they haven't changed during summarization
-                        if len(messages) > 0:
-                            messages.clear()
-                            messages.append(summary_message)
-                            logging.info("Successfully summarized the state")
+                        messages.clear()
+                        messages.append(summary_message)
+                        logging.info("Successfully summarized the state")
                     elif (
                         summary_message.role == "system"
                         and "Error" in summary_message.content
@@ -170,14 +166,8 @@ class LLMHistoryManager:
                         logging.error(
                             f"Summarization failed: {summary_message.content}"
                         )
-                        # Keep existing messages but try to reduce size if too large
-                        if len(messages) > 10:
-                            # Remove two oldest conversations to keep size manageable
-                            messages.pop(0)
-                            messages.pop(0)
-                            logging.info(
-                                "Kept existing messages but reduced history size"
-                            )
+                        messages.pop(0) if messages else None
+                        messages.pop(0) if messages else None
                     else:
                         logging.warning(f"Unexpected summary result: {summary_message}")
                 except asyncio.CancelledError:
@@ -186,11 +176,8 @@ class LLMHistoryManager:
                     logging.error(
                         f"Error in summary task callback: {type(e).__name__}: {e}"
                     )
-                    # Prevent history loss by removing two oldest messages
-                    if len(messages) > 0:
-                        messages.pop(0)
-                    if len(messages) > 0:
-                        messages.pop(0)
+                    messages.pop(0) if messages else None
+                    messages.pop(0) if messages else None
 
             self._summary_task.add_done_callback(callback)
 
@@ -198,13 +185,8 @@ class LLMHistoryManager:
             logging.warning("Summary task creation cancelled")
         except Exception as e:
             logging.error(f"Error starting summary task: {type(e).__name__}: {e}")
-            # Add retry mechanism for critical failures
-            logging.info("Attempting to recover from history error")
-            # Preserve history by removing only two oldest messages
-            if len(messages) > 0:
-                messages.pop(0)
-            if len(messages) > 0:
-                messages.pop(0)
+            messages.pop(0) if messages else None
+            messages.pop(0) if messages else None
 
     def get_messages(self) -> List[dict]:
         """
