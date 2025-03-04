@@ -10,7 +10,6 @@ uv run src/run.py deepseek
 uv run src/run.py gemini
 ```
 
-
 ## Emotion Detection with DeepSeek
 <Note>
 This example process emotion detection and a simulated environment. It will request you to accept a prompt to on your camera, this is what it uses to capture your emotions.
@@ -200,3 +199,19 @@ INFO:root:EmotionCapture: I see a person. Their emotion is sad.
 INFO:root:EmotionCapture: I see a person. Their emotion is sad.
 ```
 
+You can directly access other OpenAI style endpoints by specifying a custom API endpoint in your configuration file. To do this, provide an suitable `base_url` and the `api_key` for OpenAI, DeepSeek, or other providers. Possible `base_url` choices are:
+
+<AccordionGroup>
+    <Card>
+    - https://api.openai.com/v1
+    </Card>
+    <Card>
+    - https://api.deepseek.com/v1
+    </Card>
+    <Card>
+    - https://api.openai.com/v1
+    </Card>
+    <Card>
+    - and many others...
+    </Card> 
+</AccordionGroup>
