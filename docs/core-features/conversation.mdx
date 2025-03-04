@@ -9,17 +9,15 @@ This example uses your `default` audio in (microphone) and your `default` audio 
 uv run src/run.py conversation
 ```
 
-
 <Info>
-You will be able to speak to the LLM, and it will generate voice outputs.
+You will be able to speak to the LLM and it will generate voice outputs.
 </Info>
 
-## Hardware audio drivers
+## Hardware Audio Drivers
 
 On Mac and Linux, you may need to install `portaudio`.
 
 <CodeGroup>
-
 For Mac:
 ```bash Mac Audio Drivers
 brew install portaudio
@@ -31,3 +29,30 @@ sudo apt-get update
 sudo apt-get install portaudio19-dev python-all-dev
 ```
 </CodeGroup>
+
+## Enumerating your audio
+
+You can enumerate available audio via the test script in /system_hw_test`:
+
+```bash
+python test_audio.py
+```
+
+<Note>
+Especially on Linux, such as on Ubuntu 20.04 on the Nvidia Orin, audio support can be marginal. Expect some audio inputs and outputs to not work correctly, or to advertise incorrect hardware capabilities, such as USB microphones that report zero input channels etc. Typical work arounds are to try different audio cards. 
+</Note>
+
+## Testing audio
+
+You can provide test sentences to speak by adding the `MockInput` to the config file:  
+
+```bash
+{
+    "type": "MockInput",
+    "config": {
+        "input_name": "Voice Input"
+    }
+}
+```
+
+Then connect to the `ws` (`wscat -c ws://localhost:8765`) and type in the words you want the system to speak. This is useful to debug audio out issues and related settings such as chunk values. 
