@@ -27,7 +27,7 @@ uv run src/run.py iris
 On your control computer, you will need:
 * ffmpeg (for audio to work)
 * v4l-utils  (for video to work)
-* CycloneDDS (for DDS comms to the G1)
+* CycloneDDS (for DDS comms to the G1 motion computer/client)
 
 Set the correct `CYCLONEDDS_HOME` env var. This is where the actual CycloneDDS is installed on your computer:
 ```bash
@@ -35,7 +35,7 @@ export CYCLONEDDS_HOME="$HOME/unitree_ros2/cyclonedds_ws/install/cyclonedds"
 ```
 If you do not do this correctly, installation of the Python CycloneDDS, a later step, will fail since it cannot find the correct libraries. Note: make absolutely sure `CYCLONEDDS_HOME` actually points to the CycloneDDS install /lib. This can be confusing, since if you install indirectly via `unitree_ros2`, then the location of the CycloneDDS libraries will be in slightly different location than if you install directly, via `git clone https://github.com/eclipse-cyclonedds/cyclonedds`.
 
-Once you have all of those, then install the optional Python CycloneDDS module:
+Once you have all of those, then add the optional Python CycloneDDS module to OM1:
 
 ```bash
 uv pip install -r pyproject.toml --extra dds
@@ -81,14 +81,38 @@ sudo nmcli device wifi connect XXXXX password XXXXX
 sudo timedatectl set-ntp yes
 ```
 
-## Control via hand controller
+## Set default input and output devices
+
+### List available devices
+
+```
+pactl list sources short     # List input (microphone) devices
+pactl list sinks short       # List output (speaker) devices
+```
+
+### Set default output device
+
+```
+pactl set-default-sink [SINK_NAME || SINK_ID] 
+```
+
+### Set default input device
+
+```
+pactl set-default-source [SOURCE_NAME || SOURCE_ID]
+```
+
+## Set default output volume
+
+```
+pactl set-sink-volume @DEFAULT_SINK@ 70%
+```
+
+## Control via Unitree hand controller
 
 Hang G1 on gantry
-
 Turn on (short press, long press)
-
 Wait for boot to complete
-
 When the G1 boots, it is in `damp` state.
 
 Use the hand controller to command "L1+A" and "L1+UP", the system is ready to move using the `ai_sport` client. The system will respond to manual controller and SDK commands.
@@ -102,17 +126,18 @@ Use the hand controller to command "L1+A" and "L1+UP", the system is ready to mo
 Other actions:
 
 * "SELECT + Y" -> Wave Hand. Alternates sides.
-* "SELECT + A" -> Handshake. Hold for movement to complete. Wait 3s and press again to relax arm to initial state 
-* "SELECT + X" -> Turn around and wave hand
+* "SELECT + A" -> Handshake. Hold for movement to complete. Wait 3s and press again to relax arm to initial state. 
+* "SELECT + X" -> Turn around and wave hand.s
 
 Use the joysticks to move forwards and backwards, and to rotate/turn
 
-97% 53041
-64% 49843
+## Boot from chair
+
+This is similar to boot from gantry, except, when you press "L1+UP", you have to help the humanoid stand up, while it straighten itself. For the sitdown procedure, back up the chair behind the robot, and select "L1+LEFT", and help the humanoid settle back into the chair. 
 
 ## Special DEBUG state
 
-Avoid this mode since it disables all high level motion since it turns off the `ai_sport` client.
+**Avoid this mode** since it disables all high level motion since it turns off the `ai_sport` client.
 
 * Press L2+R2 -> Enter DEBUG STATE 
 * Press L2+A  -> Diagnostic Posture (Arms bent)
@@ -138,7 +163,7 @@ ros:foxy(1) noetic(2) ?
 
 Select `foxy(1)`.
 
-## Install CycloneDDS on Orin
+## Install CycloneDDS on Nvidia Orin
 
 The default installation of CycloneDDS on the G1 Orin is broken, since it does not support the newer `unitree_hg` IDL data format for the G1. Solution: remove the default CycloneDDS installation and reinstall following the [Unitree ROS2 installation instructions](https://github.com/unitreerobotics/unitree_ros2). The `unitree_hg` bug was fixed in early Dec. 2024 in this commit: unitreerobotics/unitree_ros2@b34fdf7. 
 
@@ -405,7 +430,7 @@ From `cycloneDDS/build`:
 ```
 
 In another terminal, receive those pings and send them right back:
-```bash ping
+```bash pong
 ./bin/RoundtripPong
 ```
 
@@ -417,26 +442,28 @@ For that to work, the `CYCLONEDDS_URI` needs to be set correctly
 
 export CYCLONEDDS_URI='
 <CycloneDDS><Domain>
-	<General>
-	<Interfaces><NetworkInterface name="en6" priority="default" multicast="default" /></Interfaces>
-	</General>
-	<Discovery><EnableTopicDiscoveryEndpoints>true</EnableTopicDiscoveryEndpoints></Discovery>
-	</Domain>
-</CycloneDDS>'  
+  <General>
+  <Interfaces><NetworkInterface name="en6" priority="default" multicast="default" /></Interfaces>
+  </General>
+  <Discovery><EnableTopicDiscoveryEndpoints>true</EnableTopicDiscoveryEndpoints></Discovery>
+  </Domain>
+</CycloneDDS>'
 
-## Terminal based setup of bluetooth audio devices
+## Terminal based setup of Bluetooth audio devices
+
+On Linux: 
 
 ```bash
 bluetoothctl
 
-list show all paired devices
+list    # show all paired devices
 scan on # search for nearby devices
-pair MAC address
-
-sudo apt install blueman
-mark device as trusted
+# once you have found the right device, you can then pair it
+# many devices also require 'trusting' them
 
 trust <MAC>
 pair <MAC>
 connect <MAC>
 ```
+
+On Mac, just use the ui.
