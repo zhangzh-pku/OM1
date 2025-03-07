@@ -3,12 +3,12 @@ from unittest.mock import Mock, patch
 
 import pytest
 
-from inputs.plugins.asr import ASRInput
+from inputs.plugins.riva_asr import RivaASRInput
 
 
 @pytest.fixture
 def mock_asr_provider():
-    with patch("inputs.plugins.asr.ASRProvider") as mock:
+    with patch("inputs.plugins.riva_asr.ASRProvider") as mock:
         mock_instance = Mock()
         mock.return_value = mock_instance
         yield mock_instance
@@ -16,13 +16,13 @@ def mock_asr_provider():
 
 @pytest.fixture
 def mock_sleep_ticker():
-    with patch("inputs.plugins.asr.SleepTickerProvider") as mock:
+    with patch("inputs.plugins.riva_asr.SleepTickerProvider") as mock:
         yield mock.return_value
 
 
 @pytest.fixture
 def asr_input(mock_asr_provider, mock_sleep_ticker):
-    return ASRInput()
+    return RivaASRInput()
 
 
 def test_init(asr_input, mock_asr_provider):

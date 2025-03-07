@@ -138,7 +138,7 @@ Highlights:
 - [Example 1 - Using DeepSeek or Gemini as the Core LLM](./docs/core-features/llm_models.mdx)
 - [Example 2 - Using Cloud Endpoints for Voice Inputs and Text to Speech](./docs/core-features/conversation.mdx)
 - [Example 3 - An Interactive Smart Toy](./docs/core-features/smart_toy.mdx)
-- [Robotics - Unitree Dog](./docs/robotics/unitree_robotics.mdx)
+- [Robotics - Unitree Dog](./docs/robotics/unitree_go2_quadruped.mdx)
 - [Robotics - Unitree Dog with Wallet](./docs/robotics/coinbase_hackathon.mdx)
 
 ## Contributing

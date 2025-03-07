@@ -19,53 +19,8 @@ This example process emotion detection and a simulated environment. It will requ
 ```
 uv run src/run.py deepseek
 ```
-
-#### Response
-
-```
-WARNING:root:Unitree SDK not found. Please install the Unitree SDK to use this plugin.
-WARNING:root:Unitree SDK not found. Please install the Unitree SDK to use this plugin.
-2025-02-22 09:04:11.416 Python[4112:79434] WARNING: AVCaptureDeviceTypeExternal is deprecated for Continuity Cameras. Please use AVCaptureDeviceTypeContinuityCamera and add NSCameraUseContinuityCameraDeviceType to your Info.plist.
-INFO:root:Found cam(0)
-INFO:root:Initializing WebSim...
-INFO:root:Starting WebSim server thread...
-INFO:root:WebSim server started successfully - Open http://localhost:8000 in your browser
-INFO:root:EmotionCapture: I do not see anyone, so I can't estimate their emotion.
-INFO:httpx:HTTP Request: POST https://api.openmind.org/api/core/deepseek/chat/completions "HTTP/1.1 401 Unauthorized"
-ERROR:root:Error asking LLM: Error code: 401 - {'error': 'API key not found'}
-WARNING:root:No output from LLM
-INFO:root:EmotionCapture: I see a person. Their emotion is angry.
-INFO:root:EmotionCapture: I see a person. Their emotion is neutral.
-INFO:httpx:HTTP Request: POST https://api.openmind.org/api/core/deepseek/chat/completions "HTTP/1.1 401 Unauthorized"
-ERROR:root:Error asking LLM: Error code: 401 - {'error': 'API key not found'}
-WARNING:root:No output from LLM
-INFO:root:EmotionCapture: I see a person. Their emotion is happy.
-INFO:root:EmotionCapture: I see a person. Their emotion is neutral.
-INFO:httpx:HTTP Request: POST https://api.openmind.org/api/core/deepseek/chat/completions "HTTP/1.1 401 Unauthorized"
-ERROR:root:Error asking LLM: Error code: 401 - {'error': 'API key not found'}
-WARNING:root:No output from LLM
-INFO:root:EmotionCapture: I see a person. Their emotion is neutral.
-INFO:root:EmotionCapture: I see a person. Their emotion is neutral.
-INFO:httpx:HTTP Request: POST https://api.openmind.org/api/core/deepseek/chat/completions "HTTP/1.1 401 Unauthorized"
-ERROR:root:Error asking LLM: Error code: 401 - {'error': 'API key not found'}
-WARNING:root:No output from LLM
-INFO:root:EmotionCapture: I see a person. Their emotion is neutral.
-INFO:root:EmotionCapture: I see a person. Their emotion is neutral.
-INFO:httpx:HTTP Request: POST https://api.openmind.org/api/core/deepseek/chat/completions "HTTP/1.1 401 Unauthorized"
-ERROR:root:Error asking LLM: Error code: 401 - {'error': 'API key not found'}
-WARNING:root:No output from LLM
-INFO:root:EmotionCapture: I see a person. Their emotion is neutral.
-INFO:root:EmotionCapture: I see a person. Their emotion is neutral.
-INFO:httpx:HTTP Request: POST https://api.openmind.org/api/core/deepseek/chat/completions "HTTP/1.1 401 Unauthorized"
-ERROR:root:Error asking LLM: Error code: 401 - {'error': 'API key not found'}
-WARNING:root:No output from LLM
-INFO:root:EmotionCapture: I see a person. Their emotion is neutral.
-INFO:root:EmotionCapture: I see a person. Their emotion is neutral.
-
-
-```
-
 #### Code Explanation
+
 <Steps>
     <Step title="Initialization Issues"> 
         ```
@@ -124,9 +79,8 @@ INFO:root:EmotionCapture: I see a person. Their emotion is neutral.
     </Step>
 </Steps>
 
-
-
 ## Emotion Detection with Gemini 
+
 <Note>
 This example process emotion detection and a simulated environment. It will request you to accept a prompt to on your camera, this is what it uses to capture your emotions.
 </Note>

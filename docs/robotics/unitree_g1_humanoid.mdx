@@ -1,0 +1,469 @@
+---
+title: Unitree Robotics
+description: "Unitree G1 Humanoid"
+---
+
+## Useful links and reading 
+
+https://support.unitree.com/home/en/G1_developer
+https://github.com/unitreerobotics/avp_teleoperate
+
+C++ SDK
+https://github.com/unitreerobotics/unitree_sdk2
+
+Python SDK
+https://github.com/unitreerobotics/unitree_sdk2_python
+
+## Basic commands
+
+Run
+
+```bash Run Robot
+uv run src/run.py iris
+```
+
+### Installation
+
+On your control computer, you will need:
+* ffmpeg (for audio to work)
+* v4l-utils  (for video to work)
+* CycloneDDS (for DDS comms to the G1 motion computer/client)
+
+Set the correct `CYCLONEDDS_HOME` env var. This is where the actual CycloneDDS is installed on your computer:
+```bash
+export CYCLONEDDS_HOME="$HOME/unitree_ros2/cyclonedds_ws/install/cyclonedds"
+```
+If you do not do this correctly, installation of the Python CycloneDDS, a later step, will fail since it cannot find the correct libraries. Note: make absolutely sure `CYCLONEDDS_HOME` actually points to the CycloneDDS install /lib. This can be confusing, since if you install indirectly via `unitree_ros2`, then the location of the CycloneDDS libraries will be in slightly different location than if you install directly, via `git clone https://github.com/eclipse-cyclonedds/cyclonedds`.
+
+Once you have all of those, then add the optional Python CycloneDDS module to OM1:
+
+```bash
+uv pip install -r pyproject.toml --extra dds
+```
+
+Note: on first invocation, the system sometimes cannot find the Unitree libraries. This should resolve by itself quickly. 
+
+Note: Install `ffmpeg` otherwise the audio out will not work due to missing `ffprobe`.
+Note: Install `v4l-utils` for `/src/providers/unitree_realsense_dev_vlm_provider/_find_rgb_device()` to work.
+```bash
+sudo apt-get update
+sudo apt-get install ffmpeg v4l-utils
+```
+v4l-utils is also useful to debug video problems. **WARNING**: The camera system, if not correctly configured, has a tendency to bring down the entire USB bus. FIX: reboot the humanoid.
+
+## Nvidia Orin System Description
+
+Your computer will be at `192.168.123.99`
+
+The LIDAR is `192.168.123.120`
+
+The internal control computer (RockChip, aka the `operation and control computing unit`) is at `192.168.123.161`
+
+The internal development computer (Orin 16GB, aka the `development computing unit`) is at `192.168.123.164`
+
+## Check CycloneDDS
+```
+./ddsperf sanity
+```
+
+## Turn the wifi on/off
+```
+sudo nmcli radio wifi on
+```
+
+## Join network
+```
+sudo nmcli device wifi connect XXXXX password XXXXX
+```
+
+## Set time via NTP
+```
+sudo timedatectl set-ntp yes
+```
+
+## Set default input and output devices
+
+### List available devices
+
+```
+pactl list sources short     # List input (microphone) devices
+pactl list sinks short       # List output (speaker) devices
+```
+
+### Set default output device
+
+```
+pactl set-default-sink [SINK_NAME || SINK_ID] 
+```
+
+### Set default input device
+
+```
+pactl set-default-source [SOURCE_NAME || SOURCE_ID]
+```
+
+## Set default output volume
+
+```
+pactl set-sink-volume @DEFAULT_SINK@ 70%
+```
+
+## Control via Unitree hand controller
+
+Hang G1 on gantry
+Turn on (short press, long press)
+Wait for boot to complete
+When the G1 boots, it is in `damp` state.
+
+Use the hand controller to command "L1+A" and "L1+UP", the system is ready to move using the `ai_sport` client. The system will respond to manual controller and SDK commands.
+
+* Press "L1+A" -> EMERGENCY DAMP / SINK TO FLOOR
+* Press "L1+UP" -> Stand firmly (aka "lock stand"). The arms will move slightly. The system is now in the "ready" state.
+* Lower the G1 to the ground (but do not unclip her yet). Stability not yet running - she will fall over if let go. 
+* Press "R2+X" -> Start motion control. The arms will jump outwards and she will actively control her stability.
+* Press "Start" to switch back and forth between `stand` and `step in place`. 
+
+Other actions:
+
+* "SELECT + Y" -> Wave Hand. Alternates sides.
+* "SELECT + A" -> Handshake. Hold for movement to complete. Wait 3s and press again to relax arm to initial state. 
+* "SELECT + X" -> Turn around and wave hand.s
+
+Use the joysticks to move forwards and backwards, and to rotate/turn
+
+## Boot from chair
+
+This is similar to boot from gantry, except, when you press "L1+UP", you have to help the humanoid stand up, while it straighten itself. For the sitdown procedure, back up the chair behind the robot, and select "L1+LEFT", and help the humanoid settle back into the chair. 
+
+## Special DEBUG state
+
+**Avoid this mode** since it disables all high level motion since it turns off the `ai_sport` client.
+
+* Press L2+R2 -> Enter DEBUG STATE 
+* Press L2+A  -> Diagnostic Posture (Arms bent)
+* Press L2+B  -> Relax arms, damping state 
+
+To exit this mode, reboot the G1.
+
+## Using the Internal Orin
+
+SSH to Orin via 
+
+```bash
+ssh unitree@192.168.123.164
+```
+
+The default password is `123` but you should obviously change this. Result:
+
+``` 
+Welcome to Ubuntu 20.04.6 LTS (GNU/Linux 5.10.104-tegra aarch64)
+Last login: Thu Jan  1 08:30:46 1970
+ros:foxy(1) noetic(2) ?
+```
+
+Select `foxy(1)`.
+
+## Install CycloneDDS on Nvidia Orin
+
+The default installation of CycloneDDS on the G1 Orin is broken, since it does not support the newer `unitree_hg` IDL data format for the G1. Solution: remove the default CycloneDDS installation and reinstall following the [Unitree ROS2 installation instructions](https://github.com/unitreerobotics/unitree_ros2). The `unitree_hg` bug was fixed in early Dec. 2024 in this commit: unitreerobotics/unitree_ros2@b34fdf7. 
+
+You will need to export suitable env variables and correct the setting in `.bashrc` and in `$HOME/unitree_ros2/setup.sh`. Add this to the `.bashrc`:
+
+```bash
+export CYCLONEDDS_HOME="$HOME/unitree_ros2/cyclonedds_ws/install/cyclonedds"
+```
+
+Set `$HOME/unitree_ros2/setup.sh` to
+
+```bash
+#!/bin/bash
+echo "Setup Unitree ROS2 Environment"
+source /opt/ros/foxy/setup.bash
+source $HOME/unitree_ros2/cyclonedds_ws/install/setup.bash
+export RMW_IMPLEMENTATION=rmw_cyclonedds_cpp
+export CYCLONEDDS_URI='<CycloneDDS><Domain><General><Interfaces>
+<NetworkInterface name="eth0" priority="default" multicast="default" />
+</Interfaces></General></Domain></CycloneDDS>'
+```
+
+Source the `setup.sh` via `source ~/unitree_ros2/setup.sh`. Finally, you should start to see data. 
+
+```bash ros2 topic echo lowstate
+version:
+- 0
+- 0
+mode_pr: 0
+mode_machine: 4
+tick: 1120016
+imu_state:
+  quaternion:
+  - 0.9940093159675598
+  - 0.0074933432042598724
+  - -0.0023974007926881313
+  - -0.10901317745447159
+  gyroscope:
+  - -0.00523598724976182
+  - -0.00523598724976182
+  - -0.0017453291220590472
+  accelerometer:
+  - 0.009999999776482582
+  - -0.05000000074505806
+  - 9.829999923706055
+  rpy:
+  - 0.015420285053551197
+  - -0.003132336074486375
+  - -0.21849146485328674
+  temperature: 78
+motor_state:
+- mode: 1
+  q: -0.008177042007446289
+  dq: 0.0
+  ddq: 0.0
+  tau_est: -0.11186079680919647
+  temperature:
+  - 29
+  - 28
+  vol: 49.0
+  sensor:
+  - 0
+  - 0
+  motorstate: 0
+  reserve:
+  - 0
+  - 1142
+  - 4
+  - 0
+```
+
+```bash ros2 topic echo lowcmd
+mode_pr: 0
+mode_machine: 4
+motor_cmd:
+- mode: 1
+  q: 0.0
+  dq: 0.0
+  tau: 0.0
+  kp: 0.0
+  kd: 0.0
+  reserve: 0
+```
+
+```bash ros2 topic echo odommodestate
+stamp:
+  sec: 0
+  nanosec: 0
+error_code: 0
+imu_state:
+  quaternion:
+  - 0.9981062412261963
+  - 0.007613412104547024
+  - -0.0016289741033688188
+  - -0.06102222576737404
+  gyroscope:
+  - 0.0
+  - 0.0
+  - 0.0
+  accelerometer:
+  - 0.0
+  - 0.0
+  - 0.0
+  rpy:
+  - 0.01539743971079588
+  - -0.002322605811059475
+  - -0.12214189022779465
+  temperature: 0
+mode: 0
+progress: 0.0
+gait_type: 0
+foot_raise_height: 0.0
+position:
+- 0.0013194791972637177
+- -0.018103253096342087
+- 0.7247929573059082
+body_height: 0.0
+velocity:
+- 6.116795248090057e-07
+- -1.2412459682309418e-06
+- -4.238392648403533e-05
+yaw_speed: 0.0017453291220590472
+range_obstacle:
+- 0.0
+- 0.0
+- 0.0
+- 0.0
+foot_force:
+- 0
+- 0
+- 0
+- 0
+foot_position_body:
+- 0.0
+- 0.0
+- 0.0
+- 0.0
+- 0.0
+- 0.0
+- 0.0
+- 0.0
+- 0.0
+- 0.0
+- 0.0
+- 0.0
+foot_speed_body:
+- 0.0
+- 0.0
+- 0.0
+- 0.0
+- 0.0
+- 0.0
+- 0.0
+- 0.0
+- 0.0
+- 0.0
+- 0.0
+- 0.0
+```
+
+```bash ros2 topic list
+/EstimatorData
+/SymState
+/SymState_back
+/api/bashrunner/request
+/api/bashrunner/response
+/api/config/request
+/api/config/response
+/api/loco/request
+/api/loco/response
+/api/motion_switcher/request
+/api/motion_switcher/response
+/api/robot_state/request
+/api/robot_state/response
+/arm_sdk
+/audiosender
+/config_change_status
+/dex3/left/cmd
+/dex3/left/state
+/dex3/right/cmd
+/dex3/right/state
+/frontvideostream
+/gnss
+/lf/bmsstate
+/lf/dex3/left/state
+/lf/dex3/right/state
+/lf/lowstate
+/lf/lowstate_doubleimu
+/lf/mainboardstate
+/lf/odommodestate
+/loco_sdk
+/lowcmd
+/lowstate
+/lowstate_doubleimu
+/multiplestate
+/odommodestate
+/parameter_events
+/public_network_status
+/rosout
+/rtc/state
+/rtc_status
+/selftest
+/servicestate
+/servicestateactivate
+/videohub/inner
+/webrtcreq
+/webrtcres
+/wirelesscontroller
+```
+
+Here is what will be visible on an external development machine at `.99`, for example, using `./bin/listtopics`:
+```bash
+rt/dex3/right/state unitree_hg::msg::dds_::HandState_
+rt/lf/dex3/right/state unitree_hg::msg::dds_::HandState_
+rt/dex3/right/cmd unitree_hg::msg::dds_::HandCmd_
+rt/EstimatorData unitree_go::msg::dds_::EstimatorData_
+rt/SymState_back unitree_go::msg::dds_::SymState_
+rt/odommodestate unitree_go::msg::dds_::SportModeState_
+rt/lf/odommodestate unitree_go::msg::dds_::SportModeState_
+rt/lowstate unitree_hg::msg::dds_::LowState_
+rt/SymState unitree_go::msg::dds_::SymState_
+rt/api/bashrunner/response unitree_api::msg::dds_::Response_
+rt/selftest std_msgs::msg::dds_::String_
+rt/api/bashrunner/request unitree_api::msg::dds_::Request_
+rt/lf/lowstate unitree_hg::msg::dds_::LowState_
+rt/api/motion_switcher/response unitree_api::msg::dds_::Response_
+rt/api/motion_switcher/request unitree_api::msg::dds_::Request_
+rt/config_change_status unitree_go::msg::dds_::ConfigChangeStatus_
+rt/api/config/response unitree_api::msg::dds_::Response_
+rt/api/config/request unitree_api::msg::dds_::Request_
+rt/api/robot_state/response unitree_api::msg::dds_::Response_
+rt/api/robot_state/request unitree_api::msg::dds_::Request_
+rt/servicestate std_msgs::msg::dds_::String_
+rt/multiplestate std_msgs::msg::dds_::String_
+rt/public_network_status std_msgs::msg::dds_::String_
+rt/gnss std_msgs::msg::dds_::String_
+rt/lf/bmsstate unitree_hg::msg::dds_::BmsState_
+rt/lf/mainboardstate unitree_hg::msg::dds_::MainBoardState_
+rt/webrtcreq std_msgs::msg::dds_::String_
+rt/webrtcres std_msgs::msg::dds_::String_
+rt/lowcmd unitree_hg::msg::dds_::LowCmd_
+rt/lowstate_doubleimu unitree_hg_doubleimu::msg::dds_::doubleIMUState_
+rt/lf/lowstate_doubleimu unitree_hg_doubleimu::msg::dds_::doubleIMUState_
+rt/wirelesscontroller unitree_go::msg::dds_::WirelessController_
+rt/frontvideostream unitree_go::msg::dds_::Go2FrontVideoData_
+rt/audiosender unitree_go::msg::dds_::AudioData_
+rt/servicestateactivate std_msgs::msg::dds_::String_
+rt/rtc_status std_msgs::msg::dds_::String_
+rt/videohub/inner std_msgs::msg::dds_::String_
+rt/rtc/state std_msgs::msg::dds_::String_
+rt/api/bashrunner/request unitree_api::msg::dds_::Request_
+rt/lf/dex3/left/state unitree_hg::msg::dds_::HandState_
+rt/dex3/left/state unitree_hg::msg::dds_::HandState_
+rt/dex3/left/cmd unitree_hg::msg::dds_::HandCmd_
+```
+
+## CycloneDDS Testing on your host computer
+
+From `cycloneDDS/build`:
+
+```bash ping
+# send some pings
+./bin/RoundtripPing 0 0 0
+```
+
+In another terminal, receive those pings and send them right back:
+```bash pong
+./bin/RoundtripPong
+```
+
+List all topics visible on your computer
+```
+./bin/listtopics
+```
+For that to work, the `CYCLONEDDS_URI` needs to be set correctly 
+
+export CYCLONEDDS_URI='
+<CycloneDDS><Domain>
+  <General>
+  <Interfaces><NetworkInterface name="en6" priority="default" multicast="default" /></Interfaces>
+  </General>
+  <Discovery><EnableTopicDiscoveryEndpoints>true</EnableTopicDiscoveryEndpoints></Discovery>
+  </Domain>
+</CycloneDDS>'
+
+## Terminal based setup of Bluetooth audio devices
+
+On Linux: 
+
+```bash
+bluetoothctl
+
+list    # show all paired devices
+scan on # search for nearby devices
+# once you have found the right device, you can then pair it
+# many devices also require 'trusting' them
+
+trust <MAC>
+pair <MAC>
+connect <MAC>
+```
+
+On Mac, just use the UI.
