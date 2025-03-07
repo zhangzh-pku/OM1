@@ -11,7 +11,7 @@
       "type": "VLMVila"
     },
     {
-      "type": "ASRInput"
+      "type": "GoogleASRInput"
     },
     {
       "type": "UnitreeGo2Lowstate"

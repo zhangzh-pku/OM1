@@ -11,7 +11,7 @@
       "type": "UnitreeGo2Lowstate"
     },
     {
-      "type": "ASRInput",
+      "type": "GoogleASRInput",
       "config": {
         "microphone_name": "Studio Display"
       }
