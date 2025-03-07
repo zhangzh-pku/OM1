@@ -12,7 +12,7 @@ from providers.io_provider import IOProvider
 from providers.sleep_ticker_provider import SleepTickerProvider
 
 
-class ASRInput(FuserInput[str]):
+class GoogleASRInput(FuserInput[str]):
     """
     Automatic Speech Recognition (ASR) input handler.
 
@@ -39,7 +39,7 @@ class ASRInput(FuserInput[str]):
         # Initialize ASR provider
         rate = getattr(self.config, "rate", 48000)
         chunk = getattr(self.config, "chunk", 12144)
-        base_url = getattr(self.config, "base_url", "wss://api-asr.openmind.org")
+        base_url = getattr(self.config, "base_url", "wss://api.openmind.org/api/core/google/asr")
         microphone_device_id = getattr(self.config, "microphone_device_id", None)
         microphone_name = getattr(self.config, "microphone_name", None)
 
