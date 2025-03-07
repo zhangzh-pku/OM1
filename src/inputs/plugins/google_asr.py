@@ -37,10 +37,13 @@ class GoogleASRInput(FuserInput[str]):
         self.message_buffer: Queue[str] = Queue()
 
         # Initialize ASR provider
+        api_key = getattr(self.config, "api_key", None)
         rate = getattr(self.config, "rate", 48000)
         chunk = getattr(self.config, "chunk", 12144)
         base_url = getattr(
-            self.config, "base_url", "wss://api.openmind.org/api/core/google/asr"
+            self.config,
+            "base_url",
+            f"wss://api.openmind.org/api/core/google/asr?api_key={api_key}",
         )
         microphone_device_id = getattr(self.config, "microphone_device_id", None)
         microphone_name = getattr(self.config, "microphone_name", None)
