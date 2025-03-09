@@ -3,7 +3,14 @@ title: Unitree Robotics
 description: "Unitree Go2 EDU Quadruped (dog)"
 ---
 
-OM1 can control a Unitree Go2 EDU. This has been tested on Nvidia Orin, Mac Mini, and current (silicon) Mac laptops.
+- [Step 1 - Establishing Ethernet and DDS Connectivity](#step-1---establishing-ethernet-and-dds-connectivity)
+- [Step 2 - Add the DDS module](#step-2---add-the-dds-module)
+- [Step 3 - Connect an XBOX controller](#step-3---connect-an-xbox-controller)
+- [Step 4 - Controlling the Quadruped](#step-4---controlling-the-quadruped)
+- [Accessing Unitree data](#accessing-unitree-data)
+- [Unitree Go2 EDU Common Problems](#unitree-go2-edu-common-problems)
+
+OM1 can control a Unitree Go2 EDU out of the box. This has been tested on Nvidia Orin, Mac Mini, and current (silicon) Mac laptops.
 
 ## Step 1 - Establishing Ethernet and DDS Connectivity
 
@@ -17,7 +24,7 @@ cmake .. -DCMAKE_INSTALL_PREFIX=../install -DBUILD_EXAMPLES=ON
 cmake --build . --target install
 ```
 
-Set `CYCLONEDDS_HOME`, `CMAKE_PREFIX_PATH`, and `CYCLONEDDS_URI` to the correct values, shown conceptually below. You should add these paths to your environment via your `.zshrc` or equivalent.
+Next, set `CYCLONEDDS_HOME`, `CMAKE_PREFIX_PATH`, and `CYCLONEDDS_URI` to the correct values for your computer. An example for a typical Mac installation is provided below. You should add these paths to your environment via your `.zshrc` or equivalent.
 
 ```bash
 export CYCLONEDDS_HOME=$HOME/Documents/GitHub/cyclonedds/install
@@ -25,11 +32,16 @@ export CYCLONEDDS_HOME=$HOME/Documents/GitHub/cyclonedds/install
 export CMAKE_PREFIX_PATH=$HOME/Documents/GitHub/cyclonedds/install
 
 export CYCLONEDDS_URI='
-<CycloneDDS><Domain>
-  <General>
-  <Interfaces><NetworkInterface name="en0" priority="default" multicast="default" /></Interfaces>
-  </General>
-  <Discovery><EnableTopicDiscoveryEndpoints>true</EnableTopicDiscoveryEndpoints></Discovery>
+<CycloneDDS>
+  <Domain>
+    <General>
+      <Interfaces>
+        <NetworkInterface name="en0" priority="default" multicast="default" />
+      </Interfaces>
+    </General>
+    <Discovery>
+      <EnableTopicDiscoveryEndpoints>true</EnableTopicDiscoveryEndpoints>
+    </Discovery>
   </Domain>
 </CycloneDDS>'
 ```
@@ -218,8 +230,3 @@ ping 192.168.123.161
 ```
 
 Assuming you can `ping` the robot, then test the `cycloneDDS` middleware (see **STEP 1**). Once you can see data flowing, then the rest of the system should work. 
-
-
-
-
-
