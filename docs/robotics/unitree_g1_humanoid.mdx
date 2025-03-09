@@ -43,10 +43,10 @@ uv run src/run.py unitree_g1_humanoid
 brew install uv portaudio cmake
 ```
 
-Install cycloneDDS via https://cyclonedds.io/docs/cyclonedds/latest/installation/installation.html. Please make sure to install `0.10.2`.
+Install cycloneDDS via https://cyclonedds.io/docs/cyclonedds/latest/installation/installation.html.
 
 ```bash
-git clone https://github.com/eclipse-cyclonedds/cyclonedds.git --branch 0.10.2 --single-branch
+git clone https://github.com/eclipse-cyclonedds/cyclonedds -b releases/0.10.x
 cd cyclonedds
 mkdir build
 cd build
@@ -68,12 +68,12 @@ At this point, if you are connected to a robot and you run `./ddsperf sanity` (l
 export CYCLONEDDS_HOME=$HOME/Documents/GitHub/cyclonedds/install
 export CMAKE_PREFIX_PATH=$HOME/Documents/GitHub/cyclonedds/install
 
-cd $HOME/Documents/GitHub/cyclonedds/install/share/CycloneDDS/examples/listtopicslisttopics
+cd $HOME/Documents/GitHub/cyclonedds/install/share/CycloneDDS/examples/listtopics
 cmake .
 cmake --build .
 ```
 
-Then, set your wired etherent adapter to `192.168.123.99` and `255.255.255.0`, double check via `ifconfig`, and intert the correct etherent adapter name at the `NetworkInterface`:
+Then, set your wired Ethernet adapter to `192.168.123.99` and `255.255.255.0`, double check via `ifconfig`, and set the correct Ethernet adapter name in `NetworkInterface`:
 
 ```bash
 export CYCLONEDDS_URI='
@@ -109,7 +109,7 @@ alive: d994fe76:2755380f:1d1835bb:ddba9c93 rt/api/obstacles_avoid/request unitre
 ...
 ```
 
-The ethernet adapter you set above (such as `en0`) is the value you should provide to `/config/unitree_g1_humanoid.json`.
+The Ethernet adapter you set above (such as `en0`) is the value you should provide to `/config/unitree_g1_humanoid.json`.
 
 Then add the optional Python CycloneDDS module to OM1:
 
@@ -485,36 +485,6 @@ rt/api/bashrunner/request unitree_api::msg::dds_::Request_
 rt/lf/dex3/left/state unitree_hg::msg::dds_::HandState_
 rt/dex3/left/state unitree_hg::msg::dds_::HandState_
 rt/dex3/left/cmd unitree_hg::msg::dds_::HandCmd_
-```
-
-## CycloneDDS Testing and Usage on your Development Computer
-
-From `cycloneDDS/build`, send some pings:
-
-```bash ping
-./bin/RoundtripPing 0 0 0
-```
-
-In another terminal, receive those pings and pong them back:
-```bash pong
-./bin/RoundtripPong
-```
-
-List all topics visible on your computer
-```bash
-./bin/listtopics
-```
-For that to work, the `CYCLONEDDS_URI` needs to be set correctly. Set the ethernet adapter to the one that is connected to the robot. You can check this via `ifconfig`. 
-
-```bash
-export CYCLONEDDS_URI='
-<CycloneDDS><Domain>
-  <General>
-  <Interfaces><NetworkInterface name="en6" priority="default" multicast="default" /></Interfaces>
-  </General>
-  <Discovery><EnableTopicDiscoveryEndpoints>true</EnableTopicDiscoveryEndpoints></Discovery>
-  </Domain>
-</CycloneDDS>'
 ```
 
 ## Terminal based setup of Bluetooth audio devices

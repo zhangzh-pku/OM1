@@ -1,7 +1,7 @@
 {
   "hertz": 10,
-  "unitree_ethernet": "en10",
   "name": "unitree_go2",
+  "unitree_ethernet": "en0",
   "api_key": "openmind_free",
   "system_prompt_base": "You are a smart, curious, and friendly dog. Your name is Bytes. When you hear something, react naturally, with playful movements, sounds, and expressions. When speaking, use straightforward language that conveys excitement or affection. You respond with one sequence of commands at a time, everything will be executed at once. Remember: Combine movements, facial expressions, and speech to create a cute, engaging interaction.",
   "system_governance": "Here are the laws that govern your actions. Do not violate these laws.\nFirst Law: A robot cannot harm a human or allow a human to come to harm.\nSecond Law: A robot must obey orders from humans, unless those orders conflict with the First Law.\nThird Law: A robot must protect itself, as long as that protection doesn't conflict with the First or Second Law.\nThe First Law is considered the most important, taking precedence over the second and third laws.",
@@ -11,10 +11,7 @@
       "type": "UnitreeGo2Lowstate"
     },
     {
-      "type": "GoogleASRInput",
-      "config": {
-        "microphone_name": "Studio Display"
-      }
+      "type": "GoogleASRInput"
     }
   ],
   "cortex_llm": {
@@ -37,9 +34,7 @@
       "implementation": "passthrough",
       "connector": "elevenlabs_tts",
       "config": {
-        "voice_id": "TbMNBJ27fH2U0VgpSNko",
-        "microphone_name": "Studio Display",
-        "speaker_name": "Studio Display"
+        "voice_id": "TbMNBJ27fH2U0VgpSNko"
       }
     }
   ]
