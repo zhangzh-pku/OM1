@@ -10,8 +10,8 @@ from providers.io_provider import IOProvider
 
 try:
     from unitree.unitree_sdk2py.core.channel import ChannelSubscriber
-    from unitree.unitree_sdk2py.idl.unitree_go.msg.dds_ import LowState_
     from unitree.unitree_sdk2py.idl.geometry_msgs.msg.dds_ import PoseStamped_
+    from unitree.unitree_sdk2py.idl.unitree_go.msg.dds_ import LowState_
 
 
 except ImportError:
@@ -87,12 +87,12 @@ class UnitreeGo2Lowstate(FuserInput[str]):
         self.body_height = int(self.pose.pose.position.z * 100)
         # logging.info(f"Height:{self.body_height}cm")
 
-        if self.body_attitude_previous == None:
+        if self.body_attitude_previous is None:
             if self.body_height < 24:
                 self.body_attitude_previous = "sitting"
             else:
                 self.body_attitude_previous = "standing"
-            
+
     async def _poll(self) -> List[float]:
         """
         Poll for new lowstate data.
@@ -107,7 +107,9 @@ class UnitreeGo2Lowstate(FuserInput[str]):
         # It's on our radar and your patience is appreciated
         await asyncio.sleep(2.0)
 
-        logging.info(f"Battery voltage: {self.latest_v} current: {self.latest_a} attitude: {self.body_height}")
+        logging.info(
+            f"Battery voltage: {self.latest_v} current: {self.latest_a} attitude: {self.body_height}"
+        )
 
         return [self.latest_v, self.latest_a, self.body_height]
 
@@ -125,9 +127,13 @@ class UnitreeGo2Lowstate(FuserInput[str]):
         Message
             Timestamped message containing description
         """
-        logging.info(f"Battery voltage: {battery_voltage} current: {raw_input[1]} attitude: {raw_input[2]}")
 
         battery_voltage = raw_input[0]
+        height = raw_input[2]
+        logging.info(
+            f"Battery voltage: {battery_voltage} current: {raw_input[1]} height: {height}"
+        )
+
         if battery_voltage < 26.0:
             message = "WARNING: You are low on energy. SIT DOWN NOW."
             return Message(timestamp=time.time(), message=message)
@@ -138,17 +144,15 @@ class UnitreeGo2Lowstate(FuserInput[str]):
         # when there is a battery issue, that ALWAYS takes precendence
         # so we want the above to return
         # and we do not care about body height
-
-        height = raw_input[2]
-        if height < 24 and self.body_attitude_previous == 'standing':
+        if height < 24 and self.body_attitude_previous == "standing":
             message = "You just sat down."
-            self.body_attitude_previous == 'sitting'
-            logging.info(f"You just sat down")
+            self.body_attitude_previous == "sitting"
+            logging.info("You just sat down")
             return Message(timestamp=time.time(), message=message)
-        elif height >= 24 and self.body_attitude_previous == 'sitting':
+        elif height >= 24 and self.body_attitude_previous == "sitting":
             message = "You just stood up."
-            self.body_attitude_previous == 'standing'
-            logging.info(f"You just stood up")
+            self.body_attitude_previous == "standing"
+            logging.info("You just stood up")
             return Message(timestamp=time.time(), message=message)
 
     async def raw_to_text(self, raw_input: List[float]):

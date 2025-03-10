@@ -153,12 +153,3 @@ class CortexRuntime:
         else:
             # do not send speech to speaker but only to simulator
             await self.action_orchestrator.promise(commands_silent)
-
-
-
-
-
-
-
-
-
