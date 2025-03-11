@@ -25,4 +25,4 @@ Boot OM1 using the example config, remember to set the correct API key
 ```
 uv run src/run.py quadruped_sim
 ```
-_Note:_ . The simulated camera feed is streamed to a virtual video device at /dev/video10, thus requiring the camera_index in the VLM config to be 10. Modify as needed if the virtual camera needs to be reordered or if OM1 needs to read from another camera.
+_Note:_ The simulated camera feed is streamed to a virtual video device at `/dev/video10`, thus requiring the `camera_index` in the VLM config to be 10. Modify as needed if the virtual camera needs to be reordered or if OM1 needs to read from another camera.
