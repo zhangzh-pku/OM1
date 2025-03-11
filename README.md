@@ -1,7 +1,7 @@
 
 ![OM_Banner_X2 (1)](https://github.com/user-attachments/assets/853153b7-351a-433d-9e1a-d257b781f93c)
 
-<p align="center">  <a href="https://arxiv.org/abs/2412.18588">Technical Paper</a> |  <a href="https://docs.openmind.org/examples/conversation">Documentation</a> |  <a href="https://x.com/openmind_agi">X</a> </p>
+<p align="center">  <a href="https://arxiv.org/abs/2412.18588">Technical Paper</a> |  <a href="https://docs.openmind.org/">Documentation</a> |  <a href="https://x.com/openmind_agi">X</a> </p>
 
 **Openmind's OM1 is a modular AI runtime for agents and robots with multimodal capabilities including movement and speech.**
 
