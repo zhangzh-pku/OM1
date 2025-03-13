@@ -45,9 +45,7 @@ Similarily, you may need `ffmpeg`, and/or other modules, depending on your syste
 
 2. Set the configuration variables. 
 
-Locate the `config` folder and add your Openmind API key in `/config/spot.json`. If you do not already have one, you can obtain a free access key at https://portal.openmind.org/.  
-
-_Note:_ Using the placeholder key **openmind-free** will generate errors.
+Locate the `config` folder and add your Openmind API key in `/config/spot.json`. If you do not already have one, you can obtain a free access key at https://portal.openmind.org/.  _Note:_ Using the placeholder key **openmind-free** will generate errors.
 
 ```bash set api key
 # /config/spot.json
