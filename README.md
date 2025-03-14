@@ -34,21 +34,18 @@ uv venv
 ```
 
 _Note 1:_ You will need the Rust Python package manager `uv`.
-* To install on Mac Intel chip, use `brew install uv`.
-* To install on Mac M1/2/3, use `curl -LsSf https://astral.sh/uv/install.sh | sh` (make sure the terminal and python are arm64 native)
+* On Mac, use `brew install uv`.
 * On Linux, use `curl -LsSf https://astral.sh/uv/install.sh | sh`.
 
 _Note 2:_ If your system doesn't have `portaudio`, you should install it to run the program.
-* To install on Mac, use `brew install portaudio`
+* On Mac, use `brew install portaudio`
 * On Linux, use `sudo apt-get install portaudio19-dev python-all-dev`
 
 Similarily, you may need `ffmpeg`, and/or other modules, depending on your system.
 
 2. Set the configuration variables. 
 
-Locate the `config` folder and add your Openmind API key in `/config/spot.json`. If you do not already have one, you can obtain a free access key at https://portal.openmind.org/.  
-
-_Note:_ Using the placeholder key **openmind-free** will generate errors.
+Locate the `config` folder and add your Openmind API key in `/config/spot.json`. If you do not already have one, you can obtain a free access key at https://portal.openmind.org/.  _Note:_ Using the placeholder key **openmind-free** will generate errors.
 
 ```bash set api key
 # /config/spot.json
@@ -66,31 +63,36 @@ uv run src/run.py spot
 Please wait for a short while before real time information is displayed. 
 
 ```bash
-INFO:root:SendThisToROS2: {'move': 'dance'}
-INFO:root:SendThisToROS2: {'speak': "Hello, it's so nice to see you! Let's dance together!"}
-INFO:root:SendThisToROS2: {'face': 'joy'}
-INFO:root:VLM_COCO_Local: You see a person in front of you.
+Object Detector INPUT
+// START
+You see a person in front of you. You also see a laptop.
+// END
+
+AVAILABLE ACTIONS:
+command: move
+    A movement to be performed by the agent.
+    Effect: Allows the agent to move.
+    Arguments: Allowed values: 'stand still', 'sit', 'dance', 'shake paw', 'walk', 'walk back', 'run', 'jump', 'wag tail'
+
+command: speak
+    Words to be spoken by the agent.
+    Effect: Allows the agent to speak.
+    Arguments: <class 'str'>
+
+command: emotion
+    A facial expression to be performed by the agent.
+    Effect: Performs a given facial expression.
+    Arguments: Allowed values: 'cry', 'smile', 'frown', 'think', 'joy'
+
+What will you do? Command: 
+
 INFO:httpx:HTTP Request: POST https://api.openmind.org/api/core/openai/chat/completions "HTTP/1.1 200 OK"
-INFO:root:Inputs and LLM Outputs: {
-	'current_action': 'wag tail', 
-	'last_speech': "Hello, new friend! I'm so happy to see you!", 
-	'current_emotion': 'joy', 
-	'system_latency': {
-		'fuse_time': 0.2420651912689209, 
-		'llm_start': 0.24208617210388184, 
-		'processing': 1.4561660289764404, 
-		'complete': 1.6982522010803223}, 
-	'inputs': [{
-		'input_type': 'VLM_COCO_Local', 
-		'timestamp': 0.0, 
-		'input': 'You see a person in front of you.'}]
-	}
+INFO:root:OpenAI LLM output: commands=[Command(type='move', value='wag tail'), Command(type='speak', value="Hi there! I see you and I'm excited!"), Command(type='emotion', value='joy')]
 ```
 
 4. WebSim
 
-Go to [http://localhost:8000](http://localhost:8000) to see real time logs along with 
- the input and output in the terminal. For easy debugging, add `--debug` to see additional logging information.
+Go to [http://localhost:8000](http://localhost:8000) to see real time logs along with the input and output in the terminal. For easy debugging, add `--debug` to see additional logging information.
 
 Congratulations! - you just got started with OM1 and can now explore its capabilities.
 

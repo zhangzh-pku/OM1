@@ -155,7 +155,7 @@ class MoveRos2Connector(ActionConnector[MoveInput]):
         logging.info(f"SendThisToSportClient: {output_interface.action}")
 
     def _move_robot(self, move_speed_x, move_speed_y, rotate_speed=0.0) -> None:
-        if not self.sport_client or self.current_state == RobotState.STANDING:
+        if not self.sport_client or self.current_state != RobotState.STANDING:
             return
 
         try:
