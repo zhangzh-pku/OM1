@@ -1,5 +1,5 @@
 # Use the official ROS Noetic full desktop image
-FROM osrf/ros:noetic-desktop-focal
+FROM ros:noetic-ros-base-focal
 
 # Set environment variables for ROS and DEBIAN frontend
 ENV ROS_DISTRO=noetic \

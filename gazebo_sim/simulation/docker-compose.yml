@@ -6,6 +6,7 @@ services:
       context: ./gazebo_ros/docker/
       dockerfile: Dockerfile
     image: ros1_gazebo_image:latest
+    platform: linux/amd64
     container_name: ros1_gazebo_container
     runtime: nvidia
     network_mode: host
