@@ -34,17 +34,17 @@
             ]
           },
           {
-            "group": "Configuration",
-            "pages": [
-              "configuration/configuration"
-            ]
-          },
-          {
-            "group": "Core Features",
+            "group": "Tutorials",
             "pages": [
               "core-features/conversation",
               "core-features/llm_models",
               "core-features/smart_toy"
+            ]
+          },
+          {
+            "group": "Configuration",
+            "pages": [
+              "configuration/configuration"
             ]
           },
           {
