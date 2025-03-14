@@ -29,145 +29,106 @@ The `Spot` agent uses your webcam to label objects and sends those captions to `
 - [Openmind API key](https://portal.openmind.org/)
 
 ### Prerequisites
-<Note>
-	Before getting started, ensure you have the following installed on your machine:
-</Note>
 
-<Steps>
-  <Step title="Homebrew (Package Manager for macOS)">
-     If Homebrew is not installed, run:
-	```
-	/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
-	```
-  </Step>
-  <Step title="UV (A Rust and Python package manager)">
-    <CodeGroup>
-	``` bash Mac
-	brew install uv
-	```
+Ensure you have the following installed on your machine:
 
-	``` bash Linux
-	curl -LsSf https://astral.sh/uv/install.sh | sh
-	```
-	</CodeGroup>
-  </Step>
-  <Step title="Hardware audio drivers">
-   <Info>
-	This will let you speak to the LLM, and it will generate voice outputs.
-   </Info>
+#### Homebrew (Package Manager for macOS)
 
-	On Mac and Linux, you may need to install `portaudio`.
+If Homebrew is not installed, run:
+```bash
+/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+```
 
-	<CodeGroup>
-	For Mac:
-	```bash Mac Audio Drivers
-	brew install portaudio
-	```
+#### UV (A Rust and Python package manager)
 
-	For Linux:
-	```bash Linux Audio Drivers
-	sudo apt-get update
-	sudo apt-get install portaudio19-dev python-all-dev
-	```
-	</CodeGroup>
-  </Step>
-</Steps>
+``` bash Mac
+brew install uv
+```
 
+``` bash Linux
+curl -LsSf https://astral.sh/uv/install.sh | sh
+```
 
-## Installation and Setup
-<Steps>
-  <Step title="Clone the repository">
-   Run the following commands to clone the repository and set up the environment:
+#### Hardware audio drivers
 
-	```bash clone repo
-	git clone https://github.com/OpenmindAGI/OM1.git
-	cd OM1
-	git submodule update --init
-	uv venv
-	```
+This will let you speak to the LLM and it will generate voice outputs. On Mac and Linux, you need `portaudio`.
 
-</Step>
+For Mac:
+```bash Mac Audio Drivers
+brew install portaudio
+```
 
-  <Step title="Configure API Key">
-	<Steps>
-  		<Step title="Go to  Openmind Portal">
-		</Step>
-  		<Step title="Sign up using your Google account or with your email address and password.">
-  		</Step>
-		<Step title="Click on Generate API Key">
-  		</Step>
-		<Step title=" Wait a few seconds, your API key will be generated.">
-			<img
-			className="block dark:hidden"
-			src="/assets/api-key.png"
-			alt="API key"
-			/>
-			<img
-			className="hidden dark:block"
-			src="/assets/api-key.png"
-			alt="API key"
-			/>
-		<Warning>
-			Important: Your API key will only be shown once. Copy it and store it securely.
-Do not share it with anyone.
-		</Warning>
-	  </Step>
-	  <Step title="Add the API key to the configuration file:">
-	  * Open `config/spot.json`.
-	  * Inside the `config` object, create a variable named `api-key` and assign your API key as the value.
-	  <Note>
-	  	Ensure to do the same to other config files
-	  </Note>
-	  <img
-			className="block dark:hidden"
-			src="/assets/api-key.png"
-			alt="API key"
-		/>
-		<img
-			className="hidden dark:block"
-			src="/assets/api-key.png"
-			alt="API key"
-		/>
-	  </Step>
-	</Steps>
-  </Step>
+For Linux:
+```bash Linux Audio Drivers
+sudo apt-get update
+sudo apt-get install portaudio19-dev python-all-dev
+```
 
-  <Step title="Run the Spot Agent">
-  #### Run the following command to start the Spot Agent:
-  ```
-  uv run src/run.py spot
-  ```
-  <Warning>
-	Some necessary packages like websockets, openapi etc will be installed during this process. This might take a little time, so please be patient.
-  </Warning>
+### Installation and Setup
 
-  #### Response:
-  ```
-  INFO:root:SendThisToROS2: {'move': 'dance'}
-	INFO:root:SendThisToROS2: {'speak': "Hello, it's so nice to see you! Let's dance together!"}
-	INFO:root:SendThisToROS2: {'face': 'joy'}
-	INFO:root:VLM_COCO_Local: You see a person in front of you.
-	INFO:httpx:HTTP Request: POST https://api.openmind.org/api/core/openai/chat/completions "HTTP/1.1 200 OK"
-	INFO:root:Inputs and LLM Outputs: {
-		'current_action': 'wag tail', 
-		'last_speech': "Hello, new friend! I'm so happy to see you!", 
-		'current_emotion': 'joy', 
-		'system_latency': {
-			'fuse_time': 0.2420651912689209, 
-			'llm_start': 0.24208617210388184, 
-			'processing': 1.4561660289764404, 
-			'complete': 1.6982522010803223}, 
-		'inputs': [{
-			'input_type': 'VLM_COCO_Local', 
-			'timestamp': 0.0, 
-			'input': 'You see a person in front of you.'}]
-		}
+1. Clone the repository
 
-  ```
+Run the following commands to clone the repository and set up the environment:
 
-  #### Explanation
+```bash clone repo
+git clone https://github.com/OpenmindAGI/OM1.git
+cd OM1
+git submodule update --init
+uv venv
+```
 
-  The response above provides insight into how the spot agent processes its environment and decides on its next actions.
+2. Set the configuration variables
+
+Locate the `config` folder and add your Openmind API key in `/config/spot.json`. If you do not already have one, you can obtain a free access key at https://portal.openmind.org/.  _Note:_ Using the placeholder key **openmind-free** will generate errors.
+
+```bash set api key
+# /config/spot.json
+...
+"api_key": "om1_live_e4252f1cf005af..."
+...
+```
+
+3. Run the Spot Agent
+
+Run the following command to start the Spot Agent:
+
+```bash
+uv run src/run.py spot
+```
+
+Some necessary packages will be installed during this process, the first time you run the command. This might take a little time. Please be patient. Then you will see the system come to life:
+
+```bash
+Object Detector INPUT
+// START
+You see a person in front of you. You also see a laptop.
+// END
+
+AVAILABLE ACTIONS:
+command: move
+    A movement to be performed by the agent.
+    Effect: Allows the agent to move.
+    Arguments: Allowed values: 'stand still', 'sit', 'dance', 'shake paw', 'walk', 'walk back', 'run', 'jump', 'wag tail'
+
+command: speak
+    Words to be spoken by the agent.
+    Effect: Allows the agent to speak.
+    Arguments: <class 'str'>
+
+command: emotion
+    A facial expression to be performed by the agent.
+    Effect: Performs a given facial expression.
+    Arguments: Allowed values: 'cry', 'smile', 'frown', 'think', 'joy'
+
+What will you do? Command: 
+
+INFO:httpx:HTTP Request: POST https://api.openmind.org/api/core/openai/chat/completions "HTTP/1.1 200 OK"
+INFO:root:OpenAI LLM output: commands=[Command(type='move', value='wag tail'), Command(type='speak', value="Hi there! I see you and I'm excited!"), Command(type='emotion', value='joy')]
+```
+
+#### Explanation of the log data
+
+The response above provides insight into how the spot agent processes its environment and decides on its next actions.
   - First, it detects a person using vision.
   - Next, it decides on a friendly action (dancing and speaking).
   - Expresses emotions via facial displays.
@@ -175,5 +136,3 @@ Do not share it with anyone.
   - Communicates with an external AI API for response generation.
 
 Overall, the system follows a predefined behavior where spotting a person triggers joyful interactions, driven by the LLM-assisted decision-making process. 
-  </Step>
-</Steps>
