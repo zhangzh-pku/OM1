@@ -34,9 +34,9 @@ docker compose -f $COMPOSE_FILE up -d --build
 # Wait for a moment to ensure containers are up
 sleep 5
 
-# Close all gnome-terminal instances
-echo "Closing all gnome-terminal instances..."
-pkill -f gnome-terminal
+# # Close all gnome-terminal instances
+# echo "Closing all gnome-terminal instances..."
+# pkill -f gnome-terminal
 
 # Wait a moment to ensure all terminals are closed
 sleep 2
