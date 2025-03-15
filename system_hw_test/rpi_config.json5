@@ -100,16 +100,8 @@
 
   //// Zenoh related configuration.
   mode: "peer",
-  connect: {
-    endpoints: [
-      "tcp/localhost:7447"
-    ]
-  },
-  listen: {
-    endpoints: [
-      "tcp/0.0.0.0:7445"
-    ]
-  },
+  connect: { endpoints: ["tcp/localhost:7447"]},
+  listen: { endpoints: ["tcp/0.0.0.0:7445", "tcp/192.168.1.193:7447"]},
   scouting: {
     timeout: 3000,
     delay: 500,
