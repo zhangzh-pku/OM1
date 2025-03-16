@@ -83,6 +83,7 @@
             "group": "Core Endpoints",
             "pages": [
               "api-reference/endpoints/llm",
+              "api-reference/endpoints/elevenlabs_tts",
               "api-reference/endpoints/riva_tts"
             ]
           },
@@ -90,6 +91,7 @@
             "group": "Core Websocket Endpoints",
             "pages": [
               "api-reference/endpoints/vila_vlm",
+              "api-reference/endpoints/google_asr",
               "api-reference/endpoints/riva_asr"
             ]
           }
