@@ -29,13 +29,13 @@ sudo apt update
 sudo apt install zenoh-bridge-ros2dds.
 ```
 
-Finally, run the bridge on the Rasberry Pi command line:
+Finally, run the bridge on the Raspberry Pi command line:
 
 ```bash
 zenoh-bridge-ros2dds
 ```
 
-The TurtleBot4 will now discover other computers running Zenoh, send then Zenoh messages, and also, accept Zenoh messages and forward them to ROS2.
+The TurtleBot4 will now discover other computers running Zenoh, send them Zenoh messages, and also, accept Zenoh messages and forward them to ROS2.
 
 3. On the TurtleBot4, test the system:
 
@@ -44,6 +44,21 @@ ros2 topic list
 ros2 action list
 ros2 topic echo /pi/scan
 ```
+
+To spin the robot, issue:
+
+```bash
+ros2 topic pub /cmd_vel geometry_msgs/msg/Twist "linear:
+  x: 0.0
+  y: 0.0
+  z: 0.0
+angular:
+  x: 0.0
+  y: 0.0
+  z: 0.1"
+```
+
+To debug movement, use `ros2 topic info /pi/cmd_vel --verbose`. You should see at least one subscriber, otherwise there is a problem with the Create3. 
 
 4. Install Zenoh on your Mac, PC, or Linux computer, following [Installing the Zenoh router](https://zenoh.io/docs/getting-started/installation/)
 
