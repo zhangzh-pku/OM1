@@ -8,9 +8,7 @@ ros2 topic echo /pi/scan
 
 
 def listener(sample):
-    print(
-        f"Received {sample.kind} ('{sample.key_expr}': '{sample.payload.to_string()}')"
-    )
+    print(f"Received {sample.kind} ('{sample.key_expr}': '{sample.payload}')")
 
 
 if __name__ == "__main__":

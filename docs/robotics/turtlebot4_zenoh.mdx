@@ -7,34 +7,35 @@ OM1 connects to TurtleBot4 using Zenoh. To correctly set up your TurtleBot4, fol
 
 1. Set up your TurtleBot4 following the [Basic Setup](https://turtlebot.github.io/turtlebot4-user-manual/setup/basic.html). These instructions are for `turtlebot4_standard_humble_1.0.4.img`, but should work for any current TurtleBot4 image. Please spend some time to become familiar with the Turtlebot4 ecosystem - there are extensive educational materials to help you get started. 
 
-2. There are numerous issues connecting to a TurtleBot4 is university/enterprise network. To solve all of those, set up a [Zenoh Bridge](https://www.youtube.com/watch?v=xmK2I0D5sas). The docker image is [here](https://hub.docker.com/r/theconstructai/zenoh-bridge-ros2dds). We suggest using `pi` and `c3` as the namespaces for the Raspberry Pi and the Create3, respectively, so it's clear where data are coming from. After you are done with the setup, your TurtleBot4 will be set up as follows:
-```
-Raspberry Pi configuration (use turtlebot4-setup tool):
+2. There are numerous issues connecting to a TurtleBot4 in a university/enterprise network. To solve many of those, set up a Zenoh bridge. To avoid routing isseus, make the following changes to the Turtlebot4.
 
-RMW_IMPLEMENTATION=rmw_cyclonedds_cpp
+Use the `turtlebot4-setup` tool to access `ROS Setup:Bash Setup` and set it to the following:
+
+```bash
+ROBOT_NAMESPACE=/pi
 ROS_DOMAIN_ID=0
-CYCLONEDDS_URI=[] (Empty).
-Any namespace can be added, such as "pi"
-Create 3 configuration (Access web server in a browser: 192.168.1.XX:8080):
-
 RMW_IMPLEMENTATION=rmw_cyclonedds_cpp
-ROS_DOMAIN_ID=1
-Uncheck Use ROS Discovery Server.
-Any namespace can be added, such as "c3"
+CYCLONEDDS_URI=[] # Empty
+```
+Click "Save", "Esc", and then "Apply Settings". 
+
+Then, access the Create3's App config page at its web server (e.g. `192.168.1.193:8080/ros-config`). Change the ROS_DOMAIN_ID to `1`, or any other number exzcept `0`. Click `Save` and _Restart Application_. 
+
+Then, on the Raspberry Pi command line, download and install the standalone `zenoh-bridge-ros2dds` bridge:
+
+```bridge
+echo "deb [trusted=yes] https://download.eclipse.org/zenoh/debian-repo/ /" | sudo tee -a /etc/apt/sources.list > /dev/null
+sudo apt update
+sudo apt install zenoh-bridge-ros2dds.
 ```
 
-WiFi will be handled by the Raspberry Pi.   
+Finally, run the bridge on the Rasberry Pi command line:
 
-Starting the Zenoh bridge
 ```bash
-sudo docker compose -f docker-compose.yaml up -d
+zenoh-bridge-ros2dds
 ```
-Terminal access and other useful commands into the bridge:
-```bash
-sudo docker ps -a
-sudo docker attach fef7aa4ad033
-sudo docker exec -it fef7aa4ad033 sh # change the CONTAINER ID
-```
+
+The TurtleBot4 will now discover other computers running Zenoh, send then Zenoh messages, and also, accept Zenoh messages and forward them to ROS2.
 
 3. On the TurtleBot4, test the system:
 
@@ -46,38 +47,11 @@ ros2 topic echo /pi/scan
 
 4. Install Zenoh on your Mac, PC, or Linux computer, following [Installing the Zenoh router](https://zenoh.io/docs/getting-started/installation/)
 
-Start the Zenoh daemon from inside `/OM1/system_hw_test` using:
+Congratuations! You can now control a TurtleBot4 from your Mac laptop, using OM1 and Zenoh.
 
-```bash
-zenohd --config=zenho_config.json5
-```
+## Accessing TurtleBot4 Data on a Remote Computer using Zenoh
 
-## Accessing TurtleBot4 Data on a remote computer using Zenoh
-
-Reading Scan Data:
+Read TurtleBot4 laser scan data:
 ```bash
 uv run system_hw_test/turtlebot4_laserscan.py
-
-
-uv run system_hw_test/turtlebot4_laserscan_dummy.py
 ```
-
-Front video feed:
-```bash
-uv run system_hw_test/go2_camera_opencv.py en0
-```
-
-Front video single image:
-```bash
-uv run system_hw_test/go2_capture_image.py en0
-```
-
-Lowstate system/joint data:
-```bash
-uv run system_hw_test/go2_data_stream.py en0
-```
-
-
-
-
-
