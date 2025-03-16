@@ -1,15 +1,15 @@
 ---
 title: TurtleBot4 Basic setup
-description: "TurtleBot4 Basic Setup"
+description: "TurtleBot4 Basic Communications Setup"
 ---
 
 OM1 connects to TurtleBot4 using Zenoh. To correctly set up your TurtleBot4, follow these steps.
 
-1. Set up your TurtleBot4 following the [Basic Setup](https://turtlebot.github.io/turtlebot4-user-manual/setup/basic.html). These instructions are for `turtlebot4_standard_humble_1.0.4.img`, but should work for any current TurtleBot4 image. Please spend some time to become familiar with the Turtlebot4 ecosystem - there are extensive educational materials to help you get started. 
+1. Set up your TurtleBot4 following the [Basic Setup](https://turtlebot.github.io/turtlebot4-user-manual/setup/basic.html). These instructions are for `turtlebot4_standard_humble_1.0.4.img`, but should work for any current TurtleBot4 image. Please spend some time to become familiar with the Turtlebot4 ecosystem - there are extensive educational materials to help you get started. NOTE: we now assume you are generally familiar with the ROS2/Turtlebot4 system.
 
-2. There are numerous issues connecting to a TurtleBot4 in a university/enterprise network. To solve many of those, set up a Zenoh bridge. To avoid routing isseus, make the following changes to the Turtlebot4.
+2. As you have just experienced first-hand, there are numerous issues connecting to a TurtleBot4 in a university/enterprise network. To solve many of those, set up a Zenoh bridge. 
 
-Use the `turtlebot4-setup` tool to access `ROS Setup:Bash Setup` and set it to the following:
+To avoid routing issues, make the following `ROS_DOMAIN_ID` changes to the Turtlebot4. Use the `turtlebot4-setup` tool to access `ROS Setup:Bash Setup` and set it to the following:
 
 ```bash
 ROBOT_NAMESPACE=/pi
@@ -19,7 +19,7 @@ CYCLONEDDS_URI=[] # Empty
 ```
 Click "Save", "Esc", and then "Apply Settings". 
 
-Then, access the Create3's App config page at its web server (e.g. `192.168.1.193:8080/ros-config`). Change the ROS_DOMAIN_ID to `1`, or any other number exzcept `0`. Click `Save` and _Restart Application_. 
+Then, access the Create3's App config page at its web server (e.g. `192.168.1.193:8080/ros-config`). Change the ROS_DOMAIN_ID to 1, or any other number except 0. Click `Save` and _Restart Application_. 
 
 Then, on the Raspberry Pi command line, download and install the standalone `zenoh-bridge-ros2dds` bridge:
 
@@ -47,7 +47,7 @@ ros2 topic echo /pi/scan
 
 4. Install Zenoh on your Mac, PC, or Linux computer, following [Installing the Zenoh router](https://zenoh.io/docs/getting-started/installation/)
 
-Congratuations! You can now control a TurtleBot4 from your Mac laptop, using OM1 and Zenoh.
+Congratulations! You can now interact with a TurtleBot4 from your Mac laptop, using OM1 and Zenoh.
 
 ## Accessing TurtleBot4 Data on a Remote Computer using Zenoh
 
