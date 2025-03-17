@@ -9,7 +9,9 @@ OM1 connects to TurtleBot4 using Zenoh. To correctly set up your TurtleBot4, fol
 
 2. As you have just experienced first-hand, there are numerous issues connecting to a TurtleBot4 in a university/enterprise network. To solve many of those, set up a Zenoh bridge. 
 
-To avoid routing issues, make the following `ROS_DOMAIN_ID` changes to the Turtlebot4. Use the `turtlebot4-setup` tool to access `ROS Setup:Bash Setup` and set it to the following:
+To avoid routing issues, we use the approach developed by `theconstruct.ai`, which is to give the Raspberry Pi and the Create3 their own ROS2 DOMAIN_IDs, and then use one or more Zenoh bridges to control message traffic between the Raspberry Pi and the Create3.
+
+Make the following `ROS_DOMAIN_ID` changes to the Turtlebot4. Use the `turtlebot4-setup` tool to access `ROS Setup:Bash Setup` and set it to the following:
 
 ```bash
 ROBOT_NAMESPACE=/pi
@@ -19,7 +21,7 @@ CYCLONEDDS_URI=[] # Empty
 ```
 Click "Save", "Esc", and then "Apply Settings". 
 
-Then, access the Create3's App config page at its web server (e.g. `192.168.1.193:8080/ros-config`). Change the ROS_DOMAIN_ID to 1, or any other number except 0. Click `Save` and _Restart Application_. 
+Then, access the Create3's App config page at its web server (e.g. `192.168.1.193:8080/ros-config`). Change the ROS_DOMAIN_ID to 1. Click `Save` and _Restart Application_. 
 
 Then, on the Raspberry Pi command line, download and install the standalone `zenoh-bridge-ros2dds` bridge:
 
@@ -71,10 +73,40 @@ Read TurtleBot4 laser scan data:
 uv run system_hw_test/turtlebot4_laserscan.py
 ```
 
+# Alternative (Dual Bridge) Approach for more Granular Control
 
-## Building the right dockerfiles
+You can also use the dual Zenoh bridge approach developed by [theconstruct.ai](www.theconstruct.ai). Follow their [instructions here](https://hub.docker.com/r/theconstructai/zenoh-bridge-ros2dds). This allows you to filter message traffic on a per topic level (see the `config_create3.json5` file for an example of how this is done). 
+
+In this approach, you need to tell your laptop the ip address of the Raspberry Pi on the Turtlebot4, since running the bridges inside a docker blocks UDP discovery (and also the used `_create3.json5` files explicitly block discovery). Please also make sure the your laptop is running the same version of the bridge (e.g. 1.2.1) as the Raspberry Pi otherwise you will get errors. 
+
+## Building the Docker Images
+
+You can also build your own dual bridge docker images:
 
 ```bash
-docker build .
+docker build -t my-username/my-image .
+docker push my-username/my-image
+```
+
+On the TurtleBot4, run `docker compose -f docker-compose.yaml up -d`. The `docker-compose` should be:
+
+```bash
+services:
+  zenoh-bridge-turtlebot4:
+    image: openmindagi/turtlebridge
+    container_name: zenoh-bridge-turtlebot4
+    network_mode: "host" 
+    restart: always # Ensures the container restarts on reboot
+```
+
+Useful docker commands
+```bash
+sudo docker images
+sudo docker rmi IMAGE ID
+sudo docker ps -a
+sudo docker exec -it CONTAINER_ID sh
+
+sudo docker kill CONTAINER_ID
+sudo docker attach CONTAINER_ID
 ```
 
