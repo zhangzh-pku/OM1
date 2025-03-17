@@ -1,14 +1,15 @@
 {
   //// Based on https://hub.docker.com/r/theconstructai/zenoh-bridge-ros2dds
-  //// https://www.theconstruct.ai
-  //// For the RPi, we want to take traffic on CycloneDDS DOMAIN_ID 0, 
+  //// Thank you theconstruct.ai
+  //// For the RPi, we want to take its traffic on CycloneDDS DOMAIN_ID 0 
   //// and make that available to the Create3.
   mode: "peer",
-  connect: {endpoints: ["tcp/localhost:7447"]},
+  //// The idea is for the RPi to connect to the Create3 which is listening on localhost:7447
+  connect: { endpoints: ["tcp/localhost:7447"] },
   //// And let's listen on all interfaces at port:7445 
-  //// That's what allows other computers, in addition to the Create3, in the local network 
+  //// That allows other computers in the local network, in addition to the Create3, 
   //// to talk to this bridge
-  listen: { endpoints: ["tcp/0.0.0.0:7445"]},
+  listen: { endpoints: ["tcp/0.0.0.0:7445"] },
   plugins: {
     ros2dds: {
       nodename: "zenoh_bridge_ros2dds_rpi",

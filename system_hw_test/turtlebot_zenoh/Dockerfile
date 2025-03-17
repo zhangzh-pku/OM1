@@ -6,7 +6,7 @@ FROM eclipse/zenoh-bridge-ros2dds:1.2.1
 # EXPOSE 7447/tcp
 # EXPOSE 8000/tcp
 
-# let's overwrite the eclise default entrypoint
+# let's overwrite the eclipse default entrypoint
 COPY entrypoint.sh /entrypoint.sh
 RUN chmod +x entrypoint.sh
 
