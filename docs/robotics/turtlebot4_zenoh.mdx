@@ -79,6 +79,51 @@ You can also use the dual Zenoh bridge approach developed by [theconstruct.ai](w
 
 In this approach, you need to tell your laptop the ip address of the Raspberry Pi on the Turtlebot4, since running the bridges inside a docker blocks UDP discovery (and also the used `_create3.json5` files explicitly block discovery). Please also make sure the your laptop is running the same version of the bridge (e.g. 1.2.1) as the Raspberry Pi otherwise you will get errors. 
 
+## Expected ROS2 Topics for a correctly configured system
+
+On the TurtleBot4, run `ros2 topic list`. Topics with a `pi` prefix originate from the Raspberry Pi, and topics without a prefix are from the Create3. 
+
+```bash
+/battery_state
+/cmd_vel
+/diagnostics
+/dock_status
+/imu
+/odom
+/parameter_events
+/pi/battery_state
+/pi/cmd_vel
+/pi/diagnostics
+/pi/diagnostics_agg
+/pi/diagnostics_toplevel_state
+/pi/dock_status
+/pi/function_calls
+/pi/hazard_detection
+/pi/hmi/buttons
+/pi/hmi/display
+/pi/hmi/display/message
+/pi/hmi/led
+/pi/imu
+/pi/interface_buttons
+/pi/ip
+/pi/joint_states
+/pi/joy
+/pi/joy/set_feedback
+/pi/mouse
+/pi/oakd/rgb/preview/camera_info
+/pi/oakd/rgb/preview/image_raw
+/pi/robot_description
+/pi/scan
+/pi/tf
+/pi/tf_static
+/pi/wheel_status
+/robot_state/transition_event
+/rosout
+/static_transform/transition_event
+/tf
+/tf_static
+```
+
 ## Building the Docker Images
 
 You can also build your own dual bridge docker images:
