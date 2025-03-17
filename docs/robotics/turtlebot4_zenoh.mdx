@@ -77,7 +77,15 @@ uv run system_hw_test/turtlebot4_laserscan.py
 
 You can also use the dual Zenoh bridge approach developed by [theconstruct.ai](www.theconstruct.ai). Follow their [instructions here](https://hub.docker.com/r/theconstructai/zenoh-bridge-ros2dds). This allows you to filter message traffic on a per topic level (see the `config_create3.json5` file for an example of how this is done). 
 
-In this approach, you need to tell your laptop the ip address of the Raspberry Pi on the Turtlebot4, since running the bridges inside a docker blocks UDP discovery (and also the used `_create3.json5` files explicitly block discovery). Please also make sure the your laptop is running the same version of the bridge (e.g. 1.2.1) as the Raspberry Pi otherwise you will get errors. 
+In this approach, you need to manually tell your laptop the IP address of the Raspberry Pi on the Turtlebot4, since running the bridges inside a docker blocks UDP discovery (and also the used `_create3.json5` files explicitly block discovery). Please also make sure the your laptop is running the same version of the bridge (e.g. 1.2.1) as the Raspberry Pi otherwise you will get errors. 
+
+On your laptop, connect to the TurtleBot4 by specififying the robot's IP address:
+```bash 
+./zenohd -l tcp/192.168.1.193:7445
+```
+The `-l tcp/192.168.1.193:7445` tells the zenoh daemon to listen on TCP port 7445 bound to IP address 192.168.1.193. To debug, make sure you can `ping` the TurtleBot4 from your laptop.
+
+NOTE: for this to work, all computers must be running the same versions of zenoh, for example, 1.2.1. 
 
 ## Expected ROS2 Topics for a correctly configured system
 
@@ -124,7 +132,7 @@ On the TurtleBot4, run `ros2 topic list`. Topics with a `pi` prefix originate fr
 /tf_static
 ```
 
-## Building the Docker Images
+## Building the Docker Dual Bridge Images
 
 You can also build your own dual bridge docker images:
 
@@ -135,7 +143,7 @@ docker push my-username/my-image
 
 On the TurtleBot4, run `docker compose -f docker-compose.yaml up -d`. The `docker-compose` should be:
 
-```bash
+```bash docker-compose.yaml
 services:
   zenoh-bridge-turtlebot4:
     image: openmindagi/turtlebridge
@@ -146,12 +154,14 @@ services:
 
 Useful docker commands
 ```bash
+# Images
 sudo docker images
-sudo docker rmi IMAGE ID
-sudo docker ps -a
-sudo docker exec -it CONTAINER_ID sh
+sudo docker rmi IMAGE_ID --force
 
-sudo docker kill CONTAINER_ID
-sudo docker attach CONTAINER_ID
+# Containers
+sudo docker ps -a
+sudo docker attach CONTAINER_ID # to stream logs 
+sudo docker exec -it CONTAINER_ID sh # to get a shell
+sudo docker kill CONTAINER_ID 
 ```
 
