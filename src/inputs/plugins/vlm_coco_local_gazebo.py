@@ -307,7 +307,7 @@ class VLM_COCO_Local_Gazebo(FuserInput[Image.Image]):
             ]
             logging.info(f"COCO isn't detecting anything familiar. The closest thing it recognises is {full_labels[0]}")
         else:
-            logging.info(f"COCO isn't detecting anything")
+            logging.info("COCO isn't detecting anything")
 
         if sentence is not None:
             return Message(timestamp=time.time(), message=sentence)
