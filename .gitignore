@@ -20,3 +20,5 @@ wheels/
 
 # Mac specific lint
 .DS_Store
+config/iris_ai.json
+launch.sh

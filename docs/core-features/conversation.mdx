@@ -5,7 +5,6 @@ description: "Using Cloud Endpoints for Voice Inputs and Text to Speech"
 
 This section provides various examples for integrating and using multiple cloud-based AI endpoints, such as OpenAI, DeepSeek, and others, for voice input processing, text-to-speech (TTS) and emotion detection synthesis. Whether you need to convert spoken language into text (ASR) or generate natural-sounding speech from text, these examples will help you interact with different cloud providers seamlessly.
 
-
 ## Voice to Text processing with OpenAI
 <Note>
 This example uses your `default` audio in (microphone) and your `default` audio output (speaker). Please test both your microphone and speaker in your system settings to make sure they are connected and working.
@@ -58,15 +57,12 @@ You will be able to speak to the LLM and it will generate voice outputs.
 
 ## Hardware Audio Drivers
 
-
 </Step>
 <Step title="Audio Input Detection and Selection"> 
     ```
     INFO:om1_speech:Found 7 audio devices
     INFO:om1_speech:Default input device: MacBook Pro Microphone (1)
     INFO:om1_speech:Selected input device: MacBook Pro Microphone (1)
-
-
     ```
     - The system detects 7 audio devices (microphones/speakers).
     - The default input device is selected: MacBook Pro Microphone (1).
@@ -77,7 +73,7 @@ You will be able to speak to the LLM and it will generate voice outputs.
     INFO:om1_utils:WebSocket client thread started
     INFO:om1_utils:Connected to wss://api-asr.openmind.org
     INFO:om1_utils:Connection established
-    ```
+```
 - A WebSocket client thread starts.
 - It successfully connects to wss://api-asr.openmind.org, which appears to be an Automatic Speech Recognition (ASR) service (real-time voice-to-text processing).
 - Connection established, meaning speech recognition is now active.
@@ -87,8 +83,7 @@ You will be able to speak to the LLM and it will generate voice outputs.
     INFO:om1_speech:Started audio processing thread
     INFO:om1_speech:Started audio stream with device 1
     INFO:om1_utils:Registered message callback
-
-    ```
+```
 - The script starts processing audio input from the selected microphone (device 1).
 - It also registers a callback function to handle messages received via WebSocket.
 </Step>
@@ -107,29 +102,33 @@ You will be able to speak to the LLM and it will generate voice outputs.
     INFO:om1_speech:Max Output Channels: 2
     INFO:om1_speech:Selected output device: LG FHD at index 0
     INFO:om1_speech:Successfully opened audio stream
+```
 
 <CodeGroup>
-For Mac:
-```bash Mac Audio Drivers
-brew install portaudio
+	For Mac:
+	```bash Mac
+	brew install portaudio
+	```
 
-```
+	For Linux:
+	```bash Linux
+	sudo apt-get update
+	sudo apt-get install portaudio19-dev python-all-dev
+	```
+</CodeGroup>
+
 - The system detects audio output devices.
 - It selects LG FHD as the output device (a monitor or external speaker).
 - Audio streaming is successfully opened, meaning the system can play sound.
 </Step>
 <Step title="Speech Recognition Captured Input"> 
- ```
+```
     INFO:root:Detected ASR message: hello hello
 ```
-
 - The system successfully recognized and transcribed speech input (hello hello).
 - This confirms that the ASR (Automatic Speech Recognition) system is working.
 </Step>
 </Steps>
-
-
-</CodeGroup>
 
 ## Enumerating your audio
 
