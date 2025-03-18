@@ -4,14 +4,12 @@ Repo for quadruped simulation and control with OM1.
 # Simulation Instructions
 ## MacOS (Gazebo Harmonic)
 ```
-cd gazebo_sim
 bash macOS.sh
 ```
 The script also checks and installs Gazebo Harmonic https://gazebosim.org/docs/harmonic/getstarted/ if not already installed.
 
 ## Ubuntu (Gazebo Classic)
 ```
-cd gazebo_sim
 bash ubuntu.sh
 ```
 For now, ROS2 is required for the simulation to interact with OM1 in Gazebo Classic, check https://docs.ros.org/en/humble/Installation.html for installation instructions.
