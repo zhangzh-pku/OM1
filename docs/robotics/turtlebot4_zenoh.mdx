@@ -1,9 +1,19 @@
 ---
-title: TurtleBot4 Basic setup
-description: "TurtleBot4 Basic Communications Setup"
+title: TurtleBot4 Basic Setup
+description: "TurtleBot4 Basic Setup"
 ---
 
+## Basic Command 
+
+Run
+
+```bash Run Robot
+uv run src/run.py turtlebot4
+```
+
 OM1 connects to TurtleBot4 using Zenoh. To correctly set up your TurtleBot4, follow these steps.
+
+## Set Up
 
 1. Set up your TurtleBot4 following the [Basic Setup](https://turtlebot.github.io/turtlebot4-user-manual/setup/basic.html). These instructions are for `turtlebot4_standard_humble_1.0.4.img`, but should work for any current TurtleBot4 image. Please spend some time to become familiar with the Turtlebot4 ecosystem - there are extensive educational materials to help you get started. NOTE: we now assume you are generally familiar with the ROS2/Turtlebot4 system.
 
@@ -59,6 +69,12 @@ To debug movement, use `ros2 topic info /pi/cmd_vel --verbose`.
 4. Install Zenoh on your Mac, PC, or Linux computer, following [Installing the Zenoh router](https://zenoh.io/docs/getting-started/installation/)
 
 Please make sure the your laptop is running the same version of the bridge (e.g. 1.2.1) as the Raspberry Pi otherwise you will get errors.
+
+Add the optional Python CycloneDDS module to OM1:
+
+```bash
+uv pip install -r pyproject.toml --extra dds
+```
 
 Congratulations! You can now interact with a TurtleBot4 from your Mac laptop, using OM1 and Zenoh.
 

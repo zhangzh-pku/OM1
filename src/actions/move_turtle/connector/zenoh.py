@@ -1,24 +1,24 @@
 import logging
 import time
+from dataclasses import dataclass
 
 import zenoh
-from pycdr import cdr
-from pycdr.types import float64
+from pycdr2 import IdlStruct
+from pycdr2.types import float64
 
 from actions.base import ActionConfig, ActionConnector
-from actions.move_safe.interface import MoveInput
+from actions.move_turtle.interface import MoveInput
 
 
-# Declare the types of Twist message to be encoded and published via zenoh
-@cdr
-class Vector3:
+@dataclass
+class Vector3(IdlStruct, typename="Vector3"):
     x: float64
     y: float64
     z: float64
 
 
-@cdr
-class Twist:
+@dataclass
+class Twist(IdlStruct, typename="Twist"):
     linear: Vector3
     angular: Vector3
 
@@ -28,43 +28,39 @@ class MoveZenohConnector(ActionConnector[MoveInput]):
     def __init__(self, config: ActionConfig):
         super().__init__(config)
         self.session = None
+        self.cmd_vel = "cmd_vel"
         try:
             # Initiate the zenoh-net API
-            self.session = zenoh.open()
+            self.session = zenoh.open(zenoh.Config())
             logging.info("Zenoh Opened")
         except Exception as e:
             logging.error(f"Error opening Zenoh client: {e}")
+
+    def pub_twist(self, linear, angular):
+        if self.session is None:
+            logging.info("No open Zenoh session, returning")
+            return
+        logging.info("Pub twist: {} - {}".format(linear, angular))
+        t = Twist(
+            linear=Vector3(x=float(linear), y=0.0, z=0.0),
+            angular=Vector3(x=0.0, y=0.0, z=float(angular)),
+        )
+        self.session.put(self.cmd_vel, t.serialize())
 
     async def connect(self, output_interface: MoveInput) -> None:
 
         if output_interface.action == "turn left":
             logging.info("Zenoh command: turn left")
-            t = Twist(
-                linear=Vector3(x=0.0, y=0.0, z=0.0),
-                angular=Vector3(x=0.0, y=0.0, z=0.2),
-            ).serialize()
-            self.session.put("cmd_vel", t)
+            self.pub_twist(0.0, 0.2)
         elif output_interface.action == "turn right":
             logging.info("Zenoh command: turn right")
-            t = Twist(
-                linear=Vector3(x=0.0, y=0.0, z=0.0),
-                angular=Vector3(x=0.0, y=0.0, z=-0.2),
-            ).serialize()
-            self.session.put("cmd_vel", t)
+            self.pub_twist(0.0, -0.2)
         elif output_interface.action == "move forwards":
             logging.info("Zenoh command: move forwards")
-            t = Twist(
-                linear=Vector3(x=0.5, y=0.0, z=0.0),
-                angular=Vector3(x=0.0, y=0.0, z=0.0),
-            ).serialize()
-            self.session.put("cmd_vel", t)
+            self.pub_twist(0.5, 0.0)
         elif output_interface.action == "move back":
             logging.info("Zenoh command: move back")
-            t = Twist(
-                linear=Vector3(x=-0.5, y=0.0, z=0.0),
-                angular=Vector3(x=0.0, y=0.0, z=0.0),
-            ).serialize()
-            self.session.put("cmd_vel", t)
+            self.pub_twist(-0.5, 0.0)
         elif output_interface.action == "stand still":
             logging.info("Zenoh command: stand still")
             # do nothing
