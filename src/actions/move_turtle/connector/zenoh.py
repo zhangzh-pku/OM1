@@ -30,9 +30,8 @@ class MoveZenohConnector(ActionConnector[MoveInput]):
         self.session = None
         self.cmd_vel = "cmd_vel"
         try:
-            # Initiate the zenoh-net API
             self.session = zenoh.open(zenoh.Config())
-            logging.info("Zenoh Opened")
+            logging.info("Zenoh client opened")
         except Exception as e:
             logging.error(f"Error opening Zenoh client: {e}")
 
@@ -49,25 +48,25 @@ class MoveZenohConnector(ActionConnector[MoveInput]):
 
     async def connect(self, output_interface: MoveInput) -> None:
 
+        logging.info(f"SendThisToZenoh: {output_interface.action}")
+
         if output_interface.action == "turn left":
-            logging.info("Zenoh command: turn left")
+            logging.info(f"Zenoh command: {output_interface.action}")
             self.pub_twist(0.0, 0.2)
         elif output_interface.action == "turn right":
-            logging.info("Zenoh command: turn right")
+            logging.info(f"Zenoh command: {output_interface.action}")
             self.pub_twist(0.0, -0.2)
         elif output_interface.action == "move forwards":
-            logging.info("Zenoh command: move forwards")
+            logging.info(f"Zenoh command: {output_interface.action}")
             self.pub_twist(0.5, 0.0)
         elif output_interface.action == "move back":
-            logging.info("Zenoh command: move back")
+            logging.info(f"Zenoh command: {output_interface.action}")
             self.pub_twist(-0.5, 0.0)
         elif output_interface.action == "stand still":
-            logging.info("Zenoh command: stand still")
+            logging.info(f"Zenoh command: {output_interface.action}")
             # do nothing
         else:
             logging.info(f"Unknown move type: {output_interface.action}")
-
-        logging.info(f"SendThisToZenoh: {output_interface.action}")
 
     def tick(self) -> None:
 
