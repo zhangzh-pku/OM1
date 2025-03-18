@@ -1,0 +1,69 @@
+---
+title: Google Speech Recognition
+description: "Google Speech Recognition (ASR) API Reference"
+---
+
+OpenMind proxies Google Speech Recognition (ASR) API to provide speech recognition capabilities. This endpoint allows you to interact with the Google ASR API to transcribe speech to text.
+
+To minimize latency, the API endpoint utilizes WebSockets for efficient real-time communication.
+
+```
+wss://api.openmind.org/api/core/google/asr?api_key=<YOUR_API_KEY>
+```
+
+## Installation
+
+Install the `OM1` package:
+
+```bash install OM1
+uv pip3 install git+https://github.com/OpenmindAGI/OM1.git
+```
+
+If you don't have `uv` installed, you can install it using the following command:
+
+```bash install OM1
+pip3 install git+https://github.com/OpenmindAGI/OM1.git
+```
+
+## Usage
+
+The following example demonstrates how to interact with the Google ASR API using the `OM1` package:
+
+```python usage
+import time
+from om1_utils import ws
+from om1_speech import AudioInputStream
+
+# Initialize the Google ASR API
+ws_client = ws.Client(url="wss://api.openmind.org/api/core/google/asr?api_key=<YOUR_API_KEY>")
+audio_stream_input = AudioInputStream(audio_data_callback=ws_client.send_message)
+
+# Start the Google ASR API
+ws_client.start()
+audio_stream_input.start()
+
+# Retrieve the Google ASR API response
+ws_client.register_message_callback(lambda msg: print(msg))
+
+while True:
+  time.sleep(1)
+```
+
+The expected response from the Google ASR API will be in the following format:
+
+```json response
+{
+  "asr_reply": "hello world"
+}
+```
+
+You can also forward the base64 encoded audio data directly to the API endpoint using the following format:
+
+```json request
+{
+  "audio": "base64_encoded_audio_data",
+  "rate": 16000
+}
+```
+
+<Tip>The `rate` parameter is optional and defaults to 16000 if not provided. The `rate` parameter specifies the sample rate of the audio data in Hz.</Tip>

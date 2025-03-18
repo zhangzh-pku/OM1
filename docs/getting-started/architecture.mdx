@@ -41,6 +41,22 @@ async def _tick(self) -> None:
 ```
 
 ### Code Explanation
+
+	**Project Structure**
+	```bash Project Structure
+.
+├── config/               # Agent configuration files
+├── src/
+│   ├── actions/          # Agent outputs/actions/capabilities
+│   ├── fuser/            # Input fusion logic
+│   ├── inputs/           # Input plugins (e.g. VLM, audio)
+│   ├── llm/              # LLM integration
+│   ├── providers/        # Providers
+│   ├── runtime/          # Core runtime system
+│   ├── simulators/       # Virtual endpoints such as `WebSim`
+│   └── run.py            # CLI entry point
+```
+
 The code above defines an asynchronous event loop for a system running a Cortex AI model. It continuously processes input, generates responses, and executes commands.
 
 <Steps>
