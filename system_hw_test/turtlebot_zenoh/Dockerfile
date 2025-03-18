@@ -1,7 +1,9 @@
 FROM eclipse/zenoh-bridge-ros2dds:1.2.1
 
 # latest is currently 1.2.1
-# this image contains everything we need and exposes 
+# this image contains everything we need
+
+# EXPOSE 7445/tcp
 # EXPOSE 7446/udp
 # EXPOSE 7447/tcp
 # EXPOSE 8000/tcp

@@ -7,9 +7,7 @@ OM1 connects to TurtleBot4 using Zenoh. To correctly set up your TurtleBot4, fol
 
 1. Set up your TurtleBot4 following the [Basic Setup](https://turtlebot.github.io/turtlebot4-user-manual/setup/basic.html). These instructions are for `turtlebot4_standard_humble_1.0.4.img`, but should work for any current TurtleBot4 image. Please spend some time to become familiar with the Turtlebot4 ecosystem - there are extensive educational materials to help you get started. NOTE: we now assume you are generally familiar with the ROS2/Turtlebot4 system.
 
-2. As you have just experienced first-hand, there are numerous issues connecting to a TurtleBot4 in a university/enterprise network. To solve many of those, set up a Zenoh bridge.
-
-To avoid routing issues, we use the approach developed by `theconstruct.ai`, which is to give the Raspberry Pi and the Create3 their own ROS2 DOMAIN_IDs, and then use one or more Zenoh bridges to control message traffic between the Raspberry Pi and the Create3.
+2. As you have just experienced first-hand, there are numerous issues connecting to a TurtleBot4 in a university/enterprise network. To solve many of those, we follow the dual Zenoh bridge approach developed by [theconstruct.ai](www.theconstruct.ai), which is to give the Raspberry Pi and the Create3 their own ROS2 DOMAIN_IDs, and then use Zenoh bridges to control message traffic between the RPi and the Create3. Follow their [instructions here](https://hub.docker.com/r/theconstructai/zenoh-bridge-ros2dds). This allows you to filter message traffic on a per topic level (see the `config_create3.json5` file for an example of how this is done).
 
 Make the following `ROS_DOMAIN_ID` changes to the Turtlebot4. Use the `turtlebot4-setup` tool to access `ROS Setup:Bash Setup` and set it to the following:
 
@@ -19,27 +17,23 @@ ROS_DOMAIN_ID=0
 RMW_IMPLEMENTATION=rmw_cyclonedds_cpp
 CYCLONEDDS_URI=[] # Empty
 ```
-Click "Save", "Esc", and then "Apply Settings".
 
-Then, access the Create3's App config page at its web server (e.g. `192.168.1.193:8080/ros-config`). Change the ROS_DOMAIN_ID to 1. Click `Save` and _Restart Application_.
+Click "Save", "Esc", and then "Apply Settings". Then, access the Create3's App config page at its web server (e.g. `192.168.1.193:8080/ros-config`). Change the ROS_DOMAIN_ID to 1. Click `Save` and _Restart Application_.
 
-Then, on the Raspberry Pi command line, download and install the standalone `zenoh-bridge-ros2dds` bridge:
+Finally, on the TurtleBot4's RPi, [install Docker](https://docs.docker.com/engine/install/raspberry-pi-os/) and run `sudo docker compose -f docker-compose.yaml up -d`. The `docker-compose` should be:
 
-```bridge
-echo "deb [trusted=yes] https://download.eclipse.org/zenoh/debian-repo/ /" | sudo tee -a /etc/apt/sources.list > /dev/null
-sudo apt update
-sudo apt install zenoh-bridge-ros2dds
+```bash docker-compose.yaml
+services:
+  zenoh-bridge-turtlebot4:
+    image: openmindagi/turtlebridge
+    container_name: zenoh-bridge-turtlebot4
+    network_mode: "host"
+    restart: always # Ensures the container restarts on reboot
 ```
 
-Finally, run the bridge on the Raspberry Pi command line:
+The TurtleBot4 will now be more stable, can now discover other computers running Zenoh, send them Zenoh messages, and also, accept Zenoh messages and forward them to ROS2.
 
-```bash
-zenoh-bridge-ros2dds
-```
-
-The TurtleBot4 will now discover other computers running Zenoh, send them Zenoh messages, and also, accept Zenoh messages and forward them to ROS2.
-
-3. On the TurtleBot4, test the system:
+3. On the TurtleBot4 command line, test the system:
 
 ```bash
 ros2 topic list
@@ -47,7 +41,7 @@ ros2 action list
 ros2 topic echo /pi/scan
 ```
 
-To spin the robot, issue:
+To spin the robot, on the TurtleBot4 command line issue:
 
 ```bash
 ros2 topic pub /cmd_vel geometry_msgs/msg/Twist "linear:
@@ -60,38 +54,27 @@ angular:
   z: 0.1"
 ```
 
-To debug movement, use `ros2 topic info /pi/cmd_vel --verbose`. You should see at least one subscriber, otherwise there is a problem with the Create3.
+To debug movement, use `ros2 topic info /pi/cmd_vel --verbose`.
 
 4. Install Zenoh on your Mac, PC, or Linux computer, following [Installing the Zenoh router](https://zenoh.io/docs/getting-started/installation/)
+
+Please make sure the your laptop is running the same version of the bridge (e.g. 1.2.1) as the Raspberry Pi otherwise you will get errors.
 
 Congratulations! You can now interact with a TurtleBot4 from your Mac laptop, using OM1 and Zenoh.
 
 ## Accessing TurtleBot4 Data on a Remote Computer using Zenoh
 
-Read TurtleBot4 laser scan data:
+Read TurtleBot4 laser scan and battery data:
 ```bash
 uv run system_hw_test/turtlebot4_laserscan.py
 ```
 
-# Alternative (Dual Bridge) Approach for more Granular Control
-
-You can also use the dual Zenoh bridge approach developed by [theconstruct.ai](www.theconstruct.ai). Follow their [instructions here](https://hub.docker.com/r/theconstructai/zenoh-bridge-ros2dds). This allows you to filter message traffic on a per topic level (see the `config_create3.json5` file for an example of how this is done).
-
-In this approach, you need to manually tell your laptop the IP address of the Raspberry Pi on the Turtlebot4, since running the bridges inside a docker blocks UDP discovery (and also the used `_create3.json5` files explicitly block discovery). Please also make sure the your laptop is running the same version of the bridge (e.g. 1.2.1) as the Raspberry Pi otherwise you will get errors.
-
-On your laptop, connect to the TurtleBot4 by specififying the robot's IP address:
-```bash
-./zenohd -l tcp/192.168.1.193:7445
-```
-The `-l tcp/192.168.1.193:7445` tells the zenoh daemon to listen on TCP port 7445 bound to IP address 192.168.1.193. To debug, make sure you can `ping` the TurtleBot4 from your laptop.
-
-NOTE: for this to work, all computers must be running the same versions of zenoh, for example, 1.2.1.
-
 ## Expected ROS2 Topics for a correctly configured system
 
-On the TurtleBot4, run `ros2 topic list`. Topics with a `pi` prefix originate from the Raspberry Pi, and topics without a prefix are from the Create3.
+On the TurtleBot4 command line, run `ros2 topic list`. Topics with a `pi` prefix originate from the Raspberry Pi, and topics without a prefix are from the Create3.
 
 ```bash
+# Create3
 /battery_state
 /cmd_vel
 /diagnostics
@@ -99,6 +82,13 @@ On the TurtleBot4, run `ros2 topic list`. Topics with a `pi` prefix originate fr
 /imu
 /odom
 /parameter_events
+/robot_state/transition_event
+/rosout
+/static_transform/transition_event
+/tf
+/tf_static
+
+# RPi
 /pi/battery_state
 /pi/cmd_vel
 /pi/diagnostics
@@ -125,11 +115,6 @@ On the TurtleBot4, run `ros2 topic list`. Topics with a `pi` prefix originate fr
 /pi/tf
 /pi/tf_static
 /pi/wheel_status
-/robot_state/transition_event
-/rosout
-/static_transform/transition_event
-/tf
-/tf_static
 ```
 
 ## Building the Docker Dual Bridge Images
@@ -141,19 +126,10 @@ docker build -t my-username/my-image .
 docker push my-username/my-image
 ```
 
-On the TurtleBot4, run `docker compose -f docker-compose.yaml up -d`. The `docker-compose` should be:
-
-```bash docker-compose.yaml
-services:
-  zenoh-bridge-turtlebot4:
-    image: openmindagi/turtlebridge
-    container_name: zenoh-bridge-turtlebot4
-    network_mode: "host"
-    restart: always # Ensures the container restarts on reboot
-```
-
 Useful docker commands
 ```bash
+sudo docker compose pull # pull latest image
+
 # Images
 sudo docker images
 sudo docker rmi IMAGE_ID --force
@@ -164,4 +140,3 @@ sudo docker attach CONTAINER_ID # to stream logs
 sudo docker exec -it CONTAINER_ID sh # to get a shell
 sudo docker kill CONTAINER_ID
 ```
-
