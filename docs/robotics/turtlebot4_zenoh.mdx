@@ -84,7 +84,10 @@ Read TurtleBot4 laser scan and battery data:
 ```bash
 uv run system_hw_test/turtlebot4_laserscan.py
 ```
-
+Read TurtleBot4 Camera PREVIEW (250x250RGB) data:
+```bash
+uv run system_hw_test/turtlebot4_camera_opencv.py
+```
 ## Expected ROS2 Topics for a correctly configured system
 
 On the TurtleBot4 command line, run `ros2 topic list`. Topics with a `pi` prefix originate from the Raspberry Pi, and topics without a prefix are from the Create3.
