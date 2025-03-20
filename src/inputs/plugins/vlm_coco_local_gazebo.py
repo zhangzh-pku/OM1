@@ -12,7 +12,6 @@ import cv2
 import numpy as np
 import torch
 from google.protobuf import text_format
-
 from PIL import Image
 from torchvision.models import detection as detection_model
 
@@ -29,7 +28,7 @@ msgs_path = os.path.abspath(
 sys.path.append(msgs_path)
 
 # And now we can find this library... 
-from gz.msgs import image_pb2
+from gz.msgs import image_pb2  # noqa
 
 Detection = collections.namedtuple("Detection", "label, bbox, score")
 
