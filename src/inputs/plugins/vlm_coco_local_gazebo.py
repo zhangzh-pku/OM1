@@ -20,17 +20,16 @@ from inputs.base.loop import FuserInput
 from providers.io_provider import IOProvider
 
 # Get the absolute path of the directory containing image_pb2.py
-msgs_path = os.path.abspath(
-    os.path.join(os.path.dirname(__file__), "../../../gazebo")
-)
+msgs_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../../gazebo"))
 
 # Add it to sys.path
 sys.path.append(msgs_path)
 
-# And now we can find this library... 
+# And now we can find this library...
 from gz.msgs import image_pb2  # noqa
 
 Detection = collections.namedtuple("Detection", "label, bbox, score")
+
 
 @dataclass
 class Message:
