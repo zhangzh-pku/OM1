@@ -22,9 +22,7 @@ class ROS2Connector(ActionConnector[MoveInput]):
         if move_topic is None:
             move_topic = "move_topic"
             # Log the domain id being used
-            logging.info(
-                f"Move topic not provided. Using default topic: {move_topic}"
-            )
+            logging.info(f"Move topic not provided. Using default topic: {move_topic}")
 
         # Initialize the ROS2 publisher provider (using a topic of your choice)
         self.publisher = ROS2PublisherProvider(topic=move_topic)
@@ -63,7 +61,6 @@ class ROS2Connector(ActionConnector[MoveInput]):
 
         # Publish the Move message using ROS2PublisherProvider.
         self.publisher.add_pending_message(new_msg)
-
 
     def tick(self) -> None:
         time.sleep(0.1)

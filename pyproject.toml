@@ -68,7 +68,7 @@ skip_glob = [".venv*", "/src/unitree", "/gazebo"]
 line-length = 88
 indent-width = 4
 src = ["src"]
-exclude = ["src/unitree","/gazebo"]
+exclude = ["src/unitree","gazebo"]
 
 [tool.ruff.lint]
 select = ["E", "F", "I"]

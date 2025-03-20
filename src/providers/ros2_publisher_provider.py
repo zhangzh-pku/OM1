@@ -11,10 +11,11 @@ from std_msgs.msg import String
 
 rclpy.init()
 
+
 class ROS2PublisherProvider(Node):
-    def __init__(self, topic: str = 'speak_topic'):
+    def __init__(self, topic: str = "speak_topic"):
         try:
-            super().__init__('ROS2_publisher_provider')
+            super().__init__("ROS2_publisher_provider")
         except Exception as e:
             print(f"Node initialization error: {e}")
 

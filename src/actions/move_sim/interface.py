@@ -16,6 +16,7 @@ class MovementAction(str, Enum):
     MOVE_LEFT = "move left"
     MOVE_RIGHT = "move right"
 
+
 @dataclass
 class MoveInput:
     action: MovementAction

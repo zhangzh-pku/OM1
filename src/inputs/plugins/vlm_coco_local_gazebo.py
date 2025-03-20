@@ -12,6 +12,7 @@ import cv2
 import numpy as np
 import torch
 from google.protobuf import text_format
+from gz.msgs import image_pb2
 from PIL import Image
 from torchvision.models import detection as detection_model
 
@@ -20,12 +21,12 @@ from inputs.base.loop import FuserInput
 from providers.io_provider import IOProvider
 
 # Get the absolute path of the directory containing image_pb2.py
-msgs_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '../../../gazebo_sim'))
+msgs_path = os.path.abspath(
+    os.path.join(os.path.dirname(__file__), "../../../gazebo_sim")
+)
 
 # Add it to sys.path
 sys.path.append(msgs_path)
-
-from gz.msgs import image_pb2
 
 Detection = collections.namedtuple("Detection", "label, bbox, score")
 
@@ -49,6 +50,7 @@ class Message:
 
 # if working on Mac, please disable continuity camera on your iphone
 # Settings > General > AirPlay & Continuity, and tunr off Continuity
+
 
 class VLM_COCO_Local_Gazebo(FuserInput[Image.Image]):
     """
@@ -90,7 +92,7 @@ class VLM_COCO_Local_Gazebo(FuserInput[Image.Image]):
         self.model.eval()
         logging.info("COCO Object Detector Started")
 
-        self.cam_third = 0 # This will be updated for _process_image is called
+        self.cam_third = 0  # This will be updated for _process_image is called
 
     def _parse_text_message(self, text_data):
         """
@@ -114,7 +116,7 @@ class VLM_COCO_Local_Gazebo(FuserInput[Image.Image]):
         width = img_msg.width
         self.cam_third = int(width / 3)
         height = img_msg.height
-        step = img_msg.step    # Number of bytes per row (may include padding)
+        step = img_msg.step  # Number of bytes per row (may include padding)
         encoding = img_msg.pixel_format_type
         raw_data = img_msg.data  # The text parser converts the escaped string to bytes
 
@@ -133,16 +135,22 @@ class VLM_COCO_Local_Gazebo(FuserInput[Image.Image]):
 
         expected_bytes_per_row = width * channels
         if step < expected_bytes_per_row:
-            logging.error(f"Step value ({step}) is less than expected row bytes ({expected_bytes_per_row}).")
+            logging.error(
+                f"Step value ({step}) is less than expected row bytes ({expected_bytes_per_row})."
+            )
             return None
 
         try:
             if step == expected_bytes_per_row:
-                image_array = np.frombuffer(raw_data, dtype=np.uint8).reshape((height, width, channels))
+                image_array = np.frombuffer(raw_data, dtype=np.uint8).reshape(
+                    (height, width, channels)
+                )
             else:
                 # Reshape to (height, step) then crop each row to the actual image data.
                 rows = np.frombuffer(raw_data, dtype=np.uint8).reshape((height, step))
-                image_array = rows[:, :expected_bytes_per_row].reshape((height, width, channels))
+                image_array = rows[:, :expected_bytes_per_row].reshape(
+                    (height, width, channels)
+                )
         except Exception as e:
             logging.error("Error reshaping image data:", e)
             return None
@@ -167,7 +175,7 @@ class VLM_COCO_Local_Gazebo(FuserInput[Image.Image]):
                 ["gz", "topic", "-e", "-t", "/camera", "-n", "1"],
                 capture_output=True,
                 text=True,
-                timeout=5  # Avoid indefinite hangs
+                timeout=5,  # Avoid indefinite hangs
             )
 
             if result.returncode != 0:
@@ -181,13 +189,15 @@ class VLM_COCO_Local_Gazebo(FuserInput[Image.Image]):
             return None
 
         except FileNotFoundError:
-            logging.error("The 'gz' command was not found. Ensure that Gazebo is installed and in PATH.")
+            logging.error(
+                "The 'gz' command was not found. Ensure that Gazebo is installed and in PATH."
+            )
             return None
 
         except Exception as e:
             logging.error(f"Unexpected error in _get_message: {e}")
             return None
-        
+
     async def _poll(self) -> Image.Image:
         """
         Poll for new image input.
@@ -218,7 +228,7 @@ class VLM_COCO_Local_Gazebo(FuserInput[Image.Image]):
             return
 
         return image
-        
+
     async def _raw_to_text(self, raw_input: Optional[Image.Image]) -> Optional[Message]:
         """
         Process raw image input to generate text description.
@@ -305,7 +315,9 @@ class VLM_COCO_Local_Gazebo(FuserInput[Image.Image]):
             full_labels = [
                 self.class_labels[detection.label] for detection in full_detections
             ]
-            logging.info(f"COCO isn't detecting anything familiar. The closest thing it recognises is {full_labels[0]}")
+            logging.info(
+                f"COCO isn't detecting anything familiar. The closest thing it recognises is {full_labels[0]}"
+            )
         else:
             logging.info("COCO isn't detecting anything")
 
