@@ -55,7 +55,7 @@ cmake --build .
 ./listtopics
 ```
 
-On Mac, you may need to click "allow" to `allow incoming connections` in the popup the first time you run `listtopics` for the first time. 
+On Mac, you may need to `allow incoming connections` in the popup the first time you run `listtopics`. 
 
 Running `listtopics` should result in an extensive data dump of available topics:
 
@@ -159,27 +159,22 @@ alive: 1453e55f:a4d5babe:aec670aa:6c0a9bff rt/uslam/localization/cloud_world sen
 alive: 1a6535ff:d7346fd8:87885024:9a136972 rt/programming_actuator/feedback std_msgs::msg::dds_::String_
 ```
 
-## Step 2 - Add the DDS module
+## Step 2 - Add the Python CycloneDDS module
 
 Add the `dds` python module to your code base: `uv pip install -r pyproject.toml --extra dds`.
 
-## Step 3 - Connect an XBOX controller
+## Step 3 - Connect an Xbox controller
 
-On Mac, **make sure that your XBOX controller is running the most recent firmware**, otherwise you will be able to pair but not connect to the controller. You will need a PC with `Xbox Accessories` installed to update the XBOX controller's firmware. Many Mac OS updates hose support for the XBOX controller, which is then fixed (after some delay) via an XBOX firmware update. 
+On Mac, **make sure that your Xbox controller is running the most recent firmware**, otherwise you will be able to pair but not connect to the controller. You will need a PC with `Xbox Accessories` to update the Xbox controller's firmware. Many Mac OS updates hose support for the Xbox controller, which is then fixed (after some delay) via an Xbox firmware update. On Mac, you will also need to install `hidapi` (`brew install hidapi`). 
 
-On Mac, you will also need to install `hidapi` (`brew install hidapi`). NOTE: There is a bug on Mac when installing packages with `brew` - some libraries cannot be found by `uv`. If you get errors such as
+NOTE: There is a bug on Mac when installing packages with `brew` - some libraries cannot be found by `uv`. If you get errors such as
 `Unable to load any of the following libraries:libhidapi-hidraw.so`, set `export DYLD_FALLBACK_LIBRARY_PATH=$HOMEBREW_PREFIX/lib` in your `.zshenv` or equivalent.
 
 On Linux, install `hidapi` like this:
 
 ```bash Linux hidapi
-# Linux
 sudo apt-get update
 sudo apt-get install python-dev libusb-1.0-0-dev libudev-dev libhidapi-dev
-
-# possibly also
-sudo pip install --upgrade setuptools
-sudo pip install hidapi
 ```
 
 ## Step 4 - Controlling the Quadruped

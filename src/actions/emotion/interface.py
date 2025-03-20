@@ -20,7 +20,6 @@ class EmotionInput:
 class Emotion(Interface[EmotionInput, EmotionInput]):
     """
     An emotion to be performed by the agent.
-
     Effect: Allows the agent to express emotions.
     """
 

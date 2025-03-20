@@ -12,7 +12,6 @@ class SpeakInput:
 class Speak(Interface[SpeakInput, SpeakInput]):
     """
     Words to be spoken by the agent.
-
     Effect: Allows the agent to speak.
     """
 

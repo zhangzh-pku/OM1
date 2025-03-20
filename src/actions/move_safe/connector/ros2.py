@@ -41,8 +41,6 @@ class MoveRos2Connector(ActionConnector[MoveInput]):
         self.move_speed = 0.7
         self.turn_speed = 0.6
 
-        self.cb: list[str] = []
-
         if hid is not None:
             for device in hid.enumerate():
                 logging.debug(f"device {device['product_string']}")
@@ -125,12 +123,10 @@ class MoveRos2Connector(ActionConnector[MoveInput]):
 
     async def connect(self, output_interface: MoveInput) -> None:
 
-        if len(self.cb) > 0:
-            logging.info(
-                f"WARNING - there are manual game controller commands in the queue: {self.cb}"
-            )
-            return
-
+        # This is a limited subset of Go2 movements that are
+        # generally safe. Note that the "stretch" action involves
+        # about 40 cm of back and forth motion, and the "dance"
+        # action involves copious jumping in place for about 10 seconds.
         if output_interface.action == "stand up":
             logging.info("Unitree AI command: stand up")
             await self._execute_sport_command("StandUp")
@@ -231,13 +227,16 @@ class MoveRos2Connector(ActionConnector[MoveInput]):
             button_value = data[14]
 
             if self.button_previous == 0 and button_value > 0:
-                # YAY - user just pressed a button
-                # we need this logic because when the user presses a button
-                # the gamepad sends a 'press' indication over and over again
-                # for several hundred ms, which would create numerous
-                # duplicated movement commands with a single button press
-                # to prevent this, we only act when the button state changes from
-                # 0 to > 0
+                # User just pressed a button
+
+                # We need this logic because when the user presses a button
+                # the gamepad sends a 'press' indication numerous times
+                # for several hundred ms, creating numerous
+                # duplicated movement commands with a single button press.
+                # To prevent this, which would freeze/crash the robot,
+                # we only act when the button state changes from 0 to > 0
+                # This is basically a software button debounce
+
                 # A button
                 if button_value == 1:
                     self._execute_sport_command_sync("StandUp")
@@ -254,6 +253,7 @@ class MoveRos2Connector(ActionConnector[MoveInput]):
                 elif button_value == 16:
                     self._execute_sport_command_sync("Stretch")
                     logging.info("Controller unitree: stretch")
+
                 logging.info(f"Gamepad button depressed edge {button_value}")
 
             self.button_previous = button_value
