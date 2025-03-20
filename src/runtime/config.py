@@ -78,8 +78,18 @@ def load_config(config_name: str) -> RuntimeConfig:
     g_api_key = raw_config.get("api_key", None)
     if g_api_key is None or g_api_key == "":
         logging.warning(
-            "No global API key found in the configuration. Rate limits may apply."
+            "No API key found in the configuration file. Rate limits may apply."
         )
+
+    if g_api_key == "openmind_free":
+        logging.warning("Checking for backup OM_API_KEY in your .env file.")
+        backup_key = os.environ.get("OM_API_KEY")
+        if backup_key:
+            g_api_key = backup_key
+        else:
+            logging.warning(
+                "Could not find backup OM_API_KEY in your .env file. Using 'openmind_free'. Rate limits will apply."
+            )
 
     g_ut_eth = raw_config.get("unitree_ethernet", None)
     if g_ut_eth is None or g_ut_eth == "":

@@ -54,6 +54,8 @@ Locate the `config` folder and add your Openmind API key in `/config/spot.json`.
 ...
 ```
 
+Note: You can also add this key to your `.env` file, if you do not want to modify the `/config/spot.json`. See the `env.example` file.
+
 3. Run the `spot` agent.
 
 ```bash run spot
