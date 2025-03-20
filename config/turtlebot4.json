@@ -28,7 +28,8 @@
   "cortex_llm": {
     "type": "OpenAILLM",
     "config": {
-      "history_length": 3
+      "agent_name": "Flash",
+      "history_length": 10
     }
   },
   "agent_actions": [

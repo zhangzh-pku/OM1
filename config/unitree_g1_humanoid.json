@@ -20,6 +20,7 @@
   "cortex_llm": {
     "type": "OpenAILLM",
     "config": {
+      "agent_name": "Iris",
       "history_length": 3
     }
   },

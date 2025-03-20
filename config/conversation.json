@@ -13,6 +13,7 @@
   "cortex_llm": {
     "type": "OpenAILLM",
     "config": {
+      "agent_name": "Spot",
       "history_length": 10
     }
   },

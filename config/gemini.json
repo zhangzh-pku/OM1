@@ -26,7 +26,11 @@
     }
   ],
   "cortex_llm": {
-    "type": "GeminiLLM"
+    "type": "GeminiLLM",
+    "config": {
+      "agent_name": "Spot",
+      "history_length": 10
+    }
   },
   "agent_actions": [
     {
