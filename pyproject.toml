@@ -50,7 +50,7 @@ dev = [
 [tool.pytest.ini_options]
 pythonpath = ["src"]
 asyncio_mode = "auto"
-norecursedirs = ["src/unitree", "system_hw_test"]
+norecursedirs = ["src/unitree", "system_hw_test", "gazebo"]
 
 [tool.black]
 line-length = 88

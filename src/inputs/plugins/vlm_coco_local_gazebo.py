@@ -12,7 +12,7 @@ import cv2
 import numpy as np
 import torch
 from google.protobuf import text_format
-from gz.msgs import image_pb2
+
 from PIL import Image
 from torchvision.models import detection as detection_model
 
@@ -22,14 +22,16 @@ from providers.io_provider import IOProvider
 
 # Get the absolute path of the directory containing image_pb2.py
 msgs_path = os.path.abspath(
-    os.path.join(os.path.dirname(__file__), "../../../gazebo_sim")
+    os.path.join(os.path.dirname(__file__), "../../../gazebo")
 )
 
 # Add it to sys.path
 sys.path.append(msgs_path)
 
-Detection = collections.namedtuple("Detection", "label, bbox, score")
+# And now we can find this library... 
+from gz.msgs import image_pb2
 
+Detection = collections.namedtuple("Detection", "label, bbox, score")
 
 @dataclass
 class Message:
