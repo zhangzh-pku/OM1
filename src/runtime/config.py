@@ -82,7 +82,7 @@ def load_config(config_name: str) -> RuntimeConfig:
         )
 
     if g_api_key == "openmind_free":
-        logging.warning("Checking for backup OM_API_KEY in your .env file.")
+        logging.info("Checking for backup OM_API_KEY in your .env file.")
         backup_key = os.environ.get("OM_API_KEY")
         if backup_key:
             g_api_key = backup_key
