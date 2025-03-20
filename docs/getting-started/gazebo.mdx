@@ -13,6 +13,15 @@ The Gazebo simulator is an very sophisticated, industry standard, simulator for 
 ```
 The script also checks and installs Gazebo Harmonic https://gazebosim.org/docs/harmonic/getstarted/ if not already installed. If this is your first time installing Gazebo, grab a coffee, since this will take a while (1/2 hour or more). 
 
+This will open a gazebo room with a bathtub and chairs. Now, add your robot!
+
+In a different terminal, boot OM1 using the example config:
+```bash
+uv run src/run.py quadruped_sim
+```
+
+NOTE: Remember to set the correct API key in the `config/quadruped_sim.json5` file or in your `.env`.
+
 ### Ubuntu (Gazebo Classic)
 
 ```bash
@@ -28,8 +37,4 @@ _Note2:_ It is also possible to run the Gazebo Harmonic simulation on Ubuntu.
 
 ### Start OM1
 
-Boot OM1 using the example config, remember to set the correct API key
 
-```bash
-uv run src/run.py quadruped_sim
-```
