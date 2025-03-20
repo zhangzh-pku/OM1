@@ -55,20 +55,20 @@ norecursedirs = ["src/unitree", "system_hw_test"]
 [tool.black]
 line-length = 88
 include = '\.pyi?$'
-exclude = "(.venv)|(/src/unitree)"
+exclude = "(.venv)|(/src/unitree)|(/gazebo)"
 
 [tool.isort]
 profile = "black"
 multi_line_output = 3
 line_length = 88
 sources = ["src", "tests"]
-skip_glob = [".venv*", "/src/unitree"]
+skip_glob = [".venv*", "/src/unitree", "/gazebo"]
 
 [tool.ruff]
 line-length = 88
 indent-width = 4
 src = ["src"]
-exclude = ["src/unitree"]
+exclude = ["src/unitree","/gazebo"]
 
 [tool.ruff.lint]
 select = ["E", "F", "I"]

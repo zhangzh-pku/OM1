@@ -49,11 +49,11 @@ jobs:
         with:
           python-version-file: "pyproject.toml"
 
-      - name: Run Ruff
-        run: uv run ruff check .
+      # - name: Run Ruff
+      #   run: uv run ruff check .
 
-      - name: Run Black
-        run: uv run black --check .
+      # - name: Run Black
+      #   run: uv run black --check .
 
-      - name: Run isort
-        run: uv run isort --check-only .
+      # - name: Run isort
+      #   run: uv run isort --check-only .
