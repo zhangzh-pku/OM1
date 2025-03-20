@@ -1,19 +1,22 @@
-# Gazebo_simulation
-Repo for quadruped simulation and control with OM1.
+# Gazebo Simulation
 
-# Simulation Instructions
+Quadruped simulation and control with OM1.
 
-## MacOS (Gazebo Harmonic)
+## Simulation Instructions
+
+The Gazebo simulator is an industry standard simulator for robots. The robot shape/size is specifies via `.dae` files, and those robots can then navigate a defined digital works. The simulation framework is useful for prototyping, debugging, and reinforcement learning. 
+
+### MacOS (Gazebo Harmonic)
 
 ```bash
-macOS.sh
+./gazebo/macOS.sh
 ```
-The script also checks and installs Gazebo Harmonic https://gazebosim.org/docs/harmonic/getstarted/ if not already installed.
+The script also checks and installs Gazebo Harmonic https://gazebosim.org/docs/harmonic/getstarted/ if not already installed. If this is your first time installing Gazebo, grab a coffee, since this will take a while.  
 
-## Ubuntu (Gazebo Classic)
+### Ubuntu (Gazebo Classic)
 
 ```bash
-ubuntu.sh
+./gazebo/ubuntu.sh
 ```
 For now, ROS2 is required for the simulation to interact with OM1 in Gazebo Classic, check https://docs.ros.org/en/humble/Installation.html for installation instructions.
 
@@ -23,9 +26,10 @@ _Note1:_ The simulated camera feed is streamed to a virtual video device at `/de
 
 _Note2:_ It is also possible to run the Gazebo Harmonic simulation on Ubuntu.
 
-# Start OM1
+### Start OM1
 
 Boot OM1 using the example config, remember to set the correct API key
-```
+
+```bash
 uv run src/run.py quadruped_sim
 ```

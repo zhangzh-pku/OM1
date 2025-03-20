@@ -27,24 +27,19 @@
           {
             "group": "Getting Started",
             "pages": [
-              "getting-started/introduction",
+              "getting-started/architecture",
               "getting-started/quick_start",
               "getting-started/architecture",
-              "getting-started/glossary"
+              "getting-started/configuration",
+              "getting-started/gazebo"
             ]
           },
           {
             "group": "Tutorials",
             "pages": [
-              "core-features/conversation",
-              "core-features/llm_models",
-              "core-features/smart_toy"
-            ]
-          },
-          {
-            "group": "Configuration",
-            "pages": [
-              "configuration/configuration"
+              "tutorials/conversation",
+              "tutorials/llm_models",
+              "tutorials/smart_toy"
             ]
           },
           {
@@ -53,8 +48,7 @@
               "development/intro",
               "development/linting-testing",
               "development/cli-commands",
-              "development/actions",
-              "development/env"
+              "development/actions"
             ]
           },
           {
