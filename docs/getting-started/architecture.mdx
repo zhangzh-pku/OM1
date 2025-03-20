@@ -1,7 +1,23 @@
 ---
-title: Architecture
+title: Prohect Structure and Architecture
 description: "Core architecture and runtime flow"
 ---
+
+## Project Structure
+
+```tree Project Structure
+.
+├── config/               # Agent configuration files
+├── src/
+│   ├── actions/          # Agent outputs/actions/capabilities
+│   ├── fuser/            # Input fusion logic
+│   ├── inputs/           # Input plugins (e.g. VLM, audio)
+│   ├── llm/              # LLM integration
+│   ├── providers/        # Providers
+│   ├── runtime/          # Core runtime system
+│   ├── simulators/       # Virtual endpoints such as `WebSim`
+│   └── run.py            # CLI entry point
+```
 
 The system is based on a loop that runs at a fixed frequency of `self.config.hertz`. This loop looks for the most recent data from various sources, fuses the data into a prompt, sends that prompt to one or more LLMs, and then sends the LLM responses to virtual agents or physical robots.
 
