@@ -43,7 +43,7 @@ NOTE: Please update the TurtleBot4's internal Create3 computer to `iRobot® Crea
 
 NOTE: Make sure to remember the TurtleBots' IP address in your local network. If you do not know it, scan your local network for "Raspberry Pi". 
 
-NOTE: In the remainder of this writeup, we assume you are generally familiar with the ROS2/Turtlebot4 ecosystem, including ssh-ing to the Raspberry PI command line, the use of the `turtlebot4-setup` program, and interacting with the internal Create3 via its webpage at IP:8080. 
+NOTE: In the remainder of this writeup, we assume you are generally familiar with the ROS2/Turtlebot4 ecosystem, including ssh-ing to the Raspberry Pi command line, the use of the `turtlebot4-setup` program, and interacting with the internal Create3 via its webpage at IP:8080. 
 
 2. As you have just experienced first-hand, there are numerous issues connecting to a TurtleBot4 in a university/enterprise network. To solve many of those, we follow the dual Zenoh bridge approach developed by [theconstruct.ai](www.theconstruct.ai), which is to give the Raspberry Pi and the Create3 their own ROS2 DOMAIN_IDs, and then use Zenoh bridges to filter message traffic between the RPi and the Create3. Follow their [instructions](https://hub.docker.com/r/theconstructai/zenoh-bridge-ros2dds). This allows you to filter messages on a per topic level (see the `config_create3.json5` file for an example of how this is done).
 
