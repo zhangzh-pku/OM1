@@ -177,12 +177,13 @@ pactl set-sink-volume @DEFAULT_SINK@ 70%      # Set default output volume
 
 ## Control via Unitree Hand Controller
 
-Hang G1 on gantry
-Turn on (short press, long press)
-Wait for boot to complete
-When the G1 boots, it is in `damp` state.
+Hang G1 on gantry\
+Turn on (short press, long press)\
+Wait for boot to complete\
+When the G1 boots, it is in `damp` state\
+Use the hand controller to command "L1+A" and "L1+UP"\
 
-Use the hand controller to command "L1+A" and "L1+UP", the system is ready to move using the `ai_sport` client. The system will respond to manual controller and SDK commands.
+The system is then ready to move using the `ai_sport` client. The system will respond to manual controller and SDK commands.
 
 * Press "L1+A" -> EMERGENCY DAMP / SINK TO FLOOR
 * Press "L1+UP" -> Stand firmly (aka "lock stand"). The arms will move slightly. The system is now in the "ready" state.

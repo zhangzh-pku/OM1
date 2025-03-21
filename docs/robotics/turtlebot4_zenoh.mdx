@@ -47,7 +47,7 @@ NOTE: In the remainder of this writeup, we assume you are generally familiar wit
 
 2. As you have just experienced first-hand, there are numerous issues connecting to a TurtleBot4 in a university/enterprise network. To solve many of those, we follow the dual Zenoh bridge approach developed by [theconstruct.ai](www.theconstruct.ai), which is to give the Raspberry Pi and the Create3 their own ROS2 DOMAIN_IDs, and then use Zenoh bridges to filter message traffic between the RPi and the Create3. This allows you to filter messages on a per topic level (see the `config_create3.json5` file for an example of how this is done).
 
-Make the following `ROS_DOMAIN_ID` changes to the Turtlebot4. Use the `turtlebot4-setup` tool to access `ROS Setup:Bash Setup` and set it to the following:
+Make the following `ROS_DOMAIN_ID` changes to the TurtleBot4. Use the `turtlebot4-setup` tool to access `ROS Setup:Bash Setup` and set it to the following:
 
 ```bash
 ROBOT_NAMESPACE=/pi
@@ -56,7 +56,7 @@ RMW_IMPLEMENTATION=rmw_cyclonedds_cpp
 CYCLONEDDS_URI=[] # Empty
 ```
 
-Click "Save", "Esc", and then "Apply Settings". The TrurtleBot4 will reboot. Once the reboot is complete (wait for chime, 1 min), access the Create3's App config page at its web server (e.g. `192.168.1.XXX:8080/ros-config`). Change the ROS_DOMAIN_ID to 1. Click `Save` and _Restart Application_. 
+Click "Save", "Esc", and then "Apply Settings". The TurtleBot4 will reboot. Once the reboot is complete (wait for chime, 1 min), access the Create3's App config page at its web server (e.g. `192.168.1.XXX:8080/ros-config`). Change the ROS_DOMAIN_ID to 1. Click `Save` and _Restart Application_. 
 
 NOTE: Do not forget to click _Restart Application_, otherwise nothing will change. Wait for chime (1 min) indicating Create3 reboot. 
 
@@ -116,7 +116,7 @@ uv run system_hw_test/turtlebot4_camera_opencv.py
 
 ## Expected ROS2 Topics for a Correctly Configured System
 
-On the TurtleBot4 command line, run `ros2 topic list`. Topics with a `pi` prefix originate from the RPi, and topics without a prefix are from the Create3. If you do not have an non-prefixed topics, your Create3 is not talking correctly to the RPi.
+On the TurtleBot4 command line, run `ros2 topic list`. Topics with a `pi` prefix originate from the RPi, and topics without a prefix are from the Create3. If you do not see any non-prefixed topics, your Create3 is not talking correctly to the RPi.
 
 ```bash
 # Create3
