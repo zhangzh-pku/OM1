@@ -6,14 +6,13 @@ description: "TurtleBot4 Basic Setup"
 - [Basic Commands](#basic-commands)
 - [Suggested Operating System Versions](#suggested-operating-system-versions)
 - [Set Up](#set-up)
-- [Accessing TurtleBot4 Data on a Remote Computer using Zenoh](#accessing-turtlebot4-data-on-a-remote-computer-using-zenoh)
+- [Interacting with TurtleBot4 from a Remote Computer using Zenoh](#interacting-with-turtlebot4-from-a-remote-computer-using-zenoh)
 - [Expected ROS2 Topics for a Correctly Configured System](#expected-ros2-topics-for-a-correctly-configured-system)
 - [Building the Docker Dual Bridge Images](#building-the-docker-dual-bridge-images)
 
 ## Basic Commands 
 
 Run
-
 ```bash Run Robot
 uv run src/run.py turtlebot4
 ```
@@ -102,7 +101,16 @@ Please make sure that your development machine (e.g. your laptop) is running the
 
 Congratulations! You can now interact with a TurtleBot4 from your laptop, using OM1 and Zenoh.
 
-## Accessing TurtleBot4 Data on a Remote Computer using Zenoh
+## Interacting with TurtleBot4 from a Remote Computer using Zenoh
+
+Steer the TurtleBot4 with your keyboard:
+```bash
+uv run system_hw_test/turtlebot4_keyboard_movement.py
+```
+* W - Move Forward
+* S - Move Backward
+* A - Turn Left
+* D - Turn Right
 
 Read TurtleBot4 laser scan and battery data:
 ```bash
