@@ -17,9 +17,9 @@ OM1 connects to TurtleBot4 using Zenoh. To correctly set up your TurtleBot4, fol
 
 **Raspberry Pi** 
 Ubuntu 22.04.4 LTS (GNU/Linux 5.15.0-1073-raspi aarch64)
-[turtlebot4_standard_humble_1.0.4.img (2024-08-19 16:59  2.2G)](http://download.ros.org/downloads/turtlebot4/turtlebot4_standard_humble_1.0.4.zip)
+[turtlebot4_standard_humble_1.0.4.img (2024-08-19 16:59 2.2G)](http://download.ros.org/downloads/turtlebot4/turtlebot4_standard_humble_1.0.4.zip)
 
-Suitable images can be installed via a [flashed SD card](https://turtlebot.github.io/turtlebot4-user-manual/setup/basic.html). Note that instuctions given are needlessly complex - basically, download the right image, flash a SD card with that image using your favorite tool/platform, insert the flashed SD card into the RPi, and turn it on.
+Suitable images can be installed via a [flashed SD card](https://turtlebot.github.io/turtlebot4-user-manual/setup/basic.html). Note that instructions given are needlessly complex - basically, download the image, unzip it, flash a SD card with that image using your favorite tool/platform (`dd`, `dcfldd`, whatever you prefer), insert the flashed SD card into the RPi, and turn it on.
 
 **Create3**
 [H.2.6 (Humble)](https://github.com/iRobotEducation/create3_docs/releases/download/H.2.6/Create3-H.2.6.swu)
@@ -28,13 +28,13 @@ Suitable images can be installed via a [flashed SD card](https://turtlebot.githu
 
 1. Set up your TurtleBot4 following the [Basic Setup](https://turtlebot.github.io/turtlebot4-user-manual/setup/basic.html). Please spend some time to become familiar with the Turtlebot4 ecosystem - there are extensive educational materials to help you get started. If you are not familiar with the TurtleBot4, please see the excellent [documentation](https://turtlebot.github.io/turtlebot4-user-manual/). 
 
-NOTE: The TurtleBot4 contains two entirely seperate computers, the Raspberry Pi (RPi) and the Create3. These computers are accessed in different ways, run different software, and have different roles. 
+NOTE: The TurtleBot4 contains two entirely separate computers, the Raspberry Pi (RPi) and the Create3. These computers are accessed in different ways, run different software, and have different roles. 
 
-NOTE: Please make sure you have updated the Raspberry Pi's OS (use `sudo apt update && sudo apt upgrade`).
+NOTE: Please update the Raspberry Pi's OS (use `sudo apt update && sudo apt upgrade`).
 
-NOTE: Please make sure you have updated the TurtleBot4's internal Create3 computer to `iRobot® Create® 3 Release H.2.6` via the Create3's html "Update" page.
+NOTE: Please update the TurtleBot4's internal Create3 computer to `iRobot® Create® 3 Release H.2.6` via the Create3's html "Update" page.
 
-NOTE: We now assume you are generally familiar with the ROS2/Turtlebot4 ecosystem, including ssh-ing to the Raspberry PI command line, the use of the `turtlebot4-setup` program, and interacting with the internal Create3 via its  webpage at IP:8080. 
+NOTE: We assume you are generally familiar with the ROS2/Turtlebot4 ecosystem, including ssh-ing to the Raspberry PI command line, the use of the `turtlebot4-setup` program, and interacting with the internal Create3 via its webpage at IP:8080. 
 
 NOTE: Make sure to remember the TurtleBots' IP address in your local network. If you do not know it, scan your local network for "Raspberry Pi". 
 
