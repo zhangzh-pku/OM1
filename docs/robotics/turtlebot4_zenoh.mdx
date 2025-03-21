@@ -26,7 +26,17 @@ Suitable images can be installed via a [flashed SD card](https://turtlebot.githu
 
 ## Set Up
 
-1. Set up your TurtleBot4 following the [Basic Setup](https://turtlebot.github.io/turtlebot4-user-manual/setup/basic.html). These instructions are for `turtlebot4_standard_humble_1.0.4.img`, but should work for any current TurtleBot4 image. Please spend some time to become familiar with the Turtlebot4 ecosystem - there are extensive educational materials to help you get started. NOTE: we now assume you are generally familiar with the ROS2/Turtlebot4 system.
+1. Set up your TurtleBot4 following the [Basic Setup](https://turtlebot.github.io/turtlebot4-user-manual/setup/basic.html). Please spend some time to become familiar with the Turtlebot4 ecosystem - there are extensive educational materials to help you get started. If you are not familiar with the TurtleBot4, please see the excellent [documentation](https://turtlebot.github.io/turtlebot4-user-manual/). 
+
+NOTE: The TurtleBot4 contains two entirely seperate computers, the Raspberry Pi (RPi) and the Create3. These computers are accessed in different ways, run different software, and have different roles. 
+
+NOTE: Please make sure you have updated the Raspberry Pi's OS (use `sudo apt update && sudo apt upgrade`).
+
+NOTE: Please make sure you have updated the TurtleBot4's internal Create3 computer to `iRobot® Create® 3 Release H.2.6` via the Create3's html "Update" page.
+
+NOTE: We now assume you are generally familiar with the ROS2/Turtlebot4 ecosystem, including ssh-ing to the Raspberry PI command line, the use of the `turtlebot4-setup` program, and interacting with the internal Create3 via its  webpage at IP:8080. 
+
+NOTE: Make sure to remember the TurtleBots' IP address in your local network. If you do not know it, scan your local network for "Raspberry Pi". 
 
 2. As you have just experienced first-hand, there are numerous issues connecting to a TurtleBot4 in a university/enterprise network. To solve many of those, we follow the dual Zenoh bridge approach developed by [theconstruct.ai](www.theconstruct.ai), which is to give the Raspberry Pi and the Create3 their own ROS2 DOMAIN_IDs, and then use Zenoh bridges to control message traffic between the RPi and the Create3. Follow their [instructions here](https://hub.docker.com/r/theconstructai/zenoh-bridge-ros2dds). This allows you to filter message traffic on a per topic level (see the `config_create3.json5` file for an example of how this is done).
 
@@ -39,7 +49,9 @@ RMW_IMPLEMENTATION=rmw_cyclonedds_cpp
 CYCLONEDDS_URI=[] # Empty
 ```
 
-Click "Save", "Esc", and then "Apply Settings". Then, access the Create3's App config page at its web server (e.g. `192.168.1.193:8080/ros-config`). Change the ROS_DOMAIN_ID to 1. Click `Save` and _Restart Application_.
+Click "Save", "Esc", and then "Apply Settings". The TrurtleBot4 will reboot. Once the reboot is complete (wait for chime, 1 min), access the Create3's App config page at its web server (e.g. `192.168.1.XXX:8080/ros-config`). Change the ROS_DOMAIN_ID to 1. Click `Save` and _Restart Application_. 
+
+NOTE: Do not forget to click _Restart Application_, otherwise nothing will change. Wait for chime (1 min) indicating Create3 reboot. 
 
 Finally, on the TurtleBot4's RPi, [install Docker](https://docs.docker.com/engine/install/raspberry-pi-os/) and run `sudo docker compose -f docker-compose.yaml up -d`. The `docker-compose` should be:
 
