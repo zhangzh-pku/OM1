@@ -18,11 +18,9 @@ Run
 uv run src/run.py turtlebot4
 ```
 
-OM1 connects to TurtleBot4 using Zenoh. To correctly set up your TurtleBot4, follow these steps.
-
 ## Suggested Operating System Versions
 
-The TurtleBot4 contains two entirely separate computers, the Raspberry Pi (RPi) and the Create3. These computers are accessed in different ways, run different software, and have different roles. Different combinations of software version running on those computers give somewhat differing capabilities.  
+The TurtleBot4 contains two entirely separate computers, the Raspberry Pi (RPi) and the Create3. These computers are accessed in different ways, run different software, and have different roles. Different combinations of software versions running on those computers give somewhat differing capabilities.  
 
 **Raspberry Pi**\
 Ubuntu 22.04.4 LTS (GNU/Linux 5.15.0-1073-raspi aarch64)\
@@ -35,7 +33,9 @@ Suitable images can be installed via a [flashed SD card](https://turtlebot.githu
 
 ## Set Up
 
-1. Set up your TurtleBot4 following the [Basic Setup](https://turtlebot.github.io/turtlebot4-user-manual/setup/basic.html). Please spend some time to become familiar with the Turtlebot4 ecosystem - there are extensive educational materials to help you get started. If you are not familiar with the TurtleBot4, please see the excellent [documentation](https://turtlebot.github.io/turtlebot4-user-manual/). 
+OM1 connects to TurtleBot4 using Zenoh. To correctly set up your TurtleBot4, follow these steps.
+
+1. Set up your TurtleBot4 following the [Basic Setup](https://turtlebot.github.io/turtlebot4-user-manual/setup/basic.html). Please then become familiar with the Turtlebot4 ecosystem - there are extensive educational materials to help you get started. If you are not familiar with the TurtleBot4, please see the excellent [documentation](https://turtlebot.github.io/turtlebot4-user-manual/). 
 
 NOTE: Please update the Raspberry Pi's OS (use `sudo apt update && sudo apt upgrade`).
 
@@ -45,7 +45,7 @@ NOTE: Make sure to remember the TurtleBots' IP address in your local network. If
 
 NOTE: In the remainder of this writeup, we assume you are generally familiar with the ROS2/Turtlebot4 ecosystem, including ssh-ing to the Raspberry PI command line, the use of the `turtlebot4-setup` program, and interacting with the internal Create3 via its webpage at IP:8080. 
 
-2. As you have just experienced first-hand, there are numerous issues connecting to a TurtleBot4 in a university/enterprise network. To solve many of those, we follow the dual Zenoh bridge approach developed by [theconstruct.ai](www.theconstruct.ai), which is to give the Raspberry Pi and the Create3 their own ROS2 DOMAIN_IDs, and then use Zenoh bridges to control message traffic between the RPi and the Create3. Follow their [instructions](https://hub.docker.com/r/theconstructai/zenoh-bridge-ros2dds). This allows you to filter message traffic on a per topic level (see the `config_create3.json5` file for an example of how this is done).
+2. As you have just experienced first-hand, there are numerous issues connecting to a TurtleBot4 in a university/enterprise network. To solve many of those, we follow the dual Zenoh bridge approach developed by [theconstruct.ai](www.theconstruct.ai), which is to give the Raspberry Pi and the Create3 their own ROS2 DOMAIN_IDs, and then use Zenoh bridges to filter message traffic between the RPi and the Create3. Follow their [instructions](https://hub.docker.com/r/theconstructai/zenoh-bridge-ros2dds). This allows you to filter messages on a per topic level (see the `config_create3.json5` file for an example of how this is done).
 
 Make the following `ROS_DOMAIN_ID` changes to the Turtlebot4. Use the `turtlebot4-setup` tool to access `ROS Setup:Bash Setup` and set it to the following:
 
@@ -71,7 +71,7 @@ services:
     restart: always # Ensures the container restarts on reboot
 ```
 
-The TurtleBot4 will now be more stable, can now discover other computers running Zenoh, send them Zenoh messages, and also, accept Zenoh messages and forward them to ROS2.
+The TurtleBot4 will now be more stable, can discover other computers running Zenoh, send them Zenoh messages, and also, accept Zenoh messages and forward them to ROS2.
 
 3. On the TurtleBot4 command line, test the system:
 
