@@ -3,14 +3,14 @@ title: TurtleBot4 Basic Setup
 description: "TurtleBot4 Basic Setup"
 ---
 
-- [Basic Command](#basic-command)
+- [Basic Commands](#basic-commands)
 - [Suggested Operating System Versions](#suggested-operating-system-versions)
 - [Set Up](#set-up)
 - [Accessing TurtleBot4 Data on a Remote Computer using Zenoh](#accessing-turtlebot4-data-on-a-remote-computer-using-zenoh)
-- [Expected ROS2 Topics for a correctly configured system](#expected-ros2-topics-for-a-correctly-configured-system)
+- [Expected ROS2 Topics for a Correctly Configured System](#expected-ros2-topics-for-a-correctly-configured-system)
 - [Building the Docker Dual Bridge Images](#building-the-docker-dual-bridge-images)
 
-## Basic Command 
+## Basic Commands 
 
 Run
 
@@ -43,9 +43,9 @@ NOTE: Please update the TurtleBot4's internal Create3 computer to `iRobot® Crea
 
 NOTE: Make sure to remember the TurtleBots' IP address in your local network. If you do not know it, scan your local network for "Raspberry Pi". 
 
-NOTE: In the remainder of this writeup, we assume you are generally familiar with the ROS2/Turtlebot4 ecosystem, including ssh-ing to the Raspberry PI command line, the use of the `turtlebot4-setup` program, and interacting with the internal Create3 via its webpage at IP:8080. 
+NOTE: In the remainder of this writeup, we assume you are generally familiar with the ROS2/Turtlebot4 ecosystem, including ssh-ing to the Raspberry Pi command line, the use of the `turtlebot4-setup` program, and interacting with the internal Create3 via its webpage at IP:8080. 
 
-2. As you have just experienced first-hand, there are numerous issues connecting to a TurtleBot4 in a university/enterprise network. To solve many of those, we follow the dual Zenoh bridge approach developed by [theconstruct.ai](www.theconstruct.ai), which is to give the Raspberry Pi and the Create3 their own ROS2 DOMAIN_IDs, and then use Zenoh bridges to filter message traffic between the RPi and the Create3. Follow their [instructions](https://hub.docker.com/r/theconstructai/zenoh-bridge-ros2dds). This allows you to filter messages on a per topic level (see the `config_create3.json5` file for an example of how this is done).
+2. As you have just experienced first-hand, there are numerous issues connecting to a TurtleBot4 in a university/enterprise network. To solve many of those, we follow the dual Zenoh bridge approach developed by [theconstruct.ai](www.theconstruct.ai), which is to give the Raspberry Pi and the Create3 their own ROS2 DOMAIN_IDs, and then use Zenoh bridges to filter message traffic between the RPi and the Create3. This allows you to filter messages on a per topic level (see the `config_create3.json5` file for an example of how this is done).
 
 Make the following `ROS_DOMAIN_ID` changes to the Turtlebot4. Use the `turtlebot4-setup` tool to access `ROS Setup:Bash Setup` and set it to the following:
 
@@ -96,17 +96,11 @@ angular:
 
 To debug movement, use `ros2 topic info /pi/cmd_vel --verbose`.
 
-4. Install Zenoh on your Mac, PC, or Linux computer, following [Installing the Zenoh router](https://zenoh.io/docs/getting-started/installation/)
+4. Install Zenoh on your Mac, PC, or Linux box, following [Installing the Zenoh router](https://zenoh.io/docs/getting-started/installation/)
 
-Please make sure the your laptop is running the same version of the bridge (e.g. 1.2.1) as the Raspberry Pi otherwise you will get errors.
+Please make sure that your development machine (e.g. your laptop) is running the same version of the Zenoh bridge (e.g. 1.2.1) as the RPi otherwise you will get errors.
 
-Add the optional Python CycloneDDS module to OM1:
-
-```bash
-uv pip install -r pyproject.toml --extra dds
-```
-
-Congratulations! You can now interact with a TurtleBot4 from your Mac laptop, using OM1 and Zenoh.
+Congratulations! You can now interact with a TurtleBot4 from your laptop, using OM1 and Zenoh.
 
 ## Accessing TurtleBot4 Data on a Remote Computer using Zenoh
 
@@ -120,9 +114,9 @@ Read TurtleBot4 Camera PREVIEW (250x250RGB) data:
 uv run system_hw_test/turtlebot4_camera_opencv.py
 ```
 
-## Expected ROS2 Topics for a correctly configured system
+## Expected ROS2 Topics for a Correctly Configured System
 
-On the TurtleBot4 command line, run `ros2 topic list`. Topics with a `pi` prefix originate from the Raspberry Pi, and topics without a prefix are from the Create3. If you do not have an non-prefixed topics, your Create3 is not talking correctly to the Raspberry Pi.
+On the TurtleBot4 command line, run `ros2 topic list`. Topics with a `pi` prefix originate from the RPi, and topics without a prefix are from the Create3. If you do not have an non-prefixed topics, your Create3 is not talking correctly to the RPi.
 
 ```bash
 # Create3
@@ -170,7 +164,7 @@ On the TurtleBot4 command line, run `ros2 topic list`. Topics with a `pi` prefix
 
 ## Building the Docker Dual Bridge Images
 
-You can also build your own dual bridge docker images:
+You can build your own dual bridge docker images using the provided `Dockerfile` (see `/system_hw_test/turtlebot_zenoh/Dockerfile`):
 
 ```bash
 docker build -t my-username/my-image .
