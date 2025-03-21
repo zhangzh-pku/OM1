@@ -25,6 +25,7 @@
                       ".*/oakd/rgb/preview/image_raw" // this allows camera data to flow to other computers
                     ],
         subscribers: [
+                      ".*/battery_state", // to debug the Create3 battery data
                       ".*/cmd_vel",
                       ".*/dock_status",
                       ".*/imu",
