@@ -29,9 +29,7 @@
             "pages": [
               "getting-started/architecture",
               "getting-started/quick_start",
-              "getting-started/architecture",
-              "getting-started/configuration",
-              "getting-started/gazebo"
+              "getting-started/configuration"
             ]
           },
           {
@@ -39,7 +37,18 @@
             "pages": [
               "tutorials/conversation",
               "tutorials/llm_models",
-              "tutorials/smart_toy"
+              "tutorials/smart_toy",
+              "getting-started/gazebo"
+            ]
+          },
+          {
+            "group": "Robotics",
+            "pages": [
+              "robotics/unitree_go2_quadruped",
+              "robotics/unitree_g1_humanoid",
+              "robotics/turtlebot4_zenoh",
+              "robotics/asimov_governance",
+              "robotics/coinbase_hackathon"
             ]
           },
           {
@@ -49,15 +58,6 @@
               "development/linting-testing",
               "development/cli-commands",
               "development/actions"
-            ]
-          },
-          {
-            "group": "Robotics",
-            "pages": [
-              "robotics/asimov_governance",
-              "robotics/coinbase_hackathon",
-              "robotics/unitree_go2_quadruped",
-              "robotics/unitree_g1_humanoid"
             ]
           }
         ]
