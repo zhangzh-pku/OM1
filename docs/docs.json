@@ -27,17 +27,17 @@
           {
             "group": "Getting Started",
             "pages": [
-              "getting-started/architecture",
               "getting-started/quick_start",
+              "getting-started/architecture",
               "getting-started/configuration"
             ]
           },
           {
             "group": "Tutorials",
             "pages": [
-              "tutorials/conversation",
-              "tutorials/llm_models",
-              "tutorials/smart_toy",
+              "examples/conversation",
+              "examples/llm_models",
+              "examples/smart_toy",
               "getting-started/gazebo"
             ]
           },
