@@ -20,8 +20,8 @@ class DIMOTeslaConnector(ActionConnector[TeslaInput]):
 
         self.previouse_output = None
 
-        self.token_id = getattr(self.io_provider, "token_id", None)
-        self.vehicle_jwt = getattr(self.io_provider, "vehicle_jwt", None)
+        self.token_id = self.io_provider.get_dynamic_variable("token_id")
+        self.vehicle_jwt = self.io_provider.get_dynamic_variable("vehicle_jwt")
         self.vehicle_jwt_expires = None
 
         if not self.token_id or not self.vehicle_jwt:
@@ -46,7 +46,9 @@ class DIMOTeslaConnector(ActionConnector[TeslaInput]):
                 self.vehicle_jwt = get_vehicle_jwt["token"]
                 self.vehicle_jwt_expires = time.time() + 8 * 60
             except Exception as e:
-                logging.error(f"Error getting DIMO vehicle jwt: {e}")
+                logging.error(
+                    f"DIMOTeslaConnector: Error getting DIMO vehicle jwt: {e}"
+                )
                 self.vehicle_jwt = None
 
     async def connect(self, output_interface: TeslaInput) -> None:
@@ -67,7 +69,9 @@ class DIMOTeslaConnector(ActionConnector[TeslaInput]):
                     self.vehicle_jwt = get_vehicle_jwt["token"]
                     self.vehicle_jwt_expires = time.time() + 8 * 60
                 except Exception as e:
-                    logging.error(f"Error getting DIMO vehicle jwt: {e}")
+                    logging.error(
+                        f"DIMOTeslaConnector: Error getting DIMO vehicle jwt: {e}"
+                    )
                     self.vehicle_jwt = None
                     return None
 

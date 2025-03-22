@@ -78,10 +78,10 @@ class DIMOTesla(FuserInput[str]):
             self.vehicle_jwt_expires = time.time() + 8 * 60
 
             # bypass token_id and vehicle_jwt to io_provider
-            self.io_provider.token_id = self.token_id
-            self.io_provider.vehicle_jwt = self.vehicle_jwt
+            self.io_provider.add_dynamic_variable("token_id", self.token_id)
+            self.io_provider.add_dynamic_variable("vehicle_jwt", self.vehicle_jwt)
         except Exception as e:
-            logging.error(f"Error getting DIMO vehicle jwt: {e}")
+            logging.error(f"DIMOTesla: Error getting DIMO vehicle jwt: {e}")
             self.vehicle_jwt = None
 
     async def _poll(self) -> Optional[str]:
@@ -107,7 +107,7 @@ class DIMOTesla(FuserInput[str]):
                 self.vehicle_jwt = get_vehicle_jwt["token"]
                 self.vehicle_jwt_expires = time.time() + 8 * 60
             except Exception as e:
-                logging.error(f"Error getting DIMO vehicle jwt: {e}")
+                logging.error(f"DIMOTesla: Error getting DIMO vehicle jwt: {e}")
                 self.vehicle_jwt = None
                 return None
 
