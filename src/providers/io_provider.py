@@ -1,6 +1,6 @@
 import threading
 from dataclasses import dataclass
-from typing import Dict, Optional
+from typing import Any, Dict, Optional
 
 from .singleton import singleton
 
@@ -43,6 +43,7 @@ class IOProvider:
         self._llm_prompt: Optional[str] = None
         self._llm_start_time: Optional[float] = None
         self._llm_end_time: Optional[float] = None
+        self._variables: Dict[str, Any] = {}
 
     @property
     def inputs(self) -> Dict[str, Input]:
@@ -240,3 +241,61 @@ class IOProvider:
         """
         with self._lock:
             self._llm_end_time = value
+
+    def __getattr__(self, name: str) -> Any:
+        """
+        Dynamically access arbitrary variables as attributes.
+
+        This allows users to access variables like obj.variable_name
+        instead of using obj.get_variable('variable_name').
+
+        Parameters
+        ----------
+        name : str
+            The attribute/variable name.
+
+        Returns
+        -------
+        Any
+            The variable value.
+
+        Raises
+        ------
+        AttributeError
+            If the attribute/variable doesn't exist.
+        """
+        # Don't interfere with special attributes like __getattribute__
+        if name.startswith("__") and name.endswith("__"):
+            raise AttributeError(
+                f"'{self.__class__.__name__}' object has no attribute '{name}'"
+            )
+
+        with self._lock:
+            if name in self._variables:
+                return self._variables[name]
+            raise AttributeError(
+                f"'{self.__class__.__name__}' object has no attribute '{name}'"
+            )
+
+    def __setattr__(self, name: str, value: Any) -> None:
+        """
+        Dynamically set arbitrary variables as attributes.
+
+        This allows users to set variables like obj.variable_name = value
+        instead of using obj.set_variable('variable_name', value).
+
+        Parameters
+        ----------
+        name : str
+            The attribute/variable name.
+        value : Any
+            The value to set.
+        """
+        # Don't interfere with instance variables that are defined in __init__
+        if name.startswith("_"):
+            super().__setattr__(name, value)
+            return
+
+        # Set the variable in the _variables dictionary
+        with self._lock:
+            self._variables[name] = value
