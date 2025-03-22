@@ -20,7 +20,7 @@ if [[ "$(uname)" != "Darwin" ]]; then
 fi
 
 # Check if gz (Gazebo Harmonic) is installed.
-if ! command -v gz &> /dev/null; then
+if ! command -v gz sim &> /dev/null; then
     echo "gz (Gazebo Harmonic) is not installed."
     read -p "Would you like to install Gazebo Harmonic using Homebrew? (y/n): " install_choice
     if [[ "$install_choice" =~ ^[Yy]$ ]]; then

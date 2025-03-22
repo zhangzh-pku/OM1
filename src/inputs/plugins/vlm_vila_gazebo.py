@@ -62,7 +62,7 @@ class VLMVilaGazebo(FuserInput[str]):
         # Initialize VLM provider
         base_url = getattr(self.config, "base_url", "wss://api-vila.openmind.org")
 
-        self.vlm: VLMVilaProvider = VLMVilaGazeboProvider(ws_url=base_url)
+        self.vlm: VLMVilaGazeboProvider = VLMVilaGazeboProvider(ws_url=base_url)
         self.vlm.start()
         self.vlm.register_message_callback(self._handle_vlm_message)
 

@@ -37,7 +37,7 @@ class VLMVilaGazeboProvider:
         """
         self.running: bool = False
         self.ws_client: ws.Client = ws.Client(url=ws_url)
-        self.video_stream: VideoStream = GazeboVideoStream(
+        self.video_stream: GazeboVideoStream = GazeboVideoStream(
             self.ws_client.send_message, fps=fps
         )
         self._thread: Optional[threading.Thread] = None
