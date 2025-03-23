@@ -1,8 +1,9 @@
-import json
 import logging
 import os
 from dataclasses import dataclass
 from typing import Dict, List, Optional
+
+import json5
 
 from actions import load_action
 from actions.base import AgentAction
@@ -69,11 +70,11 @@ def load_config(config_name: str) -> RuntimeConfig:
         If configuration values are invalid (e.g., negative hertz)
     """
     config_path = os.path.join(
-        os.path.dirname(__file__), "../../config", config_name + ".json"
+        os.path.dirname(__file__), "../../config", config_name + ".json5"
     )
 
-    with open(config_path, "r") as f:
-        raw_config = json.load(f)
+    with open(config_path, "r+") as f:
+        raw_config = json5.load(f)
 
     g_api_key = raw_config.get("api_key", None)
     if g_api_key is None or g_api_key == "":
@@ -86,6 +87,7 @@ def load_config(config_name: str) -> RuntimeConfig:
         backup_key = os.environ.get("OM_API_KEY")
         if backup_key:
             g_api_key = backup_key
+            logging.info("Success - Found OM_API_KEY in your .env file.")
         else:
             logging.warning(
                 "Could not find backup OM_API_KEY in your .env file. Using 'openmind_free'. Rate limits will apply."
