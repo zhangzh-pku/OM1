@@ -144,7 +144,7 @@ class CortexRuntime:
                 logging.debug(f"appended: {action_type}")
 
         # Trigger actions
-        if self.config.name == "spot_speak":
+        if "spot" in self.config.name:
             # spot, the speaking dog
             await self.action_orchestrator.promise(output.commands)
         elif ("Voice INPUT" in prompt) or ("WalletCoinbase" in prompt):
