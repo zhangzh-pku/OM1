@@ -18,6 +18,9 @@ wheels/
 # IDE
 .vscode/
 
+# Test files
+turtlebot4_debug.jpg
+
 # Mac specific lint
 .DS_Store
 config/iris_ai.json
