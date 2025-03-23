@@ -28,7 +28,17 @@ class MoveZenohConnector(ActionConnector[MoveInput]):
     def __init__(self, config: ActionConfig):
         super().__init__(config)
         self.session = None
-        self.cmd_vel = "cmd_vel"
+
+        URID = getattr(self.config, "URID", None)
+
+        if URID is None:
+            # Log the domain id being used
+            logging.warning(f"Aborting Move, no URID provided: {URID}")
+            return
+        else:
+            logging.warning(f"Move system is using URID:{URID}")
+
+        self.cmd_vel = f"{URID}/c3/cmd_vel"
         try:
             self.session = zenoh.open(zenoh.Config())
             logging.info("Zenoh client opened")

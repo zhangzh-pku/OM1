@@ -25,7 +25,7 @@ uv run src/run.py turtlebot4
 OM_API_KEY=om1_live_e4252f1cf005af...
 ``` 
 
-**UNIVERSAL_ROBOT_ID (URID)** Go to [portal](portal.openmind.org) to join a decentralized machine<>machine coordination and communication system (FABRIC). Enter machine metadata - currently an arbitrary string - and click "join". The system will provide a unique URID for your robot. The URIDs all share the same format: they begin with `OM`, then 12 alphanumeric characters (numerals and letters), adding up to 14 characters in total. They're not case sensitive. A unique URID allows multiple robots to communicate with one another, similar to how humans use different phone numbers to help them communicate and coordinate. 
+**UNIVERSAL_ROBOT_ID (URID)** Go to ["Hello Robots, come join us"](https://portal.openmind.org/robots) to join a decentralized machine<>machine coordination and communication system (FABRIC). Enter machine metadata - currently an arbitrary string - and click "join". The system will provide a unique URID for your robot. The URIDs all share the same format: they begin with `OM`, then 12 alphanumeric characters (numerals and letters), adding up to 14 characters in total. They're not case sensitive. A unique URID allows multiple robots to communicate with one another, similar to how humans use different phone numbers to help them communicate and coordinate. 
 
 Enter the URID in the "URID" field in the `/config/turtlebot4.json5` file. You can also provide the URID via your .env - just enter it as:
 
@@ -133,7 +133,8 @@ Congratulations! You can now interact with a TurtleBot4 from your laptop, using 
 
 Steer the TurtleBot4 with your keyboard:
 ```bash
-uv run system_hw_test/turtlebot4_keyboard_movement.py
+cd system_hw_test
+uv run turtlebot4_keyboard_movement.py
 ```
 * W - Move Forward
 * S - Move Backward
@@ -142,12 +143,14 @@ uv run system_hw_test/turtlebot4_keyboard_movement.py
 
 Read TurtleBot4 laser scan, collision, and battery data:
 ```bash
-uv run system_hw_test/turtlebot4_laserscan.py
+cd system_hw_test
+uv run turtlebot4_laserscan.py
 ```
 
 Read TurtleBot4 Camera PREVIEW (250x250RGB) data:
 ```bash
-uv run system_hw_test/turtlebot4_camera_opencv.py
+cd system_hw_test
+uv run turtlebot4_camera_opencv.py
 ```
 
 ## Expected ROS2 Topics for a Correctly Configured System
@@ -210,6 +213,9 @@ You can build your own dual bridge docker images using the provided `Dockerfile`
 docker build -t my-username/my-image .
 docker push my-username/my-image
 ```
+
+docker build -t jliphard/turtlebridge .
+docker push jliphard/turtlebridge
 
 Useful docker commands
 ```bash

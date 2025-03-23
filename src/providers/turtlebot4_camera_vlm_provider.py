@@ -32,7 +32,7 @@ def listener(sample):
         # update the global image
         image = rgb
         # for easy debug
-        # cv2.imwrite("turtlebot.jpg", rgb)
+        cv2.imwrite("turtlebot.jpg", rgb)
 
 
 class TurtleBot4CameraVideoStream(VideoStream):
