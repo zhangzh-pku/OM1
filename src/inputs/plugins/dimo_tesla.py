@@ -58,10 +58,19 @@ class DIMOTesla(FuserInput[str]):
 
         self.dimo = DIMO("Production")
 
+        self.vehicle_jwt = None
+
         # Configure the DIMO Tesla service
         client_id = getattr(config, "client_id", None)
         domain = getattr(config, "domain", None)
         private_key = getattr(config, "private_key", None)
+
+        if client_id is None or client_id == "":
+            logging.info(
+                "DIMOTesla: You did not provide credentials to your Tesla - aborting"
+            )
+            return
+
         self.token_id = getattr(config, "token_id", None)
 
         try:
@@ -81,7 +90,7 @@ class DIMOTesla(FuserInput[str]):
             self.io_provider.add_dynamic_variable("token_id", self.token_id)
             self.io_provider.add_dynamic_variable("vehicle_jwt", self.vehicle_jwt)
         except Exception as e:
-            logging.error(f"DIMOTesla: Error getting DIMO vehicle jwt: {e}")
+            logging.error(f"DIMOTesla: INIT - Error getting DIMO vehicle jwt: {e}")
             self.vehicle_jwt = None
 
     async def _poll(self) -> Optional[str]:
@@ -94,6 +103,10 @@ class DIMOTesla(FuserInput[str]):
             The latest Tesla data
         """
         await asyncio.sleep(0.5)
+
+        if self.vehicle_jwt is None:
+            logging.error("DIMOTesla: No vehicle jwt - did you provide credentials?")
+            return None
 
         if self.vehicle_jwt_expires is None:
             return None
