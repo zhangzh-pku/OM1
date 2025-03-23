@@ -33,6 +33,9 @@ class RuntimeConfig:
     # Optional API key for the runtime configuration
     api_key: Optional[str] = None
 
+    # Optional URID robot id key for the runtime configuration
+    URID: Optional[str] = None
+
     # Optional Ethernet adapter setting for Unitree Robots
     unitree_ethernet: Optional[str] = None
 
@@ -93,6 +96,23 @@ def load_config(config_name: str) -> RuntimeConfig:
                 "Could not find backup OM_API_KEY in your .env file. Using 'openmind_free'. Rate limits will apply."
             )
 
+    g_URID = raw_config.get("URID", None)
+    if g_URID is None or g_URID == "":
+        logging.warning(
+            "No URID found in the configuration file. Multirobot deployments will conflict."
+        )
+
+    if g_URID == "default":
+        logging.info("Checking for backup URID in your .env file.")
+        backup_URID = os.environ.get("URID")
+        if backup_URID:
+            g_URID = backup_URID
+            logging.info("Success - Found URID in your .env file.")
+        else:
+            logging.warning(
+                "Could not find backup URID in your .env file. Using 'default'. Multirobot deployments will conflict."
+            )
+
     g_ut_eth = raw_config.get("unitree_ethernet", None)
     if g_ut_eth is None or g_ut_eth == "":
         logging.info("No robot hardware ethernet port provided.")
@@ -108,7 +128,7 @@ def load_config(config_name: str) -> RuntimeConfig:
         "agent_inputs": [
             load_input(input["type"])(
                 config=SensorConfig(
-                    **add_meta(input.get("config", {}), g_api_key, g_ut_eth)
+                    **add_meta(input.get("config", {}), g_api_key, g_ut_eth, g_URID)
                 )
             )
             for input in raw_config.get("agent_inputs", [])
@@ -116,7 +136,10 @@ def load_config(config_name: str) -> RuntimeConfig:
         "cortex_llm": load_llm(raw_config["cortex_llm"]["type"])(
             config=LLMConfig(
                 **add_meta(
-                    raw_config["cortex_llm"].get("config", {}), g_api_key, g_ut_eth
+                    raw_config["cortex_llm"].get("config", {}),
+                    g_api_key,
+                    g_ut_eth,
+                    g_URID,
                 )
             ),
             output_model=CortexOutputModel,
@@ -125,7 +148,9 @@ def load_config(config_name: str) -> RuntimeConfig:
             load_simulator(simulator["type"])(
                 config=SimulatorConfig(
                     name=simulator["type"],
-                    **add_meta(simulator.get("config", {}), g_api_key, g_ut_eth),
+                    **add_meta(
+                        simulator.get("config", {}), g_api_key, g_ut_eth, g_URID
+                    ),
                 )
             )
             for simulator in raw_config.get("simulators", [])
@@ -134,7 +159,9 @@ def load_config(config_name: str) -> RuntimeConfig:
             load_action(
                 {
                     **action,
-                    "config": add_meta(action.get("config", {}), g_api_key, g_ut_eth),
+                    "config": add_meta(
+                        action.get("config", {}), g_api_key, g_ut_eth, g_URID
+                    ),
                 }
             )
             for action in raw_config.get("agent_actions", [])
@@ -144,7 +171,12 @@ def load_config(config_name: str) -> RuntimeConfig:
     return RuntimeConfig(**parsed_config)
 
 
-def add_meta(config: Dict, g_api_key: Optional[str], g_ut_eth: Optional[str]) -> dict:
+def add_meta(
+    config: Dict,
+    g_api_key: Optional[str],
+    g_ut_eth: Optional[str],
+    g_URID: Optional[str],
+) -> dict:
     """
     Add an API key and Robot configuration to a runtime configuration.
 
@@ -152,10 +184,12 @@ def add_meta(config: Dict, g_api_key: Optional[str], g_ut_eth: Optional[str]) ->
     ----------
     config : dict
         The runtime configuration to update.
-    api_key : str
+    g_api_key : str
         The API key to add.
     g_ut_eth : str
         The Robot ethernet port to add.
+    g_URID : str
+        The Robot URID to use.
 
     Returns
     -------
@@ -168,5 +202,7 @@ def add_meta(config: Dict, g_api_key: Optional[str], g_ut_eth: Optional[str]) ->
         config["api_key"] = g_api_key
     if "unitree_ethernet" not in config and g_ut_eth is not None:
         config["unitree_ethernet"] = g_ut_eth
+    if "URID" not in config and g_URID is not None:
+        config["URID"] = g_URID
     # logging.info(f"config after {config}")
     return config
