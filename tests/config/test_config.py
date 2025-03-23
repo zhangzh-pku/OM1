@@ -1,7 +1,8 @@
 import importlib
-import json
 import os
 from typing import Type
+
+import json5
 
 from actions.base import ActionConnector, ActionImplementation, Interface
 from runtime.config import load_input, load_llm, load_simulator
@@ -15,9 +16,9 @@ def test_configs():
     ]
 
     for file_name in files_names:
-        assert file_name.endswith(".json")
+        assert file_name.endswith(".json5")
         with open(os.path.join(config_folder_path, file_name), "r") as f:
-            raw_config = json.load(f)
+            raw_config = json5.load(f)
 
         agent_inputs = raw_config.get("agent_inputs", [])
         assert isinstance(agent_inputs, list)
