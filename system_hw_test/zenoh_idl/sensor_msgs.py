@@ -55,6 +55,39 @@ class IMU(IdlStruct, typename="IMU"):
 
 
 @dataclass
+class Detection(IdlStruct, typename="Detection"):
+    header: Header
+
+    orientation: Quaternion
+    orientation_covariance: array[float64, 9]
+    angular_velocity: Vector3
+    angular_velocity_covariance: array[float64, 9]
+    linear_acceleration: Vector3
+    linear_acceleration_covariance: array[float64, 9]
+
+
+@dataclass
+class HazardDetection(IdlStruct, typename="HazardDetection"):
+    header: Header
+
+    class TYPE(Enum):
+        BACKUP_LIMIT = 0
+        BUMP = 1  # The robot has bumped against an obstacle
+        CLIFF = 2  # The robot detected a cliff
+        STALL = 3  # The wheels of the robot are stalled against an obstacle
+        WHEEL_DROP = 4  # The wheels of the robot are fully dropped
+        OBJECT_PROXIMITY = 5  # The robot detects an obstacle in close proximity
+
+    type: uint8
+
+
+@dataclass
+class HazardDetectionVector(IdlStruct, typename="HazardDetectionVector"):
+    header: Header
+    detections: sequence[HazardDetection]
+
+
+@dataclass
 class NavSatStatus(IdlStruct, typename="NavSatStatus"):
     class STATUS(Enum):
         NO_FIX = -1  # unable to fix position
@@ -127,6 +160,7 @@ class PointCloud2(IdlStruct, typename="PointCloud2"):
 class BatteryState(IdlStruct, typename="BatteryState"):
     header: Header
     voltage: float32  # Voltage in Volts (Mandatory)
+    temperature: float32
     current: float32  # Negative when discharging (A)  (If unmeasured NaN)
     charge: float32  # Current charge in Ah  (If unmeasured NaN)
     capacity: float32  # Capacity in Ah (last full capacity)  (If unmeasured NaN)

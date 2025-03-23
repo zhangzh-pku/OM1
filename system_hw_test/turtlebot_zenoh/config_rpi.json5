@@ -18,11 +18,12 @@
                       ".*/robot_description",
                       ".*/robot_state/transition_event",
                       ".*/scan",
+                      ".*/hazard_detection",
                       ".*/static_transform/transition_event",
                       ".*/tf",
                       ".*/tf_static",
                       ".*/wheel_status",
-                      ".*/oakd/rgb/preview/image_raw" // this allows camera data to flow to other computers
+                      ".*/oakd/rgb/preview/image_raw" // allows camera data to flow to other computers
                     ],
         subscribers: [
                       ".*/battery_state", // to debug the Create3 battery data
@@ -34,6 +35,7 @@
                       ".*/robot_description",
                       ".*/robot_state/transition_event",
                       ".*/scan",
+                      ".*/hazard_detection",
                       ".*/static_transform/transition_event",
                       ".*/tf",
                       ".*/tf_static",

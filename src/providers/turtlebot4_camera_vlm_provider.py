@@ -50,7 +50,7 @@ class TurtleBot4CameraVideoStream(VideoStream):
     https://github.com/turtlebot/turtlebot4/issues/335#issuecomment-1900339747
     """
 
-    def __init__(self, frame_callback=None, fps=30):
+    def __init__(self, frame_callback=None, fps=30, URID="default"):
 
         super().__init__(frame_callback, fps)
 
@@ -59,7 +59,7 @@ class TurtleBot4CameraVideoStream(VideoStream):
         self.session = zenoh.open(zenoh.Config())
         logging.info("TurtleBot4 listener starting")
         self.camera = self.session.declare_subscriber(
-            "pi/oakd/rgb/preview/image_raw", listener
+            f"{URID}/pi/oakd/rgb/preview/image_raw", listener
         )
 
     def on_video(self):
@@ -133,7 +133,7 @@ class TurtleBot4CameraVLMProvider:
          Frames per second for the video stream.
     """
 
-    def __init__(self, ws_url: str, fps: int = 5):
+    def __init__(self, ws_url: str, fps: int = 5, URID: str = "default"):
         """
         Initialize the VLM Provider.
 
@@ -145,7 +145,7 @@ class TurtleBot4CameraVLMProvider:
         self.running: bool = False
         self.ws_client: ws.Client = ws.Client(url=ws_url)
         self.video_stream: VideoStream = TurtleBot4CameraVideoStream(
-            self.ws_client.send_message, fps=fps
+            self.ws_client.send_message, fps=fps, URID=URID
         )
         self._thread: Optional[threading.Thread] = None
 

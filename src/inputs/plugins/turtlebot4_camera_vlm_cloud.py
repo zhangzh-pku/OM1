@@ -48,9 +48,10 @@ class TurtleBot4CameraVLMCloud(FuserInput[str]):
 
         # Initialize VLM provider
         base_url = getattr(self.config, "base_url", "wss://api-vila.openmind.org")
+        URID = getattr(self.config, "URID", "default")
 
         self.vlm: TurtleBot4CameraVLMProvider = TurtleBot4CameraVLMProvider(
-            ws_url=base_url
+            ws_url=base_url, URID=URID
         )
         self.vlm.start()
         self.vlm.register_message_callback(self._handle_vlm_message)
