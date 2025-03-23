@@ -12,6 +12,9 @@
     },
     {
       "type": "TurtleBot4CameraVLMCloud"
+    },
+    {
+      "type": "TurtleBot4BattLIDARBump"
     }
   ],
   "simulators": [
