@@ -1,16 +1,22 @@
 import cmath
+import sys
 
 import numpy as np
 import zenoh
 
-# from matplotlib import pyplot as plot
-# from matplotlib.animation import FuncAnimation
-# from matplotlib.patches import Circle
-from numpy import array
-from scipy.ndimage.filters import gaussian_filter1d
-from scipy.signal import find_peaks
+sys.path.insert(0, "../src")
 
-from zenoh_idl import sensor_msgs
+try:
+    from zenoh_idl import sensor_msgs
+except ImportError:
+    print("Please run this script from inside /system_hw_test")
+
+from matplotlib import pyplot as plot
+from matplotlib.animation import FuncAnimation
+from matplotlib.patches import Circle
+from numpy import array, linspace
+from scipy.ndimage import gaussian_filter1d
+from scipy.signal import find_peaks
 
 """
 ros2 topic echo URID/pi/scan
@@ -18,31 +24,31 @@ ros2 topic echo URID/c3/battery_state
 ros2 topic echo URID/c3/hazard_detection
 """
 
-# fig, ax = plot.subplots(2)
+fig, ax = plot.subplots(2)
 
-# center = ax[0].plot([0], [0], "o", color="blue")[0]  # the robot
-# circle = ax[0].add_patch(Circle((0, 0), 0.16, color="red"))
-# line = ax[0].plot([], [], ".", color="black")[0]
-# front = ax[0].annotate("Front", xytext=(0.1, 0.3), xy=(0, 0.5))
-# arrow = ax[0].annotate("", xytext=(0, 0), xy=(0, 0.5), arrowprops=dict(arrowstyle="->"))
-# ax[0].set_xlim(-1, 1)
-# ax[0].set_ylim(-1, 1)
-# ax[0].set_aspect("equal")
+center = ax[0].plot([0], [0], "o", color="blue")[0]  # the robot
+circle = ax[0].add_patch(Circle((0, 0), 0.16, color="red"))
+line = ax[0].plot([], [], ".", color="black")[0]
+front = ax[0].annotate("Front", xytext=(0.1, 0.3), xy=(0, 0.5))
+arrow = ax[0].annotate("", xytext=(0, 0), xy=(0, 0.5), arrowprops=dict(arrowstyle="->"))
+ax[0].set_xlim(-1, 1)
+ax[0].set_ylim(-1, 1)
+ax[0].set_aspect("equal")
 
-# line1 = ax[1].plot([], [], ".", color="red")[0]
-# line2 = ax[1].plot([], [], ".", color="green")[0]
-# ax[1].set_xlim(0, 680)
-# ax[1].set_ylim(-1, 100)  # cm
+line1 = ax[1].plot([], [], ".", color="red")[0]
+line2 = ax[1].plot([], [], ".", color="green")[0]
+ax[1].set_xlim(0, 680)
+ax[1].set_ylim(-1, 100)  # cm
 
-# # Add captions to Fig2 to to orient people
-# gap = 5
-# ax[1].plot([  0, 227-gap], [99, 99], "-", color="red", linewidth=3.0)[0]
-# ax[1].plot([227 + gap, 453 - gap], [99, 99], "-", color="red", linewidth=3.0)[0]
-# ax[1].plot([453 + gap, 680], [99, 99], "-", color="red", linewidth=3.0)[0]
-# ax[1].annotate("Left",  xytext=(100, 89), xy=(0, 0.5))
-# ax[1].annotate("Front", xytext=(320, 89), xy=(0, 0.5))
-# ax[1].annotate("Right", xytext=(550, 89), xy=(0, 0.5))
-# arrow_list = []
+# Add captions to Fig2 to to orient people
+gap = 5
+ax[1].plot([0, 227 - gap], [99, 99], "-", color="red", linewidth=3.0)[0]
+ax[1].plot([227 + gap, 453 - gap], [99, 99], "-", color="red", linewidth=3.0)[0]
+ax[1].plot([453 + gap, 680], [99, 99], "-", color="red", linewidth=3.0)[0]
+ax[1].annotate("Left", xytext=(100, 89), xy=(0, 0.5))
+ax[1].annotate("Front", xytext=(320, 89), xy=(0, 0.5))
+ax[1].annotate("Right", xytext=(550, 89), xy=(0, 0.5))
+arrow_list = []
 
 intensity_treshold = 1
 # values from the sensor are either 0 or 47
@@ -102,13 +108,13 @@ def listenerScan(sample):
         else:
             clusters.append(0)
 
-    # X = [i.real for i in complexes]
-    # Y = [i.imag for i in complexes]
+    X = [i.real for i in complexes]
+    Y = [i.imag for i in complexes]
     # # XY = [[i.real, i.imag] for i in complexes]
 
-    # # plot the raw data
-    # global line
-    # line.set_data(X, Y)
+    # plot the raw data
+    global line
+    line.set_data(X, Y)
 
     a = array(clusters)
     # roll the data so the "nose" of the robot is in the middle (around 530)
@@ -125,20 +131,21 @@ def listenerScan(sample):
 
     x_kde = x_kde[200:880]  # chop off data from the back of the robot
     # the full data run from 0 to 1079 (aka length 1080)
-    # s = linspace(0, len(x_kde), num=len(x_kde))
+    s = linspace(0, len(x_kde), num=len(x_kde))
 
-    # # for debug
-    # line1.set_data(s, a[200:880])
-    # line2.set_data(s, x_kde)
+    # for debug
+    line1.set_data(s, a[200:880])
+    line2.set_data(s, x_kde)
 
     peaks, _ = find_peaks(x_kde, height=0)
     # print("peaks:", peaks)
 
-    # global arrow_list
-    # # clear the old arrows
-    # for arrow in arrow_list:
-    #     arrow.remove()
+    global arrow_list
+    # clear the old arrows
+    for arrow in arrow_list:
+        arrow.remove()
     # arrow_list[:] = []
+    arrow_list = []
 
     # add new arrows
     max_x_peak = -10  # arbitrary negative number
@@ -148,8 +155,10 @@ def listenerScan(sample):
         if y > max_y_peak:
             max_y_peak = y
             max_x_peak = int(x)
-    #     arrow = ax[1].annotate("", xytext=(x, y + 3), xy=(x, y + 20), arrowprops=dict(arrowstyle="<-"))
-    #     arrow_list.append(arrow)
+        arrow = ax[1].annotate(
+            "", xytext=(x, y + 3), xy=(x, y + 20), arrowprops=dict(arrowstyle="<-")
+        )
+        arrow_list.append(arrow)
 
     # # the closest object
     # arrow = ax[1].annotate("",
@@ -212,5 +221,5 @@ scans = z.declare_subscriber(f"{URID}/pi/scan", listenerScan)
 batts = z.declare_subscriber(f"{URID}/c3/battery_state", listenerBattery)
 bump = z.declare_subscriber(f"{URID}/c3/hazard_detection", listenerHazard)
 
-# ani = FuncAnimation(fig, lambda _: None)
-# plot.show()
+ani = FuncAnimation(fig, lambda _: None)
+plot.show()

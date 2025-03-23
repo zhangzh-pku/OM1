@@ -107,6 +107,7 @@ def load_config(config_name: str) -> RuntimeConfig:
         backup_URID = os.environ.get("URID")
         if backup_URID:
             g_URID = backup_URID
+            logging.info("Success - Found URID in your .env file.")
         else:
             logging.warning(
                 "Could not find backup URID in your .env file. Using 'default'. Multirobot deployments will conflict."
