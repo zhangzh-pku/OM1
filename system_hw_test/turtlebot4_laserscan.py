@@ -9,6 +9,7 @@ import zenoh
 from numpy import array
 from scipy.ndimage.filters import gaussian_filter1d
 from scipy.signal import find_peaks
+
 from zenoh_idl import sensor_msgs
 
 """
