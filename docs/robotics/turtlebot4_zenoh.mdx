@@ -10,7 +10,7 @@ description: "TurtleBot4 Basic Setup"
 - [Expected ROS2 Topics for a Correctly Configured System](#expected-ros2-topics-for-a-correctly-configured-system)
 - [Building the Docker Dual Bridge Images](#building-the-docker-dual-bridge-images)
 
-## Basic Commands 
+## Basic Commands
 
 Run
 ```bash Run Robot
@@ -23,19 +23,19 @@ uv run src/run.py turtlebot4
 
 ```bash
 OM_API_KEY=om1_live_e4252f1cf005af...
-``` 
+```
 
-**UNIVERSAL_ROBOT_ID (URID)** Go to ["Hello Robots, come join us"](https://portal.openmind.org/robots) to join a decentralized machine<>machine coordination and communication system (FABRIC). Enter machine metadata - currently an arbitrary string - and click "join". The system will provide a unique URID for your robot. The URIDs all share the same format: they begin with `OM`, then 12 alphanumeric characters (numerals and letters), adding up to 14 characters in total. They're not case sensitive. A unique URID allows multiple robots to communicate with one another, similar to how humans use different phone numbers to help them communicate and coordinate. 
+**UNIVERSAL_ROBOT_ID (URID)** Go to["Hello Robots, come join us"](https://portal.openmind.org/robots) to join a decentralized machine\<\>machine coordination and communication system (FABRIC). Enter machine metadata - currently an arbitrary string - and click "join". The system will provide a unique URID for your robot. The URIDs all share the same format: they begin with `OM`, then 12 alphanumeric characters (numerals and letters), adding up to 14 characters in total. They're not case sensitive. A unique URID allows multiple robots to communicate with one another, similar to how humans use different phone numbers to help them communicate and coordinate.
 
 Enter the URID in the "URID" field in the `/config/turtlebot4.json5` file. You can also provide the URID via your .env - just enter it as:
 
 ```bash
 URID=OM742d35Cc6634 # yours will be different!
-``` 
+```
 
 ## Suggested Operating System Versions
 
-The TurtleBot4 contains two entirely separate computers, the Raspberry Pi (RPi) and the Create3. These computers are accessed in different ways, run different software, and have different roles. Different combinations of software versions running on those computers give somewhat differing capabilities.  
+The TurtleBot4 contains two entirely separate computers, the Raspberry Pi (RPi) and the Create3. These computers are accessed in different ways, run different software, and have different roles. Different combinations of software versions running on those computers give somewhat differing capabilities.
 
 **Raspberry Pi**\
 Ubuntu 22.04.4 LTS (GNU/Linux 5.15.0-1073-raspi aarch64)\
@@ -50,22 +50,22 @@ Suitable images can be installed via a [flashed SD card](https://turtlebot.githu
 
 OM1 connects to TurtleBot4 using Zenoh. To correctly set up your TurtleBot4, follow these steps.
 
-1. Set up your TurtleBot4 following the [Basic Setup](https://turtlebot.github.io/turtlebot4-user-manual/setup/basic.html). Please then become familiar with the Turtlebot4 ecosystem - there are extensive educational materials to help you get started. If you are not familiar with the TurtleBot4, please see the excellent [documentation](https://turtlebot.github.io/turtlebot4-user-manual/). 
+1. Set up your TurtleBot4 following the [Basic Setup](https://turtlebot.github.io/turtlebot4-user-manual/setup/basic.html). Please then become familiar with the Turtlebot4 ecosystem - there are extensive educational materials to help you get started. If you are not familiar with the TurtleBot4, please see the excellent [documentation](https://turtlebot.github.io/turtlebot4-user-manual/).
 
 NOTE: Please update the Raspberry Pi's OS (use `sudo apt update && sudo apt upgrade`).
 
 NOTE: Please update the TurtleBot4's internal Create3 computer to `iRobot® Create® 3 Release H.2.6` via the Create3's html "Update" page.
 
-NOTE: Make sure to remember the TurtleBots' IP address in your local network. If you do not know it, scan your local network for "Raspberry Pi". 
+NOTE: Make sure to remember the TurtleBots' IP address in your local network. If you do not know it, scan your local network for "Raspberry Pi".
 
-NOTE: In the remainder of this writeup, we assume you are generally familiar with the ROS2/Turtlebot4 ecosystem, including ssh-ing to the Raspberry Pi command line, the use of the `turtlebot4-setup` program, and interacting with the internal Create3 via its webpage at IP:8080. 
+NOTE: In the remainder of this writeup, we assume you are generally familiar with the ROS2/Turtlebot4 ecosystem, including ssh-ing to the Raspberry Pi command line, the use of the `turtlebot4-setup` program, and interacting with the internal Create3 via its webpage at IP:8080.
 
 2. As you have just experienced first-hand, there are numerous issues connecting to a TurtleBot4 in a university/enterprise network. To solve many of those, we follow the dual Zenoh bridge approach developed by [theconstruct.ai](www.theconstruct.ai), which is to give the Raspberry Pi and the Create3 their own ROS2 DOMAIN_IDs, and then use Zenoh bridges to filter message traffic between the RPi and the Create3. This allows you to filter messages on a per topic level (see the `config_create3.json5` file for an example of how this is done).
 
 Make the following `ROS_DOMAIN_ID` changes to the TurtleBot4. Use the `turtlebot4-setup` tool to access `ROS Setup:Bash Setup` and set it to the following:
 
 ```bash
-ROBOT_NAMESPACE=/_your_robots_URID_/pi 
+ROBOT_NAMESPACE=/_your_robots_URID_/pi
 # example: ROBOT_NAMESPACE=/OM742d35Cc6634/pi
 ROS_DOMAIN_ID=0
 RMW_IMPLEMENTATION=rmw_cyclonedds_cpp
@@ -76,16 +76,16 @@ Click "Save", "Esc", and then "Apply Settings". The TurtleBot4 will reboot. Once
 
 ```
 ROS 2 Domain ID (default 0): 1
-ROS 2 Namespace: /_your_robots_URID_/c3 
+ROS 2 Namespace: /_your_robots_URID_/c3
 # example: /OM742d35Cc6634/c3
 RMW_IMPLEMENTATION: rmv_cyclonedds_cpp
 ```
 
-Note the use of the "/c3" to create an unique namespace for the c3. 
+Note the use of the "/c3" to create an unique namespace for the c3.
 
-Click `Save` and _Restart Application_. 
+Click `Save` and _Restart Application_.
 
-NOTE: Do not forget to click _Restart Application_, otherwise the changes will not be applied. Wait for chime (1 min) indicating Create3 reboot. 
+NOTE: Do not forget to click _Restart Application_, otherwise the changes will not be applied. Wait for chime (1 min) indicating Create3 reboot.
 
 Finally, on the TurtleBot4's RPi, [install Docker](https://docs.docker.com/engine/install/raspberry-pi-os/) and run `sudo docker compose -f docker-compose.yaml up -d`. The `docker-compose` should be:
 
