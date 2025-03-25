@@ -18,8 +18,13 @@ wheels/
 # IDE
 .vscode/
 
+# Debug files
+front_image.jpg
+turtlebot4_debug.jpg
+turtlebot.jpg
+
 # Mac specific lint
 .DS_Store
 config/iris_ai.json
 launch.sh
-front_image.jpg
+

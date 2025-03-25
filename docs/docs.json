@@ -54,10 +54,7 @@
           {
             "group": "Development",
             "pages": [
-              "development/intro",
-              "development/linting-testing",
-              "development/cli-commands",
-              "development/actions"
+              "development/intro"
             ]
           }
         ]

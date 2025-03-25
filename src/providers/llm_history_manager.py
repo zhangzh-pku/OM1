@@ -31,7 +31,7 @@ class LLMHistoryManager:
         self,
         config: LLMConfig,
         client: Union[openai.AsyncClient, openai.OpenAI],
-        system_prompt: str = "You are a helpful assistant that summarizes a succession of events and interactions accurately and concisely. You are watching a humanoid robot named **** interact with people and the world. Your goal is to help **** remember what she felt, saw, and heard, and how she responded to those inputs.",
+        system_prompt: str = "You are a helpful assistant that summarizes a succession of events and interactions accurately and concisely. You are watching a robot named **** interact with people and the world. Your goal is to help **** remember what the robot felt, saw, and heard, and how the robot responded to those inputs.",
         summary_command: str = "\nConsidering the new information, write an updated summary of the situation for ****. Emphasize information that **** needs to know to respond to people and situations in the best possible and most compelling way.",
     ):
         self.client = client
@@ -205,13 +205,15 @@ class LLMHistoryManager:
                     self.history_manager.frame_index += 1
                     return response
 
+                self.agent_name = self._config.agent_name
+
                 cycle = self.history_manager.frame_index
                 logging.debug(f"LLM Tasking cycle debug tracker: {cycle}")
 
-                formatted_inputs = "**** sensed the following: "
+                formatted_inputs = f"{self.agent_name} sensed the following: "
                 for input_type, input_info in self.io_provider.inputs.items():
-                    logging.info(f"LLM: {input_type}")
-                    logging.info(f"LLM: {input_info}")
+                    logging.debug(f"LLM: {input_type}")
+                    logging.debug(f"LLM: {input_info}")
                     formatted_inputs += f"{input_type}: {input_info.input} | "
 
                 # formatted_inputs = f"**** sensed the following: {" | ".join(f"{input_type}: {input_info.input}" for input_type, input_info in self.io_provider.inputs.items())}"
@@ -240,6 +242,8 @@ class LLMHistoryManager:
                             )
                         )
                     )
+
+                    action_message = action_message.replace("****", self.agent_name)
 
                     self.history_manager.history.append(
                         ChatMessage(role="user", content=action_message)
