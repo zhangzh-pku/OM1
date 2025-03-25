@@ -26,7 +26,7 @@ class VLMVilaGazeboProvider:
          Frames per second for the video stream.
     """
 
-    def __init__(self, ws_url: str, fps: int = 30):
+    def __init__(self, ws_url: str, fps: int = 30, topic: str = "/camera"):
         """
         Initialize the VLM Provider.
 
@@ -34,11 +34,15 @@ class VLMVilaGazeboProvider:
         ----------
         ws_url : str
             The websocket URL for the VLM service connection.
+        fps : int
+            The fps for the VLM service connection.
+        topic : str
+            The Gazebo simulated camera topic for the VLM service connection.
         """
         self.running: bool = False
         self.ws_client: ws.Client = ws.Client(url=ws_url)
         self.video_stream: GazeboVideoStream = GazeboVideoStream(
-            self.ws_client.send_message, fps=fps
+            self.ws_client.send_message, fps=fps, topic=topic
         )
         self._thread: Optional[threading.Thread] = None
 
