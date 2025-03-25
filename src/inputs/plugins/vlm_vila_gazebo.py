@@ -64,7 +64,9 @@ class VLMVilaGazebo(FuserInput[str]):
 
         topic = getattr(self.config, "topic", "/camera")
 
-        self.vlm: VLMVilaGazeboProvider = VLMVilaGazeboProvider(ws_url=base_url, topic=topic)
+        self.vlm: VLMVilaGazeboProvider = VLMVilaGazeboProvider(
+            ws_url=base_url, topic=topic
+        )
         self.vlm.start()
         self.vlm.register_message_callback(self._handle_vlm_message)
 

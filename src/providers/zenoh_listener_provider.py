@@ -1,22 +1,21 @@
 import logging
 import threading
 import time
-from dataclasses import dataclass
-from queue import Empty, Queue
+from queue import Queue
 from typing import Callable, Optional
 
 import zenoh
 
+
 class ZenohListenerProvider:
     """
     Publisher provider for subscribing messages using a Zenoh session.
-    
+
     This class manages a Zenoh session, a message queue, and a worker thread that
     continuously publishes queued messages to a specified topic.
     """
-    def __init__(
-        self, topic: str = "speech"
-    ):
+
+    def __init__(self, topic: str = "speech"):
         """
         Initialize the Zenoh Listener provider and create a Zenoh session.
 
@@ -52,7 +51,6 @@ class ZenohListenerProvider:
             self.session.declare_subscriber(self.sub_topic, message_callback)
         else:
             logging.error("Cannot register callback; Zenoh session is not available.")
-
 
     def start(self):
         """

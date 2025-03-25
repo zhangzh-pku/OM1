@@ -2,15 +2,17 @@ import asyncio
 import json
 import logging
 import time
-import zenoh
 from queue import Empty, Queue
-from typing import Dict, List, Optional
+from typing import List, Optional
+
+import zenoh
 
 from inputs.base import SensorConfig
 from inputs.base.loop import FuserInput
 from providers.io_provider import IOProvider
-from providers.zenoh_listener_provider import ZenohListenerProvider
 from providers.sleep_ticker_provider import SleepTickerProvider
+from providers.zenoh_listener_provider import ZenohListenerProvider
+
 
 class ZenohListener(FuserInput[str]):
     """

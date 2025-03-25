@@ -1,7 +1,5 @@
 import logging
 
-import zenoh
-
 from actions.base import ActionConfig, ActionConnector
 from actions.speak.interface import SpeakInput
 from providers.zenoh_publisher_provider import ZenohPublisherProvider
@@ -14,6 +12,7 @@ class SpeakZenohConnector(ActionConnector[SpeakInput]):
     When a speak input is received, this connector queues the message
     to be published using the Zenoh publisher provider.
     """
+
     def __init__(self, config: ActionConfig):
         super().__init__(config)
 

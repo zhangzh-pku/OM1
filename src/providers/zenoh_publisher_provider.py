@@ -1,24 +1,23 @@
+import json
 import logging
 import threading
 import time
-from dataclasses import dataclass
 from queue import Empty, Queue
 from typing import Optional
 
 import zenoh
 from zenoh import ZBytes
-import json
+
 
 class ZenohPublisherProvider:
     """
     Publisher provider for sending SpeechData messages using a Zenoh session.
-    
+
     This class manages a Zenoh session, a message queue, and a worker thread that
     continuously publishes queued SpeechData messages to a specified topic.
     """
-    def __init__(
-        self, topic: str = "speech"
-    ):
+
+    def __init__(self, topic: str = "speech"):
         """
         Initialize the Zenoh publisher provider and create a Zenoh session.
 
@@ -51,8 +50,7 @@ class ZenohPublisherProvider:
         text : str
             The textual content to be published as a message.
         """
-        msg = {"time_stamp": time.time(),
-               "message": text}
+        msg = {"time_stamp": time.time(), "message": text}
         logging.info(f"Queueing message: {msg}")
         self._pending_messages.put(msg)
 
