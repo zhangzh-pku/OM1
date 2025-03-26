@@ -9,7 +9,7 @@
   "agent_inputs": [
     {
       "type": "VLMVila"
-    }
+    },
     {
       "type": "TurtleBot4BattLIDARBump"
     },
