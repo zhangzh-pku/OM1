@@ -214,9 +214,6 @@ docker build -t my-username/my-image .
 docker push my-username/my-image
 ```
 
-docker build -t jliphard/turtlebridge .
-docker push jliphard/turtlebridge
-
 Useful docker commands
 ```bash
 sudo docker compose pull # pull latest image
@@ -231,3 +228,41 @@ sudo docker attach CONTAINER_ID # to stream logs
 sudo docker exec -it CONTAINER_ID sh # to get a shell
 sudo docker kill CONTAINER_ID
 ```
+
+## Run on RP4
+
+### Set default Input and Output Audio devices
+
+```bash
+sudo apt install pulseaudio pulseaudio-utils pulseaudio-bluetooth ffmpeg
+```
+
+Reboot the turtlebot4. Set the default inputs. Unplug the onboard camera. Use the Logitech 270.   
+
+```bash
+pactl list sources short                            # List input (microphone) devices
+pactl list sinks short                              # List output (speaker) devices
+
+pactl set-default-sink [SINK_NAME || SINK_ID]       # Set default output device
+pactl set-default-source [SOURCE_NAME || SOURCE_ID] # Set default input device
+pactl set-sink-volume @DEFAULT_SINK@ 70%            # Set default output volume
+```
+
+```bash
+bluetoothctl
+
+agent on
+
+list    # show all paired devices
+scan on # search for nearby devices
+# once you have found the right device, you can then pair it
+# many devices also require 'trusting' them
+
+trust <MAC> # for example, trust F8:5C:7D:DA:C9:75
+pair <MAC>
+connect <MAC>
+```
+
+If bluez is crashed/frozen, use `bluetoothctl` to run `power off`, `power on`, `scan on` to unstick. 
+
+`pulseaudio --start -D` 

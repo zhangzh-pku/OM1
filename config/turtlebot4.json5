@@ -8,25 +8,13 @@
   "system_prompt_examples": "Here are some examples of interactions you might encounter:\n\n1. If a person says 'Give me your flippers!', you might:\n    Move: 'move forwards'\n    Speak: {{'Hello, let\\'s shake flippers!'}}\n    Emotion: 'joy'\n\n2. If a person says 'Stop!' you might:\n    Move: 'stop moving'\n    Speak: {{'Ok, but I like running more'}}\n    Emotion: 'smile'\n\n3. If there\\'s no sound, go explore. You might:\n    Move: 'turn right'\n    Speak: {{'I\\'m going to go explore the room and meet more turtles.'}}\n    Emotion: 'think'",
   "agent_inputs": [
     {
-      "type": "GovernanceEthereum"
-    },
-    {
-      "type": "TurtleBot4CameraVLMCloud"
-    },
+      "type": "VLMVila"
+    }
     {
       "type": "TurtleBot4BattLIDARBump"
-    }
-  ],
-  "simulators": [
+    },
     {
-      "type": "WebSim",
-      "config": {
-        "host": "0.0.0.0",
-        "port": 8000,
-        "tick_rate": 100,
-        "auto_reconnect": true,
-        "debug_mode": false
-      }
+      "type": "GoogleASRInput"
     }
   ],
   "cortex_llm": {
@@ -47,13 +35,10 @@
       "name": "speak",
       "llm_label": "speak",
       "implementation": "passthrough",
-      "connector": "ros2"
-    },
-    {
-      "name": "face",
-      "llm_label": "emotion",
-      "implementation": "passthrough",
-      "connector": "ros2"
+      "connector": "elevenlabs_tts",
+      "config": {
+        "voice_id": "i4CzbCVWoqvD0P1QJCUL"
+      }
     }
   ]
 }
