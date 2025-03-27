@@ -89,11 +89,11 @@ def listenerScan(sample):
         # print("distance (m):", distance)
         # print("intensity:", intensity)
         # print("angle:", angle)
-        # let's look only at close things (< 0.95m)
-        if distance <= 0.95:
+        # let's look only at close things (< 0.50m)
+        if distance <= 0.50:
             if intensity >= intensity_treshold:
                 # convert to cm and flip to emphasize near returns
-                clusters.append(100 - int(distance * 100))
+                clusters.append(51 - int(distance * 100))
             else:
                 clusters.append(0)
         else:
@@ -128,7 +128,7 @@ def listenerScan(sample):
             direction = "on your right"
         elif max_x_peak > 227:
             direction = "in front of you"
-        g_lidar = f"Warning, you are {proximity} something {direction}."
+        g_lidar = f"You are {proximity} something {direction}."
     else:
         g_lidar = None
 
