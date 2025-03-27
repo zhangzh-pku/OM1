@@ -41,7 +41,7 @@ def listenerBattery(sample):
     if battery_percent < 5:
         g_battery = "CRITICAL: your battery is almost empty. Immediately move to your charging station and recharge."
     elif battery_percent < 15:
-        g_battery = "Caution: your battery is running low. Consider finding your charging stating and recharging."
+        g_battery = "Caution: your battery is running low. Consider finding your charging station and recharging."
     else:
         g_battery = None
 
