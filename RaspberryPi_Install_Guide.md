@@ -1,11 +1,13 @@
+
 # Getting Started with OM1 on Raspberry Pi
+
 
 ## Prerequisites
 
 Make sure you have the following before installation:
 
 - Device: Raspberry Pi 4 or 5 (8GB RAM or more recommended)
-- OS: 64-bit Raspberry Pi OS or any Debian-based 64-bit Linux distro
+- OS: 64-bit Raspberry Pi OS or Debian-based 64-bit Linux distro
 - Storage: At least 16GB free
 - Network: Internet access
 
@@ -33,13 +35,13 @@ git submodule update --init
 
 ## 3. Install Dependencies
 
-### 3.1 Install the Rust-based Python package manager `uv`:
+ 3.1 Install the Rust-based Python package manager `uv`:
 
 ```bash
 curl -LsSf https://astral.sh/uv/install.sh | sh
 ```
 
-### 3.2 Install PortAudio:
+3.2 Install PortAudio:
 
 ```bash
 sudo apt-get install portaudio19-dev
@@ -52,7 +54,7 @@ sudo apt-get install portaudio19-dev
 Add your OpenMind API key to the configuration file:
 
 1. Locate the config file at `/config/spot.json5`
-2. Replace the placeholder with your actual API key:
+2. Replace the placeholder with your OpenMind API key:
 
 ```json
 {
@@ -91,7 +93,14 @@ uv run src/run.py spot --debug
 
 ## Done
 
-You’re now running OM1 on your Raspberry Pi.  
+You’re now running OM1 on your Raspberry Pi.
 Explore its capabilities and refer to the OM1 GitHub repository for advanced settings and next steps:
 
 https://github.com/OpenmindAGI/OM1
+
+## Note:
+
+This is a general guide for getting OM1 started on Raspberry Pi. Depending on your specific robot’s firmware, OS version, or configuration, you may need additional modifications or pre-requirements.
+For details on supported setups, please visit: docs.openmind.org and refer to the Interfacing with New Robot Hardware section in https://github.com/OpenmindAGI/OM1
+
+
