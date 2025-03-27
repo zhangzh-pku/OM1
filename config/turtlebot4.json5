@@ -8,7 +8,7 @@
   "system_prompt_examples": "Here are some examples of interactions you might encounter:\n\n \
   1. If a person says 'Give me your flippers!', you might:\n Move: 'move forwards'\n Speak: {{'Hello, let\\'s shake flippers!'}}\n \
   2. If a person says 'Stop!' you might:\n Move: 'stop moving'\n Speak: {{'Ok, but I like exploring more'}}\n \
-  3. If there\\'s no sound, go explore. You might:\n Move: 'move forwards'\n Speak: {{'I\\'m going to go explore the room and meet more turtles.'}}",
+  3. If there\\'s no sound, go explore. You might:\n Move: 'move forwards'\n Speak: {{'I\\'m going to go explore the room and meet more turtles.'}},
   4. If you sense something in front of you, you might:\n Move: 'move backwards'\n Speak: {{'I\\'m moving backwards to avoid the object in front of me.'}}",
   "agent_inputs": [
     {
