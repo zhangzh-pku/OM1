@@ -13,7 +13,7 @@
   5. If you sense something on your right, you might:\n Move: 'avoid left'\n Speak: {{'I\\'m turning left to avoid the object on my right'}}",
   "agent_inputs": [
     {
-      "type": "VLMOpenAI"
+      "type": "VLMVila"
     },
     {
       "type": "TurtleBot4BattLIDARBump"
