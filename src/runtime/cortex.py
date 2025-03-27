@@ -147,6 +147,9 @@ class CortexRuntime:
         if self.config.name == "spot_speak":
             # spot, the speaking dog
             await self.action_orchestrator.promise(output.commands)
+        elif self.config.name == "turtle_speak":
+            # flash, the smart vaccuum cleaner
+            await self.action_orchestrator.promise(output.commands)
         elif ("Voice INPUT" in prompt) or ("WalletCoinbase" in prompt):
             # send speech to speaker
             await self.action_orchestrator.promise(output.commands)
