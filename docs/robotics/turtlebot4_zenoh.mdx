@@ -17,7 +17,7 @@ Run
 uv run src/run.py turtlebot4
 ```
 
-## Idendity and Keys
+## Identity and Keys
 
 **API_KEY** Go to [portal](portal.openmind.org) to get a free API key. Enter this API key in the "api_key" field in the `/config/turtlebot4.json5` file. You can also provide this API key via your .env - just enter it as:
 
@@ -41,7 +41,7 @@ The TurtleBot4 contains two entirely separate computers, the Raspberry Pi (RPi) 
 Ubuntu 22.04.4 LTS (GNU/Linux 5.15.0-1073-raspi aarch64)\
 [turtlebot4_standard_humble_1.0.4.img (2024-08-19 16:59 2.2G)](http://download.ros.org/downloads/turtlebot4/turtlebot4_standard_humble_1.0.4.zip)
 
-Suitable images can be installed via a [flashed SD card](https://turtlebot.github.io/turtlebot4-user-manual/setup/basic.html). Note that instructions given are needlessly complex - basically, download the image, unzip it, flash a SD card with that image using your favorite tool/platform (`dd`, `dcfldd`, whatever you prefer), insert the flashed SD card into the RPi, and turn it on.
+Suitable images can be installed via a [flashed SD card](https://turtlebot.github.io/turtlebot4-user-manual/setup/basic.html). Note that instructions given are needlessly complex - basically, download the image, unzip it, flash a SD card with that image using your favorite tool/platform (e.g. for mac use the Disk Utility to unmount the drive and then `sudo dcfldd if=tb.img sizeprobe=if bs=1M of=/dev/disk4`), insert the flashed SD card into the RPi, and turn it on.
 
 **Create3**\
 [H.2.6 (Humble)](https://github.com/iRobotEducation/create3_docs/releases/download/H.2.6/Create3-H.2.6.swu)
@@ -50,7 +50,7 @@ Suitable images can be installed via a [flashed SD card](https://turtlebot.githu
 
 OM1 connects to TurtleBot4 using Zenoh. To correctly set up your TurtleBot4, follow these steps.
 
-1. Set up your TurtleBot4 following the [Basic Setup](https://turtlebot.github.io/turtlebot4-user-manual/setup/basic.html). Please then become familiar with the Turtlebot4 ecosystem - there are extensive educational materials to help you get started. If you are not familiar with the TurtleBot4, please see the excellent [documentation](https://turtlebot.github.io/turtlebot4-user-manual/). 
+1. Set up your TurtleBot4 following the [Basic Setup](https://turtlebot.github.io/turtlebot4-user-manual/setup/basic.html). Please then become familiar with the TurtleBot4 ecosystem - there are extensive educational materials to help you get started. If you are not familiar with the TurtleBot4, please see the excellent [documentation](https://turtlebot.github.io/turtlebot4-user-manual/). 
 
 NOTE: Please update the Raspberry Pi's OS (use `sudo apt update && sudo apt upgrade`).
 
@@ -65,7 +65,7 @@ NOTE: In the remainder of this writeup, we assume you are generally familiar wit
 Make the following `ROS_DOMAIN_ID` changes to the TurtleBot4. Use the `turtlebot4-setup` tool to access `ROS Setup:Bash Setup` and set it to the following:
 
 ```bash
-ROBOT_NAMESPACE=/_your_robots_URID_/pi 
+ROBOT_NAMESPACE=/_your_robot_URID_/pi 
 # example: ROBOT_NAMESPACE=/OM742d35Cc6634/pi
 ROS_DOMAIN_ID=0
 RMW_IMPLEMENTATION=rmw_cyclonedds_cpp
@@ -76,7 +76,7 @@ Click "Save", "Esc", and then "Apply Settings". The TurtleBot4 will reboot. Once
 
 ```
 ROS 2 Domain ID (default 0): 1
-ROS 2 Namespace: /_your_robots_URID_/c3 
+ROS 2 Namespace: /_your_robot_URID_/c3 
 # example: /OM742d35Cc6634/c3
 RMW_IMPLEMENTATION: rmv_cyclonedds_cpp
 ```
@@ -87,7 +87,7 @@ Click `Save` and _Restart Application_.
 
 NOTE: Do not forget to click _Restart Application_, otherwise the changes will not be applied. Wait for chime (1 min) indicating Create3 reboot. 
 
-Finally, on the TurtleBot4's RPi, [install Docker](https://docs.docker.com/engine/install/raspberry-pi-os/) and run `sudo docker compose -f docker-compose.yaml up -d`. The `docker-compose` should be:
+Finally, on the TurtleBot4's RPi, [install Docker](https://docs.docker.com/engine/install/ubuntu/) and run `sudo docker compose -f docker-compose.yaml up -d`. The `docker-compose` should be:
 
 ```bash docker-compose.yaml
 services:
@@ -231,13 +231,36 @@ sudo docker kill CONTAINER_ID
 
 ## Run on RP4
 
-### Set default Input and Output Audio devices
+**Important: Make sure your Raspberry Pi 4 is running Ubuntu 22.04.4 LTS and that the Create 3 is running H.2.6/Create3-H.2.6.swu** (see [Suggested Operating System Versions](#suggested-operating-system-versions)). Among other possible problems, running Ubuntu 24 will create compatibility issues with the version of ROS2 and CycloneDDS on the Create 3. 
+
+On the RPi terminal command line, follow instructions 1 - 3 above. When you see all the right topics listed in `ros2 topic list`, your TurtleBot4 is set up and you are ready to install OM1.
+
+* Install `uv` - use `curl -LsSf https://astral.sh/uv/install.sh | sh`.
+
+* Install `portaudio` and other dependencies
 
 ```bash
-sudo apt install pulseaudio pulseaudio-utils pulseaudio-bluetooth ffmpeg
+sudo apt install pulseaudio pulseaudio-utils ffmpeg portaudio19-dev python-all-dev
 ```
 
-Reboot the turtlebot4. Set the default inputs. Unplug the onboard camera. Use the Logitech 270.   
+* Connect a Logitech 270 Webcam (or equivalent).
+
+* Unplug the standard TurtleBot4 Depth Camera. 
+
+* Connect a speaker to RPi with a 3.5 mm audio patch cable (or use bluetooth, depending on your pain threshold and patience with debugging bluetooth issues).
+
+* Create a .env file
+
+```bash
+cp env.example .env
+```
+and then use `vim` to set your `OM_API_KEY` and `URID`
+
+* Set default Input and Output Audio devices
+
+Use `pactl` to set your default microphone and speaker.
+
+If you get `pa_context_connect() failed: Connection refused`, then start the audio daemon manually via `pulseaudio --start -D`.
 
 ```bash
 pactl list sources short                            # List input (microphone) devices
@@ -245,25 +268,15 @@ pactl list sinks short                              # List output (speaker) devi
 
 pactl set-default-sink [SINK_NAME || SINK_ID]       # Set default output device
 pactl set-default-source [SOURCE_NAME || SOURCE_ID] # Set default input device
-pactl set-sink-volume @DEFAULT_SINK@ 70%            # Set default output volume
+pactl set-sink-volume @DEFAULT_SINK@ 100%            # Set default output volume
+
+# for example,
+pactl set-default-source alsa_input.usb-046d_C270_HD_WEBCAM_2CD9A910-02.mono-fallback
+pactl set-default-sink alsa_output.platform-bcm2835_audio.stereo-fallback
 ```
 
-```bash
-bluetoothctl
+Finally, run
 
-agent on
-
-list    # show all paired devices
-scan on # search for nearby devices
-# once you have found the right device, you can then pair it
-# many devices also require 'trusting' them
-
-trust <MAC> # for example, trust F8:5C:7D:DA:C9:75
-pair <MAC>
-connect <MAC>
+```bash Run Robot
+uv run src/run.py turtlebot4
 ```
-
-If bluez is crashed/frozen, use `bluetoothctl` to run `power off`, `power on`, `scan on` to unstick. 
-
-`pulseaudio --start -D` 
-
