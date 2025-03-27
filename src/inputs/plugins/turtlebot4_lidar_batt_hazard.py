@@ -41,7 +41,7 @@ def listenerBattery(sample):
     if battery_percent < 5:
         g_battery = "CRITICAL: your battery is almost empty. Immediately move to your charging station and recharge."
     elif battery_percent < 15:
-        g_battery = "Caution: your battery is running low. Consider finding your charging stating and recharging."
+        g_battery = "Caution: your battery is running low. Consider finding your charging station and recharging."
     else:
         g_battery = None
 
@@ -122,13 +122,13 @@ def listenerScan(sample):
     proximity = "close to"
     direction = "on your left"
     if max_x_peak > 0:
-        if max_y_peak > 80:
+        if max_y_peak > 20:
             proximity = "hitting"
         if max_x_peak > 453:
             direction = "on your right"
         elif max_x_peak > 227:
             direction = "in front of you"
-        g_lidar = f"You are {proximity} something {direction}."
+        g_lidar = f"CAUTION: You are {proximity} something {direction}."
     else:
         g_lidar = None
 
@@ -260,9 +260,9 @@ class TurtleBot4BattLIDARBump(FuserInput[str]):
 // END
 """
 
-        self.io_provider.add_input(
-            self.__class__.__name__, latest_message.message, latest_message.timestamp
-        )
+        # self.io_provider.add_input(
+        #     self.__class__.__name__, latest_message.message, latest_message.timestamp
+        # )
         self.messages = []
 
         return result

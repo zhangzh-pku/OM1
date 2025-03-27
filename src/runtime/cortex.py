@@ -46,6 +46,7 @@ class CortexRuntime:
         self.simulator_orchestrator = SimulatorOrchestrator(config)
         self.sleep_ticker_provider = SleepTickerProvider()
         self.io_provider = IOProvider()
+        self.speech_duty_cycle = 0
 
     async def run(self) -> None:
         """
@@ -144,15 +145,23 @@ class CortexRuntime:
                 logging.debug(f"appended: {action_type}")
 
         # Trigger actions
-        if self.config.name == "spot_speak":
+        if ("Voice INPUT" in prompt) or ("WalletCoinbase" in prompt):
+            # always respond to voice input
+            await self.action_orchestrator.promise(output.commands)
+        elif self.config.name == "spot_speak":
             # spot, the speaking dog
             await self.action_orchestrator.promise(output.commands)
         elif self.config.name == "turtle_speak":
             # flash, the smart vaccuum cleaner
-            await self.action_orchestrator.promise(output.commands)
-        elif ("Voice INPUT" in prompt) or ("WalletCoinbase" in prompt):
-            # send speech to speaker
-            await self.action_orchestrator.promise(output.commands)
+            # reduce continuous narration
+            self.speech_duty_cycle += 1
+            if self.speech_duty_cycle > 3:
+                # speak
+                await self.action_orchestrator.promise(output.commands)
+                self.speech_duty_cycle = 0
+            else:
+                # do not speak
+                await self.action_orchestrator.promise(commands_silent)
         else:
             # do not send speech to speaker but only to simulator
             await self.action_orchestrator.promise(commands_silent)

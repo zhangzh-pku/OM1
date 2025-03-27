@@ -125,6 +125,8 @@ angular:
 
 To debug movement, use `ros2 topic info /$URID/pi/cmd_vel --verbose`.
 
+To enable full range of motion, set `ros2 param set /motion_control safety_override backup_only`
+
 ## Run OM1 on the Internal RPi4
 
 **Important: Make sure your Raspberry Pi 4 is running Ubuntu 22.04.4 LTS and that the Create 3 is running H.2.6/Create3-H.2.6.swu** (see [Suggested Operating System Versions](#suggested-operating-system-versions)). Among other possible problems, running Ubuntu 24 will create compatibility issues with the version of ROS2 and CycloneDDS on the Create 3. 
@@ -279,6 +281,9 @@ You can build your own dual bridge docker images using the provided `Dockerfile`
 docker build -t my-username/my-image .
 docker push my-username/my-image
 ```
+
+docker build -t jliphard/turtlebridge .
+docker push jliphard/turtlebridge
 
 Useful docker commands
 ```bash
