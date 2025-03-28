@@ -125,7 +125,7 @@ angular:
 
 To debug movement, use `ros2 topic info /$URID/pi/cmd_vel --verbose`.
 
-To enable full range of motion, set `ros2 param set /motion_control safety_override backup_only`
+To enable full range of motion, set `ros2 param set /$URID/c3/motion_control safety_override backup_only`. This removes the cliff protection, which limits backwards movements to 1 cm. 
 
 ## Run OM1 on the Internal RPi4
 
