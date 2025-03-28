@@ -1,8 +1,9 @@
-import json
 import logging
 import os
 from dataclasses import dataclass
 from typing import Dict, List, Optional
+
+import json5
 
 from actions import load_action
 from actions.base import AgentAction
@@ -31,6 +32,12 @@ class RuntimeConfig:
 
     # Optional API key for the runtime configuration
     api_key: Optional[str] = None
+
+    # Optional URID robot id key for the runtime configuration
+    URID: Optional[str] = None
+
+    # Optional Ethernet adapter setting for Unitree Robots
+    unitree_ethernet: Optional[str] = None
 
     @classmethod
     def load(cls, config_name: str) -> "RuntimeConfig":
@@ -66,35 +73,73 @@ def load_config(config_name: str) -> RuntimeConfig:
         If configuration values are invalid (e.g., negative hertz)
     """
     config_path = os.path.join(
-        os.path.dirname(__file__), "../../config", config_name + ".json"
+        os.path.dirname(__file__), "../../config", config_name + ".json5"
     )
 
-    with open(config_path, "r") as f:
-        raw_config = json.load(f)
+    with open(config_path, "r+") as f:
+        raw_config = json5.load(f)
 
-    # Load Unitree robot communication channel
-    load_unitree(raw_config)
-
-    global_api_key = raw_config.get("api_key", None)
-    if global_api_key is None or global_api_key == "":
+    g_api_key = raw_config.get("api_key", None)
+    if g_api_key is None or g_api_key == "":
         logging.warning(
-            "No global API key found in the configuration. Rate limits may apply."
+            "No API key found in the configuration file. Rate limits may apply."
         )
+
+    if g_api_key == "openmind_free":
+        logging.info("Checking for backup OM_API_KEY in your .env file.")
+        backup_key = os.environ.get("OM_API_KEY")
+        if backup_key:
+            g_api_key = backup_key
+            logging.info("Success - Found OM_API_KEY in your .env file.")
+        else:
+            logging.warning(
+                "Could not find backup OM_API_KEY in your .env file. Using 'openmind_free'. Rate limits will apply."
+            )
+
+    g_URID = raw_config.get("URID", None)
+    if g_URID is None or g_URID == "":
+        logging.warning(
+            "No URID found in the configuration file. Multirobot deployments will conflict."
+        )
+
+    if g_URID == "default":
+        logging.info("Checking for backup URID in your .env file.")
+        backup_URID = os.environ.get("URID")
+        if backup_URID:
+            g_URID = backup_URID
+            logging.info("Success - Found URID in your .env file.")
+        else:
+            logging.warning(
+                "Could not find backup URID in your .env file. Using 'default'. Multirobot deployments will conflict."
+            )
+
+    g_ut_eth = raw_config.get("unitree_ethernet", None)
+    if g_ut_eth is None or g_ut_eth == "":
+        logging.info("No robot hardware ethernet port provided.")
+    else:
+        # Load Unitree robot communication channel, if needed
+        load_unitree(g_ut_eth)
+
+    conf = raw_config["cortex_llm"].get("config", {})
+    logging.debug(f"config {conf}")
 
     parsed_config = {
         **raw_config,
         "agent_inputs": [
             load_input(input["type"])(
                 config=SensorConfig(
-                    **add_api_key(input.get("config", {}), global_api_key)
+                    **add_meta(input.get("config", {}), g_api_key, g_ut_eth, g_URID)
                 )
             )
             for input in raw_config.get("agent_inputs", [])
         ],
         "cortex_llm": load_llm(raw_config["cortex_llm"]["type"])(
             config=LLMConfig(
-                **add_api_key(
-                    raw_config["cortex_llm"].get("config", {}), global_api_key
+                **add_meta(
+                    raw_config["cortex_llm"].get("config", {}),
+                    g_api_key,
+                    g_ut_eth,
+                    g_URID,
                 )
             ),
             output_model=CortexOutputModel,
@@ -103,7 +148,9 @@ def load_config(config_name: str) -> RuntimeConfig:
             load_simulator(simulator["type"])(
                 config=SimulatorConfig(
                     name=simulator["type"],
-                    **add_api_key(simulator.get("config", {}), global_api_key),
+                    **add_meta(
+                        simulator.get("config", {}), g_api_key, g_ut_eth, g_URID
+                    ),
                 )
             )
             for simulator in raw_config.get("simulators", [])
@@ -112,7 +159,9 @@ def load_config(config_name: str) -> RuntimeConfig:
             load_action(
                 {
                     **action,
-                    "config": add_api_key(action.get("config", {}), global_api_key),
+                    "config": add_meta(
+                        action.get("config", {}), g_api_key, g_ut_eth, g_URID
+                    ),
                 }
             )
             for action in raw_config.get("agent_actions", [])
@@ -122,22 +171,38 @@ def load_config(config_name: str) -> RuntimeConfig:
     return RuntimeConfig(**parsed_config)
 
 
-def add_api_key(config: Dict, global_api_key: Optional[str]) -> dict:
+def add_meta(
+    config: Dict,
+    g_api_key: Optional[str],
+    g_ut_eth: Optional[str],
+    g_URID: Optional[str],
+) -> dict:
     """
-    Add an API key to a runtime configuration.
+    Add an API key and Robot configuration to a runtime configuration.
 
     Parameters
     ----------
     config : dict
         The runtime configuration to update.
-    api_key : str
+    g_api_key : str
         The API key to add.
+    g_ut_eth : str
+        The Robot ethernet port to add.
+    g_URID : str
+        The Robot URID to use.
 
     Returns
     -------
     dict
         The updated runtime configuration.
     """
-    if "api_key" not in config and global_api_key is not None:
-        config["api_key"] = global_api_key
+
+    # logging.info(f"config before {config}")
+    if "api_key" not in config and g_api_key is not None:
+        config["api_key"] = g_api_key
+    if "unitree_ethernet" not in config and g_ut_eth is not None:
+        config["unitree_ethernet"] = g_ut_eth
+    if "URID" not in config and g_URID is not None:
+        config["URID"] = g_URID
+    # logging.info(f"config after {config}")
     return config

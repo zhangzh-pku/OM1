@@ -5,14 +5,13 @@ from actions.base import Interface
 
 @dataclass
 class SpeakInput:
-    sentence: str
+    action: str
 
 
 @dataclass
 class Speak(Interface[SpeakInput, SpeakInput]):
     """
     Words to be spoken by the agent.
-
     Effect: Allows the agent to speak.
     """
 

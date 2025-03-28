@@ -1,6 +1,6 @@
-import json
 from unittest.mock import mock_open, patch
 
+import json5
 import pytest
 
 from actions.base import AgentAction
@@ -48,6 +48,7 @@ def mock_dependencies():
         def __init__(self):
             super().__init__(
                 name="mock_action",
+                llm_label="mock_llm_label",
                 implementation="mock_implementation",
                 interface="mock_interface",
                 connector="mock_connector",
@@ -100,11 +101,13 @@ def mock_multiple_components_config():
         "agent_actions": [
             {
                 "name": "test_action_1",
+                "llm_label": "emotion",
                 "implementation": "test_implementation_1",
                 "connector": "test_connector_1",
             },
             {
                 "name": "test_action_2",
+                "llm_label": "emotion",
                 "implementation": "test_implementation_2",
                 "connector": "test_connector_2",
             },
@@ -114,7 +117,7 @@ def mock_multiple_components_config():
 
 def test_load_config(mock_config_data, mock_dependencies):
     with (
-        patch("builtins.open", mock_open(read_data=json.dumps(mock_config_data))),
+        patch("builtins.open", mock_open(read_data=json5.dumps(mock_config_data))),
         patch("runtime.config.load_input", return_value=mock_dependencies["input"]),
         patch("runtime.config.load_action", return_value=mock_dependencies["action"]()),
         patch(
@@ -146,7 +149,9 @@ def test_load_config(mock_config_data, mock_dependencies):
 
 def test_load_empty_config(mock_empty_config_data, mock_dependencies):
     with (
-        patch("builtins.open", mock_open(read_data=json.dumps(mock_empty_config_data))),
+        patch(
+            "builtins.open", mock_open(read_data=json5.dumps(mock_empty_config_data))
+        ),
         patch("runtime.config.load_input", return_value=mock_dependencies["input"]),
         patch("runtime.config.load_action", return_value=mock_dependencies["action"]()),
         patch(
@@ -173,7 +178,7 @@ def test_load_multiple_components(mock_multiple_components_config, mock_dependen
     with (
         patch(
             "builtins.open",
-            mock_open(read_data=json.dumps(mock_multiple_components_config)),
+            mock_open(read_data=json5.dumps(mock_multiple_components_config)),
         ),
         patch("runtime.config.load_input", return_value=mock_dependencies["input"]),
         patch("runtime.config.load_action", return_value=mock_dependencies["action"]()),
@@ -197,7 +202,7 @@ def test_load_config_missing_required_fields():
         "name": "invalid_config",
     }
 
-    with (patch("builtins.open", mock_open(read_data=json.dumps(invalid_config))),):
+    with (patch("builtins.open", mock_open(read_data=json5.dumps(invalid_config))),):
         with pytest.raises(KeyError):
             load_config("invalid_config")
 
@@ -215,7 +220,7 @@ def test_load_config_invalid_hertz():
         "agent_actions": [],
     }
 
-    with (patch("builtins.open", mock_open(read_data=json.dumps(invalid_config))),):
+    with (patch("builtins.open", mock_open(read_data=json5.dumps(invalid_config))),):
         with pytest.raises(ValueError):
             load_config("invalid_config")
 
@@ -226,8 +231,14 @@ def test_load_config_missing_file():
 
 
 def test_load_config_invalid_json():
-    with patch("builtins.open", mock_open(read_data="invalid json")):
-        with pytest.raises(json.JSONDecodeError):
+    with patch("builtins.open", mock_open(read_data="invalid json5")):
+
+        # try:
+        #     load_config("invalid_config")
+        # except Exception as error:
+        #     logging.info(f"{error} ERRORTYPE: {type(error).__name__}")
+
+        with pytest.raises(ValueError):
             load_config("invalid_config")
 
 
@@ -245,7 +256,7 @@ def test_load_config_invalid_component_type():
     }
 
     with (
-        patch("builtins.open", mock_open(read_data=json.dumps(invalid_config))),
+        patch("builtins.open", mock_open(read_data=json5.dumps(invalid_config))),
         patch("runtime.config.load_input", side_effect=ImportError),
     ):
         with pytest.raises(ImportError):

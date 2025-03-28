@@ -4,7 +4,7 @@ from providers.asr_provider import ASRProvider
 from providers.elevenlabs_tts_provider import ElevenLabsTTSProvider
 
 
-class SpeakRos2Connector(ActionConnector[SpeakInput]):
+class SpeakElevenLabsTTSConnector(ActionConnector[SpeakInput]):
 
     def __init__(self, config: ActionConfig):
         super().__init__(config)
@@ -46,4 +46,4 @@ class SpeakRos2Connector(ActionConnector[SpeakInput]):
         # Block ASR until TTS is done
         self.tts.register_tts_state_callback(self.asr.audio_stream.on_tts_state_change)
         # Add pending message to TTS
-        self.tts.add_pending_message(output_interface.sentence)
+        self.tts.add_pending_message(output_interface.action)

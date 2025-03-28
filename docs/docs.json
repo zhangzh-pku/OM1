@@ -10,39 +10,52 @@
   "styling": {
     "codeblocks": "system"
   },
+  "background": {
+    "decoration": "grid"
+  },
   "navigation": {
     "tabs": [
+      {
+        "tab": "Home",
+        "pages": [
+          "home"
+        ]
+      },
       {
         "tab": "Guides",
         "groups": [
           {
-            "group": "Get Started",
+            "group": "Getting Started",
             "pages": [
-              "introduction",
-              "quick_start"
+              "getting-started/quick_start",
+              "getting-started/architecture",
+              "getting-started/configuration"
             ]
           },
           {
-            "group": "Development",
-            "pages": [
-              "development/guide",
-              "development/architecture"
-            ]
-          },
-          {
-            "group": "Examples",
+            "group": "Tutorials",
             "pages": [
               "examples/conversation",
               "examples/llm_models",
-              "examples/smart_toy"
+              "examples/smart_toy",
+              "getting-started/gazebo"
             ]
           },
           {
             "group": "Robotics",
             "pages": [
+              "robotics/unitree_go2_quadruped",
+              "robotics/unitree_g1_humanoid",
+              "robotics/turtlebot4_zenoh",
+              "robotics/tesla_dimo",
               "robotics/asimov_governance",
-              "robotics/unitree_robotics",
               "robotics/coinbase_hackathon"
+            ]
+          },
+          {
+            "group": "Development",
+            "pages": [
+              "development/intro"
             ]
           }
         ]
@@ -62,6 +75,7 @@
             "group": "Core Endpoints",
             "pages": [
               "api-reference/endpoints/llm",
+              "api-reference/endpoints/elevenlabs_tts",
               "api-reference/endpoints/riva_tts"
             ]
           },
@@ -69,6 +83,7 @@
             "group": "Core Websocket Endpoints",
             "pages": [
               "api-reference/endpoints/vila_vlm",
+              "api-reference/endpoints/google_asr",
               "api-reference/endpoints/riva_asr"
             ]
           }
