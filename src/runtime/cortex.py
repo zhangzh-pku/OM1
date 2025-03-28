@@ -155,7 +155,7 @@ class CortexRuntime:
             # flash, the smart vaccuum cleaner
             # reduce continuous narration
             self.speech_duty_cycle += 1
-            if self.speech_duty_cycle > 8:
+            if self.speech_duty_cycle > 12:
                 # speak
                 await self.action_orchestrator.promise(output.commands)
                 self.speech_duty_cycle = 0
