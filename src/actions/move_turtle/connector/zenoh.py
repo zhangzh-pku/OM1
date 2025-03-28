@@ -28,6 +28,9 @@ class MoveZenohConnector(ActionConnector[MoveInput]):
     def __init__(self, config: ActionConfig):
         super().__init__(config)
         self.session = None
+        self.is_command_executing = False
+        self.command_execution_time = 0
+        self.command_timeout = 2.0
 
         URID = getattr(self.config, "URID", None)
 
@@ -56,7 +59,27 @@ class MoveZenohConnector(ActionConnector[MoveInput]):
         )
         self.session.put(self.cmd_vel, t.serialize())
 
+        if linear != 0.0 or angular != 0.0:
+            self.is_command_executing = True
+            self.command_execution_time = time.time()
+        else:
+            self.is_command_executing = False
+
     async def connect(self, output_interface: MoveInput) -> None:
+        if self.is_command_executing:
+            current_time = time.time()
+            elapsed_time = current_time - self.command_execution_time
+
+            if elapsed_time < self.command_timeout:
+                logging.debug(
+                    f"Discarding command: {output_interface.action} - previous command still executing"
+                )
+                return
+            else:
+                logging.debug(
+                    f"Previous command timed out, executing new command: {output_interface.action}"
+                )
+                self.is_command_executing = False
 
         logging.info(f"SendThisToZenoh: {output_interface.action}")
 
@@ -71,13 +94,13 @@ class MoveZenohConnector(ActionConnector[MoveInput]):
             self.pub_twist(0.5, 0.0)
         elif output_interface.action == "move back":
             logging.info(f"Zenoh command: {output_interface.action}")
-            self.pub_twist(-0.5, 0.0)
+            self.pub_twist(-0.5, 0)
         elif output_interface.action == "avoid left obstacle":
             logging.info(f"Zenoh command: {output_interface.action}")
-            self.pub_twist(1.0, 0.5)
+            self.pub_twist(0, 0.8)
         elif output_interface.action == "avoid right obstacle":
             logging.info(f"Zenoh command: {output_interface.action}")
-            self.pub_twist(1.0, -0.5)
+            self.pub_twist(0, -0.8)
         elif output_interface.action == "stand still":
             logging.info(f"Zenoh command: {output_interface.action}")
             # do nothing
