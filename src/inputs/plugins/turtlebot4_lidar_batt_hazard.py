@@ -67,8 +67,6 @@ def listenerHazard(sample):
                         "DANGER: you are hitting something right in front of you."
                     )
                     return
-    else:
-        g_hazard = None
 
 
 def listenerScan(sample):
@@ -264,5 +262,8 @@ class TurtleBot4BattLIDARBump(FuserInput[str]):
         #     self.__class__.__name__, latest_message.message, latest_message.timestamp
         # )
         self.messages = []
+
+        global g_hazard
+        g_hazard = None
 
         return result
