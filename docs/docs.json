@@ -28,6 +28,7 @@
             "group": "Getting Started",
             "pages": [
               "getting-started/quick_start",
+              "getting-started/raspberrypi",
               "getting-started/architecture",
               "getting-started/configuration"
             ]
