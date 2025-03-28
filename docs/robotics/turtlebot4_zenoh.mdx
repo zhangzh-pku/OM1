@@ -119,7 +119,7 @@ ros2 topic echo /$URID/pi/scan
 To spin the robot, for example, on the TurtleBot4 command line issue:
 
 ```bash
-ros2 topic pub /OM123435Cc1234/c3/cmd_vel geometry_msgs/msg/Twist "linear:
+ros2 topic pub /$URID/c3/cmd_vel geometry_msgs/msg/Twist "linear:
   x: -0.5
   y: 0.0
   z: 0.0
@@ -219,9 +219,10 @@ Congratulations - Your laptop is now controlling the TurtleBot4!
 
 ### Interacting with TurtleBot4 from a Remote Computer using Zenoh
 
+Inside `system_hw_test`, there are several scripts for you to interact with the TurtleBot4. For all these scripts, please provide/update the topic names to include your specific namespace. If you do not update the namespaces, the scripts will fail. 
+
 Steer the TurtleBot4 with your keyboard:
 ```bash
-cd system_hw_test
 uv run turtlebot4_keyboard_movement.py
 ```
 * W - Move Forward
@@ -231,13 +232,11 @@ uv run turtlebot4_keyboard_movement.py
 
 Read TurtleBot4 laser scan, collision, and battery data:
 ```bash
-cd system_hw_test
 uv run turtlebot4_laserscan.py
 ```
 
 Read TurtleBot4 Camera PREVIEW (250x250RGB) data:
 ```bash
-cd system_hw_test
 uv run turtlebot4_camera_opencv.py
 ```
 
