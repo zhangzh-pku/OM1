@@ -41,7 +41,7 @@ def listenerBattery(sample):
     if battery_percent < 5:
         g_battery = "CRITICAL: your battery is almost empty. Immediately move to your charging station and recharge."
     elif battery_percent < 15:
-        g_battery = "Caution: your battery is running low. Consider finding your charging stating and recharging."
+        g_battery = "Caution: your battery is running low. Consider finding your charging station and recharging."
     else:
         g_battery = None
 
@@ -67,8 +67,6 @@ def listenerHazard(sample):
                         "DANGER: you are hitting something right in front of you."
                     )
                     return
-    else:
-        g_hazard = None
 
 
 def listenerScan(sample):
@@ -89,11 +87,11 @@ def listenerScan(sample):
         # print("distance (m):", distance)
         # print("intensity:", intensity)
         # print("angle:", angle)
-        # let's look only at close things (< 0.95m)
-        if distance <= 0.95:
+        # let's look only at close things (< 0.50m)
+        if distance <= 0.50:
             if intensity >= intensity_treshold:
                 # convert to cm and flip to emphasize near returns
-                clusters.append(100 - int(distance * 100))
+                clusters.append(51 - int(distance * 100))
             else:
                 clusters.append(0)
         else:
@@ -122,13 +120,13 @@ def listenerScan(sample):
     proximity = "close to"
     direction = "on your left"
     if max_x_peak > 0:
-        if max_y_peak > 80:
+        if max_y_peak > 20:
             proximity = "hitting"
         if max_x_peak > 453:
             direction = "on your right"
         elif max_x_peak > 227:
             direction = "in front of you"
-        g_lidar = f"Warning, you are {proximity} something {direction}."
+        g_lidar = f"CAUTION: You are {proximity} something {direction}."
     else:
         g_lidar = None
 
@@ -260,9 +258,12 @@ class TurtleBot4BattLIDARBump(FuserInput[str]):
 // END
 """
 
-        self.io_provider.add_input(
-            self.__class__.__name__, latest_message.message, latest_message.timestamp
-        )
+        # self.io_provider.add_input(
+        #     self.__class__.__name__, latest_message.message, latest_message.timestamp
+        # )
         self.messages = []
+
+        global g_hazard
+        g_hazard = None
 
         return result

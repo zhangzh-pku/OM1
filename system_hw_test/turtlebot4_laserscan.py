@@ -38,13 +38,13 @@ ax[0].set_aspect("equal")
 line1 = ax[1].plot([], [], ".", color="red")[0]
 line2 = ax[1].plot([], [], ".", color="green")[0]
 ax[1].set_xlim(0, 680)
-ax[1].set_ylim(-1, 100)  # cm
+ax[1].set_ylim(-1, 51)  # cm
 
 # Add captions to Fig2 to to orient people
 gap = 5
-ax[1].plot([0, 227 - gap], [99, 99], "-", color="red", linewidth=3.0)[0]
-ax[1].plot([227 + gap, 453 - gap], [99, 99], "-", color="red", linewidth=3.0)[0]
-ax[1].plot([453 + gap, 680], [99, 99], "-", color="red", linewidth=3.0)[0]
+ax[1].plot([0, 227 - gap], [50, 50], "-", color="red", linewidth=3.0)[0]
+ax[1].plot([227 + gap, 453 - gap], [50, 50], "-", color="red", linewidth=3.0)[0]
+ax[1].plot([453 + gap, 680], [50, 50], "-", color="red", linewidth=3.0)[0]
 ax[1].annotate("Left", xytext=(100, 89), xy=(0, 0.5))
 ax[1].annotate("Front", xytext=(320, 89), xy=(0, 0.5))
 ax[1].annotate("Right", xytext=(550, 89), xy=(0, 0.5))
@@ -57,7 +57,11 @@ intensity_treshold = 1
 vectorM2 = np.zeros(1080)
 vectorM1 = np.zeros(1080)
 
-URID = "OM742d35Cc6634"
+URID = "OM123435Cc1234"
+
+print(
+    f"\n\n***********************\n***********************\nUsing {URID} as the URID - please make sure this is correct\none for your robot otherwise this script will not receive any data.\n***********************\n***********************\n"
+)
 
 
 def listenerScan(sample):
@@ -97,11 +101,11 @@ def listenerScan(sample):
         # print("intensity:", intensity)
         # print("angle:", angle)
         # let's look only at close things (< 0.95m)
-        if distance <= 0.95:
+        if distance <= 0.50:
             if intensity >= intensity_treshold:
                 complexes.append(distance * cmath.exp(angle))
                 # convert to cm and flip to emphasize near returns
-                clusters.append(100 - int(distance * 100))
+                clusters.append(51 - int(distance * 100))
             else:
                 complexes.append(1024 * cmath.exp(angle))
                 clusters.append(0)
