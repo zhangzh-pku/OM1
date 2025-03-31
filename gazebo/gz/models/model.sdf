@@ -131,7 +131,7 @@
           <property type="double" key="width">350</property>
           <property type="double" key="height">315</property>
         </gz-gui>
-        <topic>camera</topic>
+        <topic>/world/dog_world/model/go2/link/camera_link/sensor/camera/image</topic>
         <topic_picker>false</topic_picker>
       </plugin>
       <plugin filename="Teleop" name="Teleop">
