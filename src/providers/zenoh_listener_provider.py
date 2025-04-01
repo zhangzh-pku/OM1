@@ -9,10 +9,10 @@ import zenoh
 
 class ZenohListenerProvider:
     """
-    Publisher provider for subscribing messages using a Zenoh session.
+    Listener provider for subscribing messages using a Zenoh session.
 
     This class manages a Zenoh session, a message queue, and a worker thread that
-    continuously publishes queued messages to a specified topic.
+    continuously listens to messages to a specified topic.
     """
 
     def __init__(self, topic: str = "speech"):

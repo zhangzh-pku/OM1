@@ -11,10 +11,10 @@ from zenoh import ZBytes
 
 class ZenohPublisherProvider:
     """
-    Publisher provider for sending SpeechData messages using a Zenoh session.
+    Publisher provider for sending messages using a Zenoh session.
 
     This class manages a Zenoh session, a message queue, and a worker thread that
-    continuously publishes queued SpeechData messages to a specified topic.
+    continuously publishes queued messages to a specified topic.
     """
 
     def __init__(self, topic: str = "speech"):
@@ -56,12 +56,11 @@ class ZenohPublisherProvider:
 
     def _publish_message(self, msg: dict):
         """
-        Publish a single SpeechData message using the Zenoh session.
+        Publish a single message using the Zenoh session.
 
         Parameters
         ----------
-        msg : SpeechData
-            The message to be published.
+        msg : The message to be published.
         """
         # Attempt to write the message with a timeout of 0.5 seconds
 
