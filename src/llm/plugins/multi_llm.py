@@ -13,7 +13,14 @@ class Command(BaseModel):
     """Executable action with its argument."""
 
     type: str = Field(..., description="The type of action")
-    value: str = Field(..., description="The action argument")
+    value: str = Field(None, description="The action argument")
+
+
+class ApiCommand(BaseModel):
+    """Command format returned by the robotic_team API."""
+
+    command: str = Field(..., description="The command type")
+    args: T.Optional[str] = Field(None, description="Optional command arguments")
 
 
 class RoboticTeamRequest(BaseModel):
@@ -26,7 +33,7 @@ class RoboticTeamRequest(BaseModel):
 class RoboticTeamResponse(BaseModel):
     """Response model from the robotic team endpoint"""
 
-    content: str = Field(..., description="The response content from the model")
+    commands: list[ApiCommand] = Field(..., description="List of commands to execute")
 
 
 class MultiLLM(LLM[R]):
@@ -76,60 +83,108 @@ class MultiLLM(LLM[R]):
                     response_json = await response.json()
                     logging.debug(f"Raw API response: {response_json}")
 
-                    # Step 4: Validate the response structure
-                    if (
-                        not isinstance(response_json, dict)
-                        or "content" not in response_json
-                    ):
-                        logging.error(f"Invalid response format: {response_json}")
-                        return None
+                    try:
+                        # Step 4: Parse response format
+                        # The API returns either:
+                        # 1. An object with a "commands" array containing command objects
+                        # 2. A string in the "content" field (markdown format)
+                        commands = []
 
-                    # Step 5: Parse the content field directly
-                    # This contains markdown text from the TeamAgent, which we need to extract executable commands from
-                    content = response_json["content"]
-                    logging.debug(f"Raw content to parse: {content}")
-
-                    # Extract commands from the content text based on formatting patterns
-                    # For example, look for action patterns like "move forward" or "speak Hello"
-                    commands = []
-
-                    # Process action patterns by looking for common command indicators
-                    # Only include lines that start with bullet points or dashes
-                    action_lines = [
-                        line.strip()
-                        for line in content.split("\n")
                         if (
-                            line.strip().startswith("- ")
-                            or line.strip().startswith("* ")
-                        )
-                    ]
-                    logging.debug(f"Extracted action lines: {action_lines}")
+                            isinstance(response_json, dict)
+                            and "commands" in response_json
+                        ):
+                            # Format: {"commands": [{"command": "wag tail"}, {"command": "speak", "args": "Woof!"}]}
+                            api_commands = RoboticTeamResponse(**response_json).commands
+                            logging.debug(f"API commands: {api_commands}")
 
-                    for line in action_lines:
-                        # Remove leading markers
-                        line = line.lstrip("- *").strip()
+                            for cmd in api_commands:
+                                # Map API command format to our Command model
+                                cmd_type = cmd.command.lower()
+                                cmd_value = cmd.args if cmd.args is not None else ""
+                                commands.append(Command(type=cmd_type, value=cmd_value))
 
-                        # Try to split on common separators
-                        if ":" in line:
-                            parts = line.split(":", 1)
-                            cmd_type = parts[0].strip().lower()
-                            cmd_value = parts[1].strip()
-                            commands.append(Command(type=cmd_type, value=cmd_value))
-                        elif " " in line:
-                            # Use the first word as type and rest as value
-                            parts = line.split(" ", 1)
-                            cmd_type = parts[0].strip().lower()
-                            cmd_value = parts[1].strip()
-                            commands.append(Command(type=cmd_type, value=cmd_value))
+                        elif (
+                            isinstance(response_json, dict)
+                            and "content" in response_json
+                        ):
+                            # Format: {"content": "markdown text with commands"}
+                            content = response_json["content"]
+                            logging.debug(f"Content field found: {content}")
 
-                    # If no commands were found using patterns, create a single "response" command
-                    if not commands:
-                        commands.append(Command(type="response", value=content))
+                            # Extract commands from markdown bullet points
+                            # Find lines that start with bullet points (* or -)
+                            action_lines = [
+                                line.strip()
+                                for line in content.split("\n")
+                                if (
+                                    line.strip().startswith("- ")
+                                    or line.strip().startswith("* ")
+                                )
+                            ]
 
-                    logging.debug(f"Extracted commands: {commands}")
+                            for line in action_lines:
+                                # Remove leading markers
+                                line = line.lstrip("- *").strip()
 
-                    # Create output model with the extracted commands
-                    return self._output_model(commands=commands)
+                                # Remove any surrounding quotes
+                                line = line.strip('"')
+
+                                # Handle markdown bold markers
+                                line = line.replace("**", "")
+
+                                # Try to extract command and value
+                                if "." in line and not line.startswith("http"):
+                                    # Format: "Forward Scan. Obstacle detected. Type: Table."
+                                    parts = line.split(".", 1)
+                                    cmd_type = parts[0].strip().lower()
+                                    cmd_value = (
+                                        parts[1].strip() if len(parts) > 1 else ""
+                                    )
+                                    commands.append(
+                                        Command(type=cmd_type, value=cmd_value)
+                                    )
+                                elif ":" in line:
+                                    # Format: "Target Lock: Table"
+                                    parts = line.split(":", 1)
+                                    cmd_type = parts[0].strip().lower()
+                                    cmd_value = parts[1].strip()
+                                    commands.append(
+                                        Command(type=cmd_type, value=cmd_value)
+                                    )
+                                elif " " in line:
+                                    # Use the first word as type and rest as value
+                                    parts = line.split(" ", 1)
+                                    cmd_type = parts[0].strip().lower()
+                                    cmd_value = (
+                                        parts[1].strip() if len(parts) > 1 else ""
+                                    )
+                                    commands.append(
+                                        Command(type=cmd_type, value=cmd_value)
+                                    )
+                                else:
+                                    # Just use the whole line as the command type
+                                    commands.append(
+                                        Command(type=line.lower(), value="")
+                                    )
+
+                            # If no commands were extracted, use content as response
+                            if not commands:
+                                commands.append(Command(type="response", value=content))
+                        else:
+                            logging.error(
+                                f"Unrecognized response format: {response_json}"
+                            )
+                            return None
+
+                        logging.debug(f"Parsed commands: {commands}")
+
+                        # Create output model with commands
+                        return self._output_model(commands=commands)
+
+                    except Exception as e:
+                        logging.error(f"Error parsing response: {str(e)}")
+                        return None
 
         except Exception as e:
             logging.error(f"Error during API request: {str(e)}")

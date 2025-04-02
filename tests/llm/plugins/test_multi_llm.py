@@ -5,6 +5,7 @@ from pydantic import BaseModel, Field, ValidationError
 
 from llm import LLMConfig
 from llm.plugins.multi_llm import (
+    ApiCommand,
     Command,
     MultiLLM,
     RoboticTeamRequest,
@@ -55,6 +56,50 @@ def mock_unstructured_response():
 def mock_invalid_response():
     """Mock response with invalid format (missing content field)"""
     return {"wrong_field": "wrong value"}
+
+
+@pytest.fixture
+def mock_api_commands_response():
+    """Mock API response with commands array (real format)"""
+    return {
+        "commands": [
+            {"command": "wag tail"},
+            {"command": "speak", "args": "Woof! I see a person and a TV!"},
+            {"command": "emotion", "args": "smile"},
+            {"command": "walk", "args": None},
+        ]
+    }
+
+
+@pytest.fixture
+def mock_real_api_response():
+    """Mock API response with the actual format from the real API"""
+    return {
+        "content": """Okay, I'm analyzing the simulated sensor data now. Based on my current perception, here's what I "see" around me, translated into commands for a robot dog:
+
+```
+# Environmental Awareness Commands:
+
+## Immediate Surroundings:
+
+*   "**Forward Scan**. Obstacle detected. Type: Table. Distance: 1.5 meters."
+*   "**Left Scan**. Obstacle detected. Type: Chair. Distance: 0.8 meters."
+*   "**Right Scan**. Clear. No immediate obstacles."
+*   "**Back Scan**. Obstacle detected. Type: Wall. Distance: 0.5 meters. **Caution: Impeding movement.**"
+
+## Further Surroundings:
+
+*   "**Forward Scan (Far)**. Obstacle detected. Type: Couch. Distance: 4 meters."
+*   "**Right Scan (Far)**. Obstacle detected. Type: Plant. Distance: 5 meters."
+*   "**Acoustic Analysis**. Sound detected. Source: Television. Approximate direction: Forward, Distance: 6 meters."
+
+## Specific Object Commands:
+
+*   "**Target Lock: Table**. Approach target cautiously. Stop within 0.3 meters."
+*   "**Object Recognition: Plant**. Species: Ficus. Status: Healthy."
+```
+"""
+    }
 
 
 @pytest.fixture
@@ -183,21 +228,50 @@ async def test_request_validation():
 
 
 @pytest.mark.asyncio
+async def test_api_commands_format(llm, mock_api_commands_response):
+    """Test handling of API response with commands array"""
+    with patch("aiohttp.ClientSession.post") as mock_post:
+        mock_post.return_value.__aenter__.return_value.status = 200
+        mock_post.return_value.__aenter__.return_value.json = AsyncMock(
+            return_value=mock_api_commands_response
+        )
+
+        result = await llm.ask("test prompt")
+        assert result is not None
+        assert len(result.commands) == 4
+
+        # Verify command mapping
+        assert result.commands[0].type == "wag tail"
+        assert result.commands[0].value == ""
+
+        assert result.commands[1].type == "speak"
+        assert result.commands[1].value == "Woof! I see a person and a TV!"
+
+        assert result.commands[2].type == "emotion"
+        assert result.commands[2].value == "smile"
+
+        assert result.commands[3].type == "walk"
+        assert result.commands[3].value == ""
+
+
+@pytest.mark.asyncio
 async def test_response_validation():
     """Test that the response model properly validates input"""
-    # Valid response
+    # Valid response with commands
     response = RoboticTeamResponse(
-        content='{"commands": [{"type": "move", "value": "forward"}, {"type": "speak", "value": "hello"}]}'
+        commands=[ApiCommand(command="move"), ApiCommand(command="speak", args="hello")]
     )
-    assert response.content is not None
+    assert len(response.commands) == 2
+    assert response.commands[0].command == "move"
+    assert response.commands[1].args == "hello"
 
-    # Invalid response - missing content
+    # Invalid response - missing commands
     with pytest.raises(ValidationError):
         RoboticTeamResponse()
 
-    # Invalid response - wrong field name
+    # Invalid response - wrong structure
     with pytest.raises(ValidationError):
-        RoboticTeamResponse(wrong_field="value")
+        RoboticTeamResponse(commands=[{"wrong": "structure"}])
 
 
 @pytest.mark.asyncio
@@ -275,6 +349,34 @@ async def test_ask_with_messages(llm, mock_response):
         assert request_data["message"] == "test prompt"
 
 
+@pytest.mark.asyncio
+async def test_real_api_response_format(llm, mock_real_api_response):
+    """Test handling of the real API response format with markdown content"""
+    with patch("aiohttp.ClientSession.post") as mock_post:
+        mock_post.return_value.__aenter__.return_value.status = 200
+        mock_post.return_value.__aenter__.return_value.json = AsyncMock(
+            return_value=mock_real_api_response
+        )
+
+        result = await llm.ask("test prompt")
+        assert result is not None
+        assert len(result.commands) >= 5  # We should extract at least 5 commands
+
+        # Verify some of the extracted commands
+        forward_scan_commands = [
+            cmd for cmd in result.commands if "forward scan" in cmd.type
+        ]
+        assert len(forward_scan_commands) > 0
+        assert "obstacle detected" in forward_scan_commands[0].value.lower()
+
+        target_lock_commands = [
+            cmd for cmd in result.commands if "target lock" in cmd.type
+        ]
+        assert len(target_lock_commands) > 0
+        assert "table" in target_lock_commands[0].type.lower()
+        assert "approach" in target_lock_commands[0].value.lower()
+
+
 # CLI test function for debugging real API responses
 async def debug_real_api_response(api_key, prompt):
     """
@@ -283,16 +385,29 @@ async def debug_real_api_response(api_key, prompt):
     Usage from command line:
     PYTHONPATH=/Users/ahmadkhan/OM1 python -c "import asyncio; from tests.llm.plugins.test_multi_llm import debug_real_api_response; asyncio.run(debug_real_api_response('your_api_key', 'your prompt'))"
     """
+    import json
     import logging
 
-    logging.basicConfig(level=logging.DEBUG)
+    # Set up detailed logging
+    logging.basicConfig(
+        level=logging.DEBUG,
+        format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+    )
 
+    # Create config with API key
     config = LLMConfig(api_key=api_key, model="gemini-2.0-flash")
     llm = MultiLLM(DummyOutputModel, config)
 
-    print(f"Sending prompt: {prompt}")
+    print(f"\nSending prompt: {prompt}")
+
+    # Log raw request
+    request_data = {"message": prompt, "model": "gemini-2.0-flash"}
+    print(f"\nRequest data: {json.dumps(request_data, indent=2)}")
+
+    # Send request
     result = await llm.ask(prompt)
 
+    # Results
     if result:
         print("\nSuccess! Extracted commands:")
         for i, cmd in enumerate(result.commands):
