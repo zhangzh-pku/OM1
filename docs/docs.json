@@ -40,7 +40,7 @@
               "examples/conversation",
               "examples/llm_models",
               "examples/smart_toy",
-              "getting-started/gazebo"
+              "examples/gazebo"
             ]
           },
           {
@@ -94,14 +94,10 @@
     ],
     "global": {
       "anchors": [
-        {
-          "anchor": "Home",
-          "href": "https://www.openmind.org",
-          "icon": "house"
-        },
+        
         {
           "anchor": "Research",
-          "href": "https://www.openmind.org/research.html",
+          "href": "https://www.openmind.org/research",
           "icon": "book"
         }
       ]

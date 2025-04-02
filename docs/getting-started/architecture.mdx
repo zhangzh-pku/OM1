@@ -1,5 +1,5 @@
 ---
-title: Project Structure and Architecture
+title: Structure and Architecture
 description: "Core architecture and runtime flow"
 ---
 
@@ -21,6 +21,10 @@ description: "Core architecture and runtime flow"
 ```
 
 The system is based on a loop that runs at a fixed frequency of `self.config.hertz`. This loop looks for the most recent data from various sources, fuses the data into a prompt, sends that prompt to one or more LLMs, and then sends the LLM responses to virtual agents or physical robots.
+
+## Architecture Overview
+
+![](https://private-user-images.githubusercontent.com/114130009/411106230-14e9b916-4df7-4700-9336-2983c85be311.png?jwt=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJnaXRodWIuY29tIiwiYXVkIjoicmF3LmdpdGh1YnVzZXJjb250ZW50LmNvbSIsImtleSI6ImtleTUiLCJleHAiOjE3NDM2MjczODEsIm5iZiI6MTc0MzYyNzA4MSwicGF0aCI6Ii8xMTQxMzAwMDkvNDExMTA2MjMwLTE0ZTliOTE2LTRkZjctNDcwMC05MzM2LTI5ODNjODViZTMxMS5wbmc_WC1BbXotQWxnb3JpdGhtPUFXUzQtSE1BQy1TSEEyNTYmWC1BbXotQ3JlZGVudGlhbD1BS0lBVkNPRFlMU0E1M1BRSzRaQSUyRjIwMjUwNDAyJTJGdXMtZWFzdC0xJTJGczMlMkZhd3M0X3JlcXVlc3QmWC1BbXotRGF0ZT0yMDI1MDQwMlQyMDUxMjFaJlgtQW16LUV4cGlyZXM9MzAwJlgtQW16LVNpZ25hdHVyZT1kZjk1MTcwMzk4OTk0ZGFhZjI0MmIyNjIzNjQzM2Y5NzE1ZWVmOGFhOTFlZWFjYmFlY2UyOTM5MWEwM2NmMDZhJlgtQW16LVNpZ25lZEhlYWRlcnM9aG9zdCJ9.guazTa-X9S1MzxYeIKDeixGg-bg4qnKTmyq0J6yVZgI)
 
 ## Specific runtime flow:
 
