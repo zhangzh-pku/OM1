@@ -1,153 +1,70 @@
 import logging
-import time
 import typing as T
 
 import aiohttp
-from pydantic import BaseModel
 
 from llm import LLM, LLMConfig
-from providers.llm_history_manager import LLMHistoryManager
 
-R = T.TypeVar("R", bound=BaseModel)
+R = T.TypeVar("R")
 
 
 class MultiLLM(LLM[R]):
     """
-    Multi-Agent LLM implementation using the OpenMind robotic_team endpoint.
-
-    This class provides access to a multi-agent system consisting of navigation and perception
-    specialists, coordinated by a supervisor agent. The robotic team includes:
-
-    1. Navigation Agent - expert in path planning, movement control, and spatial reasoning
-    2. Perception Agent - expert in sensor data interpretation and environmental understanding
-    3. Supervisor Agent - coordinates the team members to solve complex tasks
-
-    The system automatically routes queries to the most appropriate agent and returns unified responses.
-
-    Parameters
-    ----------
-    output_model : Type[R]
-        A Pydantic BaseModel subclass defining the expected response structure.
-    config : LLMConfig
-        Configuration object containing API settings. If not provided, defaults
-        will be used.
+    MultiLLM implementation that sends requests to the robotic team endpoint.
     """
 
     def __init__(self, output_model: T.Type[R], config: LLMConfig = LLMConfig()):
-        """
-        Initialize the Multi-Agent LLM instance.
-
-        Parameters
-        ----------
-        output_model : Type[R]
-            Pydantic model class for response validation.
-        config : LLMConfig, optional
-            Configuration settings for the LLM.
-        """
         super().__init__(output_model, config)
 
         if not config.api_key:
             raise ValueError("config file missing api_key")
+
+        self.base_url = config.base_url
+        self.api_key = config.api_key
+
         if not config.model:
-            # Default model used for team agents (navigation and perception)
             self._config.model = "gemini-2.0-flash"
 
-        self.base_url = config.base_url or "https://api.openmind.org/api/core"
-        # Fixed endpoint for robotic_team agent
-        self.endpoint = f"{self.base_url}/agent/robotic_team/runs"
+        self.endpoint = "https://api.openmind.org/api/core/agent/robotic_team/runs"
+        self.history_manager = None  # We don't use history management for this LLM
 
-        # Initialize history manager (compatible with other LLMs)
-        self.history_manager = LLMHistoryManager(self._config, None)
-
-    @LLMHistoryManager.update_history()
-    async def ask(self, prompt: str, messages=[], *args, **kwargs) -> R:
+    async def ask(self, prompt: str, messages: T.List[T.Dict[str, str]] = []) -> R:
         """
-        Send a prompt to the Multi-Agent system and get a structured response.
-
-        The system will automatically:
-        1. Analyze the query to determine the required expertise
-        2. Route the query to the appropriate specialist agent
-        3. Format and return the response
+        Send a prompt to the robotic team endpoint and return the response.
 
         Parameters
         ----------
         prompt : str
-            The input prompt to send to the model.
-        messages:
-            List of message dictionaries (for context/history). Not used by the endpoint but accepted for compatibility.
-        *args, **kwargs:
-            Additional arguments passed to the function.
-            Includes messages: List[Dict[str, str]] for compatibility.
+            The prompt to send to the endpoint
+        messages : List[Dict[str, str]], optional
+            Message history (not used by this endpoint)
 
         Returns
         -------
         R
-            Parsed response matching the output_model structure.
+            Response matching the output_model type specification, or None if the request fails
         """
         try:
-            # Extract messages from args or kwargs
-            extracted_messages = []
-            if args and isinstance(args[0], list):
-                extracted_messages = args[0]
-            elif "messages" in kwargs:
-                extracted_messages = kwargs.get("messages", [])
-
-            logging.info(f"Multi-Agent LLM input: {prompt}")
-            if extracted_messages:
-                logging.info(
-                    f"Messages received but not used by endpoint: {len(extracted_messages)} items"
-                )
-
-            self.io_provider.llm_start_time = time.time()
-            self.io_provider.set_llm_prompt(prompt)
-
-            # Format the request payload for the robotic_team endpoint
-            # Following the structure in digest copy.txt
-            payload = {"model": self._config.model, "message": prompt}
-
-            # Prepare authorization header with API key
-            headers = {
-                "Content-Type": "application/json",
-                "Authorization": f"Bearer {self._config.api_key}",
-            }
-
-            # Make HTTP request to the robotic_team endpoint
             async with aiohttp.ClientSession() as session:
                 async with session.post(
-                    self.endpoint, json=payload, headers=headers
+                    self.endpoint,
+                    json={"message": prompt, "model": self._config.model},
+                    headers={"Authorization": f"Bearer {self._config.api_key}"},
                 ) as response:
                     if response.status != 200:
                         error_text = await response.text()
                         logging.error(
-                            f"Multi-Agent API error: {response.status} - {error_text}"
+                            f"API request failed with status {response.status}: {error_text}"
                         )
-                        raise Exception(f"API error: {response.status} - {error_text}")
+                        return None
 
-                    # Parse the response from the robotic_team endpoint
-                    result = await response.json()
-                    content = result.get("content", "")
-                    self.io_provider.llm_end_time = time.time()
-
-                    # Format the response according to the output model
-                    try:
-                        # Create a formatted response that matches the required output model
-                        formatted_response = {
-                            "content": content,
-                            "model_used": self._config.model,
-                            "agent_type": "robotic_team",
-                        }
-
-                        # Add any additional fields required by the output model
-                        parsed_response = self._output_model.model_validate(
-                            formatted_response
-                        )
-                        logging.info("Multi-Agent LLM output successfully parsed")
-                        return parsed_response
-                    except Exception as e:
-                        logging.error(f"Error parsing Multi-Agent response: {e}")
-                        raise
+                    data = await response.json()
+                    return self._output_model(
+                        content=data["content"],
+                        model_used=self._config.model,
+                        agent_type="robotic_team",
+                    )
 
         except Exception as e:
-            logging.error(f"Multi-Agent API request error: {e}")
-            # Return None instead of raising to match other LLM implementations
+            logging.error(f"Error during API request: {str(e)}")
             return None
