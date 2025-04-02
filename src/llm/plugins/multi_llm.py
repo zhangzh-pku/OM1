@@ -60,7 +60,9 @@ class MultiLLM(LLM[R]):
         self.history_manager = LLMHistoryManager(self._config, None)
 
     @LLMHistoryManager.update_history()
-    async def ask(self, prompt: str, messages=None, *args, **kwargs) -> R | None:
+    async def ask(
+        self, prompt: str, messages: T.List[T.Dict[str, str]] = None, *args, **kwargs
+    ) -> R:
         """
         Send a prompt to the Multi-Agent system and get a structured response.
 
@@ -80,10 +82,13 @@ class MultiLLM(LLM[R]):
 
         Returns
         -------
-        R or None
+        R
             Parsed response matching the output_model structure, or None if
             parsing fails.
         """
+        if messages is None:
+            messages = []
+
         try:
             logging.info(f"Multi-Agent LLM input: {prompt}")
 

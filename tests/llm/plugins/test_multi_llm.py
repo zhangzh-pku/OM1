@@ -107,8 +107,11 @@ async def test_ask_api_error(llm):
 
     # Test error handling
     with patch("aiohttp.ClientSession", return_value=mock_session):
-        result = await llm.ask("How do I navigate around obstacles?")
-        assert result is None
+        try:
+            result = await llm.ask("How do I navigate around obstacles?")
+            assert result is None
+        except Exception as e:
+            pytest.fail(f"Error should be handled internally, but got: {e}")
 
 
 @pytest.mark.asyncio
@@ -116,8 +119,11 @@ async def test_ask_network_exception(llm):
     """Test handling of network exceptions"""
     # Mock aiohttp to raise an exception during request
     with patch("aiohttp.ClientSession", side_effect=Exception("Connection error")):
-        result = await llm.ask("How do I navigate around obstacles?")
-        assert result is None
+        try:
+            result = await llm.ask("How do I navigate around obstacles?")
+            assert result is None
+        except Exception as e:
+            pytest.fail(f"Error should be handled internally, but got: {e}")
 
 
 @pytest.mark.asyncio
