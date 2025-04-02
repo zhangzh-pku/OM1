@@ -64,18 +64,18 @@ async def test_ask_success(llm, mock_response):
     # Mock the aiohttp ClientSession
     mock_session = MagicMock()
     mock_context = MagicMock()
-    
+
     # Configure the mocks for a successful response
     mock_session.__aenter__.return_value = mock_session
     mock_context.__aenter__.return_value = mock_context
     mock_context.status = 200
     mock_context.json = AsyncMock(return_value=mock_response)
     mock_session.post = MagicMock(return_value=mock_context)
-    
+
     # Test the ask method with a mocked HTTP session
     with patch("aiohttp.ClientSession", return_value=mock_session):
         result = await llm.ask("How do I navigate around obstacles?")
-        
+
         # Verify the request payload
         mock_session.post.assert_called_once()
         args, kwargs = mock_session.post.call_args
@@ -83,7 +83,7 @@ async def test_ask_success(llm, mock_response):
         assert kwargs["json"]["model"] == llm._config.model
         assert kwargs["json"]["message"] == "How do I navigate around obstacles?"
         assert kwargs["headers"]["Authorization"] == f"Bearer {llm._config.api_key}"
-        
+
         # Verify the response parsing
         assert isinstance(result, DummyOutputModel)
         assert result.content == mock_response["content"]
@@ -97,14 +97,14 @@ async def test_ask_api_error(llm):
     # Mock the aiohttp ClientSession for an error response
     mock_session = MagicMock()
     mock_context = MagicMock()
-    
+
     # Configure the mocks for an error
     mock_session.__aenter__.return_value = mock_session
     mock_context.__aenter__.return_value = mock_context
     mock_context.status = 500
     mock_context.text = AsyncMock(return_value="Internal Server Error")
     mock_session.post = MagicMock(return_value=mock_context)
-    
+
     # Test error handling
     with patch("aiohttp.ClientSession", return_value=mock_session):
         result = await llm.ask("How do I navigate around obstacles?")
@@ -126,32 +126,32 @@ async def test_ask_with_messages(llm, mock_response):
     # Mock the aiohttp ClientSession
     mock_session = MagicMock()
     mock_context = MagicMock()
-    
+
     # Configure the mocks
     mock_session.__aenter__.return_value = mock_session
     mock_context.__aenter__.return_value = mock_context
     mock_context.status = 200
     mock_context.json = AsyncMock(return_value=mock_response)
     mock_session.post = MagicMock(return_value=mock_context)
-    
+
     # Define test messages
     test_messages = [
         {"role": "user", "content": "Previous message"},
-        {"role": "assistant", "content": "Previous response"}
+        {"role": "assistant", "content": "Previous response"},
     ]
-    
+
     # Test with messages parameter
     with patch("aiohttp.ClientSession", return_value=mock_session):
         # Pass as positional argument instead of keyword argument to avoid conflict with decorator
         # This matches how the decorator will handle it
         result = await llm.ask("How do I navigate around obstacles?", test_messages)
-        
+
         # Verify only the current prompt is sent in the payload
         args, kwargs = mock_session.post.call_args
         assert args[0] == llm.endpoint
         assert kwargs["json"]["message"] == "How do I navigate around obstacles?"
         assert "messages" not in kwargs["json"]
-        
+
         # Verify normal response handling
         assert isinstance(result, DummyOutputModel)
         assert result.content == mock_response["content"]
