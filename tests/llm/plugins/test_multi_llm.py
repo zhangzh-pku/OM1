@@ -1,17 +1,21 @@
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
-from pydantic import BaseModel, ValidationError
+from pydantic import BaseModel, Field, ValidationError
 
 from llm import LLMConfig
-from llm.plugins.multi_llm import MultiLLM, RoboticTeamRequest, RoboticTeamResponse
+from llm.plugins.multi_llm import (
+    Command,
+    MultiLLM,
+    RoboticTeamRequest,
+    RoboticTeamResponse,
+)
 
 
-# Test output model matching the format we return
 class DummyOutputModel(BaseModel):
-    content: str
-    model_used: str
-    agent_type: str
+    """Test output model matching the CortexOutputModel structure"""
+
+    commands: list[Command] = Field(..., description="List of actions to execute")
 
 
 @pytest.fixture
@@ -26,7 +30,12 @@ def config():
 @pytest.fixture
 def mock_response():
     # Simulate the response from the robotic_team endpoint
-    return {"content": "This is a response from the robotic team's specialist agent."}
+    return {
+        "commands": [
+            {"type": "move", "value": "forward 2 steps"},
+            {"type": "speak", "value": "I am moving forward"},
+        ]
+    }
 
 
 @pytest.fixture
@@ -38,7 +47,7 @@ def llm(config):
 async def test_init_with_config(llm, config):
     """Test that the MultiLLM initializes correctly with the given config"""
     assert llm.base_url == config.base_url
-    assert llm.endpoint == f"{config.base_url}/agent/robotic_team/runs"
+    assert llm.endpoint == "https://api.openmind.org/api/core/agent/robotic_team/runs"
     assert llm._config.model == config.model
 
 
@@ -86,9 +95,72 @@ async def test_ask_success(llm, mock_response):
 
         # Verify the response parsing
         assert isinstance(result, DummyOutputModel)
-        assert result.content == mock_response["content"]
-        assert result.model_used == llm._config.model
-        assert result.agent_type == "robotic_team"
+        assert len(result.commands) == 2
+        assert result.commands[0].type == "move"
+        assert result.commands[0].value == "forward 2 steps"
+        assert result.commands[1].type == "speak"
+        assert result.commands[1].value == "I am moving forward"
+
+
+@pytest.mark.asyncio
+async def test_request_validation():
+    """Test that the request model properly validates input"""
+    # Valid request
+    request = RoboticTeamRequest(message="test prompt", model="test-model")
+    assert request.message == "test prompt"
+    assert request.model == "test-model"
+
+    # Invalid request - missing fields
+    with pytest.raises(ValidationError):
+        RoboticTeamRequest()
+
+    with pytest.raises(ValidationError):
+        RoboticTeamRequest(message="test prompt")
+
+    with pytest.raises(ValidationError):
+        RoboticTeamRequest(model="test-model")
+
+
+@pytest.mark.asyncio
+async def test_response_validation():
+    """Test that the response model properly validates input"""
+    # Valid response
+    response = RoboticTeamResponse(
+        commands=[
+            Command(type="move", value="forward"),
+            Command(type="speak", value="hello"),
+        ]
+    )
+    assert len(response.commands) == 2
+    assert response.commands[0].type == "move"
+
+    # Invalid response - missing commands
+    with pytest.raises(ValidationError):
+        RoboticTeamResponse()
+
+    # Invalid response - wrong command structure
+    with pytest.raises(ValidationError):
+        RoboticTeamResponse(commands=[{"wrong": "structure"}])
+
+
+@pytest.mark.asyncio
+async def test_ask_invalid_response(llm):
+    """Test handling of invalid response format"""
+    # Mock the aiohttp ClientSession
+    mock_session = MagicMock()
+    mock_context = MagicMock()
+
+    # Configure the mocks for an invalid response
+    mock_session.__aenter__.return_value = mock_session
+    mock_context.__aenter__.return_value = mock_context
+    mock_context.status = 200
+    mock_context.json = AsyncMock(return_value={"wrong_field": "wrong value"})
+    mock_session.post = MagicMock(return_value=mock_context)
+
+    # Test that invalid response is handled gracefully
+    with patch("aiohttp.ClientSession", return_value=mock_session):
+        result = await llm.ask("How do I navigate around obstacles?")
+        assert result is None
 
 
 @pytest.mark.asyncio
@@ -149,61 +221,8 @@ async def test_ask_with_messages(llm, mock_response):
         assert kwargs["json"]["message"] == "How do I navigate around obstacles?"
         assert "messages" not in kwargs["json"]
 
-        # Verify normal response handling
+        # Verify normal response handling with commands
         assert isinstance(result, DummyOutputModel)
-        assert result.content == mock_response["content"]
-
-
-@pytest.mark.asyncio
-async def test_request_validation():
-    """Test that the request model properly validates input"""
-    # Valid request
-    request = RoboticTeamRequest(message="test prompt", model="test-model")
-    assert request.message == "test prompt"
-    assert request.model == "test-model"
-
-    # Invalid request - missing fields
-    with pytest.raises(ValidationError):
-        RoboticTeamRequest()
-
-    with pytest.raises(ValidationError):
-        RoboticTeamRequest(message="test prompt")
-
-    with pytest.raises(ValidationError):
-        RoboticTeamRequest(model="test-model")
-
-
-@pytest.mark.asyncio
-async def test_response_validation():
-    """Test that the response model properly validates input"""
-    # Valid response
-    response = RoboticTeamResponse(content="test content")
-    assert response.content == "test content"
-
-    # Invalid response - missing content
-    with pytest.raises(ValidationError):
-        RoboticTeamResponse()
-
-    # Invalid response - wrong type
-    with pytest.raises(ValidationError):
-        RoboticTeamResponse(content=123)  # content should be string
-
-
-@pytest.mark.asyncio
-async def test_ask_invalid_response(llm):
-    """Test handling of invalid response format"""
-    # Mock the aiohttp ClientSession
-    mock_session = MagicMock()
-    mock_context = MagicMock()
-
-    # Configure the mocks for an invalid response
-    mock_session.__aenter__.return_value = mock_session
-    mock_context.__aenter__.return_value = mock_context
-    mock_context.status = 200
-    mock_context.json = AsyncMock(return_value={"wrong_field": "wrong value"})
-    mock_session.post = MagicMock(return_value=mock_context)
-
-    # Test that invalid response is handled gracefully
-    with patch("aiohttp.ClientSession", return_value=mock_session):
-        result = await llm.ask("How do I navigate around obstacles?")
-        assert result is None
+        assert len(result.commands) == 2
+        assert result.commands[0].type == "move"
+        assert result.commands[1].type == "speak"

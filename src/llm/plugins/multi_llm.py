@@ -2,11 +2,18 @@ import logging
 import typing as T
 
 import aiohttp
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from llm import LLM, LLMConfig
 
-R = T.TypeVar("R")
+R = T.TypeVar("R", bound=BaseModel)
+
+
+class Command(BaseModel):
+    """Executable action with its argument."""
+
+    type: str = Field(..., description="The type of action")
+    value: str = Field(..., description="The action argument")
 
 
 class RoboticTeamRequest(BaseModel):
@@ -19,12 +26,13 @@ class RoboticTeamRequest(BaseModel):
 class RoboticTeamResponse(BaseModel):
     """Response model from the robotic team endpoint"""
 
-    content: str
+    commands: list[Command] = Field(..., description="List of actions to execute")
 
 
 class MultiLLM(LLM[R]):
     """
     MultiLLM implementation that sends requests to the robotic team endpoint.
+    The endpoint returns a list of commands that can be executed by action plugins.
     """
 
     def __init__(self, output_model: T.Type[R], config: LLMConfig = LLMConfig()):
@@ -44,7 +52,7 @@ class MultiLLM(LLM[R]):
 
     async def ask(self, prompt: str, messages: T.List[T.Dict[str, str]] = []) -> R:
         """
-        Send a prompt to the robotic team endpoint and return the response.
+        Send a prompt to the robotic team endpoint and return a list of executable commands.
 
         Parameters
         ----------
@@ -56,7 +64,7 @@ class MultiLLM(LLM[R]):
         Returns
         -------
         R
-            Response matching the output_model type specification, or None if the request fails
+            Response containing a list of commands to execute, or None if the request fails
         """
         try:
             # Step 1: Validate request data
@@ -76,17 +84,14 @@ class MultiLLM(LLM[R]):
                         )
                         return None
 
-                    # Step 3: Parse and validate response
+                    # Step 3: Parse and validate response as a list of commands
                     try:
                         data = await response.json()
                         api_response = RoboticTeamResponse(**data)
 
                         # Step 4: Convert to output model format
-                        return self._output_model(
-                            content=api_response.content,
-                            model_used=self._config.model,
-                            agent_type="robotic_team",
-                        )
+                        # The output model should match CortexOutputModel structure
+                        return self._output_model(commands=api_response.commands)
 
                     except Exception as e:
                         logging.error(f"Error parsing API response: {str(e)}")
