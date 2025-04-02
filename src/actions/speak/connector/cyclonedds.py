@@ -24,7 +24,7 @@ class SpeakCycloneDDSConnector(ActionConnector[SpeakInput]):
             logging.info(
                 f"Speak topic not provided. Using default topic: {speak_topic}"
             )
-        self.publisher = CycloneDDSWriterProvider(speak_topic)
+        self.publisher = CycloneDDSWriterProvider(topic=speak_topic)
         self.publisher.start()
 
     async def connect(self, output_interface: SpeakInput) -> None:

@@ -11,6 +11,33 @@ from cyclonedds.pub import DataWriter
 from cyclonedds.topic import Topic
 from cyclonedds.idl import IdlStruct
 
+CycloneDDSInterfaceConfig = '''<?xml version="1.0" encoding="UTF-8" ?>
+    <CycloneDDS>
+        <Domain>
+            <General>
+            <Interfaces>
+                <NetworkInterface name="$__IF_NAME__$" priority="default" multicast="default" />
+            </Interfaces>
+            </General>
+            <Discovery>
+            <EnableTopicDiscoveryEndpoints>true</EnableTopicDiscoveryEndpoints>
+            </Discovery>
+        </Domain>
+    </CycloneDDS>'''
+
+CycloneDDSAutoInterfaceConfig = '''<?xml version="1.0" encoding="UTF-8" ?>
+    <CycloneDDS>
+        <Domain>
+            <General>
+            <Interfaces>
+                <NetworkInterface autodetermine=\"true\" priority="default" multicast="default" />
+            </Interfaces>
+            </General>
+            <Discovery>
+            <EnableTopicDiscoveryEndpoints>true</EnableTopicDiscoveryEndpoints>
+            </Discovery>
+        </Domain>
+    </CycloneDDS>'''
 
 # Define a message datatype with one member, data, with as type 'string'
 @dataclass
@@ -26,7 +53,7 @@ class CycloneDDSWriterProvider:
     continuously publishes queued messages to a specified topic.
     """
 
-    def __init__(self, topic: str = "speech"):
+    def __init__(self, domainID: int = 0, topic: str = "speech", networkInterface: str = None):
         """
         Initialize the CycloneDDS publisher provider and create a CycloneDDS DomainParticipant, Topic, and DataWriter.
 
@@ -35,18 +62,35 @@ class CycloneDDSWriterProvider:
         topic : str, optional
             The topic on which to publish messages (default is "speech").
         """
+        if networkInterface is not None: 
+            self.config = CycloneDDSInterfaceConfig.replace('$__IF_NAME__$', networkInterface)
+            logging.info(f"CycloneDDSWriter: Using CycloneDDS network interface {networkInterface}")
+        else:
+            self.config = CycloneDDSAutoInterfaceConfig
+            logging.info("CycloneDDSWriter: No network interface specified. Using autodetermine.")
+
+        self.id = domainID
+        logging.info(f"CycloneDDSWriter: Using Domain ID {self.id} ")
+
         try:
-            self.dp = DomainParticipant()
-            logging.info("CycloneDDS DomainParticipant created (Writer)")
+            self.dm = Domain(self.id, self.config)
+            logging.info("CycloneDDSWriter: CycloneDDS Domain created")
         except Exception as e:
-            logging.error(f"Error creating CycloneDDS DomainParticipant (Writer): {e}")
+            logging.error(f"CycloneDDSWriter: Error creating CycloneDDS Domain: {e}")
+            self.dm = None
+
+        try:
+            self.dp = DomainParticipant(self.id)
+            logging.info("CycloneDDSWriter: CycloneDDS DomainParticipant created")
+        except Exception as e:
+            logging.error(f"CycloneDDSWriter: Error creating CycloneDDS DomainParticipant: {e}")
             self.dp = None
 
         try:
             self.tp = Topic(self.dp, topic, SpeechData)
-            logging.info("CycloneDDS Topic created (Writer)")
+            logging.info("CycloneDDSWriter: CycloneDDS Topic created")
         except Exception as e:
-            logging.error(f"Error creating CycloneDDS Topic (Writer): {e}")
+            logging.error(f"CycloneDDSWriter: Error creating CycloneDDS Topic: {e}")
             self.tp = None
 
         try:

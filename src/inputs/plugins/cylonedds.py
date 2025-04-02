@@ -11,7 +11,7 @@ from inputs.base import SensorConfig
 from inputs.base.loop import FuserInput
 from providers.io_provider import IOProvider
 from providers.sleep_ticker_provider import SleepTickerProvider
-from providers.cyclonedds_reader_provider import CycloneDDSReaderProvider
+from providers.cyclonedds_listener_provider import CycloneDDSListenerProvider
 
 
 class CycloneDDSListener(FuserInput[str]):
@@ -47,7 +47,7 @@ class CycloneDDSListener(FuserInput[str]):
                 f"Listen topic not provided. Using default topic: {listen_topic}"
             )
 
-        self.listener: CycloneDDSListenerProvider = CycloneDDSReaderProvider(
+        self.listener: CycloneDDSListenerProvider = CycloneDDSListenerProvider(
             message_callback=self._handle_message,
             topic=listen_topic,
         )
@@ -58,12 +58,11 @@ class CycloneDDSListener(FuserInput[str]):
 
     def _handle_message(self, message: str):
         """
-        Process an incoming Zenoh message.
+        Process an incoming cyclonedds message.
 
         Parameters
         ----------
-        zenoh_input : object
-            The Zenoh sample received, which should have a 'payload' attribute.
+        message : String
         """
         try:
             self.message_buffer.put(message)
