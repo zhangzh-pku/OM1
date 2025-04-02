@@ -148,8 +148,6 @@ async def test_ask_with_messages(llm, mock_response):
 
     # Test with messages parameter
     with patch("aiohttp.ClientSession", return_value=mock_session):
-        # Pass as positional argument instead of keyword argument to avoid conflict with decorator
-        # This matches how the decorator will handle it
         result = await llm.ask("How do I navigate around obstacles?", test_messages)
 
         # Verify only the current prompt is sent in the payload

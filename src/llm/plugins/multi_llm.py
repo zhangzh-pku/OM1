@@ -60,9 +60,7 @@ class MultiLLM(LLM[R]):
         self.history_manager = LLMHistoryManager(self._config, None)
 
     @LLMHistoryManager.update_history()
-    async def ask(
-        self, prompt: str, messages: T.List[T.Dict[str, str]] = None, *args, **kwargs
-    ) -> R:
+    async def ask(self, prompt: str, messages=None, *args, **kwargs) -> R:
         """
         Send a prompt to the Multi-Agent system and get a structured response.
 
@@ -75,7 +73,7 @@ class MultiLLM(LLM[R]):
         ----------
         prompt : str
             The input prompt to send to the model.
-        messages : List[Dict[str, str]], optional
+        messages : List[Dict[str, str]]
             List of message dictionaries (for context/history).
             Note: The robotic_team endpoint doesn't use message history
             but we accept it for compatibility with other LLMs.
@@ -83,8 +81,7 @@ class MultiLLM(LLM[R]):
         Returns
         -------
         R
-            Parsed response matching the output_model structure, or None if
-            parsing fails.
+            Parsed response matching the output_model structure.
         """
         if messages is None:
             messages = []
