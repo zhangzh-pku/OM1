@@ -41,21 +41,21 @@ class CycloneDDSListenerProvider:
         logging.info(f"CycloneDDSListener: Using Domain ID {self.id} ")
 
         try:
-            self.dm = Domain(self.id, self.config)
+            self.dm = Domain(domain_id=self.id, config=self.config)
             logging.info("CycloneDDSListener: CycloneDDS Domain created")
         except Exception as e:
             logging.error(f"CycloneDDSListener: Error creating CycloneDDS Domain: {e}")
             self.dm = None
 
         try:
-            self.dp = DomainParticipant(self.id)
+            self.dp = DomainParticipant(domain_id=self.id)
             logging.info("CycloneDDSListener: CycloneDDS DomainParticipant created")
         except Exception as e:
             logging.error(f"CycloneDDSListener: Error creating CycloneDDS DomainParticipant: {e}")
             self.dp = None
 
         try:
-            self.tp = Topic(self.dp, topic, SpeechData)
+            self.tp = Topic(domain_participant=self.dp, topic_name=topic, data_type=SpeechData)
             logging.info("CycloneDDSListener: CycloneDDS Topic created")
         except Exception as e:
             logging.error(f"CycloneDDSListener: Error creating CycloneDDS Topic: {e}")
@@ -71,7 +71,7 @@ class CycloneDDSListenerProvider:
             self.tp = None
 
         try:
-            self.dr = DataReader(self.dp, self.tp, listener=self.listener)
+            self.dr = DataReader(subscriber_or_participant=self.dp, topic=self.tp, listener=self.listener)
             logging.info("CycloneDDS DataReader created")
         except Exception as e:
             logging.error(f"Error creating CycloneDDS DataReader: {e}")

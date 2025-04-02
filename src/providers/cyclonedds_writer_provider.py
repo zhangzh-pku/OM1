@@ -73,28 +73,28 @@ class CycloneDDSWriterProvider:
         logging.info(f"CycloneDDSWriter: Using Domain ID {self.id} ")
 
         try:
-            self.dm = Domain(self.id, self.config)
+            self.dm = Domain(domain_id=self.id, config=self.config)
             logging.info("CycloneDDSWriter: CycloneDDS Domain created")
         except Exception as e:
             logging.error(f"CycloneDDSWriter: Error creating CycloneDDS Domain: {e}")
             self.dm = None
 
         try:
-            self.dp = DomainParticipant(self.id)
+            self.dp = DomainParticipant(domain_id=self.id)
             logging.info("CycloneDDSWriter: CycloneDDS DomainParticipant created")
         except Exception as e:
             logging.error(f"CycloneDDSWriter: Error creating CycloneDDS DomainParticipant: {e}")
             self.dp = None
 
         try:
-            self.tp = Topic(self.dp, topic, SpeechData)
+            self.tp = Topic(domain_participant=self.dp, topic_name=topic, data_type=SpeechData)
             logging.info("CycloneDDSWriter: CycloneDDS Topic created")
         except Exception as e:
             logging.error(f"CycloneDDSWriter: Error creating CycloneDDS Topic: {e}")
             self.tp = None
 
         try:
-            self.dw = DataWriter(self.dp, self.tp)
+            self.dw = DataWriter(publisher_or_participant=self.dp, topic=self.tp)
             logging.info("CycloneDDS DataWriter created")
         except Exception as e:
             logging.error(f"Error creating CycloneDDS DataWriter: {e}")
