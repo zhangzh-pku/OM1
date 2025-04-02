@@ -2,10 +2,24 @@ import logging
 import typing as T
 
 import aiohttp
+from pydantic import BaseModel
 
 from llm import LLM, LLMConfig
 
 R = T.TypeVar("R")
+
+
+class RoboticTeamRequest(BaseModel):
+    """Request model for the robotic team endpoint"""
+
+    message: str
+    model: str
+
+
+class RoboticTeamResponse(BaseModel):
+    """Response model from the robotic team endpoint"""
+
+    content: str
 
 
 class MultiLLM(LLM[R]):
@@ -45,10 +59,14 @@ class MultiLLM(LLM[R]):
             Response matching the output_model type specification, or None if the request fails
         """
         try:
+            # Step 1: Validate request data
+            request = RoboticTeamRequest(message=prompt, model=self._config.model)
+
+            # Step 2: Send request to endpoint
             async with aiohttp.ClientSession() as session:
                 async with session.post(
                     self.endpoint,
-                    json={"message": prompt, "model": self._config.model},
+                    json=request.model_dump(),
                     headers={"Authorization": f"Bearer {self._config.api_key}"},
                 ) as response:
                     if response.status != 200:
@@ -58,12 +76,21 @@ class MultiLLM(LLM[R]):
                         )
                         return None
 
-                    data = await response.json()
-                    return self._output_model(
-                        content=data["content"],
-                        model_used=self._config.model,
-                        agent_type="robotic_team",
-                    )
+                    # Step 3: Parse and validate response
+                    try:
+                        data = await response.json()
+                        api_response = RoboticTeamResponse(**data)
+
+                        # Step 4: Convert to output model format
+                        return self._output_model(
+                            content=api_response.content,
+                            model_used=self._config.model,
+                            agent_type="robotic_team",
+                        )
+
+                    except Exception as e:
+                        logging.error(f"Error parsing API response: {str(e)}")
+                        return None
 
         except Exception as e:
             logging.error(f"Error during API request: {str(e)}")
