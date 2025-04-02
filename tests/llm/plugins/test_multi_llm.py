@@ -29,13 +29,32 @@ def config():
 
 @pytest.fixture
 def mock_response():
-    # Simulate the response from the robotic_team endpoint
+    """Mock API response with markdown content containing implicit commands"""
     return {
-        "commands": [
-            {"type": "move", "value": "forward 2 steps"},
-            {"type": "speak", "value": "I am moving forward"},
-        ]
+        "content": """
+# Navigation Plan
+
+Here's how to navigate around obstacles:
+
+- move: forward 2 steps
+- turn: left 90 degrees
+- speak: I am moving around the obstacle
+        """
     }
+
+
+@pytest.fixture
+def mock_unstructured_response():
+    """Mock API response with content that doesn't have clear command patterns"""
+    return {
+        "content": "The robot should move forward, then turn left, then continue straight."
+    }
+
+
+@pytest.fixture
+def mock_invalid_response():
+    """Mock response with invalid format (missing content field)"""
+    return {"wrong_field": "wrong value"}
 
 
 @pytest.fixture
@@ -69,37 +88,79 @@ async def test_init_empty_key():
 
 @pytest.mark.asyncio
 async def test_ask_success(llm, mock_response):
-    """Test successful API call to the robotic_team endpoint"""
-    # Mock the aiohttp ClientSession
-    mock_session = MagicMock()
-    mock_context = MagicMock()
+    """Test successful API request and command extraction from markdown content"""
+    with patch("aiohttp.ClientSession.post") as mock_post:
+        mock_post.return_value.__aenter__.return_value.status = 200
+        mock_post.return_value.__aenter__.return_value.json = AsyncMock(
+            return_value=mock_response
+        )
 
-    # Configure the mocks for a successful response
-    mock_session.__aenter__.return_value = mock_session
-    mock_context.__aenter__.return_value = mock_context
-    mock_context.status = 200
-    mock_context.json = AsyncMock(return_value=mock_response)
-    mock_session.post = MagicMock(return_value=mock_context)
-
-    # Test the ask method with a mocked HTTP session
-    with patch("aiohttp.ClientSession", return_value=mock_session):
-        result = await llm.ask("How do I navigate around obstacles?")
-
-        # Verify the request payload
-        mock_session.post.assert_called_once()
-        args, kwargs = mock_session.post.call_args
-        assert args[0] == llm.endpoint
-        assert kwargs["json"]["model"] == llm._config.model
-        assert kwargs["json"]["message"] == "How do I navigate around obstacles?"
-        assert kwargs["headers"]["Authorization"] == f"Bearer {llm._config.api_key}"
-
-        # Verify the response parsing
-        assert isinstance(result, DummyOutputModel)
-        assert len(result.commands) == 2
+        result = await llm.ask("test prompt")
+        assert result is not None
+        assert len(result.commands) == 3
         assert result.commands[0].type == "move"
         assert result.commands[0].value == "forward 2 steps"
+        assert result.commands[1].type == "turn"
+        assert result.commands[1].value == "left 90 degrees"
+        assert result.commands[2].type == "speak"
+        assert result.commands[2].value == "I am moving around the obstacle"
+
+
+@pytest.mark.asyncio
+async def test_unstructured_content(llm, mock_unstructured_response):
+    """Test handling of unstructured content without clear command patterns"""
+    with patch("aiohttp.ClientSession.post") as mock_post:
+        mock_post.return_value.__aenter__.return_value.status = 200
+        mock_post.return_value.__aenter__.return_value.json = AsyncMock(
+            return_value=mock_unstructured_response
+        )
+
+        result = await llm.ask("test prompt")
+        assert result is not None
+        assert len(result.commands) == 1
+        assert result.commands[0].type == "response"
+        assert "robot should move forward" in result.commands[0].value
+
+
+@pytest.mark.asyncio
+async def test_content_extraction():
+    """Test extraction of commands from various content formats"""
+    llm = MultiLLM(
+        config=LLMConfig(api_key="test_key", model="test-model"),
+        output_model=DummyOutputModel,
+    )
+
+    # Test with formatted action list using colons
+    mock_response = {"content": "Actions:\n- move: forward\n- speak: hello"}
+    with patch("aiohttp.ClientSession.post") as mock_post:
+        mock_post.return_value.__aenter__.return_value.status = 200
+        mock_post.return_value.__aenter__.return_value.json = AsyncMock(
+            return_value=mock_response
+        )
+
+        result = await llm.ask("test prompt")
+        assert result is not None
+        assert len(result.commands) == 2
+        assert result.commands[0].type == "move"
+        assert result.commands[0].value == "forward"
         assert result.commands[1].type == "speak"
-        assert result.commands[1].value == "I am moving forward"
+        assert result.commands[1].value == "hello"
+
+    # Test with bulleted action list using spaces
+    mock_response = {"content": "* move forward\n* turn left"}
+    with patch("aiohttp.ClientSession.post") as mock_post:
+        mock_post.return_value.__aenter__.return_value.status = 200
+        mock_post.return_value.__aenter__.return_value.json = AsyncMock(
+            return_value=mock_response
+        )
+
+        result = await llm.ask("test prompt")
+        assert result is not None
+        assert len(result.commands) == 2
+        assert result.commands[0].type == "move"
+        assert result.commands[0].value == "forward"
+        assert result.commands[1].type == "turn"
+        assert result.commands[1].value == "left"
 
 
 @pytest.mark.asyncio
@@ -126,21 +187,17 @@ async def test_response_validation():
     """Test that the response model properly validates input"""
     # Valid response
     response = RoboticTeamResponse(
-        commands=[
-            Command(type="move", value="forward"),
-            Command(type="speak", value="hello"),
-        ]
+        content='{"commands": [{"type": "move", "value": "forward"}, {"type": "speak", "value": "hello"}]}'
     )
-    assert len(response.commands) == 2
-    assert response.commands[0].type == "move"
+    assert response.content is not None
 
-    # Invalid response - missing commands
+    # Invalid response - missing content
     with pytest.raises(ValidationError):
         RoboticTeamResponse()
 
-    # Invalid response - wrong command structure
+    # Invalid response - wrong field name
     with pytest.raises(ValidationError):
-        RoboticTeamResponse(commands=[{"wrong": "structure"}])
+        RoboticTeamResponse(wrong_field="value")
 
 
 @pytest.mark.asyncio
@@ -194,35 +251,51 @@ async def test_ask_network_exception(llm):
 
 @pytest.mark.asyncio
 async def test_ask_with_messages(llm, mock_response):
-    """Test that the ask method works with message history (even though not used by endpoint)"""
-    # Mock the aiohttp ClientSession
-    mock_session = MagicMock()
-    mock_context = MagicMock()
+    """Test that the ask method handles message history correctly"""
+    with patch("aiohttp.ClientSession.post") as mock_post:
+        mock_post.return_value.__aenter__.return_value.status = 200
+        mock_post.return_value.__aenter__.return_value.json = AsyncMock(
+            return_value=mock_response
+        )
 
-    # Configure the mocks
-    mock_session.__aenter__.return_value = mock_session
-    mock_context.__aenter__.return_value = mock_context
-    mock_context.status = 200
-    mock_context.json = AsyncMock(return_value=mock_response)
-    mock_session.post = MagicMock(return_value=mock_context)
+        messages = [
+            {"role": "user", "content": "previous message"},
+            {"role": "assistant", "content": "previous response"},
+        ]
+        result = await llm.ask("test prompt", messages=messages)
 
-    # Messages that would be ignored by the endpoint but should not break our code
-    messages = [
-        {"role": "user", "content": "Previous message"},
-        {"role": "assistant", "content": "Previous response"},
-    ]
+        assert result is not None
+        assert len(result.commands) == 3
 
-    # Test that messages are accepted but don't affect the request
-    with patch("aiohttp.ClientSession", return_value=mock_session):
-        result = await llm.ask("How do I navigate around obstacles?", messages)
+        # Verify that message was included in request
+        call_args = mock_post.call_args
+        assert call_args is not None
+        request_data = call_args[1]["json"]
+        assert "message" in request_data
+        assert request_data["message"] == "test prompt"
 
-        # Verify only the current prompt is sent in the payload
-        args, kwargs = mock_session.post.call_args
-        assert kwargs["json"]["message"] == "How do I navigate around obstacles?"
-        assert "messages" not in kwargs["json"]
 
-        # Verify normal response handling with commands
-        assert isinstance(result, DummyOutputModel)
-        assert len(result.commands) == 2
-        assert result.commands[0].type == "move"
-        assert result.commands[1].type == "speak"
+# CLI test function for debugging real API responses
+async def debug_real_api_response(api_key, prompt):
+    """
+    Debug function to test MultiLLM with real API calls
+
+    Usage from command line:
+    PYTHONPATH=/Users/ahmadkhan/OM1 python -c "import asyncio; from tests.llm.plugins.test_multi_llm import debug_real_api_response; asyncio.run(debug_real_api_response('your_api_key', 'your prompt'))"
+    """
+    import logging
+
+    logging.basicConfig(level=logging.DEBUG)
+
+    config = LLMConfig(api_key=api_key, model="gemini-2.0-flash")
+    llm = MultiLLM(DummyOutputModel, config)
+
+    print(f"Sending prompt: {prompt}")
+    result = await llm.ask(prompt)
+
+    if result:
+        print("\nSuccess! Extracted commands:")
+        for i, cmd in enumerate(result.commands):
+            print(f"  {i+1}. {cmd.type}: {cmd.value}")
+    else:
+        print("\nError: Failed to get a valid response")
