@@ -54,7 +54,7 @@ class MultiLLM(LLM[R]):
             self._config.model = "gemini-2.0-flash"  
             
         self.base_url = config.base_url or "https://api.openmind.org/api/core"
-        
+        # Fixed endpoint for robotic_team agent
         self.endpoint = f"{self.base_url}/agent/robotic_team/runs"
         
         # Initialize history manager (compatible with other LLMs)
