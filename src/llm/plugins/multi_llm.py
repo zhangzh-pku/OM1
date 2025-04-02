@@ -60,7 +60,7 @@ class MultiLLM(LLM[R]):
         self.history_manager = LLMHistoryManager(self._config, None)
 
     @LLMHistoryManager.update_history()
-    async def ask(self, prompt: str, *args, **kwargs) -> R:
+    async def ask(self, prompt: str, messages=[], *args, **kwargs) -> R:
         """
         Send a prompt to the Multi-Agent system and get a structured response.
 
@@ -73,6 +73,8 @@ class MultiLLM(LLM[R]):
         ----------
         prompt : str
             The input prompt to send to the model.
+        messages:
+            List of message dictionaries (for context/history). Not used by the endpoint but accepted for compatibility.
         *args, **kwargs:
             Additional arguments passed to the function.
             Includes messages: List[Dict[str, str]] for compatibility.
@@ -84,16 +86,16 @@ class MultiLLM(LLM[R]):
         """
         try:
             # Extract messages from args or kwargs
-            messages = []
+            extracted_messages = []
             if args and isinstance(args[0], list):
-                messages = args[0]
+                extracted_messages = args[0]
             elif "messages" in kwargs:
-                messages = kwargs.get("messages", [])
+                extracted_messages = kwargs.get("messages", [])
 
             logging.info(f"Multi-Agent LLM input: {prompt}")
-            if messages:
+            if extracted_messages:
                 logging.info(
-                    f"Messages received but not used by endpoint: {len(messages)} items"
+                    f"Messages received but not used by endpoint: {len(extracted_messages)} items"
                 )
 
             self.io_provider.llm_start_time = time.time()
