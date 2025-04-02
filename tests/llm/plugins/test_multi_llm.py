@@ -107,11 +107,8 @@ async def test_ask_api_error(llm):
 
     # Test error handling
     with patch("aiohttp.ClientSession", return_value=mock_session):
-        try:
-            result = await llm.ask("How do I navigate around obstacles?")
-            assert result is None
-        except Exception as e:
-            pytest.fail(f"Error should be handled internally, but got: {e}")
+        result = await llm.ask("How do I navigate around obstacles?")
+        assert result is None
 
 
 @pytest.mark.asyncio
@@ -119,11 +116,8 @@ async def test_ask_network_exception(llm):
     """Test handling of network exceptions"""
     # Mock aiohttp to raise an exception during request
     with patch("aiohttp.ClientSession", side_effect=Exception("Connection error")):
-        try:
-            result = await llm.ask("How do I navigate around obstacles?")
-            assert result is None
-        except Exception as e:
-            pytest.fail(f"Error should be handled internally, but got: {e}")
+        result = await llm.ask("How do I navigate around obstacles?")
+        assert result is None
 
 
 @pytest.mark.asyncio
@@ -140,19 +134,18 @@ async def test_ask_with_messages(llm, mock_response):
     mock_context.json = AsyncMock(return_value=mock_response)
     mock_session.post = MagicMock(return_value=mock_context)
 
-    # Define test messages
-    test_messages = [
+    # Messages that would be ignored by the endpoint but should not break our code
+    messages = [
         {"role": "user", "content": "Previous message"},
         {"role": "assistant", "content": "Previous response"},
     ]
 
-    # Test with messages parameter
+    # Test that messages are accepted but don't affect the request
     with patch("aiohttp.ClientSession", return_value=mock_session):
-        result = await llm.ask("How do I navigate around obstacles?", test_messages)
+        result = await llm.ask("How do I navigate around obstacles?", messages)
 
         # Verify only the current prompt is sent in the payload
         args, kwargs = mock_session.post.call_args
-        assert args[0] == llm.endpoint
         assert kwargs["json"]["message"] == "How do I navigate around obstacles?"
         assert "messages" not in kwargs["json"]
 

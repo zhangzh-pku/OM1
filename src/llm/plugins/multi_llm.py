@@ -60,7 +60,7 @@ class MultiLLM(LLM[R]):
         self.history_manager = LLMHistoryManager(self._config, None)
 
     @LLMHistoryManager.update_history()
-    async def ask(self, prompt: str, messages=None, *args, **kwargs) -> R:
+    async def ask(self, prompt: str, *args, **kwargs) -> R:
         """
         Send a prompt to the Multi-Agent system and get a structured response.
 
@@ -73,21 +73,28 @@ class MultiLLM(LLM[R]):
         ----------
         prompt : str
             The input prompt to send to the model.
-        messages : List[Dict[str, str]]
-            List of message dictionaries (for context/history).
-            Note: The robotic_team endpoint doesn't use message history
-            but we accept it for compatibility with other LLMs.
+        *args, **kwargs:
+            Additional arguments passed to the function.
+            Includes messages: List[Dict[str, str]] for compatibility.
 
         Returns
         -------
         R
             Parsed response matching the output_model structure.
         """
-        if messages is None:
-            messages = []
-
         try:
+            # Extract messages from args or kwargs
+            messages = []
+            if args and isinstance(args[0], list):
+                messages = args[0]
+            elif "messages" in kwargs:
+                messages = kwargs.get("messages", [])
+
             logging.info(f"Multi-Agent LLM input: {prompt}")
+            if messages:
+                logging.info(
+                    f"Messages received but not used by endpoint: {len(messages)} items"
+                )
 
             self.io_provider.llm_start_time = time.time()
             self.io_provider.set_llm_prompt(prompt)
@@ -112,7 +119,7 @@ class MultiLLM(LLM[R]):
                         logging.error(
                             f"Multi-Agent API error: {response.status} - {error_text}"
                         )
-                        return None
+                        raise Exception(f"API error: {response.status} - {error_text}")
 
                     # Parse the response from the robotic_team endpoint
                     result = await response.json()
@@ -136,8 +143,9 @@ class MultiLLM(LLM[R]):
                         return parsed_response
                     except Exception as e:
                         logging.error(f"Error parsing Multi-Agent response: {e}")
-                        return None
+                        raise
 
         except Exception as e:
             logging.error(f"Multi-Agent API request error: {e}")
+            # Return None instead of raising to match other LLM implementations
             return None
