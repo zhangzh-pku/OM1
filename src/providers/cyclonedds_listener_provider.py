@@ -6,11 +6,15 @@ from typing import Callable, Optional
 
 from cyclonedds.core import Listener
 from cyclonedds.domain import Domain, DomainParticipant
+from cyclonedds.internal import InvalidSample
 from cyclonedds.sub import DataReader
 from cyclonedds.topic import Topic
-from cyclonedds.topic import Topic
-from cyclonedds.internal import InvalidSample
-from providers.cyclonedds_writer_provider import SpeechData, CycloneDDSInterfaceConfig, CycloneDDSAutoInterfaceConfig
+
+from providers.cyclonedds_writer_provider import (
+    CycloneDDSAutoInterfaceConfig,
+    CycloneDDSInterfaceConfig,
+    SpeechData,
+)
 
 
 class CycloneDDSListenerProvider:
@@ -21,7 +25,13 @@ class CycloneDDSListenerProvider:
     continuously listens to messages to a specified topic.
     """
 
-    def __init__(self, domainID: int = 0, topic: str = "speech", networkInterface: str = None, message_callback: Optional[Callable] = None,):
+    def __init__(
+        self,
+        domainID: int = 0,
+        topic: str = "speech",
+        networkInterface: str = None,
+        message_callback: Optional[Callable] = None,
+    ):
         """
         Initialize the CycloneDDS reader provider and the DomainParticipant, Topic, DataReader
 
@@ -30,12 +40,18 @@ class CycloneDDSListenerProvider:
         topic : str, optional
             The topic on which to subscribe messages (default is "speech").
         """
-        if networkInterface is not None: 
-            self.config = CycloneDDSInterfaceConfig.replace('$__IF_NAME__$', networkInterface)
-            logging.info(f"CycloneDDSListener: Using CycloneDDS network interface {networkInterface}")
+        if networkInterface is not None:
+            self.config = CycloneDDSInterfaceConfig.replace(
+                "$__IF_NAME__$", networkInterface
+            )
+            logging.info(
+                f"CycloneDDSListener: Using CycloneDDS network interface {networkInterface}"
+            )
         else:
             self.config = CycloneDDSAutoInterfaceConfig
-            logging.info("CycloneDDSListener: No network interface specified. Using autodetermine.")
+            logging.info(
+                "CycloneDDSListener: No network interface specified. Using autodetermine."
+            )
 
         self.id = domainID
         logging.info(f"CycloneDDSListener: Using Domain ID {self.id} ")
@@ -51,27 +67,35 @@ class CycloneDDSListenerProvider:
             self.dp = DomainParticipant(domain_id=self.id)
             logging.info("CycloneDDSListener: CycloneDDS DomainParticipant created")
         except Exception as e:
-            logging.error(f"CycloneDDSListener: Error creating CycloneDDS DomainParticipant: {e}")
+            logging.error(
+                f"CycloneDDSListener: Error creating CycloneDDS DomainParticipant: {e}"
+            )
             self.dp = None
 
         try:
-            self.tp = Topic(domain_participant=self.dp, topic_name=topic, data_type=SpeechData)
+            self.tp = Topic(
+                domain_participant=self.dp, topic_name=topic, data_type=SpeechData
+            )
             logging.info("CycloneDDSListener: CycloneDDS Topic created")
         except Exception as e:
             logging.error(f"CycloneDDSListener: Error creating CycloneDDS Topic: {e}")
             self.tp = None
 
         self.message_callback = message_callback
-        
+
         try:
             self.listener = Listener(on_data_available=self._onDataAvailable)
             logging.info("CycloneDDSListener: CycloneDDS Listener created")
         except Exception as e:
-            logging.error(f"CycloneDDSListener: Error creating CycloneDDS Listener: {e}")
+            logging.error(
+                f"CycloneDDSListener: Error creating CycloneDDS Listener: {e}"
+            )
             self.tp = None
 
         try:
-            self.dr = DataReader(subscriber_or_participant=self.dp, topic=self.tp, listener=self.listener)
+            self.dr = DataReader(
+                subscriber_or_participant=self.dp, topic=self.tp, listener=self.listener
+            )
             logging.info("CycloneDDS DataReader created")
         except Exception as e:
             logging.error(f"Error creating CycloneDDS DataReader: {e}")
@@ -97,11 +121,11 @@ class CycloneDDSListenerProvider:
         if samples is None:
             return
 
-        # check invalid sample        
+        # check invalid sample
         sample = samples[0]
         if isinstance(sample, InvalidSample):
             return
-        
+
         if self.message_callback is not None:
             self.message_callback(sample.data)
 

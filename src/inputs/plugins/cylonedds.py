@@ -1,17 +1,14 @@
 import asyncio
-import json
 import logging
 import time
 from queue import Empty, Queue
 from typing import List, Optional
 
-import zenoh
-
 from inputs.base import SensorConfig
 from inputs.base.loop import FuserInput
+from providers.cyclonedds_listener_provider import CycloneDDSListenerProvider
 from providers.io_provider import IOProvider
 from providers.sleep_ticker_provider import SleepTickerProvider
-from providers.cyclonedds_listener_provider import CycloneDDSListenerProvider
 
 
 class CycloneDDSListener(FuserInput[str]):
