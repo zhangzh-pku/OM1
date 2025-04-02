@@ -27,6 +27,7 @@
           {
             "group": "Getting Started",
             "pages": [
+              "getting-started/introduction",
               "getting-started/get-started",
               "getting-started/raspberrypi",
               "getting-started/architecture",
