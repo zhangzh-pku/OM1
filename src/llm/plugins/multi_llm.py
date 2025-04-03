@@ -1,3 +1,4 @@
+import json
 import logging
 import typing as T
 
@@ -10,10 +11,19 @@ R = T.TypeVar("R", bound=BaseModel)
 
 
 class Command(BaseModel):
-    """Executable action with its argument."""
+    """
+    Executable action with its argument.
+
+    Parameters
+    ----------
+    type : str
+        Type of action to execute
+    value : str
+        The action argument, such as magnitude or sentence to speak
+    """
 
     type: str = Field(..., description="The type of action")
-    value: str = Field(None, description="The action argument")
+    value: str = Field(..., description="The action argument")
 
 
 class ApiCommand(BaseModel):
@@ -28,12 +38,26 @@ class RoboticTeamRequest(BaseModel):
 
     message: str
     model: str
+    response_model: T.Optional[dict] = Field(
+        None, description="Pydantic model schema for structured output"
+    )
+    structured_outputs: bool = Field(
+        False, description="Whether to use structured output format"
+    )
 
 
 class RoboticTeamResponse(BaseModel):
     """Response model from the robotic team endpoint"""
 
-    commands: list[ApiCommand] = Field(..., description="List of commands to execute")
+    content: T.Optional[str] = Field(
+        None, description="Text content in markdown format"
+    )
+    structured_output: T.Optional[dict] = Field(
+        None, description="Structured output data"
+    )
+    commands: T.Optional[list[ApiCommand]] = Field(
+        None, description="List of commands to execute"
+    )
 
 
 class MultiLLM(LLM[R]):
@@ -54,22 +78,33 @@ class MultiLLM(LLM[R]):
         if not config.model:
             self._config.model = "gemini-2.0-flash"
 
+        # Configure the API endpoint
         self.endpoint = "https://api.openmind.org/api/core/agent/robotic_team/runs"
         self.history_manager = None  # We don't use history management for this LLM
+
+        # Log that we're using structured outputs
+        logging.info(f"MultiLLM initialized with output model: {output_model.__name__}")
+        logging.debug(f"Output model schema: {output_model.model_json_schema()}")
 
     async def ask(self, prompt: str, messages: T.List[T.Dict[str, str]] = []) -> R:
         """Send a prompt to the robotic team endpoint and return the response."""
         try:
             # Step 1: Prepare request data
-            request = RoboticTeamRequest(message=prompt, model=self._config.model)
+            request = {
+                "message": prompt,
+                "model": self._config.model,
+                "response_model": self._output_model.model_json_schema(),
+                "structured_outputs": True,
+            }
 
             async with aiohttp.ClientSession() as session:
                 headers = {"Authorization": f"Bearer {self._config.api_key}"}
 
+                logging.debug(f"Sending request to {self.endpoint}: {request}")
                 # Step 2: Send request to endpoint
                 async with session.post(
                     self.endpoint,
-                    json=request.model_dump(),
+                    json=request,
                     headers=headers,
                 ) as response:
                     if response.status != 200:
@@ -86,8 +121,27 @@ class MultiLLM(LLM[R]):
                     try:
                         # Handle different response formats
 
-                        # Case 1: OpenAI/Gemini format with pre-processed commands with 'type' field
+                        # Case 1: Structured output format with direct model data
                         if (
+                            isinstance(response_json, dict)
+                            and "structured_output" in response_json
+                            and response_json["structured_output"]
+                        ):
+                            # This is the new structured output format
+                            logging.debug("Using structured output from response")
+                            structured_data = response_json["structured_output"]
+
+                            # Parse and validate with output model
+                            parsed_response = self._output_model.model_validate(
+                                structured_data
+                            )
+                            logging.info(
+                                f"MultiLLM structured output: {parsed_response}"
+                            )
+                            return parsed_response
+
+                        # Case 2: OpenAI/Gemini format with pre-processed commands with 'type' field
+                        elif (
                             isinstance(response_json, dict)
                             and "commands" in response_json
                             and response_json["commands"]
@@ -102,7 +156,7 @@ class MultiLLM(LLM[R]):
                             logging.info(f"MultiLLM output: {parsed_response}")
                             return parsed_response
 
-                        # Case 2: API format with 'command' and 'args' fields
+                        # Case 3: API format with 'command' and 'args' fields
                         elif (
                             isinstance(response_json, dict)
                             and "commands" in response_json
@@ -129,7 +183,7 @@ class MultiLLM(LLM[R]):
                             logging.info(f"MultiLLM output: {parsed_response}")
                             return parsed_response
 
-                        # Case 3: Content field with markdown text
+                        # Case 4: Content field with markdown text
                         elif (
                             isinstance(response_json, dict)
                             and "content" in response_json
