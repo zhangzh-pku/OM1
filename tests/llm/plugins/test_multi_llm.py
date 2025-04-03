@@ -103,6 +103,21 @@ def mock_real_api_response():
 
 
 @pytest.fixture
+def mock_openai_format_response():
+    """Mock  response format with pre-processed commands"""
+    return {
+        "commands": [
+            {"type": "move", "value": "sit"},
+            {
+                "type": "speak",
+                "value": "Hi there! I'm Spot, your friendly dog! Woof woof!",
+            },
+            {"type": "emotion", "value": "joy"},
+        ]
+    }
+
+
+@pytest.fixture
 def llm(config):
     return MultiLLM(DummyOutputModel, config)
 
@@ -375,6 +390,28 @@ async def test_real_api_response_format(llm, mock_real_api_response):
         assert len(target_lock_commands) > 0
         assert "table" in target_lock_commands[0].type.lower()
         assert "approach" in target_lock_commands[0].value.lower()
+
+
+@pytest.mark.asyncio
+async def test_openai_format_compatibility(llm, mock_openai_format_response):
+    """Test handling of pre-processed commands format for OpenAI compatibility"""
+    with patch("aiohttp.ClientSession.post") as mock_post:
+        mock_post.return_value.__aenter__.return_value.status = 200
+        mock_post.return_value.__aenter__.return_value.json = AsyncMock(
+            return_value=mock_openai_format_response
+        )
+
+        result = await llm.ask("test prompt")
+        assert result is not None
+        assert len(result.commands) == 3
+
+        # Verify command values are preserved exactly as received
+        assert result.commands[0].type == "move"
+        assert result.commands[0].value == "sit"
+        assert result.commands[1].type == "speak"
+        assert "Hi there! I'm Spot" in result.commands[1].value
+        assert result.commands[2].type == "emotion"
+        assert result.commands[2].value == "joy"
 
 
 # CLI test function for debugging real API responses

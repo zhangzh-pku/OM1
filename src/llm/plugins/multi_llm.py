@@ -84,103 +84,74 @@ class MultiLLM(LLM[R]):
                     logging.debug(f"Raw API response: {response_json}")
 
                     try:
-                        # Step 4: Parse response format
-                        # The API returns either:
-                        # 1. An object with a "commands" array containing command objects
-                        # 2. A string in the "content" field (markdown format)
-                        commands = []
+                        # Handle different response formats
 
+                        # Case 1: OpenAI/Gemini format with pre-processed commands with 'type' field
                         if (
                             isinstance(response_json, dict)
                             and "commands" in response_json
+                            and response_json["commands"]
+                            and isinstance(response_json["commands"][0], dict)
+                            and "type" in response_json["commands"][0]
                         ):
-                            # Format: {"commands": [{"command": "wag tail"}, {"command": "speak", "args": "Woof!"}]}
-                            api_commands = RoboticTeamResponse(**response_json).commands
-                            logging.debug(f"API commands: {api_commands}")
+                            # Already in the correct format, just validate with output model
+                            logging.debug("Response has pre-processed commands")
+                            parsed_response = self._output_model.model_validate(
+                                response_json
+                            )
+                            logging.info(f"MultiLLM output: {parsed_response}")
+                            return parsed_response
 
-                            for cmd in api_commands:
-                                # Map API command format to our Command model
-                                cmd_type = cmd.command.lower()
-                                cmd_value = cmd.args if cmd.args is not None else ""
-                                commands.append(Command(type=cmd_type, value=cmd_value))
+                        # Case 2: API format with 'command' and 'args' fields
+                        elif (
+                            isinstance(response_json, dict)
+                            and "commands" in response_json
+                            and response_json["commands"]
+                            and isinstance(response_json["commands"][0], dict)
+                            and "command" in response_json["commands"][0]
+                        ):
+                            # Convert from API format to our format
+                            commands = []
+                            for cmd in response_json["commands"]:
+                                cmd_type = cmd.get("command", "").lower()
+                                cmd_value = cmd.get("args", "")
+                                if cmd_value is None:
+                                    cmd_value = ""
+                                commands.append({"type": cmd_type, "value": cmd_value})
 
+                            # Create JSON compatible with our output model
+                            output_json = {"commands": commands}
+
+                            # Parse and validate with output model
+                            parsed_response = self._output_model.model_validate(
+                                output_json
+                            )
+                            logging.info(f"MultiLLM output: {parsed_response}")
+                            return parsed_response
+
+                        # Case 3: Content field with markdown text
                         elif (
                             isinstance(response_json, dict)
                             and "content" in response_json
                         ):
-                            # Format: {"content": "markdown text with commands"}
                             content = response_json["content"]
-                            logging.debug(f"Content field found: {content}")
+                            commands = self._extract_commands_from_markdown(content)
 
-                            # Extract commands from markdown bullet points
-                            # Find lines that start with bullet points (* or -)
-                            action_lines = [
-                                line.strip()
-                                for line in content.split("\n")
-                                if (
-                                    line.strip().startswith("- ")
-                                    or line.strip().startswith("* ")
-                                )
-                            ]
+                            # Create JSON compatible with our output model
+                            output_json = {"commands": commands}
 
-                            for line in action_lines:
-                                # Remove leading markers
-                                line = line.lstrip("- *").strip()
+                            # Parse and validate with output model
+                            parsed_response = self._output_model.model_validate(
+                                output_json
+                            )
+                            logging.info(f"MultiLLM output: {parsed_response}")
+                            return parsed_response
 
-                                # Remove any surrounding quotes
-                                line = line.strip('"')
-
-                                # Handle markdown bold markers
-                                line = line.replace("**", "")
-
-                                # Try to extract command and value
-                                if "." in line and not line.startswith("http"):
-                                    # Format: "Forward Scan. Obstacle detected. Type: Table."
-                                    parts = line.split(".", 1)
-                                    cmd_type = parts[0].strip().lower()
-                                    cmd_value = (
-                                        parts[1].strip() if len(parts) > 1 else ""
-                                    )
-                                    commands.append(
-                                        Command(type=cmd_type, value=cmd_value)
-                                    )
-                                elif ":" in line:
-                                    # Format: "Target Lock: Table"
-                                    parts = line.split(":", 1)
-                                    cmd_type = parts[0].strip().lower()
-                                    cmd_value = parts[1].strip()
-                                    commands.append(
-                                        Command(type=cmd_type, value=cmd_value)
-                                    )
-                                elif " " in line:
-                                    # Use the first word as type and rest as value
-                                    parts = line.split(" ", 1)
-                                    cmd_type = parts[0].strip().lower()
-                                    cmd_value = (
-                                        parts[1].strip() if len(parts) > 1 else ""
-                                    )
-                                    commands.append(
-                                        Command(type=cmd_type, value=cmd_value)
-                                    )
-                                else:
-                                    # Just use the whole line as the command type
-                                    commands.append(
-                                        Command(type=line.lower(), value="")
-                                    )
-
-                            # If no commands were extracted, use content as response
-                            if not commands:
-                                commands.append(Command(type="response", value=content))
                         else:
                             logging.error(
                                 f"Unrecognized response format: {response_json}"
                             )
                             return None
-
-                        logging.debug(f"Parsed commands: {commands}")
-
-                        # Create output model with commands
-                        return self._output_model(commands=commands)
 
                     except Exception as e:
                         logging.error(f"Error parsing response: {str(e)}")
@@ -189,3 +160,53 @@ class MultiLLM(LLM[R]):
         except Exception as e:
             logging.error(f"Error during API request: {str(e)}")
             return None
+
+    def _extract_commands_from_markdown(self, content: str) -> list[dict]:
+        """Extract commands from markdown content"""
+        commands = []
+
+        # Find lines that start with bullet points (* or -)
+        action_lines = [
+            line.strip()
+            for line in content.split("\n")
+            if (line.strip().startswith("- ") or line.strip().startswith("* "))
+        ]
+
+        for line in action_lines:
+            # Remove leading markers
+            line = line.lstrip("- *").strip()
+
+            # Remove any surrounding quotes
+            line = line.strip('"')
+
+            # Handle markdown bold markers
+            line = line.replace("**", "")
+
+            # Try to extract command and value
+            if "." in line and not line.startswith("http"):
+                # Format: "Forward Scan. Obstacle detected. Type: Table."
+                parts = line.split(".", 1)
+                cmd_type = parts[0].strip().lower()
+                cmd_value = parts[1].strip() if len(parts) > 1 else ""
+                commands.append({"type": cmd_type, "value": cmd_value})
+            elif ":" in line:
+                # Format: "Target Lock: Table"
+                parts = line.split(":", 1)
+                cmd_type = parts[0].strip().lower()
+                cmd_value = parts[1].strip()
+                commands.append({"type": cmd_type, "value": cmd_value})
+            elif " " in line:
+                # Use the first word as type and rest as value
+                parts = line.split(" ", 1)
+                cmd_type = parts[0].strip().lower()
+                cmd_value = parts[1].strip() if len(parts) > 1 else ""
+                commands.append({"type": cmd_type, "value": cmd_value})
+            else:
+                # Just use the whole line as the command type
+                commands.append({"type": line.lower(), "value": ""})
+
+        # If no commands were extracted, use content as response
+        if not commands:
+            commands.append({"type": "response", "value": content})
+
+        return commands
