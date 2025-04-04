@@ -36,6 +36,14 @@ class MultiLLM(LLM[R]):
     MultiLLM implementation that sends requests to the robotic team endpoint.
     The endpoint returns either structured output or a list of commands that
     can be converted to our output model format.
+
+    Parameters
+    ----------
+    output_model : Type[R]
+        A Pydantic BaseModel subclass defining the expected response structure.
+    config : LLMConfig
+        Configuration object containing API settings. If not provided, defaults
+        will be used.
     """
 
     def __init__(self, output_model: T.Type[R], config: LLMConfig = LLMConfig()):
@@ -61,9 +69,13 @@ class MultiLLM(LLM[R]):
 
         # Configure the API endpoint
         self.endpoint = "https://api.openmind.org/api/core/agent/robotic_team/runs"
-        self.history_manager = None  # We don't use history management for this LLM
 
-        logging.info(f"MultiLLM initialized with output model: {output_model.__name__}")
+        # We don't use LLMHistoryManager for this LLM
+        self.history_manager = None
+
+        logging.debug(
+            f"MultiLLM initialized with output model: {output_model.__name__}"
+        )
         logging.debug(f"Output model schema: {output_model.model_json_schema()}")
 
     async def ask(
@@ -86,7 +98,7 @@ class MultiLLM(LLM[R]):
             parsing fails.
         """
         try:
-            logging.info(f"MultiLLM input: {prompt}")
+            logging.debug(f"MultiLLM input: {prompt}")
 
             self.io_provider.llm_start_time = time.time()
             self.io_provider.set_llm_prompt(prompt)
@@ -134,7 +146,7 @@ class MultiLLM(LLM[R]):
                                 parsed_response = self._output_model.model_validate(
                                     structured_data
                                 )
-                                logging.info(
+                                logging.debug(
                                     f"MultiLLM structured output: {parsed_response}"
                                 )
                                 return parsed_response
@@ -168,7 +180,7 @@ class MultiLLM(LLM[R]):
                                     parsed_response = self._output_model.model_validate(
                                         output_json
                                     )
-                                    logging.info(
+                                    logging.debug(
                                         f"MultiLLM converted commands: {parsed_response}"
                                     )
                                     return parsed_response
@@ -188,7 +200,7 @@ class MultiLLM(LLM[R]):
                                 parsed_response = self._output_model.model_validate(
                                     output_json
                                 )
-                                logging.info(
+                                logging.debug(
                                     f"MultiLLM content response: {parsed_response}"
                                 )
                                 return parsed_response
