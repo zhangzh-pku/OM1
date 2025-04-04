@@ -4,13 +4,8 @@ import pytest
 from pydantic import BaseModel, Field, ValidationError
 
 from llm import LLMConfig
-from llm.plugins.multi_llm import (
-    ApiCommand,
-    Command,
-    MultiLLM,
-    RoboticTeamRequest,
-    RoboticTeamResponse,
-)
+from llm.output_model import Command
+from llm.plugins.multi_llm import ApiCommand, MultiLLM, RoboticTeamResponse
 
 
 class DummyOutputModel(BaseModel):
@@ -125,7 +120,7 @@ def llm(config):
 @pytest.mark.asyncio
 async def test_init_with_config(llm, config):
     """Test that the MultiLLM initializes correctly with the given config"""
-    assert llm.base_url == config.base_url
+    assert llm.api_key == config.api_key
     assert llm.endpoint == "https://api.openmind.org/api/core/agent/robotic_team/runs"
     assert llm._config.model == config.model
 
@@ -157,13 +152,11 @@ async def test_ask_success(llm, mock_response):
 
         result = await llm.ask("test prompt")
         assert result is not None
-        assert len(result.commands) == 3
-        assert result.commands[0].type == "move"
-        assert result.commands[0].value == "forward 2 steps"
-        assert result.commands[1].type == "turn"
-        assert result.commands[1].value == "left 90 degrees"
-        assert result.commands[2].type == "speak"
-        assert result.commands[2].value == "I am moving around the obstacle"
+        assert len(result.commands) == 1
+        assert result.commands[0].type == "response"
+        assert "move: forward 2 steps" in result.commands[0].value
+        assert "turn: left 90 degrees" in result.commands[0].value
+        assert "speak: I am moving around the obstacle" in result.commands[0].value
 
 
 @pytest.mark.asyncio
@@ -200,11 +193,10 @@ async def test_content_extraction():
 
         result = await llm.ask("test prompt")
         assert result is not None
-        assert len(result.commands) == 2
-        assert result.commands[0].type == "move"
-        assert result.commands[0].value == "forward"
-        assert result.commands[1].type == "speak"
-        assert result.commands[1].value == "hello"
+        assert len(result.commands) == 1
+        assert result.commands[0].type == "response"
+        assert "move: forward" in result.commands[0].value
+        assert "speak: hello" in result.commands[0].value
 
     # Test with bulleted action list using spaces
     mock_response = {"content": "* move forward\n* turn left"}
@@ -216,30 +208,10 @@ async def test_content_extraction():
 
         result = await llm.ask("test prompt")
         assert result is not None
-        assert len(result.commands) == 2
-        assert result.commands[0].type == "move"
-        assert result.commands[0].value == "forward"
-        assert result.commands[1].type == "turn"
-        assert result.commands[1].value == "left"
-
-
-@pytest.mark.asyncio
-async def test_request_validation():
-    """Test that the request model properly validates input"""
-    # Valid request
-    request = RoboticTeamRequest(message="test prompt", model="test-model")
-    assert request.message == "test prompt"
-    assert request.model == "test-model"
-
-    # Invalid request - missing fields
-    with pytest.raises(ValidationError):
-        RoboticTeamRequest()
-
-    with pytest.raises(ValidationError):
-        RoboticTeamRequest(message="test prompt")
-
-    with pytest.raises(ValidationError):
-        RoboticTeamRequest(model="test-model")
+        assert len(result.commands) == 1
+        assert result.commands[0].type == "response"
+        assert "move forward" in result.commands[0].value
+        assert "turn left" in result.commands[0].value
 
 
 @pytest.mark.asyncio
@@ -280,11 +252,21 @@ async def test_response_validation():
     assert response.commands[0].command == "move"
     assert response.commands[1].args == "hello"
 
-    # Invalid response - missing commands
-    with pytest.raises(ValidationError):
-        RoboticTeamResponse()
+    # Valid response with content
+    response = RoboticTeamResponse(content="Test content")
+    assert response.content == "Test content"
 
-    # Invalid response - wrong structure
+    # Valid response with structured output
+    response = RoboticTeamResponse(structured_output={"key": "value"})
+    assert response.structured_output == {"key": "value"}
+
+    # Empty response should be valid (all fields are optional)
+    response = RoboticTeamResponse()
+    assert response.commands is None
+    assert response.content is None
+    assert response.structured_output is None
+
+    # Invalid response - wrong structure for commands
     with pytest.raises(ValidationError):
         RoboticTeamResponse(commands=[{"wrong": "structure"}])
 
@@ -354,7 +336,9 @@ async def test_ask_with_messages(llm, mock_response):
         result = await llm.ask("test prompt", messages=messages)
 
         assert result is not None
-        assert len(result.commands) == 3
+        assert len(result.commands) == 1
+        assert result.commands[0].type == "response"
+        assert "move: forward 2 steps" in result.commands[0].value
 
         # Verify that message was included in request
         call_args = mock_post.call_args
@@ -375,21 +359,14 @@ async def test_real_api_response_format(llm, mock_real_api_response):
 
         result = await llm.ask("test prompt")
         assert result is not None
-        assert len(result.commands) >= 5  # We should extract at least 5 commands
+        assert len(result.commands) == 1  # We now return a single response command
+        assert result.commands[0].type == "response"
 
-        # Verify some of the extracted commands
-        forward_scan_commands = [
-            cmd for cmd in result.commands if "forward scan" in cmd.type
-        ]
-        assert len(forward_scan_commands) > 0
-        assert "obstacle detected" in forward_scan_commands[0].value.lower()
-
-        target_lock_commands = [
-            cmd for cmd in result.commands if "target lock" in cmd.type
-        ]
-        assert len(target_lock_commands) > 0
-        assert "table" in target_lock_commands[0].type.lower()
-        assert "approach" in target_lock_commands[0].value.lower()
+        # Verify content includes the expected sections
+        content = result.commands[0].value
+        assert "Environmental Awareness Commands" in content
+        assert "Forward Scan" in content
+        assert "Target Lock: Table" in content
 
 
 @pytest.mark.asyncio
