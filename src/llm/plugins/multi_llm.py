@@ -176,11 +176,54 @@ class MultiLLM(LLM[R]):
                             output_json = {"commands": commands}
 
                             # Parse and validate with output model
-                            parsed_response = self._output_model.model_validate(
-                                output_json
-                            )
-                            logging.info(f"MultiLLM output: {parsed_response}")
-                            return parsed_response
+                            try:
+                                # Log the model schema and output_json for debugging
+                                logging.debug(
+                                    f"Output model schema: {self._output_model.model_json_schema()}"
+                                )
+                                logging.debug(f"Output JSON to validate: {output_json}")
+
+                                parsed_response = self._output_model.model_validate(
+                                    output_json
+                                )
+                                logging.info(f"MultiLLM output: {parsed_response}")
+                                return parsed_response
+                            except Exception as e:
+                                logging.info(f"Direct validation failed: {e}")
+                                logging.info(
+                                    "Response needs transformation before using with output_model.py"
+                                )
+
+                                # If validation fails, create a response with a single command
+                                # containing the entire content as a fallback
+                                content_value = response_json.get(
+                                    "content", "No content available"
+                                )
+                                output_json = {
+                                    "commands": [
+                                        {"type": "response", "value": content_value}
+                                    ]
+                                }
+
+                                try:
+                                    # Log the model schema and output_json for debugging
+                                    logging.debug(
+                                        f"Output model schema: {self._output_model.model_json_schema()}"
+                                    )
+                                    logging.debug(
+                                        f"Output JSON to validate: {output_json}"
+                                    )
+
+                                    parsed_response = self._output_model.model_validate(
+                                        output_json
+                                    )
+                                    logging.info("Using fallback response format")
+                                    return parsed_response
+                                except Exception as e2:
+                                    logging.error(
+                                        f"Fallback validation also failed: {e2}"
+                                    )
+                                    return None
 
                         # Case 4: Content field with markdown text
                         elif (
@@ -188,17 +231,52 @@ class MultiLLM(LLM[R]):
                             and "content" in response_json
                         ):
                             content = response_json["content"]
+                            logging.info("\nResponse has 'content' field")
+
+                            # Extract commands from the markdown content
                             commands = self._extract_commands_from_markdown(content)
 
                             # Create JSON compatible with our output model
                             output_json = {"commands": commands}
 
-                            # Parse and validate with output model
-                            parsed_response = self._output_model.model_validate(
-                                output_json
-                            )
-                            logging.info(f"MultiLLM output: {parsed_response}")
-                            return parsed_response
+                            try:
+                                # Parse and validate with output model
+                                parsed_response = self._output_model.model_validate(
+                                    output_json
+                                )
+                                logging.info(f"MultiLLM output: {parsed_response}")
+                                return parsed_response
+                            except Exception as e:
+                                logging.info(f"Direct validation failed: {e}")
+                                logging.info(
+                                    "Response needs transformation before using with output_model.py"
+                                )
+
+                                # If validation fails, create a response with a single command
+                                # containing the entire content as a fallback
+                                output_json = {
+                                    "commands": [{"type": "response", "value": content}]
+                                }
+
+                                try:
+                                    # Log the model schema and output_json for debugging
+                                    logging.debug(
+                                        f"Output model schema: {self._output_model.model_json_schema()}"
+                                    )
+                                    logging.debug(
+                                        f"Output JSON to validate: {output_json}"
+                                    )
+
+                                    parsed_response = self._output_model.model_validate(
+                                        output_json
+                                    )
+                                    logging.info("Using fallback response format")
+                                    return parsed_response
+                                except Exception as e2:
+                                    logging.error(
+                                        f"Fallback validation also failed: {e2}"
+                                    )
+                                    return None
 
                         else:
                             logging.error(
@@ -217,49 +295,81 @@ class MultiLLM(LLM[R]):
     def _extract_commands_from_markdown(self, content: str) -> list[dict]:
         """Extract commands from markdown content"""
         commands = []
+        logging.debug(f"Extracting commands from content: {content}")
 
-        # Find lines that start with bullet points (* or -)
+        # Find lines that start with bullet points (* or -) or numbered items (1., 2., etc)
         action_lines = [
             line.strip()
             for line in content.split("\n")
-            if (line.strip().startswith("- ") or line.strip().startswith("* "))
+            if (
+                line.strip().startswith("- ")
+                or line.strip().startswith("* ")
+                or (
+                    line.strip()
+                    and line.strip()[0].isdigit()
+                    and "." in line.strip().split(" ")[0]
+                )
+            )
         ]
 
+        if action_lines:
+            logging.debug(f"Found action lines: {action_lines}")
+        else:
+            logging.debug("No bullet points found, trying to parse paragraphs")
+            # If no bullet points, try to identify commands in paragraphs
+            paragraphs = [p.strip() for p in content.split("\n\n") if p.strip()]
+            for paragraph in paragraphs:
+                if ":" in paragraph and len(paragraph.split(":", 1)[0].split()) <= 3:
+                    # Simple format like "Move forward: The robot should move ahead"
+                    action_lines.append(paragraph)
+                elif "." in paragraph and not paragraph.startswith("http"):
+                    # Try to use first sentence as command
+                    sentences = paragraph.split(". ")
+                    if len(sentences) > 0 and len(sentences[0].split()) <= 5:
+                        action_lines.append(sentences[0])
+
+        # Process all identified action lines
         for line in action_lines:
-            # Remove leading markers
-            line = line.lstrip("- *").strip()
+            # Remove leading markers and numbering
+            clean_line = line.lstrip("- *").strip()
+            if clean_line[0].isdigit() and "." in clean_line.split(" ")[0]:
+                clean_line = " ".join(clean_line.split(" ")[1:]).strip()
 
             # Remove any surrounding quotes
-            line = line.strip('"')
+            clean_line = clean_line.strip("\"'")
 
             # Handle markdown bold markers
-            line = line.replace("**", "")
+            clean_line = clean_line.replace("**", "").replace("__", "")
 
             # Try to extract command and value
-            if "." in line and not line.startswith("http"):
-                # Format: "Forward Scan. Obstacle detected. Type: Table."
-                parts = line.split(".", 1)
-                cmd_type = parts[0].strip().lower()
-                cmd_value = parts[1].strip() if len(parts) > 1 else ""
-                commands.append({"type": cmd_type, "value": cmd_value})
-            elif ":" in line:
-                # Format: "Target Lock: Table"
-                parts = line.split(":", 1)
+            if ":" in clean_line:
+                # Format: "Target Lock: Table" or "move: forward 2 meters"
+                parts = clean_line.split(":", 1)
                 cmd_type = parts[0].strip().lower()
                 cmd_value = parts[1].strip()
                 commands.append({"type": cmd_type, "value": cmd_value})
-            elif " " in line:
+            elif "." in clean_line and not clean_line.startswith("http"):
+                # Format: "Forward Scan. Obstacle detected."
+                parts = clean_line.split(".", 1)
+                cmd_type = parts[0].strip().lower()
+                cmd_value = parts[1].strip() if len(parts) > 1 else ""
+                commands.append({"type": cmd_type, "value": cmd_value})
+            elif " " in clean_line:
                 # Use the first word as type and rest as value
-                parts = line.split(" ", 1)
+                parts = clean_line.split(" ", 1)
                 cmd_type = parts[0].strip().lower()
                 cmd_value = parts[1].strip() if len(parts) > 1 else ""
                 commands.append({"type": cmd_type, "value": cmd_value})
             else:
                 # Just use the whole line as the command type
-                commands.append({"type": line.lower(), "value": ""})
+                commands.append({"type": clean_line.lower(), "value": ""})
 
         # If no commands were extracted, use content as response
         if not commands:
+            logging.info(
+                "No commands extracted, using entire content as 'response' command"
+            )
             commands.append({"type": "response", "value": content})
 
+        logging.debug(f"Extracted commands: {commands}")
         return commands
