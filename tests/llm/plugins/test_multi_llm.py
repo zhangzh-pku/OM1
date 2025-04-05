@@ -4,14 +4,13 @@ import pytest
 from pydantic import BaseModel, Field
 
 from llm import LLMConfig
-from llm.output_model import Command
 from llm.plugins.multi_llm import ApiCommand, MultiLLM, RoboticTeamResponse
 
 
 class DummyOutputModel(BaseModel):
-    """Test output model matching the CortexOutputModel structure"""
+    """Test output model matching other LLM plugins"""
 
-    commands: list[Command] = Field(..., description="List of actions to execute")
+    result: str = Field(..., description="The result from the LLM")
 
 
 @pytest.fixture
@@ -45,14 +44,7 @@ def mock_api_commands_response():
 @pytest.fixture
 def mock_structured_output_response():
     """Mock API response with structured output matching our model"""
-    return {
-        "structured_output": {
-            "commands": [
-                {"type": "move", "value": "forward"},
-                {"type": "speak", "value": "Hello!"},
-            ]
-        }
-    }
+    return {"structured_output": {"result": "This is a structured result"}}
 
 
 @pytest.fixture
@@ -95,9 +87,10 @@ async def test_ask_content_response(llm, mock_response):
 
         result = await llm.ask("test prompt")
         assert result is not None
-        assert len(result.commands) == 1
-        assert result.commands[0].type == "response"
-        assert "robot should move forward" in result.commands[0].value
+        assert (
+            result.result
+            == "The robot should move forward, then turn left, then continue straight."
+        )
 
 
 @pytest.mark.asyncio
@@ -111,11 +104,7 @@ async def test_ask_api_commands(llm, mock_api_commands_response):
 
         result = await llm.ask("test prompt")
         assert result is not None
-        assert len(result.commands) == 2
-        assert result.commands[0].type == "move"
-        assert result.commands[0].value == "forward"
-        assert result.commands[1].type == "speak"
-        assert result.commands[1].value == "Hello there!"
+        assert "move: forward" in result.result
 
 
 @pytest.mark.asyncio
@@ -129,11 +118,7 @@ async def test_ask_structured_output(llm, mock_structured_output_response):
 
         result = await llm.ask("test prompt")
         assert result is not None
-        assert len(result.commands) == 2
-        assert result.commands[0].type == "move"
-        assert result.commands[0].value == "forward"
-        assert result.commands[1].type == "speak"
-        assert result.commands[1].value == "Hello!"
+        assert result.result == "This is a structured result"
 
 
 @pytest.mark.asyncio
