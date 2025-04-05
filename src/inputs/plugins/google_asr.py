@@ -19,6 +19,7 @@ LANGUAGE_CODE_MAP: dict = {
     "japanese": "ja-JP",
 }
 
+
 class GoogleASRInput(FuserInput[str]):
     """
     Automatic Speech Recognition (ASR) input handler.
@@ -58,7 +59,9 @@ class GoogleASRInput(FuserInput[str]):
         language = getattr(self.config, "language", "english").strip().lower()
 
         if language not in LANGUAGE_CODE_MAP:
-            logging.error(f"Language {language} not supported. Current supported languages are : {list(LANGUAGE_CODE_MAP.keys())}. Defaulting to English")
+            logging.error(
+                f"Language {language} not supported. Current supported languages are : {list(LANGUAGE_CODE_MAP.keys())}. Defaulting to English"
+            )
             language = "english"
 
         language_code = LANGUAGE_CODE_MAP.get(language, "en-US")
@@ -70,7 +73,7 @@ class GoogleASRInput(FuserInput[str]):
             ws_url=base_url,
             device_id=microphone_device_id,
             microphone_name=microphone_name,
-            language_code=language_code
+            language_code=language_code,
         )
         self.asr.start()
         self.asr.register_message_callback(self._handle_asr_message)
