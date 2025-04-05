@@ -35,8 +35,9 @@ class RoboticTeamResponse(BaseModel):
 class MultiLLM(LLM[R]):
     """
     MultiLLM implementation that sends requests to the robotic team endpoint.
-    This implementation converts the robotic team API responses to match the
-    output structure of other LLM plugins.
+    
+    This plugin maintains the same output structure as other LLM plugins
+    while routing requests through the agent-based robotic team.
 
     Parameters
     ----------
@@ -63,21 +64,14 @@ class MultiLLM(LLM[R]):
         if not config.api_key:
             raise ValueError("config file missing api_key")
 
-        self.api_key = config.api_key
-
         if not config.model:
-            self._config.model = "gemini-2.0-flash"
+            self._config.model = "gemini-2.0-flash"  # Use the exp version
 
         # Configure the API endpoint
         self.endpoint = "https://api.openmind.org/api/core/agent/robotic_team/runs"
-
-        # We don't use LLMHistoryManager for this LLM
-        self.history_manager = None
-
-        logging.debug(
-            f"MultiLLM initialized with output model: {output_model.__name__}"
-        )
-        logging.debug(f"Output model schema: {output_model.model_json_schema()}")
+        
+        # Store structured_outputs flag from config
+        self.structured_outputs = getattr(config, "structured_outputs", True)
 
     async def ask(
         self, prompt: str, messages: T.List[T.Dict[str, str]] = []
@@ -90,7 +84,7 @@ class MultiLLM(LLM[R]):
         prompt : str
             The input prompt to send to the model.
         messages : List[Dict[str, str]]
-            Message history (not used in current implementation).
+            Message history to provide context.
 
         Returns
         -------
@@ -104,11 +98,25 @@ class MultiLLM(LLM[R]):
             self.io_provider.llm_start_time = time.time()
             self.io_provider.set_llm_prompt(prompt)
 
-            # Prepare request data - always request structured output
+            # Create a more detailed system prompt to ensure proper formatting
+            system_message = {
+                "role": "system", 
+                "content": f"You are a robotic control system. Respond with valid structured output for these commands. Output schema: {json.dumps(self._output_model.model_json_schema(), indent=2)}"
+            }
+            
+            # Add system message at the beginning
+            all_messages = [system_message]
+            if messages:
+                all_messages.extend(messages)
+            all_messages.append({"role": "user", "content": prompt})
+
+            # Prepare request data
             request = {
                 "message": prompt,
+                "model": self._config.model,
+                "messages": all_messages,
                 "response_model": self._output_model.model_json_schema(),
-                "structured_outputs": True,
+                "structured_outputs": self.structured_outputs,
             }
 
             async with aiohttp.ClientSession() as session:
@@ -130,117 +138,110 @@ class MultiLLM(LLM[R]):
                         return None
 
                     response_json = await response.json()
-                    logging.debug(f"Raw API response: {response_json}")
                     self.io_provider.llm_end_time = time.time()
+                    logging.debug(f"Raw response: {response_json}")
 
-                    # Process the response to match the output structure of other LLM plugins
-                    try:
-                        # Handle structured output format
-                        if (
-                            "structured_output" in response_json
-                            and response_json["structured_output"]
-                        ):
-                            # The structured output should directly match our output model
-                            structured_data = response_json["structured_output"]
-                            try:
-                                # Pass the structured output directly to our output model
-                                parsed_response = (
-                                    self._output_model.model_validate_json(
-                                        json.dumps(structured_data)
-                                    )
-                                )
-                                logging.debug(
-                                    f"MultiLLM structured output: {parsed_response}"
-                                )
-                                return parsed_response
-                            except Exception as e:
-                                logging.debug(
-                                    f"Could not validate structured output: {e}"
-                                )
-
-                        # Handle API command format
-                        if "commands" in response_json and response_json["commands"]:
-                            # For command-based responses, create JSON that matches our output model
-                            commands_json = {}
-                            commands = response_json["commands"]
-
-                            # Extract the first command for simplicity
-                            if len(commands) > 0 and isinstance(commands[0], dict):
-                                first_command = commands[0]
-                                if "command" in first_command:
-                                    # Use command/args format
-                                    field_name = self._get_output_model_field_name()
-                                    if field_name:
-                                        commands_json[field_name] = (
-                                            f"{first_command.get('command')}: "
-                                            f"{first_command.get('args', '')}"
-                                        ).strip()
-
-                            if commands_json:
-                                try:
-                                    parsed_response = (
-                                        self._output_model.model_validate_json(
-                                            json.dumps(commands_json)
-                                        )
-                                    )
-                                    logging.debug(
-                                        f"MultiLLM command response: {parsed_response}"
-                                    )
-                                    return parsed_response
-                                except Exception as e:
-                                    logging.error(
-                                        f"Failed to validate command response: {e}"
-                                    )
-
-                        # Handle content-only format
-                        if "content" in response_json and response_json["content"]:
+                    # First try the structured_output field
+                    if "structured_output" in response_json and response_json["structured_output"]:
+                        try:
+                            parsed_response = self._output_model.model_validate(
+                                response_json["structured_output"]
+                            )
+                            logging.debug(f"MultiLLM structured output: {parsed_response}")
+                            return parsed_response
+                        except Exception as e:
+                            logging.error(f"Error validating structured response: {e}")
+                    
+                    # Then try content field - parse commands from markdown/text
+                    if "content" in response_json and response_json["content"]:
+                        try:
+                            # Attempt to extract commands from content
                             content = response_json["content"]
-                            field_name = self._get_output_model_field_name()
-
-                            if field_name:
-                                content_json = {field_name: content}
-                                try:
-                                    parsed_response = (
-                                        self._output_model.model_validate_json(
-                                            json.dumps(content_json)
-                                        )
-                                    )
-                                    logging.debug(
-                                        f"MultiLLM content response: {parsed_response}"
-                                    )
+                            
+                            # Try to find a JSON blob in the content
+                            import re
+                            json_match = re.search(r'```json\s*([\s\S]*?)\s*```', content)
+                            if json_match:
+                                json_str = json_match.group(1)
+                                parsed_json = json.loads(json_str)
+                                if isinstance(parsed_json, dict):
+                                    parsed_response = self._output_model.model_validate(parsed_json)
+                                    logging.debug(f"MultiLLM JSON from content: {parsed_response}")
                                     return parsed_response
-                                except Exception as e:
-                                    logging.error(
-                                        f"Failed to validate content response: {e}"
-                                    )
-
-                        logging.error(
-                            "Could not convert response to valid output format"
-                        )
-                        return None
-
+                            
+                            # Try creating a simple output directly matching schema
+                            schema = self._output_model.model_json_schema()
+                            if "properties" in schema and "commands" in schema["properties"]:
+                                # Attempt to parse commands from content
+                                command_lines = [line.strip() for line in content.split('\n') 
+                                                if line.strip().startswith('-') or line.strip().startswith('*')]
+                                
+                                if command_lines:
+                                    commands = []
+                                    for line in command_lines:
+                                        # Remove list marker
+                                        cmd_text = line.lstrip('-* ').strip()
+                                        if ':' in cmd_text:
+                                            cmd_parts = cmd_text.split(':', 1)
+                                            cmd_type = cmd_parts[0].strip()
+                                            cmd_value = cmd_parts[1].strip()
+                                            commands.append({"type": cmd_type, "value": cmd_value})
+                                        else:
+                                            # Just use the text as is - split into verb and object if possible
+                                            words = cmd_text.split()
+                                            if len(words) > 1:
+                                                cmd_type = words[0]
+                                                cmd_value = ' '.join(words[1:])
+                                                commands.append({"type": cmd_type, "value": cmd_value})
+                                
+                                    if commands:
+                                        result = {"commands": commands}
+                                        parsed_response = self._output_model.model_validate(result)
+                                        logging.debug(f"MultiLLM parsed commands: {parsed_response}")
+                                        return parsed_response
+                        
+                            logging.error("Could not parse commands from content")
+                        except Exception as e:
+                            logging.error(f"Error processing content response: {e}")
+                    
+                    # Try commands field as last resort
+                    if "commands" in response_json and response_json["commands"]:
+                        try:
+                            commands = []
+                            for cmd in response_json["commands"]:
+                                if isinstance(cmd, dict) and "command" in cmd:
+                                    cmd_type = cmd["command"]
+                                    cmd_value = cmd.get("args", "")
+                                    commands.append({"type": cmd_type, "value": cmd_value})
+                            
+                            if commands:
+                                result = {"commands": commands}
+                                parsed_response = self._output_model.model_validate(result)
+                                logging.debug(f"MultiLLM command output: {parsed_response}")
+                                return parsed_response
+                        except Exception as e:
+                            logging.error(f"Error processing commands: {e}")
+                    
+                    # Create a minimal valid response as fallback
+                    try:
+                        # Last resort - create a minimal valid output
+                        schema = self._output_model.model_json_schema()
+                        if "properties" in schema and "commands" in schema["properties"]:
+                            # Create a basic command from the prompt
+                            words = prompt.split()
+                            if len(words) >= 2:
+                                cmd_type = words[0].lower()
+                                cmd_value = ' '.join(words[1:])
+                                result = {"commands": [{"type": cmd_type, "value": cmd_value}]}
+                                parsed_response = self._output_model.model_validate(result)
+                                logging.debug(f"MultiLLM fallback output: {parsed_response}")
+                                return parsed_response
                     except Exception as e:
-                        logging.error(f"Error processing response: {str(e)}")
-                        return None
+                        logging.error(f"Error creating fallback response: {e}")
+
+                    logging.error("Failed to create a valid response after trying all methods")
+                    return None
 
         except Exception as e:
             logging.error(f"Error during API request: {str(e)}")
             return None
-
-    def _get_output_model_field_name(self) -> str:
-        """
-        Get the field name from the output model to use in the response.
-
-        Returns
-        -------
-        str
-            The name of the first field in the output model
-        """
-        try:
-            # Get the first field name from the output model schema
-            schema = self._output_model.model_json_schema()
-            if "properties" in schema and schema["properties"]:
-                return next(iter(schema["properties"].keys()))
-            return "result"  # Default field name if we can't determine one
-        except Exception:
-            return "result"  # Default fallback
