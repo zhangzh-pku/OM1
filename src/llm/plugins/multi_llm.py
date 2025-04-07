@@ -144,7 +144,7 @@ class MultiLLM(LLM[R]):
                     # First try the structured_output field
                     if "structured_output" in response_json and response_json["structured_output"]:
                         try:
-                            parsed_response = self._output_model.model_validate(
+                            parsed_response = self._output_model.model_validate_json(
                                 response_json["structured_output"]
                             )
                             logging.debug(f"MultiLLM structured output: {parsed_response}")
