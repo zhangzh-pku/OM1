@@ -68,7 +68,7 @@ class MultiLLM(LLM[R]):
             self._config.model = "gemini-2.0-flash"  # Use the exp version
 
         # Configure the API endpoint
-        self.endpoint = "http://127.0.0.1:3000/api/core/agent/robotic_team/runs"
+        self.endpoint = "https://api.openmind.org/api/core/agent/robotic_team/runs"
 
     async def ask(
         self, prompt: str, messages: T.List[T.Dict[str, str]] = []
