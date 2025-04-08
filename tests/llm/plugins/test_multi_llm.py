@@ -1,10 +1,10 @@
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import AsyncMock, patch
 
 import pytest
 from pydantic import BaseModel, Field
 
 from llm import LLMConfig
-from llm.plugins.multi_llm import ApiCommand, MultiLLM, RoboticTeamResponse
+from llm.plugins.multi_llm import MultiLLM
 
 
 class DummyOutputModel(BaseModel):
