@@ -3,33 +3,12 @@ import logging
 import time
 import typing as T
 
-import aiohttp
-from pydantic import BaseModel, Field
+import requests
+from pydantic import BaseModel
 
 from llm import LLM, LLMConfig
 
 R = T.TypeVar("R", bound=BaseModel)
-
-
-class ApiCommand(BaseModel):
-    """Command format returned by the robotic_team API."""
-
-    command: str = Field(..., description="The command type")
-    args: T.Optional[str] = Field(None, description="Optional command arguments")
-
-
-class RoboticTeamResponse(BaseModel):
-    """Response model from the robotic team endpoint"""
-
-    content: T.Optional[str] = Field(
-        None, description="Text content in markdown format"
-    )
-    structured_output: T.Optional[dict] = Field(
-        None, description="Structured output data"
-    )
-    commands: T.Optional[list[ApiCommand]] = Field(
-        None, description="List of commands to execute"
-    )
 
 
 class MultiLLM(LLM[R]):
@@ -107,7 +86,10 @@ class MultiLLM(LLM[R]):
                 all_messages.extend(messages)
             all_messages.append({"role": "user", "content": prompt})
 
-            # Prepare request data
+            headers = {
+                "Authorization": f"Bearer {self._config.api_key}",
+                "Content-Type": "application/json",
+            }
             request = {
                 "message": prompt,
                 "model": self._config.model,
@@ -116,38 +98,26 @@ class MultiLLM(LLM[R]):
                 "structured_outputs": True,
             }
 
-            async with aiohttp.ClientSession() as session:
-                headers = {"Authorization": f"Bearer {self._config.api_key}"}
+            response = requests.post(
+                self.endpoint,
+                json=request,
+                headers=headers,
+            )
 
-                logging.debug(f"Sending request to {self.endpoint}")
+            response_json = response.json()
+            self.io_provider.llm_end_time = time.time()
+            logging.info(f"Raw response: {response_json}")
 
-                # Send request to endpoint
-                async with session.post(
-                    self.endpoint,
-                    json=request,
-                    headers=headers,
-                ) as response:
-                    if response.status != 200:
-                        error_text = await response.text()
-                        logging.error(
-                            f"API request failed with status {response.status}: {error_text}"
-                        )
-                        return None
-
-                    response_json = await response.json()
-                    self.io_provider.llm_end_time = time.time()
-                    logging.info(f"Raw response: {response_json}")
-
-                    structured_output = response_json.get("structured_output")
-                    try:
-                        parsed_response = self._output_model.model_validate_json(
-                            structured_output
-                        )
-                        logging.debug(f"MultiLLM structured output: {parsed_response}")
-                        return parsed_response
-                    except Exception as e:
-                        logging.error(f"Error validating structured response: {e}")
-                        return None
+            structured_output = response_json.get("structured_output")
+            try:
+                parsed_response = self._output_model.model_validate_json(
+                    structured_output
+                )
+                logging.debug(f"MultiLLM structured output: {parsed_response}")
+                return parsed_response
+            except Exception as e:
+                logging.error(f"Error validating structured response: {e}")
+                return None
 
         except Exception as e:
             logging.error(f"Error during API request: {str(e)}")
