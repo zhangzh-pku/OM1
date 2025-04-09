@@ -42,13 +42,19 @@ Adafruit_LSM6DS3TRC lsm6ds3trc;
 uint32_t timerGPS = millis();
 uint32_t timerMAG = millis();
 
-float ToDecimalDegrees(float formattedLatLon)
+float ToDecimalDegrees(float formattedLatLon, char hemisphere)
 {
   float decDegrees = (float)((int)formattedLatLon / 100);
   float decMinutes = formattedLatLon - (decDegrees * 100);
   float fractDegrees = decMinutes / 60.0;
-
-  return decDegrees + fractDegrees;
+  float result = decDegrees + fractDegrees;
+  
+  // Apply negative sign for southern or western hemispheres
+  if (hemisphere == 'S' || hemisphere == 'W') {
+    result = -result;
+  }
+  
+  return result;
 }
 
 void setup()
