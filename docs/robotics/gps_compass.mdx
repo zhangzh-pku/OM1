@@ -24,7 +24,6 @@ To the Arduino IDE, add the following libraries:
 Run the following sketch. It yields all the data for tilt compensated magnetic heading and a GPS location (as well as altitude and velocity).
 
 ```c
-
 // for the GPS
 #include <Adafruit_GPS.h>
 #define GPSSerial Serial1
@@ -42,19 +41,13 @@ Adafruit_LSM6DS3TRC lsm6ds3trc;
 uint32_t timerGPS = millis();
 uint32_t timerMAG = millis();
 
-float ToDecimalDegrees(float formattedLatLon, char hemisphere)
+float ToDecimalDegrees(float formattedLatLon)
 {
   float decDegrees = (float)((int)formattedLatLon / 100);
   float decMinutes = formattedLatLon - (decDegrees * 100);
   float fractDegrees = decMinutes / 60.0;
-  float result = decDegrees + fractDegrees;
-  
-  // Apply negative sign for southern or western hemispheres
-  if (hemisphere == 'S' || hemisphere == 'W') {
-    result = -result;
-  }
-  
-  return result;
+
+  return decDegrees + fractDegrees;
 }
 
 void setup()
@@ -136,7 +129,7 @@ void setup()
                           false, // don't latch
                           true); // enabled!
 
-  Serial.println("Adafruit LSM6DS3TR-C test!");
+    Serial.println("Adafruit LSM6DS3TR-C test!");
 
   if (!lsm6ds3trc.begin_I2C()) {
     Serial.println("Failed to find LSM6DS3TR-C chip");
