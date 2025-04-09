@@ -5,30 +5,26 @@ description: "Arduino GPS and compass support"
 
 ## Hardware
 
-A simple solution for outdoors localization and basic navigation is an Arduino board (such as the Adafruit Feather nRF52840 Sense) with a GPS shield (such as the Adafruit Ultimate GPS FeatherWing). The sense provides a micro controller, Bluetooth, and a magnetometer (a LIS3MDL), and the shield provides a GPS.
+A simple solution for outdoors localization and basic navigation is an Arduino board (such as the Adafruit Feather nRF52840 Sense) with a GPS shield (such as the Adafruit Ultimate GPS FeatherWing). The sense provides a microcontroller, Bluetooth, a 6DoF IMU, and a magnetometer (a LIS3MDL). The FeatherWing shield provides a GPS.
 
 ## Assembly
 
-Solder the shield to the Adafruit Sense. Use the Arduino IDE to write a simple script to stream GPS and magnetometer data though the USB/serial. 
+Solder the FeatherWing to the Adafruit Sense. Add support for the [Adafruit nRF52](https://learn.adafruit.com/adafruit-circuit-playground-bluefruit/arduino-support-setup) to the Arduino IDE. Then add the board - it's the `Adafruit nRF52840 Sense`. The Arduino IDE will probably need to install the nRF core library (`adafruit:nrf52@1.6.1`). You should now be able to connect to the board.  
 
-https://learn.adafruit.com/adafruit-circuit-playground-bluefruit/arduino-support-setup
-
-Then add the board - it's the `Adafruit nRF52840 Sense`. The Arduino IDE will probably need to install the nRF core library (`adafruit:nrf52@1.6.1`). You should now be able to connect to the board.  
+Then, use the Arduino IDE to write a simple script to stream GPS and magnetometer data though the USB/serial. An example is given next. 
 
 ## Software
 
-* Add the `Adafruit GPS library` to your IDE
-* Add the `Adafruit LIS3MDL` library to your IDE
+To the Arduino IDE, add the following libraries:
 
-* Open the `File→Examples→Adafruit_GPS→GPS_HardwareSerial_Parsing` sketch and upload it to the Arduino.
+* `Adafruit GPS library`
+* `Adafruit LIS3MDL`
+* `Adafruit_LSM6DS`
 
-https://learn.adafruit.com/adafruit-ultimate-gps-featherwing/arduino-library
+Run the following sketch. It yields all the data for tilt compensated magnetic heading and a GPS location (as well as altitude and velocity).
 
-The system will now stream GPS data to the serial port.
+```c
 
-Magnetometer: toDo.
-
-```c partially working code
 // for the GPS
 #include <Adafruit_GPS.h>
 #define GPSSerial Serial1
@@ -38,18 +34,22 @@ Adafruit_GPS GPS(&GPSSerial);
 #include <Wire.h>
 #include <Adafruit_LIS3MDL.h>
 #include <Adafruit_Sensor.h>
-
 Adafruit_LIS3MDL lis3mdl;
-#define LIS3MDL_CLK 13
-#define LIS3MDL_MISO 12
-#define LIS3MDL_MOSI 11
-#define LIS3MDL_CS 10
 
-// Set GPSECHO to 'false' to turn off echoing the GPS data to the Serial console
-// Set to 'true' if you want to debug and listen to the raw GPS sentences
-#define GPSECHO false
+#include <Adafruit_LSM6DS3TRC.h>
+Adafruit_LSM6DS3TRC lsm6ds3trc;
 
-uint32_t timer = millis();
+uint32_t timerGPS = millis();
+uint32_t timerMAG = millis();
+
+float ToDecimalDegrees(float formattedLatLon)
+{
+  float decDegrees = (float)((int)formattedLatLon / 100);
+  float decMinutes = formattedLatLon - (decDegrees * 100);
+  float fractDegrees = decMinutes / 60.0;
+
+  return decDegrees + fractDegrees;
+}
 
 void setup()
 {
@@ -60,20 +60,9 @@ void setup()
   
   Serial.println("GPS booting");
 
-  // 9600 NMEA is the default baud rate for Adafruit MTK GPS's- some use 4800
   GPS.begin(9600);
-  // uncomment this line to turn on RMC (recommended minimum) and GGA (fix data) including altitude
   GPS.sendCommand(PMTK_SET_NMEA_OUTPUT_RMCGGA);
-  // uncomment this line to turn on only the "minimum recommended" data
-  //GPS.sendCommand(PMTK_SET_NMEA_OUTPUT_RMCONLY);
-  // For parsing data, we don't suggest using anything but either RMC only or RMC+GGA since
-  // the parser doesn't care about other sentences at this time
-  // Set the update rate
   GPS.sendCommand(PMTK_SET_NMEA_UPDATE_1HZ); // 1 Hz update rate
-  // For the parsing code to work nicely and have time to sort thru the data, and
-  // print it out we don't suggest using anything higher than 1 Hz
-
-  // Request updates on antenna status, comment out to keep quiet
   GPS.sendCommand(PGCMD_ANTENNA);
 
   delay(1000);
@@ -81,12 +70,10 @@ void setup()
   // Ask for firmware version
   GPSSerial.println(PMTK_Q_RELEASE);
 
-  Serial.println("Booting LIS3MDL!");
+  Serial.println("Booting LIS3MDL");
   
   // Try to initialize!
   if (! lis3mdl.begin_I2C()) {          // hardware I2C mode, can pass in address & alt Wire
-  //if (! lis3mdl.begin_SPI(LIS3MDL_CS)) {  // hardware SPI mode
-  //if (! lis3mdl.begin_SPI(LIS3MDL_CS, LIS3MDL_CLK, LIS3MDL_MISO, LIS3MDL_MOSI)) { // soft SPI
     Serial.println("Failed to find LIS3MDL chip");
     while (1) { delay(10); }
   }
@@ -142,78 +129,253 @@ void setup()
                           true, // polarity
                           false, // don't latch
                           true); // enabled!
+
+  Serial.println("Adafruit LSM6DS3TR-C test!");
+
+  if (!lsm6ds3trc.begin_I2C()) {
+    Serial.println("Failed to find LSM6DS3TR-C chip");
+    while (1) {
+      delay(10);
+    }
+  }
+
+  Serial.println("LSM6DS3TR-C Found!");
+
+  // lsm6ds3trc.setAccelRange(LSM6DS_ACCEL_RANGE_2_G);
+  Serial.print("Accelerometer range set to: ");
+  switch (lsm6ds3trc.getAccelRange()) {
+  case LSM6DS_ACCEL_RANGE_2_G:
+    Serial.println("+-2G");
+    break;
+  case LSM6DS_ACCEL_RANGE_4_G:
+    Serial.println("+-4G");
+    break;
+  case LSM6DS_ACCEL_RANGE_8_G:
+    Serial.println("+-8G");
+    break;
+  case LSM6DS_ACCEL_RANGE_16_G:
+    Serial.println("+-16G");
+    break;
+  }
+
+  // lsm6ds3trc.setGyroRange(LSM6DS_GYRO_RANGE_250_DPS);
+  Serial.print("Gyro range set to: ");
+  switch (lsm6ds3trc.getGyroRange()) {
+  case LSM6DS_GYRO_RANGE_125_DPS:
+    Serial.println("125 degrees/s");
+    break;
+  case LSM6DS_GYRO_RANGE_250_DPS:
+    Serial.println("250 degrees/s");
+    break;
+  case LSM6DS_GYRO_RANGE_500_DPS:
+    Serial.println("500 degrees/s");
+    break;
+  case LSM6DS_GYRO_RANGE_1000_DPS:
+    Serial.println("1000 degrees/s");
+    break;
+  case LSM6DS_GYRO_RANGE_2000_DPS:
+    Serial.println("2000 degrees/s");
+    break;
+  case ISM330DHCX_GYRO_RANGE_4000_DPS:
+    break; // unsupported range for the DS33
+  }
+
+  // lsm6ds3trc.setAccelDataRate(LSM6DS_RATE_12_5_HZ);
+  Serial.print("Accelerometer data rate set to: ");
+  switch (lsm6ds3trc.getAccelDataRate()) {
+  case LSM6DS_RATE_SHUTDOWN:
+    Serial.println("0 Hz");
+    break;
+  case LSM6DS_RATE_12_5_HZ:
+    Serial.println("12.5 Hz");
+    break;
+  case LSM6DS_RATE_26_HZ:
+    Serial.println("26 Hz");
+    break;
+  case LSM6DS_RATE_52_HZ:
+    Serial.println("52 Hz");
+    break;
+  case LSM6DS_RATE_104_HZ:
+    Serial.println("104 Hz");
+    break;
+  case LSM6DS_RATE_208_HZ:
+    Serial.println("208 Hz");
+    break;
+  case LSM6DS_RATE_416_HZ:
+    Serial.println("416 Hz");
+    break;
+  case LSM6DS_RATE_833_HZ:
+    Serial.println("833 Hz");
+    break;
+  case LSM6DS_RATE_1_66K_HZ:
+    Serial.println("1.66 KHz");
+    break;
+  case LSM6DS_RATE_3_33K_HZ:
+    Serial.println("3.33 KHz");
+    break;
+  case LSM6DS_RATE_6_66K_HZ:
+    Serial.println("6.66 KHz");
+    break;
+  }
+
+  // lsm6ds3trc.setGyroDataRate(LSM6DS_RATE_12_5_HZ);
+  Serial.print("Gyro data rate set to: ");
+  switch (lsm6ds3trc.getGyroDataRate()) {
+  case LSM6DS_RATE_SHUTDOWN:
+    Serial.println("0 Hz");
+    break;
+  case LSM6DS_RATE_12_5_HZ:
+    Serial.println("12.5 Hz");
+    break;
+  case LSM6DS_RATE_26_HZ:
+    Serial.println("26 Hz");
+    break;
+  case LSM6DS_RATE_52_HZ:
+    Serial.println("52 Hz");
+    break;
+  case LSM6DS_RATE_104_HZ:
+    Serial.println("104 Hz");
+    break;
+  case LSM6DS_RATE_208_HZ:
+    Serial.println("208 Hz");
+    break;
+  case LSM6DS_RATE_416_HZ:
+    Serial.println("416 Hz");
+    break;
+  case LSM6DS_RATE_833_HZ:
+    Serial.println("833 Hz");
+    break;
+  case LSM6DS_RATE_1_66K_HZ:
+    Serial.println("1.66 KHz");
+    break;
+  case LSM6DS_RATE_3_33K_HZ:
+    Serial.println("3.33 KHz");
+    break;
+  case LSM6DS_RATE_6_66K_HZ:
+    Serial.println("6.66 KHz");
+    break;
+  }
+
+  lsm6ds3trc.configInt1(false, false, true); // accelerometer DRDY on INT1
+  lsm6ds3trc.configInt2(false, true, false); // gyro DRDY on INT2
 }
 
 void loop() // run over and over again
 {
   // read data from the GPS in the 'main loop'
   char c = GPS.read();
-  // if you want to debug, this is a good time to do it!
-  if (GPSECHO)
-    if (c) Serial.print(c);
+  // // if you want to debug, this is a good time to do it!
+  // if (GPSECHO)
+  //   if (c) Serial.print(c);
+  
   // if a sentence is received, we can check the checksum, parse it...
   if (GPS.newNMEAreceived()) {
     // a tricky thing here is if we print the NMEA sentence, or data
     // we end up not listening and catching other sentences!
     // so be very wary if using OUTPUT_ALLDATA and trying to print out data
-    Serial.print(GPS.lastNMEA()); // this also sets the newNMEAreceived() flag to false
+    //Serial.print(GPS.lastNMEA()); // this also sets the newNMEAreceived() flag to false
     if (!GPS.parse(GPS.lastNMEA())) // this also sets the newNMEAreceived() flag to false
       return; // we can fail to parse a sentence in which case we should just wait for another
   }
 
-  // approximately every 2 seconds or so, print out the current stats
-  if (millis() - timer > 2000) {
-    timer = millis(); // reset the timer
-    Serial.print("\nTime: ");
-    if (GPS.hour < 10) { Serial.print('0'); }
-    Serial.print(GPS.hour, DEC); Serial.print(':');
-    if (GPS.minute < 10) { Serial.print('0'); }
-    Serial.print(GPS.minute, DEC); Serial.print(':');
-    if (GPS.seconds < 10) { Serial.print('0'); }
-    Serial.print(GPS.seconds, DEC); Serial.print('.');
-    if (GPS.milliseconds < 10) {
-      Serial.print("00");
-    } else if (GPS.milliseconds > 9 && GPS.milliseconds < 100) {
-      Serial.print("0");
-    }
+  // approximately every 1 seconds or so, print out the current stats
+  if (millis() - timerGPS > 1000) {
+    timerGPS = millis(); // reset the timer
+    
+    // Serial.print("\nGPS Time: ");
+    
+    // if (GPS.hour < 10) { Serial.print('0'); }
+    // Serial.print(GPS.hour, DEC); Serial.print(':');
+    // if (GPS.minute < 10) { Serial.print('0'); }
+    // Serial.print(GPS.minute, DEC); Serial.print(':');
+    // if (GPS.seconds < 10) { Serial.print('0'); }
+    // Serial.print(GPS.seconds, DEC); Serial.print('.');
+    // if (GPS.milliseconds < 10) {
+    //   Serial.print("00");
+    // } else if (GPS.milliseconds > 9 && GPS.milliseconds < 100) {
+    //   Serial.print("0");
+    // }
 
-    Serial.println(GPS.milliseconds);
-    Serial.print("Date: ");
-    Serial.print(GPS.day, DEC); Serial.print('/');
-    Serial.print(GPS.month, DEC); Serial.print("/20");
-    Serial.println(GPS.year, DEC);
-    Serial.print("Fix: "); Serial.print((int)GPS.fix);
-    Serial.print(" quality: "); Serial.println((int)GPS.fixquality);
+    // Serial.println(GPS.milliseconds);
+    // Serial.print("Date: ");
+    // Serial.print(GPS.day, DEC); Serial.print('/');
+    // Serial.print(GPS.month, DEC); Serial.print("/20");
+    // Serial.println(GPS.year, DEC);
+    // Serial.print("Fix: "); Serial.print((int)GPS.fix);
+    // Serial.print(" quality: "); Serial.println((int)GPS.fixquality);
 
     if (GPS.fix) {
-      Serial.print("Location: ");
-      Serial.print(GPS.latitude, 4); Serial.print(GPS.lat);
-      Serial.print(", ");
-      Serial.print(GPS.longitude, 4); Serial.println(GPS.lon);
-      Serial.print("Speed (knots): "); Serial.println(GPS.speed);
-      Serial.print("Angle: "); Serial.println(GPS.angle);
-      Serial.print("Altitude: "); Serial.println(GPS.altitude);
-      Serial.print("Satellites: "); Serial.println((int)GPS.satellites);
-      Serial.print("Antenna status: "); Serial.println((int)GPS.antenna);
+
+      float latDecimal = ToDecimalDegrees(GPS.latitude);
+      float lonDecimal = ToDecimalDegrees(GPS.longitude);
+
+      // use this if you want DDMM.MMMM and DDDMM.MMMM
+      // Degrees and minutes
+      // Serial.print("GPS:");
+      // Serial.print(GPS.latitude, 4); 
+      // Serial.print(GPS.lat);
+      // Serial.print(",");
+      // Serial.print(GPS.longitude, 4); 
+      // Serial.print(GPS.lon);
+      
+      // use this is you want decimal degrees
+      Serial.print("GPS:");
+      Serial.print(latDecimal,6);
+      Serial.print(GPS.lat);
+      Serial.print(",");
+      Serial.print(lonDecimal,6);
+      Serial.print(GPS.lon);
+
+      Serial.print(",KN:"); 
+      Serial.print(GPS.speed);
+      Serial.print(",HEAD:"); 
+      Serial.print(GPS.angle);
+      Serial.print(",ALT:"); 
+      Serial.print(GPS.altitude);
+      Serial.print(",SAT:"); 
+      Serial.println((int)GPS.satellites);
     }
   }
 
-  lis3mdl.read();      // get X Y and Z data at once
-  
-  // Then print out the raw data
-  Serial.print("\nX:  "); Serial.print(lis3mdl.x); 
-  Serial.print("  \tY:  "); Serial.print(lis3mdl.y); 
-  Serial.print("  \tZ:  "); Serial.println(lis3mdl.z); 
+  // approximately 500 ms or so, update the direction
+  if (millis() - timerMAG > 500) {
+    timerMAG = millis();
 
-  /* Or....get a new sensor event, normalized to uTesla */
-  // sensors_event_t event; 
-  // lis3mdl.getEvent(&event);
-  // /* Display the results (magnetic field is measured in uTesla) */
-  // Serial.print("X: "); Serial.print(event.magnetic.x);
-  // Serial.print(" \tY: "); Serial.print(event.magnetic.y); 
-  // Serial.print(" \tZ: "); Serial.print(event.magnetic.z); 
-  // Serial.println(" uTesla ");
-  // delay(250); 
-  //Serial.println();
+    // Get a new normalized sensor event
+    sensors_event_t accel;
+    sensors_event_t gyro;
+    sensors_event_t temp;
+    lsm6ds3trc.getEvent(&accel, &gyro, &temp);
+
+    Serial.print("T:");
+    Serial.print(temp.temperature);
+    Serial.println("C");
+
+    /* Display the results (acceleration is measured in m/s^2) */
+    Serial.print("AX:");
+    Serial.print(accel.acceleration.x);
+    Serial.print("Y:");
+    Serial.print(accel.acceleration.y);
+    Serial.print("Z:");
+    Serial.print(accel.acceleration.z);
+    Serial.println(" m/s^2");
+
+    /* Display the results (rotation is measured in rad/s) */
+    Serial.print("GX:");
+    Serial.print(gyro.gyro.x);
+    Serial.print("Y:");
+    Serial.print(gyro.gyro.y);
+    Serial.print("Z:");
+    Serial.print(gyro.gyro.z);
+    Serial.println(" rad/s");
+
+    sensors_event_t event; 
+    lis3mdl.getEvent(&event);
+    /* Display the results (magnetic field is measured in uTesla) */
+    Serial.print("MAG:X:"); Serial.print(event.magnetic.x);
+    Serial.print("Y:"); Serial.print(event.magnetic.y); 
+    Serial.print("Z:"); Serial.print(event.magnetic.z); 
+    Serial.println("uT");
+  }
 }
 ```
