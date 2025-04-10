@@ -32,8 +32,11 @@ float ToDecimalDegrees(float formattedLatLon)
 
 // These are specific to each IMU and IMU environment - 
 // Poor calibration values will prevent AHRS function
-float mag_hardiron[]  = { 6.41, 31.07, -12.36 }; // in uTesla
-float mag_softiron[]  = { 0.990, 0.007, -0.005, 0.007, 0.990, 0.010, -0.005, 0.010, 1.020 }; 
+float mag_hardiron[]  = { 24.42, -16.87, -3.88 }; // in uTesla
+float mag_softiron[]  = { \
+0.959, 0.050, -0.038, \
+0.050, 1.078, 0.002,  \
+-0.038, 0.002, 0.970 }; 
 float gyro_zerorate[] = { 0.00, 0.02, 0.01 }; // in Radians/s
 
 #include "quaternionFilters.h"
