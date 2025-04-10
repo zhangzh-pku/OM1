@@ -5,11 +5,11 @@ description: "Arduino GPS and compass support"
 
 ## Hardware
 
-A simple solution for outdoors localization and basic navigation is an Arduino board (such as the Adafruit Feather nRF52840 Sense) with a GPS shield (such as the Adafruit Ultimate GPS FeatherWing). The sense provides a microcontroller, Bluetooth, a 6DoF IMU, and a magnetometer (a LIS3MDL). The FeatherWing shield provides a GPS.
+A simple solution for outdoors localization and basic navigation is an Arduino board, such as the [Adafruit Feather nRF52840 Sense](https://www.adafruit.com/product/4516) with a GPS shield, such as the [Adafruit Ultimate GPS FeatherWing](https://www.adafruit.com/product/3133). The `Sense` provides a micro controller, Bluetooth, a 6DoF IMU, and a magnetometer (a LIS3MDL). The `FeatherWing` provides a GPS.
 
 ## Assembly
 
-Solder the FeatherWing to the Adafruit Sense. Add support for the [Adafruit nRF52](https://learn.adafruit.com/adafruit-circuit-playground-bluefruit/arduino-support-setup) to the Arduino IDE. Then add the board - it's the `Adafruit nRF52840 Sense`. The Arduino IDE will probably need to install the nRF core library (`adafruit:nrf52@1.6.1`). You should now be able to connect to the board.  
+Solder the `FeatherWing` to the `Sense`. Add support for the [nRF52](https://learn.adafruit.com/adafruit-circuit-playground-bluefruit/arduino-support-setup) to the Arduino IDE. Then, add the board - it's the `Adafruit nRF52840 Sense`. The Arduino IDE will probably need to also install the nRF core library (`adafruit:nrf52@1.6.1`). You should now be able to connect to the board.  
 
 ## Software
 
@@ -19,30 +19,33 @@ Add the following libraries to the Arduino IDE:
 * `Adafruit LIS3MDL`
 * `Adafruit_LSM6DS`
 
-Run the sketch in `/system_hw_test/gps_mag`. It yields all the data for tilt compensated magnetic heading, a full AHRS solution (yaw, tile, roll) and a GPS location (as well as altitude and velocity). 
+Run the sketch provided in `/system_hw_test/gps_mag`. It yields all the data for tilt compensated magnetic heading, a full AHRS solution (yaw, tilt, roll) and a GPS location, as well as altitude and velocity. 
 
-*WARNING* The direction and AHRS data will be entirely incorrect unless you calibrate tyour magnetometer, gyro, and accelerator.
+*WARNING* The direction and AHRS data will be entirely incorrect unless you calibrate your magnetometer, gyro, and accelerator.
 
 ## Calibration
 
-In the `/system_hw_test/gps_mag`, see:
+In the `/system_hw_test/gps_mag.ino`, see:
 
 ```c
-/* For calibration, set this to true, run the script, close
-the Arduino IDE, close the serial monitor, and open MotionCal
+/* For calibration, set CALIBRATION to true, run the script, close
+the Arduino IDE, close the serial monitor, and open MotionCal.
+
+MotionCal can be downloaded here:
 
 https://github.com/PaulStoffregen/MotionCal
 
-If you do not see your Arduino in the serial port dropdown menu,
-then follow these instructions to compile MotionCal for your 
-OS and platform
+If you do not see your Arduino in MotionCal's serial port 
+drop down menu, follow these instructions to compile MotionCal 
+for your OS and platform
 
 https://github.com/PaulStoffregen/MotionCal/issues/11#issuecomment-2412937251
 */
+
 bool CALIBRATION = false;
 ```
 
-Once you have established your 15 (3+9+3) calibration coefficients (see https://github.com/PaulStoffregen/MotionCal), determine the device string of your sensor (see serial debug output of the Arduino) and add those parameters following the given example:
+Once you have established your 15 (3+9+3) calibration coefficients (see https://github.com/PaulStoffregen/MotionCal), determine the device string of your sensor (provided in the initial serial debug output), and add your calibration coefficients following the example given in `gap_mag.ino`:
 
 ```c
 if (strcmp(DeviceID, "38e4bfd6") == 0) {
@@ -59,8 +62,8 @@ if (strcmp(DeviceID, "38e4bfd6") == 0) {
 }
 ```
 
-*WARNING* If you use different sensor hardware (and not the nRF52840 Sense with the FeatherWing), you will need to change all data flowing for your gyros, accelerators, and magnetometer to (1) have the correct units, and (2) follow the correct sign conventions, and (3) accommodate your pcb/sensor geometry as well as how it is mounted relative to your robot. This tends to be extremely tedious and time consuming, so we recommend using the Sense/Feathering for which this driver has been developed.
+*WARNING* If you use different sensor hardware (and not the nRF52840 Sense with the FeatherWing), you will need to adapt all data flowing from your gyros, accelerators, and magnetometer to (1) have the correct units, (2) follow the correct sign conventions, and (3) accommodate your pcb/sensor geometry as well as how the sensors are mounted relative to your robot. This tends to be extremely tedious and time consuming, so we recommend using the Sense/FeatherWing for which this driver has been developed.
 
 ## Usage
 
-Once your Sense/FeatherWing is streaming data on the serial line, it can be fed into OM1. see the example (`src/inputs/plugins/serial_reader`) for an example of how to do that. 
+Once your Sense/FeatherWing is streaming data on the serial line, it can be fed into OM1. See `src/inputs/plugins/serial_reader` for an example of how to do that. 

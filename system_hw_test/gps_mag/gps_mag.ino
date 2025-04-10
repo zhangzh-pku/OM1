@@ -17,17 +17,20 @@ uint32_t timerMAG = millis();
 
 int IMU_LAST_READ = 0;
 
-/* For calibration, set this to true, run the script, close
-the Arduino IDE, close the serial monitor, and open MotionCal
+/* For calibration, set CALIBRATION to true, run the script, close
+the Arduino IDE, close the serial monitor, and open MotionCal.
+
+MotionCal can be downloaded here:
 
 https://github.com/PaulStoffregen/MotionCal
 
-If you do not see your Arduino in the device Dropdown menu,
-then follow these instructions to compile MotionCal for your 
-OS and platform
+If you do not see your Arduino in MotionCal's serial port 
+drop down menu, follow these instructions to compile MotionCal 
+for your OS and platform
 
 https://github.com/PaulStoffregen/MotionCal/issues/11#issuecomment-2412937251
 */
+
 bool CALIBRATION = false;
 
 float ToDecimalDegrees(float formattedLatLon)
@@ -111,7 +114,7 @@ void setup()
 
   Serial.println("Booting LIS3MDL");
   
-  if (! lis3mdl.begin_I2C()) {
+  if (!lis3mdl.begin_I2C()) {
     Serial.println("Failed to find LIS3MDL");
     while (1) { delay(10); }
   }
@@ -127,13 +130,12 @@ void setup()
                           false, // don't latch
                           true); // enabled!
 
-    Serial.println("Adafruit LSM6DS3TR-C test!");
+  Serial.println("Booting LSM6DS3TR-C");
 
   if (!lsm6ds3trc.begin_I2C()) {
-    Serial.println("Failed to find LSM6DS3TR-C chip");
+    Serial.println("Failed to find LSM6DS3TR-C");
     while (1) { delay(10); }
   }
-
   Serial.println("LSM6DS3TR-C Found");
 
   lsm6ds3trc.setAccelRange(LSM6DS_ACCEL_RANGE_2_G);
@@ -321,13 +323,13 @@ void loop()
     // For more see
     // http://en.wikipedia.org/wiki/Conversion_between_quaternions_and_Euler_angles
     // which has additional links.
-    float myIMUyaw   = atan2(2.0f * (*(getQ()+1) * *(getQ()+2) + *getQ()
+    float myIMUyaw = atan2(2.0f * (*(getQ()+1) * *(getQ()+2) + *getQ()
                   * *(getQ()+3)), *getQ() * *getQ() + *(getQ()+1)
                   * *(getQ()+1) - *(getQ()+2) * *(getQ()+2) - *(getQ()+3)
                   * *(getQ()+3));
     float myIMUpitch = -asin(2.0f * (*(getQ()+1) * *(getQ()+3) - *getQ()
                   * *(getQ()+2)));
-    float myIMUroll  = atan2(2.0f * (*getQ() * *(getQ()+1) + *(getQ()+2)
+    float myIMUroll = atan2(2.0f * (*getQ() * *(getQ()+1) + *(getQ()+2)
                   * *(getQ()+3)), *getQ() * *getQ() - *(getQ()+1)
                   * *(getQ()+1) - *(getQ()+2) * *(getQ()+2) + *(getQ()+3)
                   * *(getQ()+3));
