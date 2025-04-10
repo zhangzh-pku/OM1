@@ -68,28 +68,11 @@ class FabricGPSInput(FuserInput[str]):
         """
         await asyncio.sleep(0.5)
 
-        try:
-            # share GPS coordinates with the Fabric network
-            share_status_response = requests.post(
-                f"{self.fabric_endpoint}",
-                json={
-                    "method": "omp2p_shareStatus",
-                    "params": [{"latitude": 0, "longitude": 0}],
-                    "id": 1,
-                    "jsonrpc": "2.0",
-                },
-                headers={"Content-Type": "application/json"},
-            )
-            response = share_status_response.json()
-            logging.debug(f"Share status response: {response}")
-            if "result" in response and response["result"]:
-                logging.info("GPS coordinates shared successfully.")
-            else:
-                logging.error("Failed to share GPS coordinates.")
-                return None
-        except Exception as e:
-            logging.error(f"Error while sharing GPS coordinates: {e}")
-            return None
+        # TODO use real GPS coordinates
+        # For now, we are using hardcoded coordinates
+        # Set GPS coordinates
+        self.io_provider.add_dynamic_variable("latitude", 37.781867)
+        self.io_provider.add_dynamic_variable("longitude", -122.394044)
 
         # Find the closest node
         try:
