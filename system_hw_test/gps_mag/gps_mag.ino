@@ -339,7 +339,7 @@ void loop()
     Serial.print(", ");
     Serial.println(myIMUroll *= RAD_TO_DEG, 2);
 
-  int headingDegrees = 0.0;
+  float headingDegrees = 0.0;
   if (myIMUyaw < 0) {
     headingDegrees = -1.0 * myIMUyaw;
   } else {
