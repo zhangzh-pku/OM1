@@ -60,7 +60,7 @@ class SerialReader(FuserInput[str]):
     def __init__(self, config: SensorConfig = SensorConfig()):
         super().__init__(config)
 
-        port = "/dev/cu.usbmodem1101"  # Replace with your actual port
+        port = getattr(config, "port", None)
         baudrate = 115200
         timeout = 1
 
