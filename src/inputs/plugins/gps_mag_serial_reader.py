@@ -122,6 +122,13 @@ class SerialReader(FuserInput[str]):
                     heading = parts[3].split(":")[1]
                     alt = parts[4].split(":")[1]
                     sats = parts[5].split(":")[1]
+
+                    self.io_provider.add_dynamic_variable("latitude", lat)
+                    self.io_provider.add_dynamic_variable("longitude", lon)
+                    self.io_provider.add_dynamic_variable("altitude", alt)
+                    self.io_provider.add_dynamic_variable("heading", heading)
+                    self.io_provider.add_dynamic_variable("sats", sats)
+
                     msg = (
                         f"Current location is {lat}, {lon} at {alt} meters altitude, "
                         f"heading {heading}°, with {sats} satellites locked."

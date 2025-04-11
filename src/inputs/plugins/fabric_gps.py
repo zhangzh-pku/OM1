@@ -68,12 +68,6 @@ class FabricGPSInput(FuserInput[str]):
         """
         await asyncio.sleep(0.5)
 
-        # TODO use real GPS coordinates
-        # For now, we are using hardcoded coordinates
-        # Set GPS coordinates
-        self.io_provider.add_dynamic_variable("latitude", 37.781867)
-        self.io_provider.add_dynamic_variable("longitude", -122.394044)
-
         # Find the closest node
         try:
             find_closest_node_response = requests.post(
