@@ -48,7 +48,7 @@ class Message:
     message: str
 
 
-class SerialReader(FuserInput[str]):
+class GPSMagSerialReader(FuserInput[str]):
     """
     Reads GPS and Magnetometer data from serial port.
     Parses lines like:
