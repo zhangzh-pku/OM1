@@ -107,12 +107,16 @@ class GPSMagSerialReader(FuserInput[str]):
                     cardinal_abbr = parts[3]
                     direction = CARDINAL_MAP.get(cardinal_abbr, cardinal_abbr)
                     msg = f"You are facing {direction}."
+                    self.io_provider.add_dynamic_variable("direction", direction)
                 else:
                     msg = f"Unable to parse heading: {raw_input}"
 
             elif raw_input.startswith("YPR:"):
                 yaw, pitch, roll = map(str.strip, raw_input[4:].split(","))
                 msg = f"Orientation is Yaw: {yaw}°, Pitch: {pitch}°, Roll: {roll}°."
+                self.io_provider.add_dynamic_variable("yaw", yaw)
+                self.io_provider.add_dynamic_variable("pitch", pitch)
+                self.io_provider.add_dynamic_variable("roll", roll)
 
             elif raw_input.startswith("GPS:"):
                 try:
