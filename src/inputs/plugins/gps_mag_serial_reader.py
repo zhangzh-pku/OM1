@@ -119,7 +119,6 @@ class SerialReader(FuserInput[str]):
                     parts = raw_input[4:].split(",")
                     lat = parts[0]
                     lon = parts[1]
-                    speed = parts[2].split(":")[1]
                     heading = parts[3].split(":")[1]
                     alt = parts[4].split(":")[1]
                     sats = parts[5].split(":")[1]
