@@ -201,9 +201,9 @@ paths:
                   model:
                     type: string
                     description: The model to use for the agent run
-                    default: gemini-2.0-flash
+                    default: "gemini-2.0-flash"
                     example: "gemini-2.0-flash"
-                    enum: [gpt-4o, gpt-4o-mini, "gemini-2.0-flash-exp"]
+                    enum: [gpt-4o, gpt-4o-mini, "gemini-2.0-flash"]
                   message:
                     type: string
                     description: The message to be processed by the agent
