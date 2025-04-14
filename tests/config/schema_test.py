@@ -10,7 +10,7 @@ json_dir = os.path.join(os.path.dirname(__file__), "../../config")
 
 @pytest.fixture(scope="session")
 def json_schema():
-    schema_path = os.path.join(json_dir, "schema.json")
+    schema_path = os.path.join(json_dir, "schema/schema.json")
     with open(schema_path) as f:
         return json.load(f)
 
