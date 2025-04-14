@@ -16,7 +16,7 @@ def test_configs():
     ]
 
     for file_name in files_names:
-        assert file_name.endswith(".json5", ".json")
+        assert file_name.endswith((".json5", ".json"))
         with open(os.path.join(config_folder_path, file_name), "r") as f:
             raw_config = json5.load(f)
 
