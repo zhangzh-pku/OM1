@@ -2,9 +2,9 @@
     "$schema": "http://json-schema.org/draft-07/schema#",
     "type": "object",
     "required": [
-        "hertz", 
-        "name", 
-        "api_key", 
+        "hertz",
+        "name",
+        "api_key",
         "system_prompt_base",
         "system_governance",
         "system_prompt_examples",
@@ -45,7 +45,7 @@
         },
         "cortex_llm": {
             "type": "object",
-            "required": ["type", "config"],
+            "required": ["type"],
             "properties": {
                 "type": {"type": "string"},
                 "config": {
