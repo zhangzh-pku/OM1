@@ -60,7 +60,7 @@ class GPSMagSerialReader(FuserInput[str]):
     def __init__(self, config: SensorConfig = SensorConfig()):
         super().__init__(config)
 
-        port = getattr(config, "port", "/dev/tty.usbmodem101")
+        port = getattr(config, "port", None)
         baudrate = 115200
         timeout = 1
 
@@ -121,11 +121,11 @@ class GPSMagSerialReader(FuserInput[str]):
             elif raw_input.startswith("GPS:"):
                 try:
                     parts = raw_input[4:].split(",")
-                    lat = parts[0]
-                    lon = parts[1]
+                    lat = float(parts[0][:-1])
+                    lon = float(parts[1][:-1])
                     heading = parts[3].split(":")[1]
-                    alt = parts[4].split(":")[1]
-                    sats = parts[5].split(":")[1]
+                    alt = float(parts[4].split(":")[1])
+                    sats = int(parts[5].split(":")[1])
 
                     self.io_provider.add_dynamic_variable("latitude", lat)
                     self.io_provider.add_dynamic_variable("longitude", lon)
