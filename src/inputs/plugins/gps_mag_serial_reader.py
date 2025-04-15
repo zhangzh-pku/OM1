@@ -60,7 +60,7 @@ class GPSMagSerialReader(FuserInput[str]):
     def __init__(self, config: SensorConfig = SensorConfig()):
         super().__init__(config)
 
-        port = getattr(config, "port", None)
+        port = getattr(config, "port", "/dev/tty.usbmodem101")
         baudrate = 115200
         timeout = 1
 

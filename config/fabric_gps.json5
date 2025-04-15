@@ -17,6 +17,9 @@
     },
     {
         "type": "FabricGPSInput"
+    },
+    {
+        "type": "GPSMagSerialReader",
     }
   ],
   "simulators": [
