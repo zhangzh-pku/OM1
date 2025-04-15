@@ -1,12 +1,13 @@
-from unittest.mock import patch, AsyncMock, MagicMock
 import json
+from unittest.mock import AsyncMock, patch
 
-import pytest
 import aiohttp
+import pytest
 
 from llm import LLMConfig
 from llm.output_model import CortexOutputModel
 from llm.plugins.multi_llm import MultiLLM
+
 
 @pytest.fixture
 def config():
@@ -29,14 +30,16 @@ def mock_response():
 def mock_structured_output_response():
     """Mock API response with structured output matching our model"""
     return {
-        "structured_output": json.dumps({
-            "commands": [
-                {"type": "move", "value": "wag tail"},
-                {"type": "move", "value": "walk"},
-                {"type": "speak", "value": "Hello!"},
-                {"type": "emotion", "value": "happy"}
-            ]
-        })
+        "structured_output": json.dumps(
+            {
+                "commands": [
+                    {"type": "move", "value": "wag tail"},
+                    {"type": "move", "value": "walk"},
+                    {"type": "speak", "value": "Hello!"},
+                    {"type": "emotion", "value": "happy"},
+                ]
+            }
+        )
     }
 
 
@@ -61,7 +64,7 @@ def mocked_session(request):
     mock_context_manager = AsyncMock()
     mock_response_obj = AsyncMock()
     mock_response_obj.json = AsyncMock(return_value=response_data)
-    mock_response_obj.status = 200 # Default status
+    mock_response_obj.status = 200  # Default status
     mock_context_manager.__aenter__.return_value = mock_response_obj
 
     mock_session = AsyncMock(spec=aiohttp.ClientSession)
@@ -101,11 +104,11 @@ def test_init_empty_key():
 async def test_context_manager():
     """Test async context manager functionality"""
     config = LLMConfig(api_key="test_key", model="test-model")
-    
+
     async with MultiLLM(CortexOutputModel, config) as llm:
         assert llm.session is not None
         assert isinstance(llm.session, aiohttp.ClientSession)
-    
+
     assert llm.session is None
 
 
@@ -113,7 +116,7 @@ async def test_context_manager():
 @pytest.mark.parametrize("mocked_session", ["mock_response"], indirect=True)
 async def test_ask_structured_output(llm, mocked_session):
     """Test handling of structured output response format"""
-    with patch('aiohttp.ClientSession', return_value=mocked_session):
+    with patch("aiohttp.ClientSession", return_value=mocked_session):
         result = await llm.ask("test prompt")
 
         assert result is not None
@@ -130,20 +133,22 @@ async def test_ask_api_error(llm):
     mock_session.post.return_value = mock_context_manager
     mock_session.close = AsyncMock()
 
-    with patch('aiohttp.ClientSession', return_value=mock_session):
+    with patch("aiohttp.ClientSession", return_value=mock_session):
         result = await llm.ask("test prompt")
         assert result is None
 
 
 @pytest.mark.asyncio
-@pytest.mark.parametrize("mocked_session", ["mock_structured_output_response"], indirect=True)
+@pytest.mark.parametrize(
+    "mocked_session", ["mock_structured_output_response"], indirect=True
+)
 async def test_io_provider_timing(llm, mocked_session):
     """Test timing metrics collection"""
     # The fixture sets up the response using mock_structured_output_response name
-    with patch('aiohttp.ClientSession', return_value=mocked_session):
+    with patch("aiohttp.ClientSession", return_value=mocked_session):
         result = await llm.ask("test prompt")
 
-        assert result is not None 
+        assert result is not None
         assert llm.io_provider.llm_start_time is not None
         assert llm.io_provider.llm_end_time is not None
         assert llm.io_provider.llm_end_time >= llm.io_provider.llm_start_time

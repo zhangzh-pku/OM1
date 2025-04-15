@@ -118,14 +118,14 @@ class MultiLLM(LLM[R]):
 
             # Initialize session if needed
             await self._init_session()
-            
+
             async with self.session.post(
                 self.endpoint,
                 json=request,
                 headers=headers,
             ) as response:
                 response_json = await response.json()
-                    
+
             self.io_provider.llm_end_time = time.time()
             logging.info(f"Raw response: {response_json}")
 
