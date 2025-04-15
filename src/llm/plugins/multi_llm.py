@@ -119,6 +119,7 @@ class MultiLLM(LLM[R]):
             # Initialize session if needed
             await self._init_session()
 
+            response_json = None
             async with self.session.post(
                 self.endpoint,
                 json=request,
