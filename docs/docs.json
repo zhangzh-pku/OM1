@@ -79,6 +79,7 @@
             "group": "Core Endpoints",
             "pages": [
               "api-reference/endpoints/llm",
+              "api-reference/endpoints/llm_agent",
               "api-reference/endpoints/elevenlabs_tts",
               "api-reference/endpoints/riva_tts"
             ]
@@ -96,7 +97,6 @@
     ],
     "global": {
       "anchors": [
-        
         {
           "anchor": "Research",
           "href": "https://www.openmind.org/research",

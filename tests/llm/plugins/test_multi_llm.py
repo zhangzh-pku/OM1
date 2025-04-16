@@ -20,14 +20,14 @@ def config():
 def mock_response():
     """Mock API response with markdown content"""
     return {
-        "structured_output": '{"commands":[{"type":"move","value":"wag tail"},{"type":"move","value":"walk"},{"type":"speak","value":"Woof! Hello there! I see you!"},{"type":"emotion","value":"joy"}]}'
+        "content": '{"commands":[{"type":"move","value":"wag tail"},{"type":"move","value":"walk"},{"type":"speak","value":"Woof! Hello there! I see you!"},{"type":"emotion","value":"joy"}]}'
     }
 
 
 @pytest.fixture
 def mock_structured_output_response():
     """Mock API response with structured output matching our model"""
-    return {"structured_output": {"result": "This is a structured result"}}
+    return {"content": {"result": "This is a structured result"}}
 
 
 @pytest.fixture
