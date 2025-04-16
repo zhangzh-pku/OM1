@@ -51,6 +51,7 @@
               "robotics/unitree_g1_humanoid",
               "robotics/turtlebot4_zenoh",
               "robotics/tesla_dimo",
+              "robotics/gps_compass",
               "robotics/asimov_governance",
               "robotics/coinbase_hackathon"
             ]
