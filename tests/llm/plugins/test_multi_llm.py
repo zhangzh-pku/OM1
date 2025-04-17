@@ -42,6 +42,7 @@ def mock_structured_output_response():
         )
     }
 
+
 @pytest.fixture
 def llm(config):
     return MultiLLM(CortexOutputModel, config)
