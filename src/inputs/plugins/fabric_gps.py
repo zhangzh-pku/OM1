@@ -84,9 +84,18 @@ class FabricGPSInput(FuserInput[str]):
             logging.info(f"Find closest node response: {response}")
             if "result" in response and response["result"]:
                 logging.info(f"Found closest node: {response['result']}")
-                # TODO
-                # Process the closest node data as needed
-                # the response returns eth address, node id, gps location and others
+                # inside async def _poll(self) after you get response["result"]:
+                peer = response["result"]
+                lat = peer["latitude"]
+                lon = peer["longitude"]
+
+                # save for others
+                self.io_provider.add_dynamic_variable("closest_peer_lat", lat)
+                self.io_provider.add_dynamic_variable("closest_peer_lon", lon)
+
+                # optionally enqueue a human‑readable message
+                self.message_buffer.put(f"Closest peer at {lat:.5f}, {lon:.5f}")
+
         except Exception as e:
             logging.error(f"Error while finding the closest node: {e}")
             return None
