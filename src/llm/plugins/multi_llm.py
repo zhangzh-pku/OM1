@@ -130,11 +130,9 @@ class MultiLLM(LLM[R]):
             self.io_provider.llm_end_time = time.time()
             logging.info(f"Raw response: {response_json}")
 
-            structured_output = response_json.get("structured_output")
+            output = response_json.get("content")
             try:
-                parsed_response = self._output_model.model_validate_json(
-                    structured_output
-                )
+                parsed_response = self._output_model.model_validate_json(output)
                 logging.debug(f"MultiLLM structured output: {parsed_response}")
                 return parsed_response
             except Exception as e:

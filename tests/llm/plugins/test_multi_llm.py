@@ -22,7 +22,7 @@ def config():
 def mock_response():
     """Mock API response with markdown content"""
     return {
-        "structured_output": '{"commands":[{"type":"move","value":"wag tail"},{"type":"move","value":"walk"},{"type":"speak","value":"Woof! Hello there! I see you!"},{"type":"emotion","value":"joy"}]}'
+        "content": '{"commands":[{"type":"move","value":"wag tail"},{"type":"move","value":"walk"},{"type":"speak","value":"Woof! Hello there! I see you!"},{"type":"emotion","value":"joy"}]}'
     }
 
 
@@ -30,7 +30,7 @@ def mock_response():
 def mock_structured_output_response():
     """Mock API response with structured output matching our model"""
     return {
-        "structured_output": json.dumps(
+        "content": json.dumps(
             {
                 "commands": [
                     {"type": "move", "value": "wag tail"},
@@ -41,7 +41,6 @@ def mock_structured_output_response():
             }
         )
     }
-
 
 @pytest.fixture
 def llm(config):
