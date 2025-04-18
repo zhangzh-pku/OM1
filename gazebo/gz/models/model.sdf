@@ -170,12 +170,12 @@
 
     <include>
       <name>Armchair_01</name>
-      <pose>-2.74 -0.13 0.0 0 0 -0.77</pose>
+      <pose>-2.74 0.7 0.0 0 0 -0.77</pose>
       <uri>https://fuel.gazebosim.org/1.0/OpenRobotics/models/Armchair</uri>
     </include>
     <include>
       <name>Armchair_02</name>
-      <pose>-2.62 -1.44 0.0 0 0 -1.75</pose>
+      <pose>-2.62 -0.7 0.0 0 0 -1.75</pose>
       <uri>https://fuel.gazebosim.org/1.0/OpenRobotics/models/Armchair</uri>
     </include>
     <include>
@@ -184,7 +184,7 @@
       <uri>https://fuel.gazebosim.org/1.0/OpenRobotics/models/Bathtub</uri>
     </include>
     <include>
-      <pose>1.5 3.5 0.0 0 0 3.14</pose>
+      <pose>0.5 3.5 0.0 0 0 1.57</pose>
       <name>Bed</name>
       <uri>https://fuel.gazebosim.org/1.0/OpenRobotics/models/Bed</uri>
     </include>
@@ -214,7 +214,7 @@
       <uri>https://fuel.gazebosim.org/1.0/OpenRobotics/models/Dining Chair</uri>
     </include>
     <include>
-      <pose>-0.25 -3.89 0.0 0 0 0</pose>
+      <pose>-0.55 -3.89 0.0 0 0 0</pose>
       <name>Fridge</name>
       <uri>https://fuel.gazebosim.org/1.0/OpenRobotics/models/Refrigerator</uri>
     </include>
