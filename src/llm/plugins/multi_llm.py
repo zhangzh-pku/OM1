@@ -3,7 +3,7 @@ import logging
 import time
 import typing as T
 
-import requests
+import aiohttp
 from pydantic import BaseModel
 
 from llm import LLM, LLMConfig
@@ -48,6 +48,24 @@ class MultiLLM(LLM[R]):
 
         # Configure the API endpoint
         self.endpoint = "https://api.openmind.org/api/core/agent/robotic_team/runs"
+        self.session = None
+
+    async def __aenter__(self):
+        """Async context manager entry."""
+        await self._init_session()
+        return self
+
+    async def __aexit__(self, exc_type, exc_val, exc_tb):
+        """Async context manager exit."""
+        if self.session:
+            await self.session.close()
+            self.session = None
+
+    async def _init_session(self):
+        """Initialize aiohttp session if it doesn't exist."""
+        if self.session is None:
+            timeout = aiohttp.ClientTimeout(total=60)
+            self.session = aiohttp.ClientSession(timeout=timeout)
 
     async def ask(
         self, prompt: str, messages: T.List[T.Dict[str, str]] = []
@@ -98,21 +116,23 @@ class MultiLLM(LLM[R]):
                 "structured_outputs": True,
             }
 
-            response = requests.post(
+            # Initialize session if needed
+            await self._init_session()
+
+            response_json = None
+            async with self.session.post(
                 self.endpoint,
                 json=request,
                 headers=headers,
-            )
+            ) as response:
+                response_json = await response.json()
 
-            response_json = response.json()
             self.io_provider.llm_end_time = time.time()
             logging.info(f"Raw response: {response_json}")
 
-            structured_output = response_json.get("structured_output")
+            output = response_json.get("content")
             try:
-                parsed_response = self._output_model.model_validate_json(
-                    structured_output
-                )
+                parsed_response = self._output_model.model_validate_json(output)
                 logging.debug(f"MultiLLM structured output: {parsed_response}")
                 return parsed_response
             except Exception as e:
@@ -122,3 +142,9 @@ class MultiLLM(LLM[R]):
         except Exception as e:
             logging.error(f"Error during API request: {str(e)}")
             return None
+
+    async def close(self):
+        """Close the session when done."""
+        if self.session:
+            await self.session.close()
+            self.session = None

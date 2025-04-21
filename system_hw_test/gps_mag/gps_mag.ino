@@ -89,6 +89,15 @@ void setup()
     memcpy(mag_hardiron,  mh, sizeof(mag_hardiron));
     memcpy(mag_softiron,  ms, sizeof(mag_softiron));
     memcpy(gyro_zerorate, gc, sizeof(gyro_zerorate));
+  } else if (strcmp(DeviceID, "cfcdd0fb") == 0) {
+    float mh[]  = { -9.0, -5.0, 10.0 }; // in uTesla
+    float ms[]  = { 1.0, 0.0, 0.0, \
+                              0.0, 1.0, 0.0, \
+                              0.0, 0.0, 1.0 }; 
+    float gc[] = { 0.0, 0.0, 0.0 };
+    memcpy(mag_hardiron,  mh, sizeof(mag_hardiron));
+    memcpy(mag_softiron,  ms, sizeof(mag_softiron));
+    memcpy(gyro_zerorate, gc, sizeof(gyro_zerorate));
   } else {
     Serial.println("CAUTION: Magnetometer not calibrated - code will yield garbage - please calibrate your Magnetometer and IMU");
   }
