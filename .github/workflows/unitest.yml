@@ -60,4 +60,4 @@ jobs:
         if: always()
         with:
           name: test-results-${{ runner.os }}
-          path: pytest-results/
+          path: pytest-cache/
