@@ -47,9 +47,6 @@ class MultiLLM(LLM[R]):
 
         # Configure the API endpoint
         self.endpoint = "https://api.openmind.org/api/core/agent"
-        self.session = None
-
-        self.session = None
 
     async def ask(
         self, prompt: str, messages: T.List[T.Dict[str, str]] = []
