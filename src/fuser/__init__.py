@@ -105,6 +105,13 @@ class Fuser:
 
         logging.debug(f"FINAL PROMPT: {fused_prompt}")
 
+        # Record the global prompt, actions and inputs
+        self.io_provider.set_fuser_system_prompt(f"{system_prompt}")
+        self.io_provider.set_fuser_inputs(inputs_fused)
+        self.io_provider.set_fuser_available_actions(
+            f"AVAILABLE ACTIONS:\n{actions_fused}\n\n{question_prompt}"
+        )
+
         # Record the timestamp of the output
         self.io_provider.fuser_end_time = time.time()
 

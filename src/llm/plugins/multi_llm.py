@@ -47,9 +47,6 @@ class MultiLLM(LLM[R]):
 
         # Configure the API endpoint
         self.endpoint = "https://api.openmind.org/api/core/agent"
-        self.session = None
-
-        self.session = None
 
     async def ask(
         self, prompt: str, messages: T.List[T.Dict[str, str]] = []
@@ -71,8 +68,6 @@ class MultiLLM(LLM[R]):
             parsing fails.
         """
         try:
-            logging.debug(f"MultiLLM input: {prompt}")
-
             self.io_provider.llm_start_time = time.time()
             self.io_provider.set_llm_prompt(prompt)
 
@@ -81,11 +76,17 @@ class MultiLLM(LLM[R]):
                 "Content-Type": "application/json",
             }
             request = {
-                "message": prompt,
+                "system_prompt": self.io_provider.fuser_system_prompt,
+                "inputs": self.io_provider.fuser_inputs,
+                "available_actions": self.io_provider.fuser_available_actions,
                 "model": self._config.model,
                 "response_format": self._output_model.model_json_schema(),
                 "structured_outputs": True,
             }
+
+            logging.debug(f"MultiLLM system_prompt: {request['system_prompt']}")
+            logging.debug(f"MultiLLM inputs: {request['inputs']}")
+            logging.debug(f"MultiLLM available_actions: {request['available_actions']}")
 
             response = requests.post(
                 self.endpoint,
