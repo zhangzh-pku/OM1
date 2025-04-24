@@ -2,7 +2,7 @@ import logging
 import math
 from actions.base import ActionConnector, ActionConfig
 from providers.io_provider import IOProvider
-from .interface import MoveToPeerAction, MoveToPeerInput
+from ..interface import MoveToPeerAction, MoveToPeerInput
 
 
 class MoveToPeerRos2Connector(ActionConnector[MoveToPeerInput]):
