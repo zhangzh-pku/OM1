@@ -122,12 +122,12 @@ class GPSMagSerialReader(FuserInput[str]):
                 try:
                     parts = raw_input[4:].split(",")
                     # Validate latitude format
-                    if not parts[0][-1] in {"N", "S"}:
+                    if parts[0][-1] not in {"N", "S"}:
                         raise ValueError(f"Invalid latitude format: {parts[0]}")
                     lat = float(parts[0][:-1]) * (1 if parts[0][-1] == "N" else -1)
 
                     # Validate longitude format
-                    if not parts[1][-1] in {"E", "W"}:
+                    if parts[1][-1] not in {"E", "W"}:
                         raise ValueError(f"Invalid longitude format: {parts[1]}")
                     lon = float(parts[1][:-1]) * (1 if parts[1][-1] == "E" else -1)
                     heading = parts[3].split(":")[1]
