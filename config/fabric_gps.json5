@@ -70,7 +70,7 @@
       "name": "move_to_peer",
       "llm_label": "move_to_peer",
       "implementation": "passthrough",
-      "connector": "ros2",
+      "connector": "ros2"
     }
   ]
 }
