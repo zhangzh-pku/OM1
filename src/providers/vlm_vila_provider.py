@@ -26,7 +26,7 @@ class VLMVilaProvider:
          Frames per second for the video stream.
     """
 
-    def __init__(self, ws_url: str, fps: int = 30):
+    def __init__(self, ws_url: str, fps: int = 30, teleops_url: str = None):
         """
         Initialize the VLM Provider.
 
@@ -37,10 +37,24 @@ class VLMVilaProvider:
         """
         self.running: bool = False
         self.ws_client: ws.Client = ws.Client(url=ws_url)
+        self.teleops_ws_client: Optional[ws.Client] = (
+            ws.Client(url=teleops_url) if teleops_url else None
+        )
         self.video_stream: VideoStream = VideoStream(
             self.ws_client.send_message, fps=fps
         )
         self._thread: Optional[threading.Thread] = None
+
+    def register_frame_callback(self, video_callback: Optional[Callable]):
+        """
+        Register a callback for processing video frames.
+
+        Parameters
+        ----------
+        video_callback : callable
+            The callback function to process video frames.
+        """
+        self.video_stream.register_frame_callback(video_callback)
 
     def register_message_callback(self, message_callback: Optional[Callable]):
         """
@@ -69,6 +83,12 @@ class VLMVilaProvider:
         self._thread = threading.Thread(target=self._run, daemon=True)
         self._thread.start()
 
+        if self.teleops_ws_client:
+            self.teleops_ws_client.start()
+            self.video_stream.register_frame_callback(
+                self.teleops_ws_client.send_message
+            )
+
     def _run(self):
         """
         Main loop for the VLM provider.
@@ -93,3 +113,6 @@ class VLMVilaProvider:
             self.video_stream.stop()
             self.ws_client.stop()
             self._thread.join(timeout=5)
+
+        if self.teleops_ws_client:
+            self.teleops_ws_client.stop()
