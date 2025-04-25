@@ -24,7 +24,6 @@ class Message:
 
 g_battery = None
 g_lidar = None
-g_hazard = None
 intensity_treshold = 1
 # values from the sensor are either 0 or 47
 # so any value bewtween 1 and 47 works
@@ -41,32 +40,9 @@ def listenerBattery(sample):
     if battery_percent < 5:
         g_battery = "CRITICAL: your battery is almost empty. Immediately move to your charging station and recharge."
     elif battery_percent < 15:
-        g_battery = "Caution: your battery is running low. Consider finding your charging station and recharging."
+        g_battery = "IMPORTANT: your battery is running low. Consider finding your charging station and recharging."
     else:
         g_battery = None
-
-
-def listenerHazard(sample):
-    hazard = sensor_msgs.HazardDetectionVector.deserialize(sample.payload.to_bytes())
-    global g_hazard
-    if hazard.detections and len(hazard.detections) > 0:
-        # print(f"Hazard Detections {hazard.detections}")
-        for haz in hazard.detections:
-            # print(f"Hazard Type:{haz.type} direction:{haz.header.frame_id}")
-            if haz.type == 1:
-                if haz.header.frame_id == "bump_front_right":
-                    g_hazard = "DANGER: you are hitting something on your front right."
-                    # if this hazard exists, report it immediately, and don't overwrite
-                    # g_hazard with less important information
-                    return
-                if haz.header.frame_id == "bump_front_left":
-                    g_hazard = "DANGER: you are hitting something on your front left."
-                    return
-                if haz.header.frame_id == "bump_front_center":
-                    g_hazard = (
-                        "DANGER: you are hitting something right in front of you."
-                    )
-                    return
 
 
 def listenerScan(sample):
@@ -120,7 +96,7 @@ def listenerScan(sample):
     proximity = "close to"
     direction = "on your left"
     if max_x_peak > 0:
-        if max_y_peak > 20:
+        if max_y_peak < 20:
             proximity = "hitting"
         if max_x_peak > 453:
             direction = "on your right"
@@ -131,9 +107,9 @@ def listenerScan(sample):
         g_lidar = None
 
 
-class TurtleBot4BattLIDARBump(FuserInput[str]):
+class TurtleBot4BattLIDAR(FuserInput[str]):
     """
-    TurtleBot4 LIDAR, Battery, and bump inputs.
+    TurtleBot4 LIDAR, and Battery inputs.
 
     Takes specific TurtleBot4 ROS2/Zenoh messages, converts them to
     text strings, and sends them to the fuser.
@@ -164,9 +140,9 @@ class TurtleBot4BattLIDARBump(FuserInput[str]):
         self.batts = self.z.declare_subscriber(
             f"{self.URID}/c3/battery_state", listenerBattery
         )
-        self.bump = self.z.declare_subscriber(
-            f"{self.URID}/c3/hazard_detection", listenerHazard
-        )
+        # self.bump = self.z.declare_subscriber(
+        #     f"{self.URID}/c3/hazard_detection", listenerHazard
+        # )
 
         # Simple description of sensor output to help LLM understand its importance and utility
         self.descriptor_for_LLM = "Body State"
@@ -184,9 +160,9 @@ class TurtleBot4BattLIDARBump(FuserInput[str]):
         # It's on our radar and your patience is appreciated
         await asyncio.sleep(2.0)
 
-        logging.info(f"TB4 batt:{g_battery} lidar:{g_lidar} hazard:{g_hazard}")
+        logging.info(f"TB4 batt:{g_battery} lidar:{g_lidar}")
 
-        return [g_battery, g_lidar, g_hazard]
+        return [g_battery, g_lidar]
 
     async def _raw_to_text(self, raw_input: List[str]) -> Optional[Message]:
         """
@@ -204,14 +180,7 @@ class TurtleBot4BattLIDARBump(FuserInput[str]):
         """
         battery = raw_input[0]
         lidar = raw_input[1]
-        hazard = raw_input[2]
 
-        if hazard:
-            message = hazard
-            return Message(timestamp=time.time(), message=message)
-        # when there is a hazard, that ALWAYS takes precendence
-        # so we want the above to return
-        # and we do not care about lidar etc
         if lidar:
             message = lidar
             return Message(timestamp=time.time(), message=message)
@@ -262,8 +231,5 @@ class TurtleBot4BattLIDARBump(FuserInput[str]):
         #     self.__class__.__name__, latest_message.message, latest_message.timestamp
         # )
         self.messages = []
-
-        global g_hazard
-        g_hazard = None
 
         return result

@@ -45,9 +45,9 @@ gap = 5
 ax[1].plot([0, 227 - gap], [50, 50], "-", color="red", linewidth=3.0)[0]
 ax[1].plot([227 + gap, 453 - gap], [50, 50], "-", color="red", linewidth=3.0)[0]
 ax[1].plot([453 + gap, 680], [50, 50], "-", color="red", linewidth=3.0)[0]
-ax[1].annotate("Left", xytext=(100, 89), xy=(0, 0.5))
-ax[1].annotate("Front", xytext=(320, 89), xy=(0, 0.5))
-ax[1].annotate("Right", xytext=(550, 89), xy=(0, 0.5))
+ax[1].annotate("Left", xytext=(100, 45), xy=(0, 0.5))
+ax[1].annotate("Front", xytext=(320, 45), xy=(0, 0.5))
+ax[1].annotate("Right", xytext=(550, 45), xy=(0, 0.5))
 arrow_list = []
 
 intensity_treshold = 1
