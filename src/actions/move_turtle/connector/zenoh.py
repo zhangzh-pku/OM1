@@ -1,5 +1,6 @@
 import logging
 import math
+import random
 import time
 from queue import Queue
 
@@ -17,7 +18,7 @@ gOdom = None
 
 def listenerHazard(data):
     global gHazard
-    # logging.info(f"Hazard listener")
+    logging.info(f"Hazard listener: {data.payload.to_bytes()}")
     gHazard = sensor_msgs.HazardDetectionVector.deserialize(data.payload.to_bytes())
     logging.info(f"Hazard listener: {gHazard}")
 
@@ -26,7 +27,8 @@ def listenerOdom(data):
     global gOdom
     # logging.info(f"Odom listener")
     gOdom = nav_msgs.Odometry.deserialize(data.payload.to_bytes())
-    logging.info(f"Odom listener: {gOdom}")
+    # logging.info(f"Odom listener: {gOdom}")
+    logging.info("Odom listener")
 
 
 def euler_from_quaternion(x, y, z, w):
@@ -98,32 +100,29 @@ class MoveZenohConnector(ActionConnector[MoveInput]):
         logging.info(f"Hazard processor: {gHazard}")
         if gHazard is not None and gHazard.detections and len(gHazard.detections) > 0:
             for haz in gHazard.detections:
-                # print(f"Hazard Type:{haz.type} direction:{haz.header.frame_id}")
+                logging.info(f"Hazard Type:{haz.type} direction:{haz.header.frame_id}")
                 if haz.type == 1:
 
                     # clear the movement queue immediately
                     with self.pending_movements.mutex:
                         self.pending_movements.queue.clear()
 
-                    if haz.header.frame_id == "bump_front_right":
+                    if "right" in haz.header.frame_id:
                         self.hazard = "TURN_LEFT"
-                        logging.info(f"Hazard: {self.hazard}")
-                        # if this hazard exists, report it immediately, and don't overwrite
-                        # hazard with less important information
-                        return
-                    if haz.header.frame_id == "bump_front_left":
+                    elif "left" in haz.header.frame_id:
                         self.hazard = "TURN_RIGHT"
-                        logging.info(f"Hazard: {self.hazard}")
-                        return
-                    if haz.header.frame_id == "bump_front_center":
-                        self.hazard = "TURN"
-                        logging.info(f"Hazard: {self.hazard}")
-                        return
+                    elif "center" in haz.header.frame_id:
+                        if random.randint(1, 2) == 1:
+                            self.hazard = "TURN_LEFT"
+                        else:
+                            self.hazard = "TURN_RIGHT"
+
+                    logging.info(f"Hazard decision: {self.hazard}")
 
     def odomProcessor(self):
         global gOdom
 
-        logging.info(f"Odom processor: {gOdom}")
+        # logging.info(f"Odom processor: {gOdom}")
 
         if gOdom is not None:
             x = gOdom.pose.pose.orientation.x
@@ -131,7 +130,7 @@ class MoveZenohConnector(ActionConnector[MoveInput]):
             z = gOdom.pose.pose.orientation.z
             w = gOdom.pose.pose.orientation.w
 
-            logging.info(f"TurtleBot4 Odom listener: {gOdom.pose.pose.orientation}")
+            # logging.info(f"TurtleBot4 Odom listener: {gOdom.pose.pose.orientation}")
 
             angles = euler_from_quaternion(x, y, z, w)
 
@@ -139,11 +138,13 @@ class MoveZenohConnector(ActionConnector[MoveInput]):
                 angles[2] * rad_to_deg * -1.0
             )  # we use the aviation convention of CW yaw = positive
 
-            logging.info(f"TurtleBot4 current yaw angle {self.yaw_now}")
-
             # current position in world frame
             self.x = gOdom.pose.pose.position.x
             self.y = gOdom.pose.pose.position.y
+
+            logging.info(
+                f"TB4 x,y,yaw: {round(self.x,2)},{round(self.y,2)},{round(self.yaw_now,2)}"
+            )
 
     def move(self, vx, vyaw):
         """
@@ -222,7 +223,7 @@ class MoveZenohConnector(ActionConnector[MoveInput]):
             return
 
         if self.hazard is not None:
-            logging.info(f"Should be empty: {self.pending_movements}")
+            logging.info(f"Should be empty now: {self.pending_movements}")
             # self.pending_movements.put([0.5, 0.0, "back", self.x, self.y])
             # this jams the TB4 because it overlaps with the low level recoil action
             if self.hazard == "TURN_RIGHT":
@@ -235,17 +236,14 @@ class MoveZenohConnector(ActionConnector[MoveInput]):
                 if target_yaw <= -180.0:
                     target_yaw += 360.0
                 self.pending_movements.put([0.0, target_yaw, "turn_left"])
-            elif self.hazard == "TURN":
-                # always turn left, after collision
-                target_yaw = self.yaw_now - 100.0
-                if target_yaw <= -180.0:
-                    target_yaw += 360.0
-                self.pending_movements.put([0.0, target_yaw, "turn_left"])
             # clear the hazard
             self.hazard = None
-            logging.info(f"Should have avoidance: {self.pending_movements}")
+            logging.info(
+                f"Should have avoidance action in it: {self.pending_movements}"
+            )
 
         target = list(self.pending_movements.queue)
+        # should have length 1 due to avoidance prioritiy
         logging.info(f"Movement plan: {target}")
 
     #     if len(target) > 0:
