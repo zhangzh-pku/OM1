@@ -50,7 +50,7 @@ class MultiLLM(LLM[R]):
         self.rag_endpoint = "https://api.openmind.org/api/core/rag/query"
         
         # Flag to enable/disable RAG functionality
-        self.use_rag = config.get("use_rag", False)
+        self.use_rag = hasattr(config, "use_rag") and config.use_rag
 
     async def ask(
         self, prompt: str, messages: T.List[T.Dict[str, str]] = []
