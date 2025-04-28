@@ -45,14 +45,19 @@ class MultiLLM(LLM[R]):
         if not config.model:
             self._config.model = "gpt-4.1-nano"
 
-        # Configure the API endpoint
+        # Configure the API endpoints
         self.endpoint = "https://api.openmind.org/api/core/agent"
+        self.rag_endpoint = "https://api.openmind.org/api/core/rag/query"
+        
+        # Flag to enable/disable RAG functionality
+        self.use_rag = config.get("use_rag", False)
 
     async def ask(
         self, prompt: str, messages: T.List[T.Dict[str, str]] = []
     ) -> R | None:
         """
-        Send a prompt to the robotic team endpoint and get a structured response.
+        Send a prompt to the appropriate endpoint and get a structured response.
+        If RAG is enabled, it will query the knowledge base first.
 
         Parameters
         ----------
@@ -75,6 +80,37 @@ class MultiLLM(LLM[R]):
                 "Authorization": f"Bearer {self._config.api_key}",
                 "Content-Type": "application/json",
             }
+
+            # If RAG is enabled, query the knowledge base first
+            rag_context = ""
+            if self.use_rag:
+                try:
+                    rag_request = {
+                        "query": prompt,
+                        "skip_cache": False
+                    }
+                    
+                    rag_response = requests.post(
+                        self.rag_endpoint,
+                        json=rag_request,
+                        headers=headers,
+                    )
+                    
+                    if rag_response.status_code == 200:
+                        rag_data = rag_response.json()
+                        if rag_data.get("success") and "data" in rag_data:
+                            rag_content = rag_data["data"].get("content", "")
+                            if rag_content:
+                                rag_context = f"[Knowledge Base Context]: {rag_content}\n\n"
+                                logging.debug(f"RAG context added: {rag_context[:100]}...")
+                
+                except Exception as e:
+                    logging.error(f"Error querying RAG endpoint: {str(e)}")
+                    # Continue without RAG context if there's an error
+
+            # Prepare the main request with RAG context if available
+            augmented_prompt = f"{rag_context}{prompt}" if rag_context else prompt
+            
             request = {
                 "system_prompt": self.io_provider.fuser_system_prompt,
                 "inputs": self.io_provider.fuser_inputs,
@@ -83,6 +119,22 @@ class MultiLLM(LLM[R]):
                 "response_format": self._output_model.model_json_schema(),
                 "structured_outputs": True,
             }
+            
+            # If we have RAG context, add it to the request
+            if rag_context:
+                # Modify the system prompt to include RAG context usage instructions
+                rag_instruction = "The following query has been augmented with relevant information from the user's knowledge base. Use this information to provide a more accurate and contextually relevant response."
+                if request["system_prompt"]:
+                    request["system_prompt"] = f"{request['system_prompt']}\n\n{rag_instruction}"
+                else:
+                    request["system_prompt"] = rag_instruction
+                
+                # Update the first input with the augmented prompt
+                if request["inputs"] and len(request["inputs"]) > 0:
+                    for i, input_item in enumerate(request["inputs"]):
+                        if input_item.get("role") == "user":
+                            request["inputs"][i]["content"] = augmented_prompt
+                            break
 
             logging.debug(f"MultiLLM system_prompt: {request['system_prompt']}")
             logging.debug(f"MultiLLM inputs: {request['inputs']}")
