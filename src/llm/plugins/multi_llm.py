@@ -84,14 +84,14 @@ class MultiLLM(LLM[R]):
             if self.use_rag:
                 try:
                     rag_request = {"query": prompt, "skip_cache": False}
-                    
+
                     logging.debug(f"Sending RAG request to {self.rag_endpoint}")
                     rag_response = requests.post(
                         self.rag_endpoint,
                         json=rag_request,
                         headers=headers,
                     )
-                    
+
                     logging.debug(f"RAG response status: {rag_response.status_code}")
                     if rag_response.status_code == 200:
                         rag_data = rag_response.json()
