@@ -36,7 +36,10 @@ class MoveToPeerRos2Connector(ActionConnector[MoveToPeerInput]):
         dlon = math.radians(lon1 - lon0)
         x = dlon * math.cos(math.radians((lat0 + lat1) / 2)) * R
         y = dlat * R
-        norm = math.hypot(x, y) or 1
+        distance = math.hypot(x, y)
+        if distance < 4.0:
+            return
+        norm = distance or 1
         vx = (y / norm) * 0.5
         vy = (x / norm) * 0.5
 
