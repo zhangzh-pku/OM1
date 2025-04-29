@@ -48,7 +48,7 @@ class MultiLLM(LLM[R]):
         self.endpoint = "https://api.openmind.org/api/core/agent"
         self.rag_endpoint = "https://api.openmind.org/api/core/rag/query"
 
-        self.use_rag = hasattr(config, "use_rag") and config.use_rag
+        self.use_rag = config.use_rag if config.use_rag is not None else False
 
     async def ask(
         self, prompt: str, messages: T.List[T.Dict[str, str]] = []
@@ -79,28 +79,29 @@ class MultiLLM(LLM[R]):
                 "Content-Type": "application/json",
             }
 
+            logging.info(f"self.use_rag: {self.use_rag}")
             rag_context = ""
             if self.use_rag:
                 try:
                     rag_request = {"query": prompt, "skip_cache": False}
-
+                    
+                    logging.debug(f"Sending RAG request to {self.rag_endpoint}")
                     rag_response = requests.post(
                         self.rag_endpoint,
                         json=rag_request,
                         headers=headers,
                     )
-
+                    
+                    logging.debug(f"RAG response status: {rag_response.status_code}")
                     if rag_response.status_code == 200:
                         rag_data = rag_response.json()
+                        logging.debug(f"RAG response data: {rag_data}")
                         if rag_data.get("success") and "data" in rag_data:
                             rag_content = rag_data["data"].get("content", "")
                             if rag_content:
-                                rag_context = (
-                                    f"[Knowledge Base Context]: {rag_content}\n\n"
-                                )
-                                logging.debug(
-                                    f"RAG context added: {rag_context[:100]}..."
-                                )
+                                # Don't use the content as a label, separate content from label
+                                rag_context = rag_content.strip()
+                                logging.info(f"RAG context added: {rag_context}")
 
                 except Exception as e:
                     logging.error(f"Error querying RAG endpoint: {str(e)}")
@@ -115,7 +116,7 @@ class MultiLLM(LLM[R]):
             }
 
             if rag_context:
-                rag_instruction = f"The following information from the user's knowledge base is relevant to the query:\n\n{rag_context}\n\nUse this information to provide a more accurate and contextually relevant response."
+                rag_instruction = f"The following information from the user's knowledge base is relevant to the query:\n\n---\n{rag_context}\n---\n\nUse this information to provide a more accurate and contextually relevant response."
                 request["system_prompt"] = (
                     f"{request['system_prompt']}\n\n{rag_instruction}"
                 )
