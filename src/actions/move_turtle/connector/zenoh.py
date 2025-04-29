@@ -18,17 +18,14 @@ gOdom = None
 
 def listenerHazard(data):
     global gHazard
-    logging.info(f"Hazard listener: {data.payload.to_bytes()}")
     gHazard = sensor_msgs.HazardDetectionVector.deserialize(data.payload.to_bytes())
     logging.info(f"Hazard listener: {gHazard}")
 
 
 def listenerOdom(data):
     global gOdom
-    # logging.info(f"Odom listener")
     gOdom = nav_msgs.Odometry.deserialize(data.payload.to_bytes())
-    # logging.info(f"Odom listener: {gOdom}")
-    logging.info("Odom listener")
+    logging.info(f"Odom listener: {gOdom}")
 
 
 def euler_from_quaternion(x, y, z, w):
@@ -77,10 +74,10 @@ class MoveZenohConnector(ActionConnector[MoveInput]):
         URID = getattr(self.config, "URID", None)
 
         if URID is None:
-            logging.warning("Aborting Turtlebot4 Move system, no URID provided")
+            logging.warning("Aborting TurtleBot4 Move system, no URID provided")
             return
         else:
-            logging.info(f"Turtlebot4 Move system is using URID: {URID}")
+            logging.info(f"TurtleBot4 Move system is using URID: {URID}")
 
         self.cmd_vel = f"{URID}/c3/cmd_vel"
 
@@ -134,9 +131,10 @@ class MoveZenohConnector(ActionConnector[MoveInput]):
 
             angles = euler_from_quaternion(x, y, z, w)
 
-            self.yaw_now = (
-                angles[2] * rad_to_deg * -1.0
-            )  # we use the aviation convention of CW yaw = positive
+            self.yaw_now = angles[2] * rad_to_deg * -1.0
+
+            # we set CW yaw = positive
+            # this runs from -180 to +180
 
             # current position in world frame
             self.x = gOdom.pose.pose.position.x
@@ -150,6 +148,8 @@ class MoveZenohConnector(ActionConnector[MoveInput]):
         """
         generate movement commands
         """
+        logging.info("move: {} - {}".format(vx, vyaw))
+
         if self.session is None:
             logging.info("No open Zenoh session, returning")
             return
@@ -212,16 +212,13 @@ class MoveZenohConnector(ActionConnector[MoveInput]):
         self.hazardProcessor()
         self.odomProcessor()
 
-        # AVOID_LEFT_OBSTACLE = "avoid left obstacle"
-        # AVOID_FRONT_OBSTACLE = "avoid front obstacle"
-        # AVOID_RIGHT_OBSTACLE = "avoid right obstacle"
-
         if self.x == 0.0:
             # this value is never precisely zero except while
             # booting and waiting for data to arrive
-            logging.info("Waiting for location data")
+            logging.info("Waiting for odom data")
             return
 
+        # physical collision event ALWAYS takes precedence
         if self.hazard is not None:
             logging.info(f"Should be empty now: {self.pending_movements}")
             # self.pending_movements.put([0.5, 0.0, "back", self.x, self.y])
@@ -230,12 +227,12 @@ class MoveZenohConnector(ActionConnector[MoveInput]):
                 target_yaw = self.yaw_now + 100.0
                 if target_yaw >= 180.0:
                     target_yaw -= 360.0
-                self.pending_movements.put([0.0, target_yaw, "turn_right"])
+                self.pending_movements.put([0.0, target_yaw])
             elif self.hazard == "TURN_LEFT":
                 target_yaw = self.yaw_now - 100.0
-                if target_yaw <= -180.0:
+                if target_yaw <= -180:
                     target_yaw += 360.0
-                self.pending_movements.put([0.0, target_yaw, "turn_left"])
+                self.pending_movements.put([0.0, target_yaw])
             # clear the hazard
             self.hazard = None
             logging.info(
@@ -243,41 +240,68 @@ class MoveZenohConnector(ActionConnector[MoveInput]):
             )
 
         target = list(self.pending_movements.queue)
-        # should have length 1 due to avoidance prioritiy
-        logging.info(f"Movement plan: {target}")
 
-    #     if len(target) > 0:
-    #         logging.info(f"Zenoh Target: {target}")
-    #         if target[0][2] == "turn_left":
-    #             togo = abs(G.yaw_now - target[0][1])
-    #             logging.info(f"tl to go: {togo}")
-    #             if togo > self.angle_tolerance:
-    #                 if self.yaw_now > target[0][1]:  # keep turning left
-    #                     logging.info(f"keep turning left. remaining:{togo} ")
-    #                     self.move(0.0, 0.3)
-    #                 elif (
-    #                     self.yaw_now < target[0][1]
-    #                 ):  # turn to the right - you turned too far
-    #                     logging.info(f"OVERSHOOT: turn right. remaining:{togo} ")
-    #                     self.move(0.0, -0.1)
-    #             else:
-    #                 logging.info("done, pop 1 off queue")
-    #                 self.pending_movements.get()
-    #         elif target[0][2] == "turn_right":
-    #             togo = abs(G.yaw_now - target[0][1])
-    #             logging.info(f"tr to go: {togo}")
-    #             if togo > self.angle_tolerance:
-    #                 if self.yaw_now < target[0][1]:  # keep turning right
-    #                     logging.info(f"keep turning right. remaining:{togo} ")
-    #                     self.move(0.0, -0.3)
-    #                 elif (
-    #                     self.yaw_now > target[0][1]
-    #                 ):  # turn to the left - you turned too far
-    #                     logging.info(f"OVERSHOOT: turn left. remaining:{togo} ")
-    #                     self.move(0.0, 0.1)
-    #             else:
-    #                 logging.info("done, pop 1 off queue")
-    #                 self.pending_movements.get()
+        # should have length 1 due to avoidance priority
+        logging.info(f"Movement plan: {target} length: {len(target)}")
+
+        if len(target) > 0:
+            first_target = target[0]
+            logging.info(f"Zenoh Target: {first_target}")
+
+            goal = first_target[1]
+            # direction = first_target[2]
+
+            gap = self.yaw_now - goal
+            if gap > 180.0:
+                gap -= 360.0
+            elif gap < -180.0:
+                gap += 360.0
+
+            """
+            gap is a SIGNED value indicating:
+                * the direction to turn to get to goal, and
+                * the magnitude remaining to turn 
+
+            a mathematically equivalent way to do this is 
+
+            a = targetA - sourceA
+            a = (a + 180) % 360 - 180
+            where mod = (a, n) -> a - floor(a/n) * n
+            """
+            logging.info(f"GAP: {gap}")
+            if abs(gap) > 10.0:
+                logging.info("gap is big, using large displacements")
+                if gap > 0:
+                    self.move(0.0, 0.3)
+                elif gap < 0:
+                    self.move(0.0, -0.3)
+            elif abs(gap) > self.angle_tolerance and abs(gap) <= 10.0:
+                logging.info("gap is getting smaller, using smaller steps")
+                if gap > 0:
+                    self.move(0.0, 0.1)
+                elif gap < 0:
+                    self.move(0.0, -0.1)
+            elif abs(gap) <= self.angle_tolerance:
+                logging.info("gap is small enough, done, pop 1 off queue")
+                self.pending_movements.get()
+
+                # if direction == "turn_left":
+                #     logging.info(f"tl remaining: {remaining}")
+                #     if self.yaw_now > goal:  # keep turning left
+                #         logging.info(f"keep turning left. remaining:{remaining} ")
+                #         self.move(0.0, 0.3)
+                #     elif self.yaw_now <= goal:  # turn to the right - you turned too far
+                #         logging.info(f"OVERSHOOT: turn right. remaining:{remaining} ")
+                #         self.move(0.0, -0.1)
+                # elif direction == "turn_right":
+                #     logging.info(f"tr remaining: {remaining}")
+                #     if self.yaw_now < goal:  # keep turning right
+                #         logging.info(f"keep turning right. remaining:{remaining} ")
+                #         self.move(0.0, -0.3)
+                #     elif self.yaw_now > goal:  # turn to the left - you turned too far
+                #         logging.info(f"OVERSHOOT: turn left. remaining:{remaining} ")
+                #         self.move(0.0, 0.1)
+
     #         elif target[0][2] == "advance":
     #             distance_traveled = math.sqrt(
     #                 (G.x - target[0][3]) ** 2 + (G.y - target[0][4]) ** 2
