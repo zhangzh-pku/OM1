@@ -99,6 +99,20 @@ class MultiLLM(LLM[R]):
                         logging.debug(f"RAG response data: {rag_data}")
                         if rag_data.get("success") and "data" in rag_data:
                             rag_content = rag_data["data"].get("content", "")
+                            rag_tools = rag_data["data"].get("tools", [])
+                            
+                            # Log tools data
+                            if rag_tools:
+                                logging.info(f"RAG tools data: {rag_tools}")
+                                
+                                # Generate tools summary text
+                                tools_summary = "\n\nThe following tools were used to gather this information:\n"
+                                for tool in rag_tools:
+                                    tool_name = tool.get("tool_name", "Unknown tool")
+                                    tools_summary += f"- {tool_name}\n"
+                            else:
+                                tools_summary = ""
+                                
                             if rag_content:
                                 rag_context = rag_content.strip()
                                 logging.info(f"RAG context added: {rag_context}")
@@ -116,7 +130,10 @@ class MultiLLM(LLM[R]):
             }
 
             if rag_context:
-                rag_instruction = f"The following information from the user's knowledge base is relevant to the query:\n\n---\n{rag_context}\n---\n\nUse this information to provide a more accurate and contextually relevant response."
+                # Append tools_summary to the instruction if available
+                tools_text = tools_summary if 'tools_summary' in locals() and tools_summary else ""
+                
+                rag_instruction = f"The following information from the user's knowledge base is relevant to the query:\n\n---\n{rag_context}\n---\n{tools_text}\n\nUse this information to provide a more accurate and contextually relevant response."
                 request["system_prompt"] = (
                     f"{request['system_prompt']}\n\n{rag_instruction}"
                 )
