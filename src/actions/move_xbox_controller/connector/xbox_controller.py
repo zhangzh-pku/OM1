@@ -69,13 +69,11 @@ class XboxControllerConnector(ActionConnector[IDLEInput]):
         if self.gamepad:
             data = list(self.gamepad.read(64))
 
-            rt_value = data[11]
             lt_value = data[9]
+            rt_value = data[11]
 
             rt_changed = abs(rt_value - self.rt_previous) > 5
             lt_changed = abs(lt_value - self.lt_previous) > 5
-            rt_value = data[11]
-            lt_value = data[9]
 
             if rt_changed or lt_changed or rt_value == 255 or lt_value == 255:
                 self.rt_previous = rt_value

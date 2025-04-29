@@ -11,7 +11,7 @@ class IDLEInput:
 @dataclass
 class XboxController(Interface[IDLEInput, IDLEInput]):
     """
-    xbox controller interface
+    Xbox controller interface
     """
 
     input: IDLEInput
