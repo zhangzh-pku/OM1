@@ -116,12 +116,9 @@ class MultiLLM(LLM[R]):
 
             if rag_context:
                 rag_instruction = f"The following information from the user's knowledge base is relevant to the query:\n\n{rag_context}\n\nUse this information to provide a more accurate and contextually relevant response."
-                if request["system_prompt"]:
-                    request["system_prompt"] = (
-                        f"{request['system_prompt']}\n\n{rag_instruction}"
-                    )
-                else:
-                    request["system_prompt"] = rag_instruction
+                request["system_prompt"] = (
+                    f"{request['system_prompt']}\n\n{rag_instruction}"
+                )
 
             logging.debug(f"MultiLLM system_prompt: {request['system_prompt']}")
             logging.debug(f"MultiLLM inputs: {request['inputs']}")
