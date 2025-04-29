@@ -38,6 +38,9 @@ class MoveToPeerRos2Connector(ActionConnector[MoveToPeerInput]):
         y = dlat * R
         distance = math.hypot(x, y)
         if distance < 4.0:
+            logging.info(
+                f"MoveToPeer: too close to peer, distance={distance:.1f}m, not moving."
+            )
             return
         norm = distance or 1
         vx = (y / norm) * 0.5
