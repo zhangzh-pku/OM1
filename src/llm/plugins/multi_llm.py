@@ -48,7 +48,8 @@ class MultiLLM(LLM[R]):
         self.endpoint = "https://api.openmind.org/api/core/agent"
         self.rag_endpoint = "https://api.openmind.org/api/core/rag/query"
 
-        self.use_rag = config.use_rag if config.use_rag is not None else False
+        # Access use_rag from config
+        self.use_rag = config.use_rag
 
     async def ask(
         self, prompt: str, messages: T.List[T.Dict[str, str]] = []
@@ -99,7 +100,6 @@ class MultiLLM(LLM[R]):
                         if rag_data.get("success") and "data" in rag_data:
                             rag_content = rag_data["data"].get("content", "")
                             if rag_content:
-                                # Don't use the content as a label, separate content from label
                                 rag_context = rag_content.strip()
                                 logging.info(f"RAG context added: {rag_context}")
 
