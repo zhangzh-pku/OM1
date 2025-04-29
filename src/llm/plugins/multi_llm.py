@@ -104,8 +104,6 @@ class MultiLLM(LLM[R]):
                 except Exception as e:
                     logging.error(f"Error querying RAG endpoint: {str(e)}")
             
-            augmented_prompt = f"{rag_context}{prompt}" if rag_context else prompt
-            
             request = {
                 "system_prompt": self.io_provider.fuser_system_prompt,
                 "inputs": self.io_provider.fuser_inputs,
