@@ -45,11 +45,9 @@ class MultiLLM(LLM[R]):
         if not config.model:
             self._config.model = "gpt-4.1-nano"
 
-        # Configure the API endpoints
         self.endpoint = "https://api.openmind.org/api/core/agent"
         self.rag_endpoint = "https://api.openmind.org/api/core/rag/query"
         
-        # Flag to enable/disable RAG functionality
         self.use_rag = hasattr(config, "use_rag") and config.use_rag
 
     async def ask(
@@ -81,7 +79,6 @@ class MultiLLM(LLM[R]):
                 "Content-Type": "application/json",
             }
 
-            # If RAG is enabled, query the knowledge base first
             rag_context = ""
             if self.use_rag:
                 try:
@@ -106,9 +103,7 @@ class MultiLLM(LLM[R]):
                 
                 except Exception as e:
                     logging.error(f"Error querying RAG endpoint: {str(e)}")
-                    # Continue without RAG context if there's an error
-
-            # Prepare the main request with RAG context if available
+            
             augmented_prompt = f"{rag_context}{prompt}" if rag_context else prompt
             
             request = {
@@ -120,21 +115,12 @@ class MultiLLM(LLM[R]):
                 "structured_outputs": True,
             }
             
-            # If we have RAG context, add it to the request
             if rag_context:
-                # Modify the system prompt to include RAG context usage instructions
-                rag_instruction = "The following query has been augmented with relevant information from the user's knowledge base. Use this information to provide a more accurate and contextually relevant response."
+                rag_instruction = f"The following information from the user's knowledge base is relevant to the query:\n\n{rag_context}\n\nUse this information to provide a more accurate and contextually relevant response."
                 if request["system_prompt"]:
                     request["system_prompt"] = f"{request['system_prompt']}\n\n{rag_instruction}"
                 else:
                     request["system_prompt"] = rag_instruction
-                
-                # Update the first input with the augmented prompt
-                if request["inputs"] and len(request["inputs"]) > 0:
-                    for i, input_item in enumerate(request["inputs"]):
-                        if input_item.get("role") == "user":
-                            request["inputs"][i]["content"] = augmented_prompt
-                            break
 
             logging.debug(f"MultiLLM system_prompt: {request['system_prompt']}")
             logging.debug(f"MultiLLM inputs: {request['inputs']}")
