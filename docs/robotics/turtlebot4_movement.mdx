@@ -1,0 +1,143 @@
+---
+title: TurtleBot4 Autonomous Movement Logic
+description: "TurtleBot4 Autonomous Movement Logic"
+---
+
+- [Overview](#overview)
+  * [The core LLMs provide motion commands](#the-core-llms-provide-motion-commands)
+  * [TB4 low level firmware collision avoidance logic](#tb4-low-level-firmware-collision-avoidance-logic)
+  * [TB4 RPLIDAR Laserscan Data](#tb4-rplidar-laserscan-data)
+  * [TB4 collision switches](#tb4-collision-switches)
+- [Data Priorities](#data-priorities)
+  * [Normal case](#normal-case)
+  * [Object nearby](#object-nearby)
+  * [Object almost hit (within 20 cm of the LIDAR) but switches not triggered](#object-almost-hit--within-20-cm-of-the-lidar--but-switches-not-triggered)
+  * [Collision - within 20 cm of the LIDAR AND switches triggered](#collision---within-20-cm-of-the-lidar-and-switches-triggered)
+
+## Overview
+
+Using OM1, the TurtleBot4 is able to autonomously explore spaces such as your home. There are four parts to this capability:
+
+### The core LLMs provide motion commands
+
+```py
+# /actions/move_turtle/interface.py
+  TURN_LEFT = "turn left"
+  TURN_RIGHT = "turn right"
+  MOVE_FORWARDS = "move forwards"
+  MOVE_BACK = "move back"
+  STAND_STILL = "stand still"
+```
+These commands are defined in `actions/move_turtle/interface.py` and are converted to TB4 zenoh/cycloneDDS `cmd_vel` motions in `/actions/move_turtle/connector/zenoh.py`:
+
+```py
+# /actions/move_turtle/connector/zenoh.py
+if output_interface.action == "turn left":
+  # turn 90 Deg to the left (CCW)
+  target_yaw = self.yaw_now - 90.0
+  if target_yaw <= -180: target_yaw += 360.0
+  self.pending_movements.put([0.0, target_yaw, "turn"])
+
+...
+
+t = geometry_msgs.Twist(
+  linear=geometry_msgs.Vector3(x=float(vx), y=0.0, z=0.0),
+  angular=geometry_msgs.Vector3(x=0.0, y=0.0, z=float(vyaw)),
+)
+self.session.put(self.cmd_vel, t.serialize())
+```
+
+### TB4 low level firmware collision avoidance logic
+
+This logic which consists of backing off about 10 cm after a frontal collision. That is handled within the `Create3` and cannot be changed by a user.
+
+### TB4 RPLIDAR Laserscan Data
+
+OM1 uses the TB4's RPLIDAR to tell the core LLMs about nearby objects. This information flows to the core LLMs from `/input/plugins/turtlebot4_lidar_batt.py`. The code converts laserscan data to spatial alerts, such as:
+
+```py
+# /input/plugins/turtlebot4_lidar_batt.py
+for distance, intensity in list(zip(smv, scan.intensities)):
+    # let's look only at close things (< 0.50m)
+    if distance <= 0.50:
+        if intensity >= intensity_treshold:
+            # convert to cm and flip to emphasize near returns
+            clusters.append(51 - int(distance * 100))
+        else:
+            clusters.append(0)
+    else:
+        clusters.append(0)
+
+...
+
+global g_lidar
+proximity = "close to"
+if max_y_peak > 30:
+  proximity = "hitting"
+
+direction = "on your left"
+if max_x_peak > 0: # max_x_peak == 0 handles the special case of no detected object 
+    if max_x_peak > 453:
+        direction = "on your right"
+    elif max_x_peak > 227:
+        direction = "in front of you"
+    g_lidar = f"CAUTION: You are {proximity} an object {direction}."
+```
+
+### TB4 collision switches
+
+OM1 uses the TB4's collision switches, if triggered, to invoke an emergency object avoidance behavior, which consists of turning 100 deg left or right, depending on which switch was triggered. This "turning to face away" from the object is handled inside the `action` driver to ensure prompt responses to physical collisions:
+
+```py
+# /actions/move_turtle/connector/zenoh.py
+
+def listenerHazard(data):
+    global gHazard
+    gHazard = sensor_msgs.HazardDetectionVector.deserialize(data.payload.to_bytes())
+
+...
+
+if gHazard is not None and gHazard.detections and len(gHazard.detections) > 0:
+  for haz in gHazard.detections:
+      if haz.type == 1:
+          if "right" in haz.header.frame_id:
+              self.hazard = "TURN_LEFT"
+
+...
+
+if self.hazard is not None:
+  if self.hazard == "TURN_RIGHT":
+      target_yaw = self.yaw_now + 100.0
+      if target_yaw >= 180.0: target_yaw -= 360.0
+      self.emergency = target_yaw
+```
+
+## Data Priorities
+
+### Normal case
+
+* The LIDAR does not sense anything in proximity (within 50 cm or closer).
+* The collision switches are open
+
+In this case, the TB4 moves about the room, controlled by the core LLMs. 
+
+### Object nearby
+
+* The LIDAR senses something in proximity, and sends messages such as "You are close to something on your left" to the core LLMs.
+* The collision switches are open
+
+In this case, the core LLMs **may** command the TB4 to turn away from the object. 
+
+### Object almost hit (within 20 cm of the LIDAR) but switches not triggered
+
+* The LIDAR senses something in proximity, and sends messages such as "You are hitting something on your left" to the core LLMs.
+* The collision switches are open
+
+In this case, the core LLMs **will probably** command the TB4 to turn away from the object. 
+
+### Collision - within 20 cm of the LIDAR AND switches triggered
+
+* The LIDAR senses something in proximity, and sends messages such as "You are hitting something on your left" to the core LLMs.
+* The collision switches are triggered
+
+In this case, the `action` level collision avoidance code will command a hard-coded 100 deg avoidance rotation. Once this rotation is complete, the system reverts to responding to commands from the core LLMs. 

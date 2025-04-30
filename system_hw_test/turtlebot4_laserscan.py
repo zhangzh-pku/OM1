@@ -100,7 +100,7 @@ def listenerScan(sample):
         # print("distance (m):", distance)
         # print("intensity:", intensity)
         # print("angle:", angle)
-        # let's look only at close things (< 0.95m)
+        # let's look only at close things (< 0.50m)
         if distance <= 0.50:
             if intensity >= intensity_treshold:
                 complexes.append(distance * cmath.exp(angle))
@@ -175,7 +175,7 @@ def listenerScan(sample):
     proximity = "close to"
     direction = "on your left"
     if max_x_peak > 0:
-        if max_y_peak > 80:
+        if max_y_peak > 30:
             proximity = "hitting"
         if max_x_peak > 453:
             direction = "on your right"

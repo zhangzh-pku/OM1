@@ -96,13 +96,13 @@ def listenerScan(sample):
     proximity = "close to"
     direction = "on your left"
     if max_x_peak > 0:
-        if max_y_peak < 20:
+        if max_y_peak > 30:
             proximity = "hitting"
         if max_x_peak > 453:
             direction = "on your right"
         elif max_x_peak > 227:
             direction = "in front of you"
-        g_lidar = f"CAUTION: You are {proximity} something {direction}."
+        g_lidar = f"CAUTION: You are {proximity} an object {direction}."
     else:
         g_lidar = None
 
