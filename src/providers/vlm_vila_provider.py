@@ -28,7 +28,7 @@ class VLMVilaProvider:
         The URL for the video stream. If not provided, defaults to None.
     """
 
-    def __init__(self, ws_url: str, fps: int = 30, stream_url: str = None):
+    def __init__(self, ws_url: str, fps: int = 30, stream_url: Optional[str] = None):
         """
         Initialize the VLM Provider.
 
