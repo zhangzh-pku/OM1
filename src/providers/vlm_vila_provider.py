@@ -14,19 +14,21 @@ class VLMVilaProvider:
     """
     VLM Provider that handles audio streaming and websocket communication.
 
-     This class implements a singleton pattern to manage audio input streaming and websocket
-     communication for vlm services. It runs in a separate thread to handle
-     continuous vlm processing.
+    This class implements a singleton pattern to manage audio input streaming and websocket
+    communication for vlm services. It runs in a separate thread to handle
+    continuous vlm processing.
 
-     Parameters
-     ----------
-     ws_url : str
-         The websocket URL for the VLM service connection.
-     fps : int
-         Frames per second for the video stream.
+    Parameters
+    ----------
+    ws_url : str
+        The websocket URL for the VLM service connection.
+    fps : int
+        Frames per second for the video stream.
+    stream_url : str, optional
+        The URL for the video stream. If not provided, defaults to None.
     """
 
-    def __init__(self, ws_url: str, fps: int = 30, teleops_url: str = None):
+    def __init__(self, ws_url: str, fps: int = 30, stream_url: str = None):
         """
         Initialize the VLM Provider.
 
@@ -37,8 +39,8 @@ class VLMVilaProvider:
         """
         self.running: bool = False
         self.ws_client: ws.Client = ws.Client(url=ws_url)
-        self.teleops_ws_client: Optional[ws.Client] = (
-            ws.Client(url=teleops_url) if teleops_url else None
+        self.stream_ws_client: Optional[ws.Client] = (
+            ws.Client(url=stream_url) if stream_url else None
         )
         self.video_stream: VideoStream = VideoStream(
             self.ws_client.send_message, fps=fps
@@ -83,10 +85,10 @@ class VLMVilaProvider:
         self._thread = threading.Thread(target=self._run, daemon=True)
         self._thread.start()
 
-        if self.teleops_ws_client:
-            self.teleops_ws_client.start()
+        if self.stream_ws_client:
+            self.stream_ws_client.start()
             self.video_stream.register_frame_callback(
-                self.teleops_ws_client.send_message
+                self.stream_ws_client.send_message
             )
 
     def _run(self):
@@ -114,5 +116,5 @@ class VLMVilaProvider:
             self.ws_client.stop()
             self._thread.join(timeout=5)
 
-        if self.teleops_ws_client:
-            self.teleops_ws_client.stop()
+        if self.stream_ws_client:
+            self.stream_ws_client.stop()

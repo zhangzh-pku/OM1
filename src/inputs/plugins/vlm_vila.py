@@ -61,14 +61,14 @@ class VLMVila(FuserInput[str]):
 
         # Initialize VLM provider
         base_url = getattr(self.config, "base_url", "wss://api-vila.openmind.org")
-        teleops_base_url = getattr(
+        stream_base_url = getattr(
             self.config,
-            "teleops_base_url",
+            "stream_base_url",
             f"wss://api.openmind.org/api/core/stream/video?api_key={self.config.api_key}",
         )
 
         self.vlm: VLMVilaProvider = VLMVilaProvider(
-            ws_url=base_url, teleops_url=teleops_base_url
+            ws_url=base_url, stream_url=stream_base_url
         )
         self.vlm.start()
         self.vlm.register_message_callback(self._handle_vlm_message)
