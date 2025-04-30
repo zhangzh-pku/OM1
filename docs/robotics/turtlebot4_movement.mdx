@@ -18,7 +18,9 @@ description: "TurtleBot4 Autonomous Movement Logic"
 
 Using OM1, the TurtleBot4 is able to autonomously explore spaces such as your home. There are four parts to this capability:
 
-### The core LLMs provide motion commands
+### Core LLM Directed Motion
+
+Depending on the environment of the TB4, the core LLMs can generate contextually appropriate motion commands. 
 
 ```py
 # /actions/move_turtle/interface.py
@@ -47,9 +49,9 @@ t = geometry_msgs.Twist(
 self.session.put(self.cmd_vel, t.serialize())
 ```
 
-### TB4 low level firmware collision avoidance logic
+### TB4 Low Level (Firmware) Collision Avoidance
 
-This logic which consists of backing off about 10 cm after a frontal collision. That is handled within the `Create3` and cannot be changed by a user.
+This logic consists of backing off about 10 cm after a frontal collision. That is handled within the `Create3` and cannot be changed by a user.
 
 ### TB4 RPLIDAR Laserscan Data
 
@@ -84,9 +86,9 @@ if max_x_peak > 0: # max_x_peak == 0 handles the special case of no detected obj
     g_lidar = f"CAUTION: You are {proximity} an object {direction}."
 ```
 
-### TB4 collision switches
+### TB4 Collision Switches
 
-OM1 uses the TB4's collision switches, if triggered, to invoke an emergency object avoidance behavior, which consists of turning 100 deg left or right, depending on which switch was triggered. This "turning to face away" from the object is handled inside the `action` driver to ensure prompt responses to physical collisions:
+OM1 uses the TB4's collision switches to invoke an emergency object avoidance behavior, which consists of turning 100 deg left or right, depending on which switch was triggered. This "turning to face away" from the object is handled inside the `action` driver to ensure prompt responses to physical collisions:
 
 ```py
 # /actions/move_turtle/connector/zenoh.py
