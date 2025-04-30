@@ -60,11 +60,12 @@ class VLMVila(FuserInput[str]):
         self.message_buffer: Queue[str] = Queue()
 
         # Initialize VLM provider
+        api_key = getattr(self.config, "api_key", None)
         base_url = getattr(self.config, "base_url", "wss://api-vila.openmind.org")
         stream_base_url = getattr(
             self.config,
             "stream_base_url",
-            f"wss://api.openmind.org/api/core/stream/video?api_key={self.config.api_key}",
+            f"wss://api.openmind.org/api/core/stream/video?api_key={api_key}",
         )
 
         self.vlm: VLMVilaProvider = VLMVilaProvider(
