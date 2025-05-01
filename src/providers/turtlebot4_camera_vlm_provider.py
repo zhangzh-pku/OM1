@@ -2,7 +2,7 @@ import base64
 import logging
 import threading
 import time
-from typing import Callable, Optional
+from typing import Callable, List, Optional
 
 import cv2
 import numpy as np
@@ -50,8 +50,30 @@ class TurtleBot4CameraVideoStream(VideoStream):
     https://github.com/turtlebot/turtlebot4/issues/335#issuecomment-1900339747
     """
 
-    def __init__(self, frame_callback=None, fps=30, URID="default"):
-        super().__init__(frame_callback=frame_callback, fps=fps)
+    def __init__(
+        self,
+        frame_callback: Optional[Callable[[str], None]] = None,
+        frame_callbacks: Optional[List[Callable[[str], None]]] = None,
+        fps: Optional[int] = 30,
+        URID="default",
+    ):
+        """
+        Initialize the TurtleBot4 Camera Video Stream.
+
+        Parameters
+        ----------
+        frame_callback : callable, optional
+            A callback function to process video frames.
+        frame_callbacks : list of callables, optional
+            A list of callback functions to process video frames.
+        fps : int, optional
+            Frames per second for the video stream. Default is 30.
+        URID : str, optional
+            The URID for the Zenoh session. Default is "default".
+        """
+        super().__init__(
+            frame_callback=frame_callback, frame_callbacks=frame_callbacks, fps=fps
+        )
 
         self.session = None
 
@@ -121,19 +143,18 @@ class TurtleBot4CameraVLMProvider:
     """
     VLM Provider that handles audio streaming and websocket communication.
 
-     This class implements a singleton pattern to manage camera input streaming
-     and websocket communication for vlm services. It runs in a separate thread
-     to handle continuous vlm processing.
-
-     Parameters
-     ----------
-     ws_url : str
-         The websocket URL for the VLM service connection.
-     fps : int
-         Frames per second for the video stream.
+    This class implements a singleton pattern to manage camera input streaming
+    and websocket communication for vlm services. It runs in a separate thread
+    to handle continuous vlm processing.
     """
 
-    def __init__(self, ws_url: str, fps: int = 5, URID: str = "default"):
+    def __init__(
+        self,
+        ws_url: str,
+        fps: int = 5,
+        URID: str = "default",
+        stream_url: Optional[str] = None,
+    ):
         """
         Initialize the VLM Provider.
 
@@ -141,9 +162,18 @@ class TurtleBot4CameraVLMProvider:
         ----------
         ws_url : str
             The websocket URL for the VLM service connection.
+        fps : int, optional
+            The fps for the VLM service connection. Default is 5.
+        URID : str, optional
+            The URID for the Zenoh session. Default is "default".
+        stream_url : str, optional
+            The URL for the video stream. If not provided, defaults to None.
         """
         self.running: bool = False
         self.ws_client: ws.Client = ws.Client(url=ws_url)
+        self.stream_ws_client: Optional[ws.Client] = (
+            ws.Client(url=stream_url) if stream_url else None
+        )
         self.video_stream: VideoStream = TurtleBot4CameraVideoStream(
             self.ws_client.send_message, fps=fps, URID=URID
         )
@@ -176,6 +206,14 @@ class TurtleBot4CameraVLMProvider:
         self._thread = threading.Thread(target=self._run, daemon=True)
         self._thread.start()
 
+        if self.stream_ws_client:
+            self.stream_ws_client.start()
+            self.video_stream.register_frame_callback(
+                self.stream_ws_client.send_message
+            )
+
+        logging.info("TurtleBot4 Camera VLM provider started")
+
     def _run(self):
         """
         Main loop for the VLM provider.
@@ -200,3 +238,6 @@ class TurtleBot4CameraVLMProvider:
             self.video_stream.stop()
             self.ws_client.stop()
             self._thread.join()
+
+        if self.stream_ws_client:
+            self.stream_ws_client.stop()

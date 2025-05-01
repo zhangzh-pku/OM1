@@ -214,19 +214,12 @@ class UnitreeRealSenseDevVLMProvider:
     """
     VLM Provider that handles audio streaming and websocket communication.
 
-     This class implements a singleton pattern to manage audio input streaming and websocket
-     communication for vlm services. It runs in a separate thread to handle
-     continuous vlm processing.
-
-     Parameters
-     ----------
-     ws_url : str
-         The websocket URL for the ASR service connection.
-     fps : int
-         Frames per second for the video stream.
+    This class implements a singleton pattern to manage audio input streaming and websocket
+    communication for vlm services. It runs in a separate thread to handle
+    continuous vlm processing.
     """
 
-    def __init__(self, ws_url: str, fps: int = 5):
+    def __init__(self, ws_url: str, fps: int = 5, stream_url: Optional[str] = None):
         """
         Initialize the VLM Provider.
 
@@ -234,9 +227,16 @@ class UnitreeRealSenseDevVLMProvider:
         ----------
         ws_url : str
             The websocket URL for the VLM service connection.
+        fps : int, optional
+            The fps for the VLM service connection. Default is 5.
+        stream_url : str, optional
+            The URL for the video stream. If not provided, defaults to None.
         """
         self.running: bool = False
         self.ws_client: ws.Client = ws.Client(url=ws_url)
+        self.stream_ws_client: Optional[ws.Client] = (
+            ws.Client(url=stream_url) if stream_url else None
+        )
         self.video_stream: VideoStream = UnitreeRealSenseDevVideoStream(
             self.ws_client.send_message, fps=fps
         )
@@ -269,6 +269,14 @@ class UnitreeRealSenseDevVLMProvider:
         self._thread = threading.Thread(target=self._run, daemon=True)
         self._thread.start()
 
+        if self.stream_ws_client:
+            self.stream_ws_client.start()
+            self.video_stream.register_stream_callback(
+                self.stream_ws_client.send_message
+            )
+
+        logging.ifno("Unitree RealSenseDev VLM provider started")
+
     def _run(self):
         """
         Main loop for the VLM provider.
@@ -293,3 +301,6 @@ class UnitreeRealSenseDevVLMProvider:
             self.video_stream.stop()
             self.ws_client.stop()
             self._thread.join(timeout=5)
+
+        if self.stream_ws_client:
+            self.stream_ws_client.stop()
