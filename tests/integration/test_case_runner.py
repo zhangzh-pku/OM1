@@ -5,6 +5,7 @@ from pathlib import Path
 from typing import Any, Dict, List, Tuple
 
 import json5
+import openai
 import pytest
 from PIL import Image
 
@@ -23,6 +24,9 @@ register_mock_inputs()
 logging.basicConfig(level=logging.INFO)
 DATA_DIR = Path(__file__).parent / "data"
 TEST_CASES_DIR = DATA_DIR / "test_cases"
+
+# Global client to be created once for all test cases
+_llm_client = None
 
 
 def process_env_vars(config_dict):
@@ -131,7 +135,7 @@ def load_test_images_from_config(config: Dict[str, Any]) -> List[Image.Image]:
     return images
 
 
-async def run_test_with_cortex(config: Dict[str, Any]) -> Dict[str, Any]:
+async def run_test_case(config: Dict[str, Any]) -> Dict[str, Any]:
     """
     Run a test case using the CortexRuntime with mocked inputs.
 
@@ -174,7 +178,7 @@ async def run_test_with_cortex(config: Dict[str, Any]) -> Dict[str, Any]:
     cortex = CortexRuntime(runtime_config)
 
     # Store the outputs for validation
-    output_results = {"vlm_results": [], "commands": [], "raw_response": None}
+    output_results = {"commands": [], "raw_response": None}
 
     # Capture output from simulators and actions
     original_simulator_promise = cortex.simulator_orchestrator.promise
@@ -215,13 +219,6 @@ async def run_test_with_cortex(config: Dict[str, Any]) -> Dict[str, Any]:
     # Run a single tick of the cortex loop
     await cortex._tick()
 
-    # Collect results from inputs after processing
-    for input_obj in cortex.config.agent_inputs:
-        if hasattr(input_obj, "formatted_latest_buffer"):
-            result = input_obj.formatted_latest_buffer()
-            if result:
-                output_results["vlm_results"].append(result)
-
     # The output includes detection results and commands
     return output_results
 
@@ -248,25 +245,8 @@ async def initialize_mock_inputs(inputs):
                 logging.info(f"Initialized mock input: {type(input_obj).__name__}")
 
 
-async def run_test_case(config: Dict[str, Any]) -> Dict[str, Any]:
-    """
-    Run a test case using the provided configuration.
-
-    Parameters
-    ----------
-    config : Dict[str, Any]
-        Test case configuration
-
-    Returns
-    -------
-    Dict[str, Any]
-        Test results
-    """
-    return await run_test_with_cortex(config)
-
-
 async def evaluate_with_llm(
-    actual_output: Dict[str, Any], expected_output: Dict[str, Any]
+    actual_output: Dict[str, Any], expected_output: Dict[str, Any], api_key: str
 ) -> Tuple[float, str]:
     """
     Evaluate test results using LLM-based comparison.
@@ -277,19 +257,126 @@ async def evaluate_with_llm(
         Actual output from the system
     expected_output : Dict[str, Any]
         Expected output defined in test configuration
+    api_key : str
+        API key for the LLM evaluation
 
     Returns
     -------
     Tuple[float, str]
         (score from 1-5 converted to 0-1 range, detailed reasoning)
     """
-    # TODO (Kyle): Implement an LLM-based evaluator
+    global _llm_client
 
-    return 0.0, "Failed to parse LLM evaluationt()"
+    # Initialize the OpenAI client if not already done
+    if _llm_client is None:
+        if not api_key:
+            logging.warning("No API key found for LLM evaluation, using mock score")
+            return 0.0, "No API key provided for LLM evaluation"
+
+        _llm_client = openai.AsyncClient(
+            base_url="https://api.openmind.org/api/core/openai", api_key=api_key
+        )
+
+    # Format actual and expected results for evaluation
+    formatted_actual = {
+        "movement": next(
+            (
+                cmd.value
+                for cmd in actual_output.get("commands", [])
+                if hasattr(cmd, "type") and cmd.type == "move"
+            ),
+            "unknown",
+        ),
+        "keywords_found": [
+            kw
+            for kw in expected_output.get("keywords", [])
+            if any(
+                kw.lower() in result.lower()
+                for result in actual_output.get("raw_response", [])
+            )
+        ],
+    }
+
+    formatted_expected = {
+        "movement": expected_output.get("movement", "unknown"),
+        "keywords": expected_output.get("keywords", []),
+    }
+
+    system_prompt = """You are an AI evaluator specialized in analyzing robotic system test results. Your task is to assess how well the actual output matches the expected output based on specific criteria.
+
+    Evaluation criteria:
+    1. MOVEMENT ACCURACY: Does the robot's movement command match or fulfill the intended purpose of the expected movement?
+    2. KEYWORD DETECTION: Were the expected keywords correctly identified in the system's vision results?
+    3. OVERALL BEHAVIOR: Does the combined response (movement, speech, emotion) appropriately respond to the detected objects?
+
+    Rate on a scale of 1-5:
+    • 1: Completely mismatched; wrong movement and few/no keywords detected
+    • 2: Mostly incorrect; movement intent doesn't align, or most keywords missed
+    • 3: Partially correct; movement is acceptable but not ideal, or only some keywords detected
+    • 4: Mostly correct; movement closely matches expected intent, most keywords detected
+    • 5: Perfect match; movement is exactly as expected, all keywords properly detected
+
+    Your response must follow this format exactly:
+    Rating: [number 1-5]
+    Reasoning: [clear explanation of your rating, referencing specific evidence]"""
+
+    user_prompt = f"""
+    TEST CASE: "Indoor scene object detection test"
+
+    CONTEXT: A robot with vision capabilities is analyzing an indoor scene and should respond appropriately to what it detects.
+
+    EXPECTED OUTPUT:
+    - Movement command: "{formatted_expected['movement']}"
+    - Should detect keywords: {formatted_expected['keywords']}
+
+    ACTUAL OUTPUT:
+    - Movement command: "{formatted_actual['movement']}"
+    - Keywords successfully detected: {formatted_actual['keywords_found']}
+
+    Compare these results carefully. Does the actual movement match the expected movement? Were the expected keywords detected? Does the response make sense for what was detected in the scene?
+
+    Provide your evaluation in exactly this format:
+    Rating: [1-5]
+    Reasoning: [Your detailed explanation]
+    """
+
+    try:
+        # Call the OpenAI API
+        response = await _llm_client.chat.completions.create(
+            model="gpt-4.1-nano",
+            messages=[
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": user_prompt},
+            ],
+        )
+
+        content = response.choices[0].message.content
+
+        # Parse the rating and reasoning
+        try:
+            rating_match = re.search(r"Rating:\s*(\d+)", content)
+            rating = int(rating_match.group(1)) if rating_match else 3
+
+            # Normalize score to 0-1 range
+            normalized_score = (rating - 1) / 4.0
+
+            # Extract reasoning
+            reasoning_match = re.search(r"Reasoning:\s*(.*)", content, re.DOTALL)
+            reasoning = reasoning_match.group(1).strip() if reasoning_match else content
+
+            return normalized_score, reasoning
+
+        except Exception as e:
+            logging.error(f"Error parsing LLM evaluation response: {e}")
+            return 0.5, f"Failed to parse LLM evaluation: {content}"
+
+    except Exception as e:
+        logging.error(f"Error calling LLM evaluation API: {e}")
+        return 0.0, f"LLM evaluation failed: {str(e)}"
 
 
 async def evaluate_test_results(
-    results: Dict[str, Any], expected: Dict[str, Any]
+    results: Dict[str, Any], expected: Dict[str, Any], api_key: str
 ) -> Tuple[bool, float, str]:
     """
     Evaluate test results against expected output using both heuristic and LLM-based evaluation.
@@ -300,6 +387,8 @@ async def evaluate_test_results(
         Test results from running the pipeline
     expected : Dict[str, Any]
         Expected outputs defined in the test configuration
+    api_key : str
+        API key for the LLM evaluation
 
     Returns
     -------
@@ -335,13 +424,6 @@ async def evaluate_test_results(
     expected_keywords = expected.get("keywords", [])
     keyword_matches = []
 
-    # Check for keywords in VLM results and raw response
-    if "vlm_results" in results and results["vlm_results"]:
-        for result in results["vlm_results"]:
-            for keyword in expected_keywords:
-                if keyword.lower() in result.lower():
-                    keyword_matches.append(keyword)
-
     if "raw_response" in results and isinstance(results["raw_response"], str):
         for keyword in expected_keywords:
             if keyword.lower() in results["raw_response"].lower():
@@ -357,7 +439,7 @@ async def evaluate_test_results(
     heuristic_score += 0.5 * keyword_match_ratio
 
     # Get LLM-based evaluation
-    llm_score, llm_reasoning = await evaluate_with_llm(results, expected)
+    llm_score, llm_reasoning = await evaluate_with_llm(results, expected, api_key)
 
     # Combine scores (equal weighting)
     final_score = (heuristic_score + llm_score) / 2.0
@@ -373,11 +455,6 @@ async def evaluate_test_results(
         f"- LLM reasoning: {llm_reasoning}",
         f"\nFinal score: {final_score:.2f}",
     ]
-
-    if results.get("vlm_results"):
-        details.append("\nVLM Results:")
-        for i, result in enumerate(results["vlm_results"]):
-            details.append(f"- Result {i+1}: {result}")
 
     if results.get("commands"):
         details.append("\nCommands:")
@@ -515,7 +592,7 @@ async def test_from_config(test_case_path: Path):
 
         # Evaluate results
         passed, score, message = await evaluate_test_results(
-            results, config["expected"]
+            results, config["expected"], config["api_key"]
         )
 
         # Log detailed results

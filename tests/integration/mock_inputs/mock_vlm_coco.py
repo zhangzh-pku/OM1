@@ -3,13 +3,13 @@ import logging
 from typing import Optional
 
 import numpy as np
+from torchvision.models import detection as detection_model
 
 from inputs.base import SensorConfig
-from inputs.plugins.vlm_coco_local import VLM_COCO_Local
-from tests.integration.mock_inputs.mock_image_provider import get_next_opencv_image
-from torchvision.models import detection as detection_model
-from providers.io_provider import IOProvider
 from inputs.base.loop import FuserInput
+from inputs.plugins.vlm_coco_local import VLM_COCO_Local
+from providers.io_provider import IOProvider
+from tests.integration.mock_inputs.mock_image_provider import get_next_opencv_image
 
 
 class MockVLM_COCO(VLM_COCO_Local):
@@ -43,9 +43,13 @@ class MockVLM_COCO(VLM_COCO_Local):
         self.model = detection_model.fasterrcnn_mobilenet_v3_large_320_fpn(
             weights="FasterRCNN_MobileNet_V3_Large_320_FPN_Weights.COCO_V1",
             progress=True,
-            weights_backbone="MobileNet_V3_Large_Weights.IMAGENET1K_V1"
+            weights_backbone="MobileNet_V3_Large_Weights.IMAGENET1K_V1",
         ).to(self.device)
-        self.class_labels = detection_model.FasterRCNN_MobileNet_V3_Large_320_FPN_Weights.DEFAULT.meta["categories"]
+        self.class_labels = (
+            detection_model.FasterRCNN_MobileNet_V3_Large_320_FPN_Weights.DEFAULT.meta[
+                "categories"
+            ]
+        )
         self.model.eval()
 
         # Set mock camera properties without opening real camera
