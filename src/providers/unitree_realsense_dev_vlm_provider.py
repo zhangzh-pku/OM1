@@ -120,12 +120,9 @@ class UnitreeRealSenseDevVideoStream(VideoStream):
                     logger.exception("Error encoding frame: %s", e)
                     continue
 
-                # Invoke the callback; catch exceptions so one bad callback won't crash the thread.
-                try:
-                    if self.frame_callback:
-                        self.frame_callback(frame_data)
-                except Exception as e:
-                    logger.exception("Error in frame callback: %s", e)
+                if self.frame_callbacks:
+                    for frame_callback in self.frame_callbacks:
+                        frame_callback(frame_data)
 
                 time.sleep(self.frame_delay)
         except Exception as e:

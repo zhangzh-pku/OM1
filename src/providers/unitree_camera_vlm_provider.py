@@ -34,7 +34,7 @@ class UnitreeCameraVideoStream(VideoStream):
     """
 
     def __init__(self, frame_callback=None, fps=30):
-        super().__init__(frame_callback, fps)
+        super().__init__(frame_callback=frame_callback, fps=fps)
 
         self.video_client = VideoClient()
         self.video_client.Init()
@@ -77,8 +77,9 @@ class UnitreeCameraVideoStream(VideoStream):
                         )
                         frame_data = base64.b64encode(buffer).decode("utf-8")
 
-                        if self.frame_callback:
-                            self.frame_callback(frame_data)
+                        if self.frame_callbacks:
+                            for frame_callback in self.frame_callbacks:
+                                frame_callback(frame_data)
                     else:
                         logging.warning("Failed to decode image")
                 else:

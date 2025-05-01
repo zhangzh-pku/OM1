@@ -51,8 +51,7 @@ class TurtleBot4CameraVideoStream(VideoStream):
     """
 
     def __init__(self, frame_callback=None, fps=30, URID="default"):
-
-        super().__init__(frame_callback, fps)
+        super().__init__(frame_callback=frame_callback, fps=fps)
 
         self.session = None
 
@@ -103,8 +102,9 @@ class TurtleBot4CameraVideoStream(VideoStream):
                 )
                 frame_data = base64.b64encode(buffer).decode("utf-8")
 
-                if self.frame_callback:
-                    self.frame_callback(frame_data)
+                if self.frame_callbacks:
+                    for frame_callback in self.frame_callbacks:
+                        frame_callback(frame_data)
 
                 # Control frame rate
                 time.sleep(self.frame_delay)

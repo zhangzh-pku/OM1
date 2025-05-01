@@ -36,7 +36,8 @@ def test_video_stream_init(mock_video_client):
     callback = Mock()
     stream = UnitreeCameraVideoStream(frame_callback=callback)
 
-    assert stream.frame_callback == callback
+    assert len(stream.frame_callbacks) == 1
+    assert stream.frame_callbacks[0] == callback
     assert stream.running is True
     mock_video_client.Init.assert_called_once()
 
