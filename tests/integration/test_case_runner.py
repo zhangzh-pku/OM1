@@ -389,12 +389,11 @@ async def evaluate_test_results(
     # Determine if test passed based on minimum score threshold
     minimum_score = expected.get("minimum_score", 0.7)
     passed = final_score >= minimum_score
-    # TODO (Kyle): Remove this once we have a real evaluator
-    passed = True
 
     return passed, final_score, message
 
 
+@pytest.mark.no_collect
 class TestCategory:
     """Represents a category of test cases."""
 

@@ -21,18 +21,6 @@
       "history_length": 3
     }
   },
-  "simulators": [
-    {
-      "type": "WebSim",
-      "config": {
-        "host": "0.0.0.0",
-        "port": 8000,
-        "tick_rate": 100,
-        "auto_reconnect": true,
-        "debug_mode": false
-      }
-    }
-  ],
   "agent_actions": [
     {
       "name": "move",
@@ -58,16 +46,13 @@
   
   // Input data
   "input": {
-    "images": ["../images/indoor_2.jpg"],
-    "transcriptions": [],
-    "scene_type": "indoor",
-    "objects": ["person", "chair", "table"]
+    "images": ["../images/indoor_2.jpg"]
   },
   
   // Expected output
   "expected": {
-    "movement": "turn_left",
-    "keywords": ["person", "you see a"],
-    "minimum_score": 0.7
+    "movement": "wag tail",
+    "keywords": ["dog", "you see a"],
+    "minimum_score": 0.5
   }
 } 

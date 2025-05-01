@@ -7,6 +7,9 @@ import numpy as np
 from inputs.base import SensorConfig
 from inputs.plugins.vlm_coco_local import VLM_COCO_Local
 from tests.integration.mock_inputs.mock_image_provider import get_next_opencv_image
+from torchvision.models import detection as detection_model
+from providers.io_provider import IOProvider
+from inputs.base.loop import FuserInput
 
 
 class MockVLM_COCO(VLM_COCO_Local):
@@ -19,26 +22,38 @@ class MockVLM_COCO(VLM_COCO_Local):
 
     def __init__(self, config: SensorConfig = SensorConfig()):
         """
-        Initialize with the real VLM implementation but mock camera.
+        Initialize with the real VLM implementation but without opening camera.
 
         Parameters
         ----------
         config : SensorConfig, optional
             Configuration for the sensor
         """
-        # Initialize the parent class with the provided config
-        super().__init__(config)
+        # Initialize base FuserInput class
+        super(FuserInput, self).__init__(config)  # Skip VLM_COCO_Local.__init__
 
-        # Override camera check
+        # Set up the model and class labels like the parent class
+        self.device = "cpu"
+        self.detection_threshold = 0.7
+        self.messages = []
+        self.io_provider = IOProvider()
+        self.descriptor_for_LLM = "MOCK Vision INPUT (COCO Test)"
+
+        # Initialize the model like the parent class
+        self.model = detection_model.fasterrcnn_mobilenet_v3_large_320_fpn(
+            weights="FasterRCNN_MobileNet_V3_Large_320_FPN_Weights.COCO_V1",
+            progress=True,
+            weights_backbone="MobileNet_V3_Large_Weights.IMAGENET1K_V1"
+        ).to(self.device)
+        self.class_labels = detection_model.FasterRCNN_MobileNet_V3_Large_320_FPN_Weights.DEFAULT.meta["categories"]
+        self.model.eval()
+
+        # Set mock camera properties without opening real camera
         self.have_cam = True  # Pretend we have a camera
-
-        # Set up some dummy camera dimensions for the test
+        self.cap = None  # Don't create actual capture object
         self.width = 1280  # Standard webcam width
         self.height = 720  # Standard webcam height
         self.cam_third = int(self.width / 3)
-
-        # Set a distinct descriptor to identify this as a mock
-        self.descriptor_for_LLM = "MOCK Vision INPUT (COCO Test)"
 
         logging.info("MockVLM_COCO initialized - using mock image provider")
 
