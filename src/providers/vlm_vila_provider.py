@@ -99,7 +99,7 @@ class VLMVilaProvider:
             try:
                 time.sleep(0.1)
             except Exception as e:
-                logging.error(f"Error in VLM provider: {e}")
+                logging.error(f"Error in Vila VLM provider: {e}")
 
     def stop(self):
         """

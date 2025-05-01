@@ -275,7 +275,7 @@ class UnitreeRealSenseDevVLMProvider:
                 self.stream_ws_client.send_message
             )
 
-        logging.ifno("Unitree RealSenseDev VLM provider started")
+        logging.info("Unitree RealSenseDev VLM provider started")
 
     def _run(self):
         """
@@ -288,7 +288,7 @@ class UnitreeRealSenseDevVLMProvider:
             try:
                 time.sleep(0.1)
             except Exception as e:
-                logging.error(f"Error in VLM provider: {e}")
+                logging.error(f"Error in Unitree RealSenseDev VLM provider: {e}")
 
     def stop(self):
         """

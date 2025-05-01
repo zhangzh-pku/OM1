@@ -96,7 +96,7 @@ class VLMVilaGazeboProvider:
             try:
                 time.sleep(0.1)
             except Exception as e:
-                logging.error(f"Error in VLM provider: {e}")
+                logging.error(f"Error in Vila Gazebo VLM provider: {e}")
 
     def stop(self):
         """

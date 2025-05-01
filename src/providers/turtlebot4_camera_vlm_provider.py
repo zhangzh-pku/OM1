@@ -225,7 +225,7 @@ class TurtleBot4CameraVLMProvider:
             try:
                 time.sleep(0.1)
             except Exception as e:
-                logging.error(f"Error in VLM provider: {e}")
+                logging.error(f"Error in TurtleBot4 Camera VLM provider: {e}")
 
     def stop(self):
         """
