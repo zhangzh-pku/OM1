@@ -74,7 +74,7 @@ void setup()
   // also spit it out
   Serial.begin(115200);
   while (!Serial) delay(10); // pause until serial console opens
-  
+
   char DeviceID[9];
   itoa(NRF_FICR->DEVICEID[0], DeviceID, 16);
   Serial.print("Device ID 0: ");
@@ -155,6 +155,8 @@ void setup()
   lsm6ds3trc.configInt2(false, true, false); // gyro DRDY on INT2
 }
 
+static bool sbasConfigured = false;
+
 void loop()
 {
 
@@ -170,6 +172,17 @@ void loop()
     timerGPS = millis(); // reset the timer
   
     if (GPS.fix && CALIBRATION == false) {
+
+      if (!sbasConfigured) {
+        // Turn on SBAS
+        GPS.sendCommand("$PMTK313,1*2E"); // Enable SBAS
+        GPS.sendCommand("$PMTK301,2*2E"); // Use WAAS (or similar)
+
+        // Set update rate if needed
+        GPS.sendCommand(PMTK_SET_NMEA_UPDATE_1HZ);
+
+        sbasConfigured = true;
+      }
 
       float latDecimal = ToDecimalDegrees(GPS.latitude);
       float lonDecimal = ToDecimalDegrees(GPS.longitude);
