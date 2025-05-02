@@ -51,14 +51,15 @@
               "robotics/turtlebot4_zenoh",
               "robotics/tesla_dimo",
               "examples/gazebo",
-              "robotics/gps_compass"
+              "robotics/gps_compass",
+              "robotics/coinbase-x402"
             ]
           },
           {
             "group": "Others",
-            "pages": [
+            "pages": [  
               "robotics/asimov_governance",
-              "robotics/coinbase_hackathon"
+              "robotics/coinbase_hackathon"              
             ]
           }
         ]
