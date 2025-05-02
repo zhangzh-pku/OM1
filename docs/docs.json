@@ -29,8 +29,8 @@
             "pages": [
               "getting-started/introduction",
               "getting-started/get-started",              
-              "getting-started/architecture",
               "getting-started/configuration",
+              "getting-started/architecture",
               "getting-started/faq"
             ]
           },
@@ -40,8 +40,7 @@
               "examples/conversation",
               "examples/llm_models",
               "examples/smart_toy",
-              "getting-started/raspberrypi",
-              "examples/gazebo"
+              "getting-started/raspberrypi"
             ]
           },
           {
@@ -51,7 +50,13 @@
               "robotics/unitree_g1_humanoid",
               "robotics/turtlebot4_zenoh",
               "robotics/tesla_dimo",
-              "robotics/gps_compass",
+              "examples/gazebo",
+              "robotics/gps_compass"
+            ]
+          },
+          {
+            "group": "Others",
+            "pages": [
               "robotics/asimov_governance",
               "robotics/coinbase_hackathon"
             ]
