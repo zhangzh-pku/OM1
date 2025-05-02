@@ -88,7 +88,7 @@ def listenerScan(sample):
 
     # smoothing
     global vectorM1, vectorM2
-    # Add the new data, with the last two data vectros
+    # Add the new data, with the last two data vectors
     # then divide by 3 -> simple averaging
     smv = np.add(scan.ranges, vectorM1)
     smv = np.add(smv, vectorM2)
