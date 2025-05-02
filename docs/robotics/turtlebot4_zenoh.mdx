@@ -3,18 +3,7 @@ title: TurtleBot4 Basic Setup
 description: "TurtleBot4 Basic Setup"
 ---
 
-- [Supported versions](#supported-versions) 
-- [Prepare the Turtlebot4](#prepare-the-turtlebot4)
-- [Configure the Turtlebot4](#configure-the-turtlebot4)
-- [Basic Commands](#basic-commands)
-- [Run OM1 on the Internal RPi4](#run-om1-on-the-internal-rpi4)
-- [Run OM1 on an External Development Computer (e.g. Mac Laptop)](#run-om1-on-an-external-development-computer--eg-mac-laptop-)
-  * [Interacting with TurtleBot4 from a Remote Computer using Zenoh](#interacting-with-turtlebot4-from-a-remote-computer-using-zenoh)
-- [Expected ROS2 Topics for a Correctly Configured System](#expected-ros2-topics-for-a-correctly-configured-system)
-- [Building the Docker Dual Bridge Images](#building-the-docker-dual-bridge-images)
-- [Debugging Commands](#debugging-commands)
-
-## Supported versions
+## Suggested Operating System Versions
 
 OM1 only supports TurtleBot4 with Humble and Create3 with H.2.6.
 
@@ -91,9 +80,13 @@ services:
 
 The TurtleBot4 will now be more stable, can discover other computers running Zenoh, send them Zenoh messages, and also, accept Zenoh messages and forward them to ROS2.
 
-## Basic Commands
+## Identity and Keys
 
-Once the preparation is done, you can install OM1 and start using it. Refer to the [Install OM1](/getting-started/get-started) page for instructions. 
+**API_KEY** Go to [portal](portal.openmind.org) to get a free API key. Enter this API key in the "api_key" field in the `/config/turtlebot4.json5` file. You can also provide this API key via your .env - just enter it as:
+
+```bash
+OM_API_KEY=om1_live_e4252f1cf005af...
+```
 
 **UNIVERSAL_ROBOT_ID (URID)** Go to["Hello Robots, come join us"](https://portal.openmind.org/robots) to join a decentralized machine\<\>machine coordination and communication system (FABRIC). Enter machine metadata - currently an arbitrary string - and click "join". The system will provide a unique URID for your robot. The URIDs all share the same format: they begin with `OM`, then 12 alphanumeric characters (numerals and letters), adding up to 14 characters in total. They're not case sensitive. A unique URID allows multiple robots to communicate with one another, similar to how humans use different phone numbers to help them communicate and coordinate.
 
@@ -101,6 +94,28 @@ Enter the URID in the "URID" field in the `/config/turtlebot4.json5` file. You c
 
 ```bash
 URID=OM742d35Cc6634 # yours will be different!
+```
+
+## TurtleBot4 Set Up
+
+OM1 connects to TurtleBot4 using Zenoh. To correctly set up your TurtleBot4, follow these steps.
+
+1. Set up your TurtleBot4 following the [Basic Setup](https://turtlebot.github.io/turtlebot4-user-manual/setup/basic.html). 
+2. Please then become familiar with the Turtlebot4 ecosystem - there are extensive educational materials to help you get started. 
+3. If you are not familiar with the TurtleBot4, please see the excellent [documentation](https://turtlebot.github.io/turtlebot4-user-manual/).
+
+NOTE: Please update the Raspberry Pi's OS (use `sudo apt update && sudo apt upgrade`).
+
+NOTE: Please update the TurtleBot4's internal Create3 computer to `iRobot® Create® 3 Release H.2.6` via the Create3's html "Update" page.
+
+NOTE: In the remainder of this writeup, we assume you are generally familiar with the ROS2/TurtleBot4 ecosystem, including ssh-ing to the Raspberry Pi command line, the use of the `turtlebot4-setup` program, and interacting with the internal Create3 via its webpage at IP:8080.
+
+
+## Basic Commands
+
+Run
+```bash Run Robot
+uv run src/run.py turtlebot4
 ```
 
 ## Run OM1 on the Internal RPi4
