@@ -25,11 +25,10 @@
         "tab": "Guides",
         "groups": [
           {
-            "group": "Getting Started",
+            "group": "Overview",
             "pages": [
               "getting-started/introduction",
-              "getting-started/get-started",
-              "getting-started/raspberrypi",
+              "getting-started/get-started",              
               "getting-started/architecture",
               "getting-started/configuration",
               "getting-started/faq"
@@ -41,11 +40,12 @@
               "examples/conversation",
               "examples/llm_models",
               "examples/smart_toy",
+              "getting-started/raspberrypi",
               "examples/gazebo"
             ]
           },
           {
-            "group": "Robotics",
+            "group": "Robot Integration",
             "pages": [
               "robotics/unitree_go2_quadruped",
               "robotics/unitree_g1_humanoid",
@@ -54,12 +54,6 @@
               "robotics/gps_compass",
               "robotics/asimov_governance",
               "robotics/coinbase_hackathon"
-            ]
-          },
-          {
-            "group": "Development",
-            "pages": [
-              "development/intro"
             ]
           }
         ]
