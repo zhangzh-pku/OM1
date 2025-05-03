@@ -214,7 +214,7 @@ def continuous_subscribe(lidar):
                 print("You can retreat.")
         else:
             print(
-                "You are surrounded by objects and cannot safelty move in any direction. DO NOT MOVE."
+                "You are surrounded by objects and cannot safely move in any direction. DO NOT MOVE."
             )
 
         for p in bad_paths:
