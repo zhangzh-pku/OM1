@@ -78,7 +78,7 @@ lines = []
 for li in list(range(0, len(curves) + 1)):
     lines.append(ax2.plot([0], [0], "-", color="black")[0])
 
-line = ax3.plot([0], [0], ".", color="red")[0]
+line = ax3.plot([0], [0], "-", color="red")[0]
 ax3.set_xlim(-180, 180)
 ax3.set_ylim(0, 1.2)
 ax3.set_aspect(300)
