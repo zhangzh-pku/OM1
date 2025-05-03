@@ -8,7 +8,11 @@ import zenoh
 
 from actions.base import ActionConfig, ActionConnector
 from actions.move_turtle.interface import MoveInput
-from zenoh_idl import geometry_msgs, nav_msgs, sensor_msgs
+
+from zenoh_idl import geometry_msgs
+from zenoh_idl import nav_msgs
+from zenoh_idl import sensor_msgs
+
 
 rad_to_deg = 57.2958
 
