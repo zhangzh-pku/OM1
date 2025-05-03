@@ -38,7 +38,7 @@ class RPLidarProvider:
         self.lidar = None
 
         self._scan_result: Optional[NDArray] = None
-        self._idar_result: str = None
+        self._lidar_result: str = None
 
         """
         precompute Bezier trajectories
@@ -254,7 +254,7 @@ class RPLidarProvider:
                     logging.info(f"RPLidar result: {return_string}")
 
                     self._scan_result = array
-                    self._idar_result = return_string
+                    self._lidar_result = return_string
 
                 time.sleep(0.1)
             except Exception as e:
@@ -296,4 +296,4 @@ class RPLidarProvider:
         str
             The latest Lidar result as a string
         """
-        return self._idar_result
+        return self._lidar_result
