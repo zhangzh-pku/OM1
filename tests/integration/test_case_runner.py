@@ -269,7 +269,11 @@ async def evaluate_with_llm(
 
     # Initialize the OpenAI client if not already done
     if _llm_client is None:
-        if not api_key:
+        if not api_key or api_key == "openmind_free":
+            # Try to get the API key from a GitHub secret environment variable
+            github_api_key = os.environ.get("OM1_API_KEY")
+            if github_api_key:
+                api_key = github_api_key
             logging.warning("No API key found for LLM evaluation, using mock score")
             return 0.0, "No API key provided for LLM evaluation"
 
