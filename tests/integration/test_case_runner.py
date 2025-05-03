@@ -100,7 +100,9 @@ def load_test_case(test_case_path: Path) -> Dict[str, Any]:
     if config.get("api_key") == "openmind_free":
         env_api_key = os.environ.get("OM1_API_KEY")
         if not env_api_key:
-            logging.warning("OM1_API_KEY environment variable not found, using default free tier")
+            logging.warning(
+                "OM1_API_KEY environment variable not found, using default free tier"
+            )
         config["api_key"] = env_api_key or "openmind_free"
 
     return config
