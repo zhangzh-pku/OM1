@@ -274,8 +274,9 @@ async def evaluate_with_llm(
             github_api_key = os.environ.get("OM1_API_KEY")
             if github_api_key:
                 api_key = github_api_key
-            logging.warning("No API key found for LLM evaluation, using mock score")
-            return 0.0, "No API key provided for LLM evaluation"
+            else:
+                logging.warning("No API key found for LLM evaluation, using mock score")
+                return 0.0, "No API key provided for LLM evaluation"
 
         _llm_client = openai.AsyncClient(
             base_url="https://api.openmind.org/api/core/openai", api_key=api_key
