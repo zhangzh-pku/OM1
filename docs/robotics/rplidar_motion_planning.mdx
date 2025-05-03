@@ -1,0 +1,33 @@
+---
+title: RPLidar
+description: "RPLidar Setup and Use"
+---
+
+## RPLidar
+
+This is an A8.
+
+```bash
+ls /dev/tty.*  
+ls /dev/cu.*  
+uv run rptest.py /dev/cu.usbserial-0001 # for example
+```
+
+Please configure as needed: 
+
+```python
+"""
+Robot and sensor configuration
+"""
+half_width_robot      = 0.20  # the width of the robot is 40 cm
+max_relevant_distance = 1.1   # meters
+sensor_mounting_angle = 180.0 # corrects for how sensor is mounted
+```
+
+## Architecture 
+
+The system pre-computes 9 different paths, 4 to the left, one straight ahead, 4 to the right, and one to the back. For each of the those Bezier curves, the code checks whether the path approaches any detected object to within `half_width_robot`. If not, the path is considered to be a valid choice and the motion system can execute that path. 
+
+## Assumptions
+
+The code assumes that any unpredictable barriers (e.g. humans crossing the path of the robot) will be avoided using separate code within the `action` driver, such as by issuing a "STOP" command when an object is detected in front of the robot.   

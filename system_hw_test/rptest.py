@@ -1,99 +1,262 @@
-from rpdriver import RPDriver
-import time
+import logging
+import math
 import sys
-import numpy as np
+import threading
+import time
 
+import bezier
+import numpy as np
 from matplotlib import pyplot as plot
 from matplotlib.animation import FuncAnimation
-from matplotlib.patches import Circle
-from numpy import array, linspace
-from scipy.ndimage import gaussian_filter1d
-from scipy.signal import find_peaks
+from matplotlib.patches import Circle, Rectangle
+from rpdriver import RPDriver
+
+# Configure logging
+logging.basicConfig(
+    level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
+)
+
+"""
+precompute Bezier trajectories 
+"""
+curves = [
+    bezier.Curve(np.asfortranarray([[0.0, -0.3, -0.75], [0.0, 0.5, 0.40]]), degree=2),
+    bezier.Curve(np.asfortranarray([[0.0, -0.3, -0.70], [0.0, 0.6, 0.70]]), degree=2),
+    bezier.Curve(np.asfortranarray([[0.0, -0.2, -0.60], [0.0, 0.7, 0.90]]), degree=2),
+    bezier.Curve(np.asfortranarray([[0.0, -0.1, -0.35], [0.0, 0.7, 1.03]]), degree=2),
+    bezier.Curve(np.asfortranarray([[0.0, 0.0, 0.00], [0.0, 0.5, 1.05]]), degree=2),
+    bezier.Curve(np.asfortranarray([[0.0, +0.1, +0.35], [0.0, 0.7, 1.03]]), degree=2),
+    bezier.Curve(np.asfortranarray([[0.0, +0.2, +0.60], [0.0, 0.7, 0.90]]), degree=2),
+    bezier.Curve(np.asfortranarray([[0.0, +0.3, +0.70], [0.0, 0.6, 0.70]]), degree=2),
+    bezier.Curve(np.asfortranarray([[0.0, +0.3, +0.75], [0.0, 0.5, 0.40]]), degree=2),
+    bezier.Curve(np.asfortranarray([[0.0, 0.0, 0.00], [0.0, -0.5, -1.05]]), degree=2),
+]
+
+paths = []
+pp = []
+s_vals = np.linspace(0.0, 1.0, 10)
+
+for curve in curves:
+    cp = curve.evaluate_multi(s_vals)
+    paths.append(cp)
+    pairs = list(zip(cp[0], cp[1]))
+    pp.append(pairs)
+
+print(paths)
+print(pp)
+
+fig, ax = plot.subplots(3)
+
+fig = plot.figure()
+ax1 = plot.subplot(131)
+ax2 = plot.subplot(132)
+ax3 = plot.subplot(133)
+
+center = ax1.plot([0], [0], "o", color="blue")[0]  # the robot
+circle = ax1.add_patch(Circle((0, 0), 0.20, color="red"))  # the robot
+points = ax1.plot([], [], "-", color="black")[0]
+front = ax1.annotate("Front", xytext=(0.1, 0.3), xy=(0, 0.5))
+arrow = ax1.annotate("", xytext=(0, 0), xy=(0, 1.5), arrowprops=dict(arrowstyle="->"))
+ax1.set_xlim(-5, 5)
+ax1.set_ylim(-5, 5)
+ax1.set_aspect("equal")
+
+# Figure 2 - the zoom and the possible paths
+centerZoom = ax2.plot([0], [0], "o", color="blue")[0]  # the robot
+circleZoom = ax2.add_patch(
+    Circle((0, 0), 0.20, ls="--", lw=1, ec="red", fc="none")
+)  # the robot head
+outline = ax2.add_patch(
+    Rectangle((-0.2, -0.7), 0.40, 0.70, ls="--", lw=1, ec="red", fc="none")
+)  # the robot body
+pointsZoom = ax2.plot([], [], ".", color="black")[0]
+ax2.set_xlim(-1.2, 1.2)
+ax2.set_ylim(-1.2, 1.2)
+ax2.set_aspect("equal")
+
+lines = []
+for li in list(range(0, len(curves) + 1)):
+    lines.append(ax2.plot([0], [0], "-", color="black")[0])
+
+line = ax3.plot([0], [0], ".", color="red")[0]
+ax3.set_xlim(-180, 180)
+ax3.set_ylim(0, 1.2)
+ax3.set_aspect(300)
+
+ax3.plot([-180, -48], [1.18, 1.18], "-", color="red", linewidth=3.0)[0]
+ax3.plot([-42, 42], [1.18, 1.18], "-", color="black", linewidth=3.0)[0]
+ax3.plot([48, 180], [1.18, 1.18], "-", color="green", linewidth=3.0)[0]
+ax3.annotate("Left", xytext=(-125, 1.1), xy=(0, 0.5))
+ax3.annotate("Front", xytext=(-20, 1.1), xy=(0, 0.5))
+ax3.annotate("Right", xytext=(85, 1.1), xy=(0, 0.5))
+
+"""
+Robot and sensor configuration
+"""
+half_width_robot = 0.20  # the width of the robot is 40 cm
+max_relevant_distance = 1.1  # meters
+sensor_mounting_angle = 180.0  # corrects for how sensor is mounted
 
 
+def continuous_subscribe(lidar):
 
-# center = ax[0].plot([0], [0], "o", color="blue")[0]  # the robot
-# circle = ax[0].add_patch(Circle((0, 0), 0.16, color="red"))
-# line = ax[0].plot([], [], ".", color="black")[0]
-# front = ax[0].annotate("Front", xytext=(0.1, 0.3), xy=(0, 0.5))
-# arrow = ax[0].annotate("", xytext=(0, 0), xy=(0, 0.5), arrowprops=dict(arrowstyle="->"))
-# ax[0].set_xlim(-1, 1)
-# ax[0].set_ylim(-1, 1)
-# ax[0].set_aspect("equal")
+    for i, scan in enumerate(
+        lidar.iter_scans(scan_type="express", max_buf_meas=3000, min_len=5)
+    ):
 
-# # Add captions to Fig2 to to orient people
-# gap = 5
-# ax[1].plot([0, 227 - gap], [50, 50], "-", color="red", linewidth=3.0)[0]
-# ax[1].plot([227 + gap, 453 - gap], [50, 50], "-", color="red", linewidth=3.0)[0]
-# ax[1].plot([453 + gap, 680], [50, 50], "-", color="red", linewidth=3.0)[0]
-# ax[1].annotate("Left", xytext=(100, 45), xy=(0, 0.5))
-# ax[1].annotate("Front", xytext=(320, 45), xy=(0, 0.5))
-# ax[1].annotate("Right", xytext=(550, 45), xy=(0, 0.5))
-# arrow_list = []
+        array = np.array(scan)
 
-distances = zeros(361)
-# angles = list(range(361))
+        # the driver sends angles in degrees
+        # between from 0 to 360
+        angles = array[:, 1]
 
-PORT_NAME = '' # Adjust the port according to your system
+        # distances are in millimeters
+        distances = array[:, 2]
 
-if len(sys.argv) > 1:
-    PORT_NAME = sys.argv[1]
-    print(f"using {PORT_NAME} as the serial port")
-else:
-    print("you forgot to specify the serial port...")
+        complexes = []
+
+        for angle, distance in list(zip(angles, distances)):
+
+            # convert distance to meters
+            d_m = distance / 1000.0
+
+            # don't worry about distant objects
+            if d_m > 5.0:
+                continue
+
+            # first, correctly orient the sensor zero to the robot zero
+            # sensor_mounting_angle = 180.0
+            angle = angle + sensor_mounting_angle
+            if angle >= 360.0:
+                angle = angle - 360.0
+
+            # then, convert to radians
+            a_rad = angle * math.pi / 180.0
+
+            v1 = d_m * math.cos(a_rad)
+            v2 = d_m * math.sin(a_rad)
+
+            # convert to x and y
+            # x runs backwards to forwards, y runs left to right
+            x = -1 * v2
+            y = -1 * v1
+
+            # also, convert the angle to -180 to + 180 range
+            complexes.append([x, y, -180 + angle, d_m])
+
+        array = np.array(complexes)
+        X = array[:, 0]
+        Y = array[:, 1]
+        A = array[:, 2]
+        D = array[:, 3]
+        # print(complexes)
+
+        global points
+        points.set_data(X, Y)
+
+        global pointsZoom
+        pointsZoom.set_data(X, Y)
+
+        global line
+        line.set_data(A, D)
+
+        """
+        Determine set of possible paths
+        """
+        possible_paths = np.array([0, 1, 2, 3, 4, 5, 6, 7, 8, 9])
+        bad_paths = []
+
+        # all the possible conflicting points
+        for x, y, d in list(zip(X, Y, D)):
+            if d > max_relevant_distance:  # too far away - we do not care
+                continue
+            for apath in possible_paths:
+                for point in pp[apath]:
+                    p1 = x - point[0]
+                    p2 = y - point[1]
+                    dist = math.sqrt(p1 * p1 + p2 * p2)
+                    if dist < half_width_robot:
+                        # too close - this path will not work
+                        path_to_remove = np.array([apath])
+                        bad_paths.append(apath)
+                        possible_paths = np.setdiff1d(possible_paths, path_to_remove)
+                        break  # no need to keep checking this path - we know this path is bad
+
+        # print(f"possible: {possible_paths}")
+
+        turn_left = []
+        turn_right = []
+        advance = []
+        retreat = []
+
+        for p in possible_paths:
+            # all the possible paths
+            if p < 4:
+                turn_left.append(p)
+            elif p == 4:
+                advance.append(p)
+            elif p < 9:
+                turn_right.append(p)
+            elif p == 9:
+                retreat.append(p)
+            lines[p].set_data(paths[p][0], paths[p][1])
+            lines[p].set_color("green")
+
+        if len(possible_paths) > 0:
+            print(f"There are {len(possible_paths)} possible paths.")
+            if len(turn_left) > 0:
+                print(f"You can turn left using paths: {turn_left}.")
+            if len(advance) > 0:
+                print("You can advance.")
+            if len(turn_right) > 0:
+                print(f"You can turn right using paths: {turn_right}.")
+            if len(retreat) > 0:
+                print("You can retreat.")
+        else:
+            print(
+                "You are surrounded by objects and cannot safelty move in any direction. DO NOT MOVE."
+            )
+
+        for p in bad_paths:
+            # the are all the bad paths
+            lines[p].set_data(paths[p][0], paths[p][1])
+            lines[p].set_color("red")
 
 
-fig, ax = plot.subplots(2)
-line = ax[1].plot([], [], ".", color="red")[0]
-#line2 = ax[1].plot([], [], ".", color="green")[0]
-ax[1].set_xlim(0, 680)
-ax[1].set_ylim(-1, 51)  # cm
-#ani = FuncAnimation(fig, lambda _: None)
+if __name__ == "__main__":
 
-lidar = RPDriver(PORT_NAME)
-info = lidar.get_info()
-print(f"Info: {info}")
+    PORT_NAME = ""
 
-health = lidar.get_health()
-print(f"Health: {health}")
+    if len(sys.argv) > 1:
+        PORT_NAME = sys.argv[1]
+        print(f"Using {PORT_NAME} as the serial port")
+    else:
+        print("Please specify a serial port...")
 
-# reset to clear buffers
-lidar.reset()
-#lidar.start("express")
+    try:
+        lidar = RPDriver(PORT_NAME)
+        info = lidar.get_info()
+        print(f"Info: {info}")
 
-#for i, scan in enumerate(lidar.iter_measures()):
+        health = lidar.get_health()
+        print(f"Health: {health}")
 
+        # reset to clear buffers
+        lidar.reset()
 
+        subscribe_thread = threading.Thread(target=continuous_subscribe, args=(lidar,))
+        subscribe_thread.daemon = True
+        subscribe_thread.start()
 
-# # for i, scan in enumerate(lidar.iter_scans("normal", 3000, 300)):
-for i, scan in enumerate(lidar.iter_scans(scan_type='express', max_buf_meas=3000, min_len=5)):
+        ani = FuncAnimation(fig, lambda _: None)
+        plot.show()
 
-    print(f"{i}: {scan}")
-    print(f"{scan[0][0]}")
-    
-    array = np.array(scan)
-    print(f"{len(array[:,1])}")
+    except KeyboardInterrupt:
+        logging.info("Program interrupted")
 
-    angles = array[:,1]
-    distances = array[:,2]
-
-    line.set_data(angles, distances)
-    plot.show()
-
-        # print(f"{int(array[:,1])}")
-
-    #     #if i > 10:
-    #     #    break
-
-    # lidar.stop()
-    # #lidar.stop_motor()
-    # lidar.disconnect()
-
-# except Exception as e:
-#      print(f"An error occurred: {e}")
-
-# # finally:
-# #     if 'lidar' in locals():
-# #         #lidar.stop()
-# #         #lidar.stop_motor()
-# #         #lidar.disconnect()
+    finally:
+        logging.info("Exiting program")
+        lidar.stop()
+        lidar.disconnect()
+        time.sleep(0.5)
+        sys.exit(0)
