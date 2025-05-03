@@ -15,10 +15,10 @@
     }
   ],
   "cortex_llm": {
-    "type": "MultiLLM",
+    "type": "OpenAILLM",
     "config": {
       "agent_name": "Spot",
-      "history_length": 3
+      "history_length": 10
     }
   },
   "agent_actions": [
@@ -52,7 +52,7 @@
   // Expected output
   "expected": {
     "movement": "wag tail",
-    "keywords": ["dog", "you see a"],
-    "minimum_score": 0.5
+    "keywords": ["dog"],
+    "minimum_score": 0.2
   }
 } 

@@ -96,6 +96,13 @@ def load_test_case(test_case_path: Path) -> Dict[str, Any]:
     # Process environment variables
     config = process_env_vars(config)
 
+    # Check for openmind_free API key and replace with environment variable
+    if config.get("api_key") == "openmind_free":
+        env_api_key = os.environ.get("OM1_API_KEY")
+        if not env_api_key:
+            logging.warning("OM1_API_KEY environment variable not found, using default free tier")
+        config["api_key"] = env_api_key or "openmind_free"
+
     return config
 
 
