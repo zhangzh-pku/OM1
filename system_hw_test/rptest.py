@@ -45,8 +45,6 @@ for curve in curves:
 print(paths)
 print(pp)
 
-fig, ax = plot.subplots(3)
-
 fig = plot.figure()
 ax1 = plot.subplot(131)
 ax2 = plot.subplot(132)
@@ -96,7 +94,6 @@ Robot and sensor configuration
 half_width_robot = 0.20  # the width of the robot is 40 cm
 max_relevant_distance = 1.1  # meters
 sensor_mounting_angle = 180.0  # corrects for how sensor is mounted
-
 angles_blanked = [[-180.0, -160.0], [32.0, 46.6]]
 
 for b in angles_blanked:
