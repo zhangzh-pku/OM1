@@ -170,17 +170,23 @@ async def test_ask_with_question_state(llm_with_question_states, mock_response):
     with patch("requests.post") as mock_post:
         mock_post.return_value.status_code = 200
         mock_post.return_value.json.return_value = mock_response
-        
+
         # Capture the request to verify question_state is included
         await llm_with_question_states.ask("test prompt")
-        
+
         # Verify the question state was sent in the request
         request_json = mock_post.call_args[1]["json"]
         assert "question_state" in request_json
-        assert request_json["question_state"] == llm_with_question_states._config.question_states
-        
+        assert (
+            request_json["question_state"]
+            == llm_with_question_states._config.question_states
+        )
+
         # Verify question state was updated from response
-        assert llm_with_question_states.io_provider.question_state == mock_response["extra"]["question_states"]
+        assert (
+            llm_with_question_states.io_provider.question_state
+            == mock_response["extra"]["question_states"]
+        )
 
 
 @pytest.mark.asyncio
