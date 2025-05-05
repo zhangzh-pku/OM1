@@ -17,11 +17,62 @@ def config():
 
 
 @pytest.fixture
+def config_with_question_states():
+    question_states = {
+        "current_question_index": 1,
+        "states": [
+            {
+                "index": 0,
+                "question": "How are you feeling today?",
+                "answer": "I feel good",
+                "status": "answered"
+            },
+            {
+                "index": 1,
+                "question": "Any pain or discomfort?",
+                "answer": "",
+                "status": "not_asked"
+            }
+        ]
+    }
+    return LLMConfig(
+        base_url="https://api.openmind.org/api/core",
+        api_key="test_api_key",
+        model="gpt-4.1-nano",
+        question_states=question_states
+    )
+
+
+@pytest.fixture
 def mock_response():
     """Mock API response with markdown content"""
     return {
         "content": '{"commands":[{"type":"move","value":"wag tail"},{"type":"move","value":"walk"},{"type":"speak","value":"Hello! How can I help with your medical question?"},{"type":"emotion","value":"concern"}]}',
-        "question_state": {"topics": ["medical", "health"], "questions_asked": 1},
+        "extra": {
+            "question_states": {
+                "current_question_index": 2,
+                "states": [
+                    {
+                        "index": 0,
+                        "question": "How are you feeling today?",
+                        "answer": "I feel good",
+                        "status": "answered"
+                    },
+                    {
+                        "index": 1,
+                        "question": "Any pain or discomfort?",
+                        "answer": "No pain",
+                        "status": "answered"
+                    },
+                    {
+                        "index": 2,
+                        "question": "When did symptoms start?",
+                        "answer": "",
+                        "status": "not_asked"
+                    }
+                ]
+            }
+        }
     }
 
 
@@ -30,7 +81,31 @@ def mock_structured_output_response():
     """Mock API response with structured output matching our model"""
     return {
         "content": {"result": "This is a structured medical result"},
-        "question_state": {"topics": ["medical", "health"], "questions_asked": 1},
+        "extra": {
+            "question_states": {
+                "current_question_index": 2,
+                "states": [
+                    {
+                        "index": 0,
+                        "question": "How are you feeling today?",
+                        "answer": "I feel good",
+                        "status": "answered"
+                    },
+                    {
+                        "index": 1,
+                        "question": "Any pain or discomfort?",
+                        "answer": "No pain",
+                        "status": "answered"
+                    },
+                    {
+                        "index": 2,
+                        "question": "When did symptoms start?",
+                        "answer": "",
+                        "status": "not_asked"
+                    }
+                ]
+            }
+        }
     }
 
 
@@ -39,11 +114,21 @@ def llm(config):
     return MultiLLMHealthy(CortexOutputModel, config)
 
 
+@pytest.fixture
+def llm_with_question_states(config_with_question_states):
+    return MultiLLMHealthy(CortexOutputModel, config_with_question_states)
+
+
 def test_init_with_config(llm, config):
     """Test initialization with provided configuration"""
     assert llm._config.api_key == config.api_key
     assert llm.endpoint == "https://api.openmind.org/api/core/agent/medical"
     assert llm._config.model == config.model
+
+
+def test_init_with_question_states(llm_with_question_states, config_with_question_states):
+    """Test initialization with question states in config"""
+    assert llm_with_question_states.io_provider.question_state == config_with_question_states.question_states
 
 
 def test_init_with_default_model():
@@ -69,10 +154,26 @@ async def test_ask_structured_output(llm, mock_response):
 
         result = await llm.ask("test prompt")
         assert result is not None
-        assert llm.question_state == {
-            "topics": ["medical", "health"],
-            "questions_asked": 1,
-        }
+        assert llm.io_provider.question_state == mock_response["extra"]["question_states"]
+
+
+@pytest.mark.asyncio
+async def test_ask_with_question_state(llm_with_question_states, mock_response):
+    """Test that question state is included in request and updated from response"""
+    with patch("requests.post") as mock_post:
+        mock_post.return_value.status_code = 200
+        mock_post.return_value.json.return_value = mock_response
+        
+        # Capture the request to verify question_state is included
+        result = await llm_with_question_states.ask("test prompt")
+        
+        # Verify the question state was sent in the request
+        request_json = mock_post.call_args[1]["json"]
+        assert "question_state" in request_json
+        assert request_json["question_state"] == llm_with_question_states._config.question_states
+        
+        # Verify question state was updated from response
+        assert llm_with_question_states.io_provider.question_state == mock_response["extra"]["question_states"]
 
 
 @pytest.mark.asyncio
