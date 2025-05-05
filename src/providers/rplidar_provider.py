@@ -6,8 +6,9 @@ from typing import Optional
 
 import bezier
 import numpy as np
-from rpdriver_driver import RPDriver
+from numpy.typing import NDArray
 
+from .rplidar_driver import RPDriver
 from .singleton import singleton
 
 
@@ -36,8 +37,11 @@ class RPLidarProvider:
         self.running: bool = False
         self.lidar = None
 
+        self._scan_result: Optional[NDArray] = None
+        self._lidar_result: str = None
+
         """
-        precompute Bezier trajectories 
+        precompute Bezier trajectories
         """
         self.curves = [
             bezier.Curve(
@@ -104,17 +108,6 @@ class RPLidarProvider:
             logging.error(f"Error in RPLidar provider: {e}")
 
         self._thread: Optional[threading.Thread] = None
-
-    # def register_message_callback(self, message_callback: Optional[Callable]):
-    #     """
-    #     Register a callback for processing RPLidar results.
-
-    #     Parameters
-    #     ----------
-    #     callback : callable
-    #         The callback function to process VLM results.
-    #     """
-    #     self.ws_client.register_message_callback(message_callback)
 
     def start(self):
         """
@@ -260,11 +253,10 @@ class RPLidarProvider:
 
                     logging.info(f"RPLidar result: {return_string}")
 
-                    #####################################
-                    # string to return: return_string
-                    # array to return: array
+                    self._scan_result = array
+                    self._lidar_result = return_string
 
-                # time.sleep(0.1)
+                time.sleep(0.1)
             except Exception as e:
                 logging.error(f"Error in RPLidar provider: {e}")
 
@@ -281,3 +273,27 @@ class RPLidarProvider:
             self.lidar.disconnect()
             time.sleep(0.5)
             self._thread.join(timeout=5)
+
+    @property
+    def scan_result(self) -> Optional[NDArray]:
+        """
+        Get the latest scan result.
+
+        Returns
+        -------
+        Optional[NDArray]
+            The latest scan result as a NumPy array, or None if not available
+        """
+        return self._scan_result
+
+    @property
+    def lidar_result(self) -> str:
+        """
+        Get the latest Lidar result.
+
+        Returns
+        -------
+        str
+            The latest Lidar result as a string
+        """
+        return self._lidar_result
