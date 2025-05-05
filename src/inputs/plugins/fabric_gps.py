@@ -82,20 +82,19 @@ class FabricGPSInput(FuserInput[str]):
             )
             response = find_closest_node_response.json()
             logging.info(f"Find closest node response: {response}")
-            if "result" in response and response["result"]:
+            if "result" in response and response["result"] and len(response["result"]) > 0:
                 logging.info(f"Found closest node: {response['result']}")
-                # inside async def _poll(self) after you get response["result"]:
-                peer = response["result"]
-                lat = peer["latitude"]
-                lon = peer["longitude"]
+                # Access the first result
+                peer_info = response["result"][0]["peer"]
+                lat = peer_info["latitude"]
+                lon = peer_info["longitude"]
 
-                # save for others
+                # Save for others
                 self.io_provider.add_dynamic_variable("closest_peer_lat", lat)
                 self.io_provider.add_dynamic_variable("closest_peer_lon", lon)
 
-                # optionally enqueue a human‑readable message
+                # Optionally enqueue a human‑readable message
                 self.message_buffer.put(f"Closest peer at {lat:.5f}, {lon:.5f}")
-                return f"Closest peer at {lat:.5f}, {lon:.5f}"
             else:
                 logging.info("No closest node found.")
                 return None
