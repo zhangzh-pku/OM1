@@ -2,15 +2,15 @@ import importlib
 import inspect
 import os
 import typing as T
-
-from pydantic import BaseModel
+from dataclasses import dataclass
 
 from providers.io_provider import IOProvider
 
 R = T.TypeVar("R")
 
 
-class LLMConfig(BaseModel):
+@dataclass
+class LLMConfig:
     """
     Configuration class for Language Learning Models.
 
@@ -31,6 +31,10 @@ class LLMConfig(BaseModel):
     model: T.Optional[str] = None
     agent_name: T.Optional[str] = "IRIS"
     history_length: T.Optional[int] = 0
+
+    def __init__(self, **kwargs):
+        for key, value in kwargs.items():
+            setattr(self, key, value)
 
 
 class LLM(T.Generic[R]):
