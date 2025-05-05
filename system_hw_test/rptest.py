@@ -24,12 +24,12 @@ curves = [
     bezier.Curve(np.asfortranarray([[0.0, -0.3, -0.70], [0.0, 0.6, 0.70]]), degree=2),
     bezier.Curve(np.asfortranarray([[0.0, -0.2, -0.60], [0.0, 0.7, 0.90]]), degree=2),
     bezier.Curve(np.asfortranarray([[0.0, -0.1, -0.35], [0.0, 0.7, 1.03]]), degree=2),
-    bezier.Curve(np.asfortranarray([[0.0, 0.0, 0.00], [0.0, 0.5, 1.05]]), degree=2),
+    bezier.Curve(np.asfortranarray([[0.0,  0.0,  0.00], [0.0, +0.5, +1.05]]), degree=2),
     bezier.Curve(np.asfortranarray([[0.0, +0.1, +0.35], [0.0, 0.7, 1.03]]), degree=2),
     bezier.Curve(np.asfortranarray([[0.0, +0.2, +0.60], [0.0, 0.7, 0.90]]), degree=2),
     bezier.Curve(np.asfortranarray([[0.0, +0.3, +0.70], [0.0, 0.6, 0.70]]), degree=2),
     bezier.Curve(np.asfortranarray([[0.0, +0.3, +0.75], [0.0, 0.5, 0.40]]), degree=2),
-    bezier.Curve(np.asfortranarray([[0.0, 0.0, 0.00], [0.0, -0.5, -1.05]]), degree=2),
+    bezier.Curve(np.asfortranarray([[0.0,  0.0,  0.00], [0.0, -0.5, -1.05]]), degree=2),
 ]
 
 paths = []
@@ -83,9 +83,9 @@ ax3.set_xlim(-180, 180)
 ax3.set_ylim(0, 1.2)
 ax3.set_aspect(300)
 
-ax3.plot([-180, -48], [1.18, 1.18], "-", color="red", linewidth=3.0)[0]
-ax3.plot([-42, 42], [1.18, 1.18], "-", color="black", linewidth=3.0)[0]
-ax3.plot([48, 180], [1.18, 1.18], "-", color="green", linewidth=3.0)[0]
+ax3.plot([-180.0, -48.0], [1.18, 1.18], "-", color="red", linewidth=3.0)[0]
+ax3.plot([-42.0, 42.0], [1.18, 1.18], "-", color="black", linewidth=3.0)[0]
+ax3.plot([48.0, 180.0], [1.18, 1.18], "-", color="green", linewidth=3.0)[0]
 ax3.annotate("Left", xytext=(-125, 1.1), xy=(0, 0.5))
 ax3.annotate("Front", xytext=(-20, 1.1), xy=(0, 0.5))
 ax3.annotate("Right", xytext=(85, 1.1), xy=(0, 0.5))
@@ -97,6 +97,10 @@ half_width_robot = 0.20  # the width of the robot is 40 cm
 max_relevant_distance = 1.1  # meters
 sensor_mounting_angle = 180.0  # corrects for how sensor is mounted
 
+angles_blanked = [[-180.0, -160.0], [32.0, 46.6]]
+
+for b in angles_blanked:
+    ax3.plot([b[0],b[1]], [0.5, 0.5], "-", color="black", linewidth=6.0)[0]
 
 def continuous_subscribe(lidar):
 
@@ -109,6 +113,9 @@ def continuous_subscribe(lidar):
         # the driver sends angles in degrees
         # between from 0 to 360
         angles = array[:, 1]
+
+        # warning - the driver may send two or more readings per angle,
+        # this can be confusing for the code
 
         # distances are in millimeters
         distances = array[:, 2]
@@ -141,15 +148,37 @@ def continuous_subscribe(lidar):
             x = -1 * v2
             y = -1 * v1
 
-            # also, convert the angle to -180 to + 180 range
-            complexes.append([x, y, -180 + angle, d_m])
+            # convert the angle to -180 to + 180 range
+            angle = angle - 180.0
+
+            keep = True
+            for b in angles_blanked:
+                if angle > b[0] and angle < b[1]:
+                    # this is a permanent reflection based on the robot
+                    # disregard
+                    keep = False
+                    break
+            
+            # the final data ready to use for path planning 
+            if keep:
+                complexes.append([x, y, angle, d_m])
 
         array = np.array(complexes)
+
+        # sort data into strictly increasing angles to deal with sensor issues
+        # the sensor sometimes reports part of the previous scan and part of the next scan
+        # so you end up with multiple slightly different values for some angles at the 
+        # junction
+        sorted_indices = array[:, 2].argsort()
+        array = array[sorted_indices]
+
         X = array[:, 0]
         Y = array[:, 1]
         A = array[:, 2]
         D = array[:, 3]
-        # print(complexes)
+
+        # print(array)
+        # print(A)
 
         global points
         points.set_data(X, Y)
@@ -185,8 +214,8 @@ def continuous_subscribe(lidar):
         # print(f"possible: {possible_paths}")
 
         turn_left = []
-        turn_right = []
         advance = []
+        turn_right = []
         retreat = []
 
         for p in possible_paths:
