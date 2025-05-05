@@ -69,47 +69,67 @@ class MultiLLMHealthy(LLM[R]):
             Parsed response matching the output_model structure, or None if
             parsing fails.
         """
-        self.io_provider.llm_start_time = time.time()
-        self.io_provider.set_llm_prompt(prompt)
+        try:
+            self.io_provider.llm_start_time = time.time()
+            self.io_provider.set_llm_prompt(prompt)
 
-        headers = {
-            "Authorization": f"Bearer {self._config.api_key}",
-            "Content-Type": "application/json",
-        }
+            headers = {
+                "Authorization": f"Bearer {self._config.api_key}",
+                "Content-Type": "application/json",
+            }
 
-        request = {
-            "system_prompt": self.io_provider.fuser_system_prompt,
-            "inputs": self.io_provider.fuser_inputs,
-            "available_actions": self.io_provider.fuser_available_actions,
-            "model": self._config.model,
-            "response_format": self._output_model.model_json_schema(),
-            "structured_outputs": True,
-        }
+            request = {
+                "system_prompt": self.io_provider.fuser_system_prompt,
+                "inputs": self.io_provider.fuser_inputs,
+                "available_actions": self.io_provider.fuser_available_actions,
+                "model": self._config.model,
+                "response_format": self._output_model.model_json_schema(),
+                "structured_outputs": True,
+            }
 
-        if self.io_provider.question_state:
-            request["question_state"] = self.io_provider.question_state
+            if self.io_provider.question_state:
+                request["question_state"] = self.io_provider.question_state
 
-        logging.debug(f"MultiLLMHealthy system_prompt: {request['system_prompt']}")
-        logging.debug(f"MultiLLMHealthy inputs: {request['inputs']}")
-        logging.debug(f"MultiLLMHealthy available_actions: {request['available_actions']}")
+            logging.debug(f"MultiLLMHealthy system_prompt: {request['system_prompt']}")
+            logging.debug(f"MultiLLMHealthy inputs: {request['inputs']}")
+            logging.debug(f"MultiLLMHealthy available_actions: {request['available_actions']}")
 
-        response = requests.post(
-            self.endpoint,
-            json=request,
-            headers=headers,
-        )
+            response = requests.post(
+                self.endpoint,
+                json=request,
+                headers=headers,
+            )
 
-        response_json = response.json()
-        self.io_provider.llm_end_time = time.time()
-        logging.info(f"Raw response: {response_json}")
+            if response.status_code != 200:
+                logging.error(f"API request failed with status {response.status_code}: {response.text}")
+                return None
 
-        if "extra" in response_json and "question_states" in response_json["extra"]:
-            self.io_provider.question_state = response_json["extra"]["question_states"]
+            response_json = response.json()
+            self.io_provider.llm_end_time = time.time()
+            logging.info(f"Raw response: {response_json}")
 
-        output = response_json.get("content")
-        parsed_response = self._output_model.model_validate_json(output)
-        logging.debug(f"MultiLLMHealthy structured output: {parsed_response}")
-        return parsed_response
+            if "extra" in response_json and "question_states" in response_json["extra"]:
+                self.io_provider.question_state = response_json["extra"]["question_states"]
+
+            output = response_json.get("content")
+            if output is None:
+                logging.error("Response missing content field")
+                return None
+
+            try:
+                if isinstance(output, dict):
+                    parsed_response = self._output_model.model_validate(output)
+                else:
+                    parsed_response = self._output_model.model_validate_json(output)
+                logging.debug(f"MultiLLMHealthy structured output: {parsed_response}")
+                return parsed_response
+            except Exception as e:
+                logging.error(f"Error validating structured response: {e}")
+                return None
+
+        except Exception as e:
+            logging.error(f"Error during API request: {str(e)}")
+            return None
 
     async def close(self):
         """Close the session when done."""

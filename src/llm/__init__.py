@@ -31,6 +31,7 @@ class LLMConfig(BaseModel):
     model: T.Optional[str] = None
     agent_name: T.Optional[str] = "IRIS"
     history_length: T.Optional[int] = 0
+    question_states: T.Optional[dict] = None
 
 
 class LLM(T.Generic[R]):
