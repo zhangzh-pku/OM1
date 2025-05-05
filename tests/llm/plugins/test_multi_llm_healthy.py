@@ -25,21 +25,21 @@ def config_with_question_states():
                 "index": 0,
                 "question": "How are you feeling today?",
                 "answer": "I feel good",
-                "status": "answered"
+                "status": "answered",
             },
             {
                 "index": 1,
                 "question": "Any pain or discomfort?",
                 "answer": "",
-                "status": "not_asked"
-            }
-        ]
+                "status": "not_asked",
+            },
+        ],
     }
     return LLMConfig(
         base_url="https://api.openmind.org/api/core",
         api_key="test_api_key",
         model="gpt-4.1-nano",
-        question_states=question_states
+        question_states=question_states,
     )
 
 
@@ -56,23 +56,23 @@ def mock_response():
                         "index": 0,
                         "question": "How are you feeling today?",
                         "answer": "I feel good",
-                        "status": "answered"
+                        "status": "answered",
                     },
                     {
                         "index": 1,
                         "question": "Any pain or discomfort?",
                         "answer": "No pain",
-                        "status": "answered"
+                        "status": "answered",
                     },
                     {
                         "index": 2,
                         "question": "When did symptoms start?",
                         "answer": "",
-                        "status": "not_asked"
-                    }
-                ]
+                        "status": "not_asked",
+                    },
+                ],
             }
-        }
+        },
     }
 
 
@@ -89,23 +89,23 @@ def mock_structured_output_response():
                         "index": 0,
                         "question": "How are you feeling today?",
                         "answer": "I feel good",
-                        "status": "answered"
+                        "status": "answered",
                     },
                     {
                         "index": 1,
                         "question": "Any pain or discomfort?",
                         "answer": "No pain",
-                        "status": "answered"
+                        "status": "answered",
                     },
                     {
                         "index": 2,
                         "question": "When did symptoms start?",
                         "answer": "",
-                        "status": "not_asked"
-                    }
-                ]
+                        "status": "not_asked",
+                    },
+                ],
             }
-        }
+        },
     }
 
 
@@ -126,9 +126,14 @@ def test_init_with_config(llm, config):
     assert llm._config.model == config.model
 
 
-def test_init_with_question_states(llm_with_question_states, config_with_question_states):
+def test_init_with_question_states(
+    llm_with_question_states, config_with_question_states
+):
     """Test initialization with question states in config"""
-    assert llm_with_question_states.io_provider.question_state == config_with_question_states.question_states
+    assert (
+        llm_with_question_states.io_provider.question_state
+        == config_with_question_states.question_states
+    )
 
 
 def test_init_with_default_model():
@@ -154,7 +159,9 @@ async def test_ask_structured_output(llm, mock_response):
 
         result = await llm.ask("test prompt")
         assert result is not None
-        assert llm.io_provider.question_state == mock_response["extra"]["question_states"]
+        assert (
+            llm.io_provider.question_state == mock_response["extra"]["question_states"]
+        )
 
 
 @pytest.mark.asyncio
@@ -165,7 +172,7 @@ async def test_ask_with_question_state(llm_with_question_states, mock_response):
         mock_post.return_value.json.return_value = mock_response
         
         # Capture the request to verify question_state is included
-        result = await llm_with_question_states.ask("test prompt")
+        await llm_with_question_states.ask("test prompt")
         
         # Verify the question state was sent in the request
         request_json = mock_post.call_args[1]["json"]

@@ -52,7 +52,7 @@ class IOProvider:
 
         # Additional variables storage
         self._variables: Dict[str, Any] = {}
-        
+
         # QuestionStates for medical agent
         self._question_state: Optional[Any] = None
 
@@ -326,7 +326,7 @@ class IOProvider:
     def question_state(self) -> Optional[Any]:
         """
         Get the question state for medical agents.
-        
+
         Returns
         -------
         Any or None
@@ -334,12 +334,12 @@ class IOProvider:
         """
         with self._lock:
             return self._question_state
-            
+
     @question_state.setter
     def question_state(self, value: Any) -> None:
         """
         Set the question state for medical agents.
-        
+
         Parameters
         ----------
         value : Any
@@ -347,11 +347,11 @@ class IOProvider:
         """
         with self._lock:
             self._question_state = value
-            
+
     def set_question_state(self, value: Any) -> None:
         """
         Alternative method to set question state.
-        
+
         Parameters
         ----------
         value : Any

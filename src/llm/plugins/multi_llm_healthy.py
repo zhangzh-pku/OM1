@@ -46,7 +46,7 @@ class MultiLLMHealthy(LLM[R]):
             self._config.model = "gpt-4.1-nano"
 
         self.endpoint = "https://api.openmind.org/api/core/agent/medical"
-        
+
         if hasattr(config, "question_states"):
             self.io_provider.question_state = config.question_states
 
@@ -92,7 +92,9 @@ class MultiLLMHealthy(LLM[R]):
 
             logging.debug(f"MultiLLMHealthy system_prompt: {request['system_prompt']}")
             logging.debug(f"MultiLLMHealthy inputs: {request['inputs']}")
-            logging.debug(f"MultiLLMHealthy available_actions: {request['available_actions']}")
+            logging.debug(
+                f"MultiLLMHealthy available_actions: {request['available_actions']}"
+            )
 
             response = requests.post(
                 self.endpoint,
@@ -101,7 +103,9 @@ class MultiLLMHealthy(LLM[R]):
             )
 
             if response.status_code != 200:
-                logging.error(f"API request failed with status {response.status_code}: {response.text}")
+                logging.error(
+                    f"API request failed with status {response.status_code}: {response.text}"
+                )
                 return None
 
             response_json = response.json()
@@ -109,7 +113,9 @@ class MultiLLMHealthy(LLM[R]):
             logging.info(f"Raw response: {response_json}")
 
             if "extra" in response_json and "question_states" in response_json["extra"]:
-                self.io_provider.question_state = response_json["extra"]["question_states"]
+                self.io_provider.question_state = response_json["extra"][
+                    "question_states"
+                ]
 
             output = response_json.get("content")
             if output is None:
