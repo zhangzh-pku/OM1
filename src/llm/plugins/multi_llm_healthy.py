@@ -48,7 +48,9 @@ class MultiLLMHealthy(LLM[R]):
         self.endpoint = "https://api.openmind.org/api/core/agent/medical"
 
         if hasattr(config, "question_states"):
-            self.io_provider.question_state = config.question_states
+            self.io_provider.add_dynamic_variable(
+                "question_states", config.question_states
+            )
 
     async def ask(
         self, prompt: str, messages: T.List[T.Dict[str, str]] = []
@@ -87,8 +89,9 @@ class MultiLLMHealthy(LLM[R]):
                 "structured_outputs": True,
             }
 
-            if self.io_provider.question_state:
-                request["question_state"] = self.io_provider.question_state
+            question_states = self.io_provider.get_dynamic_variable("question_states")
+            if question_states:
+                request["question_state"] = question_states
 
             logging.debug(f"MultiLLMHealthy system_prompt: {request['system_prompt']}")
             logging.debug(f"MultiLLMHealthy inputs: {request['inputs']}")
@@ -113,9 +116,9 @@ class MultiLLMHealthy(LLM[R]):
             logging.info(f"Raw response: {response_json}")
 
             if "extra" in response_json and "question_states" in response_json["extra"]:
-                self.io_provider.question_state = response_json["extra"][
-                    "question_states"
-                ]
+                self.io_provider.add_dynamic_variable(
+                    "question_states", response_json["extra"]["question_states"]
+                )
 
             output = response_json.get("content")
             if output is None:

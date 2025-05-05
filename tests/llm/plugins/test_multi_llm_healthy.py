@@ -131,7 +131,7 @@ def test_init_with_question_states(
 ):
     """Test initialization with question states in config"""
     assert (
-        llm_with_question_states.io_provider.question_state
+        llm_with_question_states.io_provider.get_dynamic_variable("question_states")
         == config_with_question_states.question_states
     )
 
@@ -160,7 +160,8 @@ async def test_ask_structured_output(llm, mock_response):
         result = await llm.ask("test prompt")
         assert result is not None
         assert (
-            llm.io_provider.question_state == mock_response["extra"]["question_states"]
+            llm.io_provider.get_dynamic_variable("question_states")
+            == mock_response["extra"]["question_states"]
         )
 
 
@@ -184,7 +185,7 @@ async def test_ask_with_question_state(llm_with_question_states, mock_response):
 
         # Verify question state was updated from response
         assert (
-            llm_with_question_states.io_provider.question_state
+            llm_with_question_states.io_provider.get_dynamic_variable("question_states")
             == mock_response["extra"]["question_states"]
         )
 
