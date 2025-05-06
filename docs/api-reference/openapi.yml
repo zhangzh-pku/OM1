@@ -31,7 +31,7 @@ paths:
               properties:
                 model:
                   type: string
-                  enum: [gpt-4o, gpt-4o-mini, "deepseek-chat", "gemini-2.0-flash-exp", "grok-2-latest"]
+                  enum: ["gpt-4o", "gpt-4o-mini", "deepseek-chat", "gemini-2.0-flash-exp", "grok-2-latest"]
                   description: The model to use for completion.
                 messages:
                   type: array
@@ -187,7 +187,7 @@ paths:
         - apiKeyAuth: []
         - bearerAuth: []
 
-  /agent/robotic_team/runs:
+  /agent:
       post:
         summary: Run a multi-agent task with the specified agent
         description: Multi-agent endpoint that runs the multi-agent with the given message
@@ -203,7 +203,7 @@ paths:
                     description: The model to use for the agent run
                     default: "gemini-2.0-flash"
                     example: "gemini-2.0-flash"
-                    enum: [gpt-4o, gpt-4o-mini, "gemini-2.0-flash"]
+                    enum: ["gpt-4o", "gpt-4o-mini", "gemini-2.0-flash"]
                   message:
                     type: string
                     description: The message to be processed by the agent
