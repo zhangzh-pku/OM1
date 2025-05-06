@@ -3,6 +3,10 @@
 #define GPSSerial Serial1
 Adafruit_GPS GPS(&GPSSerial);
 
+// PMTK commands to turn on SBAS/WAAS (DGPS)
+#define PMTK_ENABLE_SBAS   "$PMTK313,1*2E"  // enable SBAS search
+#define PMTK_ENABLE_WAAS   "$PMTK301,2*2E"  // set SBAS mode = WAAS
+
 // for the mag
 #include <Wire.h>
 #include <Adafruit_LIS3MDL.h>
@@ -70,11 +74,10 @@ float gyro_zerorate[] = { 0.0, 0.0, 0.0 }; // in Radians/s
 
 void setup()
 {
-  // connect at 115200 so we can read the GPS fast enough and echo without dropping chars
-  // also spit it out
   Serial.begin(115200);
-  while (!Serial) delay(10); // pause until serial console opens
+  while (!Serial) delay(10);
 
+  // print device ID and pick calibration set...
   char DeviceID[9];
   itoa(NRF_FICR->DEVICEID[0], DeviceID, 16);
   Serial.print("Device ID 0: ");
@@ -109,18 +112,24 @@ void setup()
 
   delay(5000);
 
+  // --- GPS init ---
   Serial.println("GPS booting");
-
   GPS.begin(9600);
   GPS.sendCommand(PMTK_SET_NMEA_OUTPUT_RMCGGA);
-  GPS.sendCommand(PMTK_SET_NMEA_UPDATE_1HZ); // 1 Hz update rate
+  GPS.sendCommand(PMTK_SET_NMEA_UPDATE_1HZ);
   GPS.sendCommand(PGCMD_ANTENNA);
+
+  // ==== DGPS enable ====
+  GPS.sendCommand(PMTK_ENABLE_SBAS);
+  GPS.sendCommand(PMTK_ENABLE_WAAS);
+  // ======================
 
   delay(1000);
 
   // Ask for firmware version
   GPSSerial.println(PMTK_Q_RELEASE);
 
+  // --- Magnetometer init ---
   Serial.println("Booting LIS3MDL");
   
   if (!lis3mdl.begin_I2C()) {
@@ -155,8 +164,6 @@ void setup()
   lsm6ds3trc.configInt2(false, true, false); // gyro DRDY on INT2
 }
 
-static bool sbasConfigured = false;
-
 void loop()
 {
 
@@ -172,17 +179,6 @@ void loop()
     timerGPS = millis(); // reset the timer
   
     if (GPS.fix && CALIBRATION == false) {
-
-      if (!sbasConfigured) {
-        // Turn on SBAS
-        GPS.sendCommand("$PMTK313,1*2E"); // Enable SBAS
-        GPS.sendCommand("$PMTK301,2*2E"); // Use WAAS (or similar)
-
-        // Set update rate if needed
-        GPS.sendCommand(PMTK_SET_NMEA_UPDATE_1HZ);
-
-        sbasConfigured = true;
-      }
 
       float latDecimal = ToDecimalDegrees(GPS.latitude);
       float lonDecimal = ToDecimalDegrees(GPS.longitude);
