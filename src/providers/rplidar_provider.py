@@ -37,6 +37,7 @@ class RPLidarProvider:
         """
 
         logging.info(f"trying to boot lidar")
+        
         if wait and self.running:
             logging.info(f"wait and self.running")
             # no need to reinit driver
@@ -299,8 +300,8 @@ class RPLidarProvider:
                     self._lidar_string = return_string
                     self._valid_paths = possible_paths
 
-                    logging.info(f"INPUT: RPLidar string: {self._lidar_string}")
-                    logging.info(f"INPUT: RPLidar valid paths: {self._valid_paths}")
+                    logging.debug(f"INPUT: RPLidar string: {self._lidar_string}")
+                    logging.debug(f"INPUT: RPLidar valid paths: {self._valid_paths}")
 
                 time.sleep(0.1)
             except Exception as e:

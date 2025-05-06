@@ -22,6 +22,17 @@ Robot and sensor configuration
 half_width_robot      = 0.20  # the width of the robot is 40 cm
 max_relevant_distance = 1.1   # meters
 sensor_mounting_angle = 180.0 # corrects for how sensor is mounted
+
+{
+      "type": "RPLidar",
+      "config": {
+        "serial_port": "/dev/cu.usbserial-0001",
+        "half_width_robot": 0.21,
+        "max_relevant_distance": 1.1,
+        "sensor_mounting_angle": 180.0,
+        "angles_blanked": [[-180.0, -160.0], [32.0, 46.6]]
+      }
+    }
 ```
 
 ## Architecture 

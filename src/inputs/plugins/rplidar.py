@@ -78,7 +78,7 @@ class RPLidar(FuserInput[str]):
         # this is now done automatically 
         self.lidar.start()
         
-        self.descriptor_for_LLM = "Objects and walls around you, useful to plan your movements and avoid collsions"
+        self.descriptor_for_LLM = "Information about objects and walls around you, useful to plan your movements and avoid bumping into things."
 
     async def _poll(self) -> Optional[str]:
         """
@@ -96,7 +96,7 @@ class RPLidar(FuserInput[str]):
         # logging.info("LIDAR message poll")
         try:
             lidar_string = self.lidar.lidar_string
-            logging.info(f"LIDAR string message: {lidar_string}")
+            # logging.info(f"LIDAR string message: {lidar_string}")
             message = lidar_string
             return message
         except Empty:

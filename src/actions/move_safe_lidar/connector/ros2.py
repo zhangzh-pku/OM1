@@ -150,14 +150,14 @@ class MoveRos2Connector(ActionConnector[MoveInput]):
         retreat = []
 
         for p in possible_paths:
-            if p < 4:
-                turn_left.append(p)
-            elif p == 4:
-                advance.append(p)
-            elif p < 9:
-                turn_right.append(p)
-            elif p == 9:
-                retreat.append(p)
+            if p.item() < 4:
+                turn_left.append(p.item())
+            elif p.item() == 4:
+                advance.append(p.item())
+            elif p.item() < 9:
+                turn_right.append(p.item())
+            elif p.item() == 9:
+                retreat.append(p.item())
 
         if output_interface.action == "turn left":
             logging.info("Unitree AI command: turn left")
@@ -218,6 +218,10 @@ class MoveRos2Connector(ActionConnector[MoveInput]):
 
     def _move_robot(self, vx, vy, vturn=0.0) -> None:
         
+        logging.info(
+                f"Moving robot goal: move_speed_x={vx}, move_speed_y={vy}, rotate_speed={vturn}"
+            )
+
         if not self.sport_client or self.current_state != RobotState.STANDING:
             return
 
@@ -347,19 +351,17 @@ class MoveRos2Connector(ActionConnector[MoveInput]):
             
             if self.motion_buffer[0] == "TurnLeft":
                 turn_type = self.motion_buffer[1]
-                if turn_type not in possible_paths:
-                    return
-                self._move_robot(self, self.move_speed, 0.0, 0.1 * (4 - turn_type))
+                if turn_type not in possible_paths: return
+                self._move_robot(self.move_speed, 0.0, 0.1 * (4 - turn_type))
             elif self.motion_buffer[0] == "MoveForwards":
                 if 5 not in possible_paths: return
-                self._move_robot(self, move_speed, 0.0, 0.0)
+                self._move_robot(self.move_speed, 0.0, 0.0)
             elif self.motion_buffer[0] == "TurnRight":
                 turn_type = self.motion_buffer[1]
-                if turn_type not in possible_paths:
-                    return
-                self._move_robot(self, self.move_speed, 0.0, -0.1 * (turn_type - 4))
+                if turn_type not in possible_paths: return
+                self._move_robot(self.move_speed, 0.0, -0.1 * (turn_type - 4))
             elif self.motion_buffer[0] == "MoveBack":
                 if 9 not in possible_paths: return
-                self._move_robot(self, -self.move_speed, 0.0, 0.0)
+                self._move_robot(-self.move_speed, 0.0, 0.0)
             elif self.motion_buffer[0] == "StandStill":
                 logging.info(f"Standing Still")
