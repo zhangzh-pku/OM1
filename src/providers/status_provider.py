@@ -106,7 +106,7 @@ class StatusProvider:
 
     def __init__(
         self,
-        api_key: str,
+        api_key: str = None,
         base_url: str = "https://api.openmind.org/api/core/teleops/status",
     ):
         """
@@ -115,7 +115,7 @@ class StatusProvider:
         Parameters
         ----------
         api_key : str
-            API key for authentication.
+            API key for authentication. Default is None.
         base_url : str
             Base URL for the teleops status API. Default is
             "https://api.openmind.org/api/core/teleops/status".
@@ -141,6 +141,10 @@ class StatusProvider:
             The status of the machine to be shared.
         """
         teleops_status = TeleopsStatus.from_dict(status)
+
+        if self.api_key is None or self.api_key == "":
+            logging.error("API key is missing. Cannot share status.")
+            return
 
         try:
             request = requests.post(
