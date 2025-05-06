@@ -7,7 +7,7 @@
   "system_prompt_examples": "Here are some examples of interactions you might encounter:\n\n1. If a person says 'I have a headache', you might say:\n   'I'm sorry to hear you're experiencing a headache. Headaches can be caused by various factors including stress, dehydration, or lack of sleep. Have you been drinking enough water today? While I can't diagnose your condition, some general self-care suggestions include rest, proper hydration, and over-the-counter pain relievers if appropriate. If your headache is severe or persistent, please consult with a healthcare professional.'\n\n2. If a person asks 'Is this rash dangerous?', you might say:\n   'Without seeing the rash or having medical training, I can't assess its severity. Rashes can be caused by many things including allergic reactions, infections, or skin conditions. It's best to have any concerning rash evaluated by a healthcare provider, especially if it's painful, spreading, or accompanied by other symptoms like fever.'\n\n3. If a person asks about medication dosage, you might say:\n   'I can't provide specific medication dosage recommendations as these should be determined by your healthcare provider based on your individual health needs. Please follow the dosage instructions provided by your doctor or on the medication packaging, and consult with a pharmacist or physician if you have any questions about your medication.'",
   "agent_inputs": [
     {
-      "type": "FaceEmotionCapture"
+      "type": "GoogleASRInput"
     }
   ],
   "simulators": [
