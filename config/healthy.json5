@@ -1,5 +1,5 @@
 {
-  "hertz": 1,
+  "hertz": 0.1,
   "name": "healthy",
   "api_key": "openmind_free",
   "system_prompt_base": "You are a helpful medical assistant. Your goal is to provide accurate and helpful information about health-related topics. You can ask clarifying questions to better understand the person's concerns. Always provide evidence-based information and avoid diagnosing specific conditions.",
@@ -26,7 +26,7 @@
     "type": "MultiLLMHealthy",
     "config": {
       "agent_name": "HealthyAgent",
-      "history_length": 5,
+      "history_length": 11,
       "question_states": {
         "current_question_index": 0,
         "states": [

@@ -45,13 +45,16 @@ class MultiLLMHealthy(LLM[R]):
         if not config.model:
             self._config.model = "gpt-4.1-nano"
 
-        self.endpoint = "https://api.openmind.org/api/core/agent/medical"
+        self.endpoint = "http://127.0.0.1:3000/api/core/agent/medical"
         self._first_question = True
         
+        self.current_question_index = 0
         if hasattr(config, "question_states"):
-            self.io_provider.add_dynamic_variable(
-                "question_states", config.question_states
-            )
+            idx = config.question_states.get("current_question_index", 0)
+            self.current_question_index = idx
+        self.io_provider.add_dynamic_variable("question_index", self.current_question_index)
+
+        self._sent_initial_state = False
 
     async def ask(
         self, prompt: str, messages: T.List[T.Dict[str, str]] = []
@@ -90,14 +93,18 @@ class MultiLLMHealthy(LLM[R]):
                 "structured_outputs": True,
             }
 
-            question_states = self.io_provider.get_dynamic_variable("question_states")
-            
-            if not question_states and hasattr(self._config, "question_states"):
-                question_states = self._config.question_states
-                self.io_provider.add_dynamic_variable("question_states", question_states)
+            current_qs = self.io_provider.get_dynamic_variable("question_states")
+            if current_qs is None and hasattr(self._config, "question_states"):
+                current_qs = self._config.question_states
 
-            if question_states:
-                request["question_state"] = question_states
+            if current_qs is not None:
+                request["question_state"] = current_qs
+
+            self.current_question_index = (
+                self.io_provider.get_dynamic_variable("question_index")
+                or self.current_question_index
+            )
+            request["question_index"] = self.current_question_index
 
             logging.debug(f"MultiLLMHealthy system_prompt: {request['system_prompt']}")
             logging.debug(f"MultiLLMHealthy inputs: {request['inputs']}")
@@ -118,13 +125,17 @@ class MultiLLMHealthy(LLM[R]):
                 return None
 
             response_json = response.json()
-            self.io_provider.llm_end_time = time.time()
-            logging.info(f"Raw response: {response_json}")
 
             if "extra" in response_json and "question_states" in response_json["extra"]:
-                self.io_provider.add_dynamic_variable(
-                    "question_states", response_json["extra"]["question_states"]
-                )
+                new_qs = response_json["extra"].pop("question_states")
+                idx = new_qs.get("current_question_index")
+                if idx is not None:
+                    self.current_question_index = idx
+                    self.io_provider.add_dynamic_variable("question_index", idx)
+                self.io_provider.add_dynamic_variable("question_states", new_qs)
+
+            self.io_provider.llm_end_time = time.time()
+            logging.info(f"Raw response: {response_json}")
 
             output = response_json.get("content")
             if output is None:
