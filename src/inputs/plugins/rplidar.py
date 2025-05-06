@@ -63,12 +63,19 @@ class RPLidar(FuserInput[str]):
         serial_port = getattr(self.config, "serial_port", "/dev/cu.usbserial-0001")
         half_width_robot = getattr(self.config, "half_width_robot", 0.20)
         angles_blanked = getattr(self.config, "angles_blanked", [])
+        max_relevant_distance = getattr(self.config, "max_relevant_distance", 1.1)
+        sensor_mounting_angle = getattr(self.config, "sensor_mounting_angle", 180.0)
 
         self.lidar: RPLidarProvider = RPLidarProvider(
+            False,
             serial_port,
             half_width_robot,
-            angles_blanked)
+            angles_blanked,
+            max_relevant_distance,
+            sensor_mounting_angle
+        )
 
+        # this is now done automatically 
         self.lidar.start()
         
         self.descriptor_for_LLM = "Objects and walls around you, useful to plan your movements and avoid collsions"
@@ -89,7 +96,7 @@ class RPLidar(FuserInput[str]):
         # logging.info("LIDAR message poll")
         try:
             lidar_string = self.lidar.lidar_string
-            logging.info(f"[LIDAR string message: {lidar_string}")
+            logging.info(f"LIDAR string message: {lidar_string}")
             message = lidar_string
             return message
         except Empty:

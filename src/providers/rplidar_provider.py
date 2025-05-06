@@ -11,7 +11,6 @@ from numpy.typing import NDArray
 from .rplidar_driver import RPDriver
 from .singleton import singleton
 
-
 @singleton
 class RPLidarProvider:
     """
@@ -25,7 +24,8 @@ class RPLidarProvider:
         The name of the serial port in use by the RPLidar sensor.
     """
 
-    def __init__(self, 
+    def __init__(self,
+            wait: bool = False, 
             serial_port: str = "/dev/cu.usbserial-0001",
             half_width_robot: float = 0.20,
             angles_blanked: list = [],
@@ -35,6 +35,15 @@ class RPLidarProvider:
         """
         Robot and sensor configuration
         """
+
+        logging.info(f"trying to boot lidar")
+        if wait and self.running:
+            logging.info(f"wait and self.running")
+            # no need to reinit driver
+            return
+        elif wait and self.running == False:
+            logging.info(f"wait and not self.running")
+            return
 
         self.serial_port = serial_port
         self.half_width_robot = half_width_robot
@@ -98,6 +107,8 @@ class RPLidarProvider:
         #logging.info(self.paths)
         #logging.info(self.pp)
 
+        self._thread: Optional[threading.Thread] = None
+
         try:
             self.lidar = RPDriver(self.serial_port)
 
@@ -113,10 +124,12 @@ class RPLidarProvider:
 
             # reset to clear buffers
             self.lidar.reset()
+
+            # # and start the lidar
+            # self.lidar.start()
+        
         except Exception as e:
             logging.error(f"Error in RPLidar provider: {e}")
-
-        self._thread: Optional[threading.Thread] = None
 
     def start(self):
         """
@@ -250,34 +263,44 @@ class RPLidarProvider:
                         elif p == 9:
                             retreat.append(p)
 
-                    return_string = ""
+                    # if len(possible_paths) > 0:
+                    #     return_string += (
+                    #         f"There are {len(possible_paths)} possible paths.\n"
+                    #     )
+                    #     if len(turn_left) > 0:
+                    #         return_string += (
+                    #             f"You can turn left using paths: {turn_left}.\n"
+                    #         )
+                    #     if len(advance) > 0:
+                    #         return_string += "You can advance.\n"
+                    #     if len(turn_right) > 0:
+                    #         return_string += (
+                    #             f"You can turn right using paths: {turn_right}.\n"
+                    #         )
+                    #     if len(retreat) > 0:
+                    #         return_string += "You can retreat.\n"
+                    # else:
+                    #     return_string = "You are surrounded by objects and cannot safely move in any direction. DO NOT MOVE."
+
+                    return_string = "You are surrounded by objects and cannot safely move in any direction. DO NOT MOVE."
 
                     if len(possible_paths) > 0:
-                        return_string += (
-                            f"There are {len(possible_paths)} possible paths.\n"
-                        )
+                        return_string = "Here are all the safe movement choices. "
                         if len(turn_left) > 0:
-                            return_string += (
-                                f"You can turn left using paths: {turn_left}.\n"
-                            )
+                            return_string += "You can turn left. "
                         if len(advance) > 0:
-                            return_string += "You can advance.\n"
+                            return_string += "You can move forwards. "
                         if len(turn_right) > 0:
-                            return_string += (
-                                f"You can turn right using paths: {turn_right}.\n"
-                            )
+                            return_string += "You can turn right. "
                         if len(retreat) > 0:
-                            return_string += "You can retreat.\n"
-                    else:
-                        return_string = "You are surrounded by objects and cannot safely move in any direction. DO NOT MOVE."
-
-                    logging.info(f"RPLidar result: {return_string}")
-
+                            return_string += "You can move back. "
+                    
                     self._raw_scan = array
                     self._lidar_string = return_string
                     self._valid_paths = possible_paths
 
-                    logging.info(f"Lidar provider: {self._valid_paths}")
+                    logging.info(f"INPUT: RPLidar string: {self._lidar_string}")
+                    logging.info(f"INPUT: RPLidar valid paths: {self._valid_paths}")
 
                 time.sleep(0.1)
             except Exception as e:

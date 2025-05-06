@@ -1,6 +1,8 @@
 import logging
 import threading
 import time
+import sys
+import random
 from enum import Enum
 
 try:
@@ -14,6 +16,8 @@ except ImportError:
 from actions.base import ActionConfig, ActionConnector
 from actions.move_safe.interface import MoveInput
 from unitree.unitree_sdk2py.go2.sport.sport_client import SportClient
+
+from providers.rplidar_provider import RPLidarProvider
 
 
 class RobotState(Enum):
@@ -41,6 +45,8 @@ class MoveRos2Connector(ActionConnector[MoveInput]):
         self.move_speed = 0.7
         self.turn_speed = 0.6
 
+        self.motion_buffer = None
+
         if hid is not None:
             for device in hid.enumerate():
                 logging.debug(f"device {device['product_string']}")
@@ -52,6 +58,16 @@ class MoveRos2Connector(ActionConnector[MoveInput]):
                         f"Connected {device['product_string']} {self.vendor_id} {self.product_id}"
                     )
                     break
+
+        self.lidar_on = False
+        self.lidar = None
+
+        while self.lidar_on is False:
+            logging.info("Waiting for RPLidar Provider")
+            time.sleep(0.5)
+            self.lidar = RPLidarProvider(wait=True)
+            self.lidar_on = self.lidar.running
+            logging.info(f"Action: Lidar running?: {self.lidar_on}")
 
         # create sport client
         self.sport_client = None
@@ -66,6 +82,10 @@ class MoveRos2Connector(ActionConnector[MoveInput]):
         self.thread_lock = threading.Lock()
 
     def _execute_command_thread(self, command: str) -> None:
+
+        if not self.sport_client:
+            return
+
         try:
             if command == "StandUp" and self.current_state == RobotState.STANDING:
                 logging.info("Already standing, skipping command")
@@ -88,8 +108,6 @@ class MoveRos2Connector(ActionConnector[MoveInput]):
             self.thread_lock.release()
 
     def _execute_sport_command_sync(self, command: str) -> None:
-        if not self.sport_client:
-            return
 
         if not self.thread_lock.acquire(blocking=False):
             logging.info("Action already in progress, skipping")
@@ -105,9 +123,7 @@ class MoveRos2Connector(ActionConnector[MoveInput]):
             self.thread_lock.release()
 
     async def _execute_sport_command(self, command: str) -> None:
-        if not self.sport_client:
-            return
-
+        
         if not self.thread_lock.acquire(blocking=False):
             logging.info("Action already in progress, skipping")
             return
@@ -123,44 +139,95 @@ class MoveRos2Connector(ActionConnector[MoveInput]):
 
     async def connect(self, output_interface: MoveInput) -> None:
 
-        # This is a limited subset of Go2 movements that are
-        # generally safe. Note that the "stretch" action involves
-        # about 40 cm of back and forth motion, and the "dance"
-        # action involves copious jumping in place for about 10 seconds.
-        if output_interface.action == "stand up":
-            logging.info("Unitree AI command: stand up")
-            await self._execute_sport_command("StandUp")
-        elif output_interface.action == "sit":
-            logging.info("Unitree AI command: lay down")
-            await self._execute_sport_command("StandDown")
-        elif output_interface.action == "shake paw":
-            logging.info("Unitree AI command: shake paw")
-            await self._execute_sport_command("Hello")
-        elif output_interface.action == "stretch":
-            logging.info("Unitree AI command: stretch")
-            await self._execute_sport_command("Stretch")
-        elif output_interface.action == "dance":
-            logging.info("Unitree AI command: dance")
-            await self._execute_sport_command("Dance1")
+        logging.info(f"AI command: {output_interface.action}")
+        
+        possible_paths = self.lidar.valid_paths
+        logging.info(f"Action - Valid paths: {possible_paths}")
+
+        turn_left = []
+        advance = []
+        turn_right = []
+        retreat = []
+
+        for p in possible_paths:
+            if p < 4:
+                turn_left.append(p)
+            elif p == 4:
+                advance.append(p)
+            elif p < 9:
+                turn_right.append(p)
+            elif p == 9:
+                retreat.append(p)
+
+        if output_interface.action == "turn left":
+            logging.info("Unitree AI command: turn left")
+            if len(turn_left) > 0:
+                path = random.choice(turn_left)
+                self.motion_buffer = ["TurnLeft", path]
+            else:
+                logging.warning("Cannot turn left due to barrier")
+        elif output_interface.action == "turn right":
+            logging.info("Unitree AI command: turn right")
+            if len(turn_right) > 0:
+                path = random.choice(turn_right)
+                self.motion_buffer = ["TurnRight", path]
+            else:
+                logging.warning("Cannot turn right to barrier")
+        elif output_interface.action == "move forwards":
+            logging.info("Unitree AI command: move forwards")
+            if len(advance) > 0:
+                self.motion_buffer = ["MoveForwards", 0]
+            else:
+                logging.warning("Cannot advance due to barrier")
+        elif output_interface.action == "move back":
+            logging.info("Unitree AI command: move back")
+            if len(retreat) > 0:
+                self.motion_buffer = ["MoveBack", 0]
+            else:
+                logging.warning("Cannot retreat due to barrier")
         elif output_interface.action == "stand still":
             logging.info("Unitree AI command: stand still")
+            self.motion_buffer = ["StandStill", 0]
             # do nothing
         else:
             logging.info(f"Unknown move type: {output_interface.action}")
 
-        logging.info(f"SendThisToSportClient: {output_interface.action}")
+        # This is a limited subset of Go2 movements that are
+        # generally safe. Note that the "stretch" action involves
+        # about 40 cm of back and forth motion, and the "dance"
+        # action involves copious jumping in place for about 10 seconds.
 
-    def _move_robot(self, move_speed_x, move_speed_y, rotate_speed=0.0) -> None:
+        # if output_interface.action == "stand up":
+        #     logging.info("Unitree AI command: stand up")
+        #     await self._execute_sport_command("StandUp")
+        # elif output_interface.action == "sit":
+        #     logging.info("Unitree AI command: lay down")
+        #     await self._execute_sport_command("StandDown")
+        # elif output_interface.action == "shake paw":
+        #     logging.info("Unitree AI command: shake paw")
+        #     await self._execute_sport_command("Hello")
+        # elif output_interface.action == "stretch":
+        #     logging.info("Unitree AI command: stretch")
+        #     await self._execute_sport_command("Stretch")
+        # elif output_interface.action == "dance":
+        #     logging.info("Unitree AI command: dance")
+        #     await self._execute_sport_command("Dance1")
+        
+
+        logging.info(f"AI command: {output_interface.action}")
+
+    def _move_robot(self, vx, vy, vturn=0.0) -> None:
+        
         if not self.sport_client or self.current_state != RobotState.STANDING:
             return
 
         try:
             logging.info(
-                f"Moving robot: move_speed_x={move_speed_x}, move_speed_y={move_speed_y}, rotate_speed={rotate_speed}"
+                f"Moving robot: move_speed_x={vx}, move_speed_y={vy}, rotate_speed={vturn}"
             )
             sport_client = SportClient()
             sport_client.Init()
-            sport_client.Move(move_speed_x, move_speed_y, rotate_speed)
+            sport_client.Move(vx, vy, vturn)
         except Exception as e:
             logging.error(f"Error moving robot: {e}")
 
@@ -192,15 +259,18 @@ class MoveRos2Connector(ActionConnector[MoveInput]):
 
                 # Right Trigger - clockwise rotation
                 if rt_normalized > 0.8 and rt_normalized > lt_normalized:
+                    self.motion_buffer = None
                     self._move_robot(0.0, 0.0, -self.turn_speed)
 
                 # Left Trigger - counter-clockwise rotation
                 elif lt_normalized > 0.8 and lt_normalized > rt_normalized:
+                    self.motion_buffer = None
                     self._move_robot(0.0, 0.0, self.turn_speed)
 
                 # Both triggers released or below threshold
                 elif rt_normalized <= 0.8 and lt_normalized <= 0.8:
                     logging.debug("Triggers released - Stopping rotation")
+                    self.motion_buffer = None
                     self._move_robot(0.0, 0.0)
 
             d_pad_value = data[13]
@@ -210,18 +280,23 @@ class MoveRos2Connector(ActionConnector[MoveInput]):
                 # Control robot movement based on D-pad
                 if d_pad_value == 1:  # Up
                     logging.info("D-pad UP - Moving forward")
+                    self.motion_buffer = None
                     self._move_robot(self.move_speed, 0.0)
                 elif d_pad_value == 5:  # Down
                     logging.info("D-pad DOWN - Moving backward")
+                    self.motion_buffer = None
                     self._move_robot(-self.move_speed, 0.0)
                 elif d_pad_value == 7:  # Left
                     logging.info("D-pad LEFT - Turning left")
                     self._move_robot(0.0, self.move_speed)
+                    self.motion_buffer = None
                 elif d_pad_value == 3:  # Right
                     logging.info("D-pad RIGHT - Turning right")
+                    self.motion_buffer = None
                     self._move_robot(0.0, -self.move_speed)
                 elif d_pad_value == 0:  # Nothing pressed
                     logging.debug("D-pad released - Stopping movement")
+                    self.motion_buffer = None
                     self._move_robot(0.0, 0.0)
 
             button_value = data[14]
@@ -239,21 +314,52 @@ class MoveRos2Connector(ActionConnector[MoveInput]):
 
                 # A button
                 if button_value == 1:
-                    self._execute_sport_command_sync("StandUp")
+                    self.motion_buffer = None
+                    self._execute_sport_command_sync("StandUp", 0)
                     logging.info("Controller unitree: stand_up")
                 # B button
                 elif button_value == 2:
-                    self._execute_sport_command_sync("StandDown")
+                    self.motion_buffer = None
+                    self._execute_sport_command_sync("StandDown", 0)
                     logging.info("Controller unitree: lay_down")
                 # X button
                 elif button_value == 8:
-                    self._execute_sport_command_sync("Hello")
+                    self.motion_buffer = None
+                    self._execute_sport_command_sync("Hello", 0)
                     logging.info("Controller unitree: say_hello")
                 # Y button
                 elif button_value == 16:
-                    self._execute_sport_command_sync("Stretch")
+                    self.motion_buffer = None
+                    self._execute_sport_command_sync("Stretch", 0)
                     logging.info("Controller unitree: stretch")
 
                 logging.info(f"Gamepad button depressed edge {button_value}")
 
             self.button_previous = button_value
+
+        if self.motion_buffer:
+
+            logging.info(f"MOTION BUFFER {self.motion_buffer}")
+
+            possible_paths = self.lidar.valid_paths
+            # check for new possible collisons right before each move
+            logging.info(f"FAST - Valid paths: {possible_paths}")
+            
+            if self.motion_buffer[0] == "TurnLeft":
+                turn_type = self.motion_buffer[1]
+                if turn_type not in possible_paths:
+                    return
+                self._move_robot(self, self.move_speed, 0.0, 0.1 * (4 - turn_type))
+            elif self.motion_buffer[0] == "MoveForwards":
+                if 5 not in possible_paths: return
+                self._move_robot(self, move_speed, 0.0, 0.0)
+            elif self.motion_buffer[0] == "TurnRight":
+                turn_type = self.motion_buffer[1]
+                if turn_type not in possible_paths:
+                    return
+                self._move_robot(self, self.move_speed, 0.0, -0.1 * (turn_type - 4))
+            elif self.motion_buffer[0] == "MoveBack":
+                if 9 not in possible_paths: return
+                self._move_robot(self, -self.move_speed, 0.0, 0.0)
+            elif self.motion_buffer[0] == "StandStill":
+                logging.info(f"Standing Still")
