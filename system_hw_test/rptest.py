@@ -82,9 +82,9 @@ ax3.set_ylim(0, 1.2)
 ax3.set_aspect(300)
 
 ax3.plot([-180.0, -48.0], [1.18, 1.18], "-", color="red", linewidth=3.0)[0]
-ax3.plot([-42.0, 42.0], [1.18, 1.18], "-", color="black", linewidth=3.0)[0]
-ax3.plot([48.0, 180.0], [1.18, 1.18], "-", color="green", linewidth=3.0)[0]
-ax3.annotate("Left", xytext=(-125, 1.1), xy=(0, 0.5))
+ax3.plot([ -42.0,  42.0], [1.18, 1.18], "-", color="black", linewidth=3.0)[0]
+ax3.plot([  48.0, 180.0], [1.18, 1.18], "-", color="green", linewidth=3.0)[0]
+ax3.annotate("Left",  xytext=(-125, 1.1), xy=(0, 0.5))
 ax3.annotate("Front", xytext=(-20, 1.1), xy=(0, 0.5))
 ax3.annotate("Right", xytext=(85, 1.1), xy=(0, 0.5))
 
@@ -97,7 +97,12 @@ sensor_mounting_angle = 180.0  # corrects for how sensor is mounted
 angles_blanked = [[-180.0, -160.0], [32.0, 46.6]]
 
 for b in angles_blanked:
-    ax3.plot([b[0],b[1]], [0.5, 0.5], "-", color="black", linewidth=6.0)[0]
+    width = abs(b[1] - b[0])
+    #rect = patches.Rectangle((x, y), width, height, linewidth=1, edgecolor='r', facecolor='none')
+    ax3.add_patch(
+    Rectangle((b[0], 0.2), width, 1.0, fc="grey")
+)  # the robot body
+    #ax3.plot([b[0],b[1]], [0.5, 0.5], "-", color="black", linewidth=6.0)[0]
 
 def continuous_subscribe(lidar):
 

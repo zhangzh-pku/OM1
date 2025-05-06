@@ -25,20 +25,29 @@ class RPLidarProvider:
         The name of the serial port in use by the RPLidar sensor.
     """
 
-    def __init__(self, serial_port: str = "/dev/cu.usbserial-0001"):
+    def __init__(self, 
+            serial_port: str = "/dev/cu.usbserial-0001",
+            half_width_robot: float = 0.20,
+            angles_blanked: list = [],
+            max_relevant_distance: float = 1.1,
+            sensor_mounting_angle: float = 180.0
+        ):
         """
         Robot and sensor configuration
-        ToDo: move to config.json5 file
         """
-        self.half_width_robot = 0.20  # the width of the robot is 40 cm
-        self.max_relevant_distance = 1.10  # meters
-        self.sensor_mounting_angle = 180.0  # corrects for how sensor is mounted
+
+        self.serial_port = serial_port
+        self.half_width_robot = half_width_robot
+        self.angles_blanked = angles_blanked
+        self.max_relevant_distance = max_relevant_distance
+        self.sensor_mounting_angle = sensor_mounting_angle
 
         self.running: bool = False
         self.lidar = None
 
-        self._scan_result: Optional[NDArray] = None
-        self._lidar_result: str = None
+        self._raw_scan: Optional[NDArray] = None
+        self._valid_paths: Optional[NDArray] = None
+        self._lidar_string: str = None
 
         """
         precompute Bezier trajectories
@@ -86,11 +95,11 @@ class RPLidarProvider:
             pairs = list(zip(cp[0], cp[1]))
             self.pp.append(pairs)
 
-        logging.info(self.paths)
-        logging.info(self.pp)
+        #logging.info(self.paths)
+        #logging.info(self.pp)
 
         try:
-            self.lidar = RPDriver(serial_port)
+            self.lidar = RPDriver(self.serial_port)
 
             info = self.lidar.get_info()
             ret = f"Info: {info}"
@@ -121,7 +130,7 @@ class RPLidarProvider:
 
         self.running = True
         self._thread = threading.Thread(
-            target=self._run, daemon=True, args=(self.lidar,)
+            target=self._run, daemon=True
         )
         self._thread.start()
 
@@ -176,8 +185,20 @@ class RPLidarProvider:
                         x = -1 * v2
                         y = -1 * v1
 
-                        # also, convert the angle to -180 to + 180 range
-                        complexes.append([x, y, -180 + angle, d_m])
+                        # convert the angle to -180 to + 180 range
+                        angle = angle - 180.0
+
+                        keep = True
+                        for b in self.angles_blanked:
+                            if angle > b[0] and angle < b[1]:
+                                # this is a permanent reflection based on the robot
+                                # disregard
+                                keep = False
+                                break
+                        
+                        # the final data ready to use for path planning 
+                        if keep:
+                            complexes.append([x, y, angle, d_m])
 
                     array = np.array(complexes)
                     X = array[:, 0]
@@ -252,8 +273,11 @@ class RPLidarProvider:
 
                     logging.info(f"RPLidar result: {return_string}")
 
-                    self._scan_result = array
-                    self._lidar_result = return_string
+                    self._raw_scan = array
+                    self._lidar_string = return_string
+                    self._valid_paths = possible_paths
+
+                    logging.info(f"Lidar provider: {self._valid_paths}")
 
                 time.sleep(0.1)
             except Exception as e:
@@ -262,8 +286,6 @@ class RPLidarProvider:
     def stop(self):
         """
         Stop the RPLidar provider.
-
-        Stops the websocket client, video stream, and processing thread.
         """
         self.running = False
         if self._thread:
@@ -274,25 +296,37 @@ class RPLidarProvider:
             self._thread.join(timeout=5)
 
     @property
-    def scan_result(self) -> Optional[NDArray]:
+    def valid_paths(self) -> Optional[NDArray]:
         """
-        Get the latest scan result.
+        Get the currently valid paths.
+
+        Returns
+        -------
+        Optional[list]
+            The currently valid paths latest scan as a NumPy array, or None if not available. The list contains 0 to 10 entries, corresponding to possible paths - for example: [0,3,4,5]
+        """
+        return self._valid_paths
+
+    @property
+    def raw_scan(self) -> Optional[NDArray]:
+        """
+        Get the latest raw scan data.
 
         Returns
         -------
         Optional[NDArray]
-            The latest scan result as a NumPy array, or None if not available
+            The latest raw scan result as a NumPy array, or None if not available
         """
-        return self._scan_result
+        return self._raw_scan
 
     @property
-    def lidar_result(self) -> str:
+    def lidar_string(self) -> str:
         """
-        Get the latest Lidar result.
+        Get the latest natural language assessment of possible paths.
 
         Returns
         -------
         str
-            The latest Lidar result as a string
+            A natural lange summary of possible motion paths
         """
-        return self._lidar_result
+        return self._lidar_string
