@@ -45,7 +45,7 @@ class MultiLLMHealthy(LLM[R]):
         if not config.model:
             self._config.model = "gpt-4.1-nano"
 
-        self.endpoint = "http://127.0.0.1:3000/api/core/agent/medical"
+        self.endpoint = "https://api.openmind.org/api/core/agent/medical"
         self._first_question = True
         
         self.current_question_index = 0
