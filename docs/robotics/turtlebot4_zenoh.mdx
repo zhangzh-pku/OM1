@@ -21,7 +21,25 @@ NOTE: choose turtlebot4 lite image file if your turtlebot4 is lite version.
 1. Flash the turtlebot4 image to an SD card if needed.
 2. Upgrade/downgrade the Create3 firmware to H.2.6 if needed.
 3. Insert the SD card into the Turtlebot4 and power it on.
-4. Set up your TurtleBot4 following the [Basic Setup](https://turtlebot.github.io/turtlebot4-user-manual/setup/basic.html). 
+4. Set up your TurtleBot4 following the [Basic Setup](https://turtlebot.github.io/turtlebot4-user-manual/setup/basic.html#robot). 
+
+NOTE: For above step 4, you don't need to configure **User PC** unless you want to use the ROS2 to control the TurtleBot4.
+
+## Identity and Keys
+
+**API_KEY** Go to [portal](https://portal.openmind.org/) to get a free API key. Enter this API key in the "api_key" field in the `/config/turtlebot4.json5` file. You can also provide this API key via your .env - just enter it as:
+
+```bash
+OM_API_KEY=om1_live_e4252f1cf005af...
+```
+
+**UNIVERSAL_ROBOT_ID (URID)** Go to["Hello Robots, come join us"](https://portal.openmind.org/robots) to join a decentralized machine\<\>machine coordination and communication system (FABRIC). Enter machine metadata - currently an arbitrary string - and click "join". The system will provide a unique URID for your robot. The URIDs all share the same format: they begin with `OM`, then 12 alphanumeric characters (numerals and letters), adding up to 14 characters in total. They're not case sensitive. A unique URID allows multiple robots to communicate with one another, similar to how humans use different phone numbers to help them communicate and coordinate.
+
+Enter the URID in the "URID" field in the `/config/turtlebot4.json5` file. You can also provide the URID via your .env - just enter it as:
+
+```bash
+URID=OM742d35Cc6634 # yours will be different!
+```
 
 ## Configure the Turtlebot4
 
@@ -78,55 +96,35 @@ services:
     restart: always # Ensures the container restarts on reboot
 ```
 
-The TurtleBot4 will now be more stable, can discover other computers running Zenoh, send them Zenoh messages, and also, accept Zenoh messages and forward them to ROS2.
+The TurtleBot4 will now be more stable, can discover other computers running **Zenoh**, send them **Zenoh** messages, and also, accept **Zenoh** messages and forward them to **ROS2**.
 
-## Identity and Keys
+## OM1 Installation and launch
 
-**API_KEY** Go to [portal](https://portal.openmind.org/) to get a free API key. Enter this API key in the "api_key" field in the `/config/turtlebot4.json5` file. You can also provide this API key via your .env - just enter it as:
+You can install and run OM1 
 
+- offboard (your laptop) or
+- onboard (Raspberry Pi, on Turtlebot4)
+
+**NOTE**: Before running OM1, double check the [following configurations](#identity-and-keys):
+
+- API Key
+- URID
+
+
+### Run OM1 onboard (Raspberry Pi) on Turtlebot4  
+
+Once the TurtleBot4 is set up, in order to use the hardware (like camera, microphone, speaker, LIDAR etc. ) of the Turtlebot4, you can install OM1 on the Turtlebot4.
+
+**Important: Make sure your Raspberry Pi 4 is running Ubuntu 22.04.4 LTS (Turtlebot4 Humble image) and that the Create 3 is running H.2.6/Create3-H.2.6.swu** (see [Suggested Operating System Versions](#suggested-operating-system-versions)). Among other possible problems, running Ubuntu 24 will create compatibility issues with the version of ROS2 and CycloneDDS on the Create 3. 
+
+On the RPi terminal command line, follow [instructions](/getting-started/raspberrypi). When you see all the right topics listed in `ros2 topic list`, your TurtleBot4 is set up and you are ready to install OM1.
+
+* Install `uv` - Python package manager.   
 ```bash
-OM_API_KEY=om1_live_e4252f1cf005af...
+curl -LsSf https://astral.sh/uv/install.sh | sh
 ```
 
-**UNIVERSAL_ROBOT_ID (URID)** Go to["Hello Robots, come join us"](https://portal.openmind.org/robots) to join a decentralized machine\<\>machine coordination and communication system (FABRIC). Enter machine metadata - currently an arbitrary string - and click "join". The system will provide a unique URID for your robot. The URIDs all share the same format: they begin with `OM`, then 12 alphanumeric characters (numerals and letters), adding up to 14 characters in total. They're not case sensitive. A unique URID allows multiple robots to communicate with one another, similar to how humans use different phone numbers to help them communicate and coordinate.
-
-Enter the URID in the "URID" field in the `/config/turtlebot4.json5` file. You can also provide the URID via your .env - just enter it as:
-
-```bash
-URID=OM742d35Cc6634 # yours will be different!
-```
-
-## TurtleBot4 Set Up
-
-OM1 connects to TurtleBot4 using Zenoh. To correctly set up your TurtleBot4, follow these steps.
-
-1. Set up your TurtleBot4 following the [Basic Setup](https://turtlebot.github.io/turtlebot4-user-manual/setup/basic.html). 
-2. Please then become familiar with the Turtlebot4 ecosystem - there are extensive educational materials to help you get started. 
-3. If you are not familiar with the TurtleBot4, please see the excellent [documentation](https://turtlebot.github.io/turtlebot4-user-manual/).
-
-NOTE: Please update the Raspberry Pi's OS (use `sudo apt update && sudo apt upgrade`).
-
-NOTE: Please update the TurtleBot4's internal Create3 computer to `iRobot® Create® 3 Release H.2.6` via the Create3's html "Update" page.
-
-NOTE: In the remainder of this writeup, we assume you are generally familiar with the ROS2/TurtleBot4 ecosystem, including ssh-ing to the Raspberry Pi command line, the use of the `turtlebot4-setup` program, and interacting with the internal Create3 via its webpage at IP:8080.
-
-
-## Basic Commands
-
-Run
-```bash Run Robot
-uv run src/run.py turtlebot4
-```
-
-## Run OM1 on the Internal RPi4
-
-**Important: Make sure your Raspberry Pi 4 is running Ubuntu 22.04.4 LTS and that the Create 3 is running H.2.6/Create3-H.2.6.swu** (see [Suggested Operating System Versions](#suggested-operating-system-versions)). Among other possible problems, running Ubuntu 24 will create compatibility issues with the version of ROS2 and CycloneDDS on the Create 3. 
-
-On the RPi terminal command line, follow instructions 1 - 3 above. When you see all the right topics listed in `ros2 topic list`, your TurtleBot4 is set up and you are ready to install OM1.
-
-* Install `uv` - use `curl -LsSf https://astral.sh/uv/install.sh | sh`.
-
-* Install `portaudio` and other dependencies
+* Install `portaudio`, `ffmpeg` and other dependencies
 
 ```bash
 sudo apt install pulseaudio pulseaudio-utils ffmpeg portaudio19-dev python-all-dev
@@ -138,12 +136,7 @@ sudo apt install pulseaudio pulseaudio-utils ffmpeg portaudio19-dev python-all-d
 
 * Connect a speaker to RPi with a 3.5 mm audio patch cable (or use bluetooth, depending on your pain threshold and patience with debugging bluetooth issues).
 
-* Create a `.env` file
-
-```bash
-cp env.example .env
-```
-and then use `vim` to set your `OM_API_KEY` and `URID`
+* Make sure [Identity and Keys](#identity-and-keys) are set correctly.
 
 * Set Default Input and Output Audio devices
 
@@ -164,35 +157,43 @@ pactl set-default-source alsa_input.usb-046d_C270_HD_WEBCAM_2CD9A910-02.mono-fal
 pactl set-default-sink alsa_output.platform-bcm2835_audio.stereo-fallback
 ```
 
-* Boot OM1
+* Launch OM1
 
-Finally, run
-
-```bash Run Robot
+```bash Run OM1 turtlebot4 agent
 uv run src/run.py turtlebot4
 ```
 
 On the RPi4, there will be a lengthy delay before OM1 runs. 
 
-## Run OM1 on an External Development Computer (e.g. Mac Laptop)
+### Run OM1 offboard (your laptop)
 
-Install Zenoh on your Mac, PC, or Linux box, following [Installing the Zenoh router](https://zenoh.io/docs/getting-started/installation/)
+- Install OM1 on your laptop, following [Install OM1 on your laptop](/getting-started/get-started)
+- Install Zenoh on your Mac, PC, or Linux box, following [Installing the Zenoh router](https://zenoh.io/docs/getting-started/installation/)
 
-Please make sure that your development machine (e.g. your laptop) is running the same version of the Zenoh bridge (e.g. 1.2.1) as the RPi otherwise you will get errors.
-
-Set up OM1 on your machine, for example, following the `spot` example. Then, run
+Run OM1 on your laptop .  
 
 ```bash Run Robot
 uv run src/run.py turtlebot4
 ```
 
-Congratulations - Your laptop is now controlling the TurtleBot4!
+Please make sure that your development machine (e.g. your laptop) is running the same version of the Zenoh bridge (e.g. 1.2.1) as the RPi otherwise you will get errors.
 
-### Interacting with TurtleBot4 from a Remote Computer using Zenoh
+#### Interacting with TurtleBot4 from a Remote Computer using Zenoh
 
 Inside `system_hw_test`, there are several scripts for you to interact with the TurtleBot4. For all these scripts, please provide/update the topic names to include your specific namespace. If you do not update the namespaces, the scripts will fail. 
 
 Steer the TurtleBot4 with your keyboard:
+Before running the script, make sure you have the correct topic names e.g   
+Change the [URID, topic name in turtlebot4_keyboard_movement.py](https://github.com/OpenmindAGI/OM1/blob/c6f0d118bf16c9201403ae459111d4cacc3830dd/system_hw_test/turtlebot4_keyboard_movement.py#L40C9-L40C33) to include your specific namespace.  
+
+NOTE: Remove the first `/` in the topic name.
+
+```bash
+self.cmd_vel = "<your_namespace>/pi/cmd_vel"
+```
+
+And then run the script.
+
 ```bash
 uv run turtlebot4_keyboard_movement.py
 ```
@@ -201,12 +202,16 @@ uv run turtlebot4_keyboard_movement.py
 * A - Turn Left
 * D - Turn Right
 
-Read TurtleBot4 laser scan, collision, and battery data:
+Read TurtleBot4 laser scan, collision, and battery data:  
+NOTE: Change the [URID in turtlebot4_laserscan.py](https://github.com/OpenmindAGI/OM1/blob/c6f0d118bf16c9201403ae459111d4cacc3830dd/system_hw_test/turtlebot4_laserscan.py#L60) to your specific namespace. 
+
 ```bash
 uv run turtlebot4_laserscan.py
 ```
 
-Read TurtleBot4 Camera PREVIEW (250x250RGB) data:
+Read TurtleBot4 Camera PREVIEW (250x250RGB) data:    
+NOTE: Change the [URID in turtlebot4_camera_opencv.py](https://github.com/OpenmindAGI/OM1/blob/c6f0d118bf16c9201403ae459111d4cacc3830dd/system_hw_test/turtlebot4_camera_opencv.py#L22) to your specific namespace. 
+
 ```bash
 uv run turtlebot4_camera_opencv.py
 ```
