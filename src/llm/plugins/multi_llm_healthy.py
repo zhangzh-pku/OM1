@@ -46,7 +46,8 @@ class MultiLLMHealthy(LLM[R]):
             self._config.model = "gpt-4.1-nano"
 
         self.endpoint = "https://api.openmind.org/api/core/agent/medical"
-
+        self._first_question = True
+        
         if hasattr(config, "question_states"):
             self.io_provider.add_dynamic_variable(
                 "question_states", config.question_states
@@ -90,6 +91,11 @@ class MultiLLMHealthy(LLM[R]):
             }
 
             question_states = self.io_provider.get_dynamic_variable("question_states")
+            
+            if not question_states and hasattr(self._config, "question_states"):
+                question_states = self._config.question_states
+                self.io_provider.add_dynamic_variable("question_states", question_states)
+
             if question_states:
                 request["question_state"] = question_states
 
