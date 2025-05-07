@@ -30,6 +30,8 @@ class LLMConfig(BaseModel):
         Dictionary containing question state data to send with requests
     use_rag : bool, optional
         Whether to enable Retrieval-Augmented Generation (RAG) functionality
+=======
+
     """
 
     base_url: T.Optional[str] = None
