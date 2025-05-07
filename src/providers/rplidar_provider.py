@@ -11,6 +11,7 @@ from numpy.typing import NDArray
 from .rplidar_driver import RPDriver
 from .singleton import singleton
 
+
 @singleton
 class RPLidarProvider:
     """
@@ -20,30 +21,37 @@ class RPLidarProvider:
 
     Parameters
     ----------
-    serial_port : str
+    wait: bool = False
+        Whether to wait for another class to init this driver, somewhere else in the codebase
+    serial_port: str = "/dev/cu.usbserial-0001"
         The name of the serial port in use by the RPLidar sensor.
+    half_width_robot: float = 0.20
+        The half width of the robot in m
+    angles_blanked: list = []
+        Regions of the scan to disregard, runs from -180 to +180 deg
+    max_relevant_distance: float = 1.1
+        Only consider barriers within this range, in m
+    sensor_mounting_angle: float = 180.0
+        The angle of the sensor zero relative to the way in which it's mounted
     """
 
-    def __init__(self,
-            wait: bool = False, 
-            serial_port: str = "/dev/cu.usbserial-0001",
-            half_width_robot: float = 0.20,
-            angles_blanked: list = [],
-            max_relevant_distance: float = 1.1,
-            sensor_mounting_angle: float = 180.0
-        ):
+    def __init__(
+        self,
+        wait: bool = False,
+        serial_port: str = "/dev/cu.usbserial-0001",
+        half_width_robot: float = 0.20,
+        angles_blanked: list = [],
+        max_relevant_distance: float = 1.1,
+        sensor_mounting_angle: float = 180.0,
+    ):
         """
         Robot and sensor configuration
         """
 
-        logging.info(f"trying to boot lidar")
-        
-        if wait and self.running:
-            logging.info(f"wait and self.running")
+        logging.info("Booting RPLidar")
+
+        if wait:
             # no need to reinit driver
-            return
-        elif wait and self.running == False:
-            logging.info(f"wait and not self.running")
             return
 
         self.serial_port = serial_port
@@ -105,8 +113,8 @@ class RPLidarProvider:
             pairs = list(zip(cp[0], cp[1]))
             self.pp.append(pairs)
 
-        #logging.info(self.paths)
-        #logging.info(self.pp)
+        # logging.info(self.paths)
+        # logging.info(self.pp)
 
         self._thread: Optional[threading.Thread] = None
 
@@ -114,28 +122,21 @@ class RPLidarProvider:
             self.lidar = RPDriver(self.serial_port)
 
             info = self.lidar.get_info()
-            ret = f"Info: {info}"
-            print(ret)
+            ret = f"RPLidar Info: {info}"
             logging.info(ret)
 
             health = self.lidar.get_health()
-            ret = f"Health: {health}"
-            print(ret)
+            ret = f"RPLidar Health: {health}"
             logging.info(ret)
 
             # reset to clear buffers
             self.lidar.reset()
 
-            # # and start the lidar
-            # self.lidar.start()
-        
         except Exception as e:
             logging.error(f"Error in RPLidar provider: {e}")
 
     def start(self):
         """
-        Start the RPLidar provider.
-
         Starts the RPLidar and processing thread
         if not already running.
         """
@@ -143,16 +144,14 @@ class RPLidarProvider:
             return
 
         self.running = True
-        self._thread = threading.Thread(
-            target=self._run, daemon=True
-        )
+        self._thread = threading.Thread(target=self._run, daemon=True)
         self._thread.start()
 
     def _run(self):
         """
         Main loop for the RPLidar provider.
 
-        Continuously processes RPLidar data and sends them
+        Continuously processes RPLidar data and send them
         to the inputs and actions, as needed.
         """
         while self.running:
@@ -209,8 +208,8 @@ class RPLidarProvider:
                                 # disregard
                                 keep = False
                                 break
-                        
-                        # the final data ready to use for path planning 
+
+                        # the final data ready to use for path planning
                         if keep:
                             complexes.append([x, y, angle, d_m])
 
@@ -219,7 +218,6 @@ class RPLidarProvider:
                     Y = array[:, 1]
                     # A = array[:, 2]
                     D = array[:, 3]
-                    # print(complexes)
 
                     """
                     Determine set of possible paths
@@ -254,7 +252,6 @@ class RPLidarProvider:
                     retreat = []
 
                     for p in possible_paths:
-                        # all the possible paths
                         if p < 4:
                             turn_left.append(p)
                         elif p == 4:
@@ -263,25 +260,6 @@ class RPLidarProvider:
                             turn_right.append(p)
                         elif p == 9:
                             retreat.append(p)
-
-                    # if len(possible_paths) > 0:
-                    #     return_string += (
-                    #         f"There are {len(possible_paths)} possible paths.\n"
-                    #     )
-                    #     if len(turn_left) > 0:
-                    #         return_string += (
-                    #             f"You can turn left using paths: {turn_left}.\n"
-                    #         )
-                    #     if len(advance) > 0:
-                    #         return_string += "You can advance.\n"
-                    #     if len(turn_right) > 0:
-                    #         return_string += (
-                    #             f"You can turn right using paths: {turn_right}.\n"
-                    #         )
-                    #     if len(retreat) > 0:
-                    #         return_string += "You can retreat.\n"
-                    # else:
-                    #     return_string = "You are surrounded by objects and cannot safely move in any direction. DO NOT MOVE."
 
                     return_string = "You are surrounded by objects and cannot safely move in any direction. DO NOT MOVE."
 
@@ -295,13 +273,14 @@ class RPLidarProvider:
                             return_string += "You can turn right. "
                         if len(retreat) > 0:
                             return_string += "You can move back. "
-                    
+
                     self._raw_scan = array
                     self._lidar_string = return_string
                     self._valid_paths = possible_paths
 
-                    logging.debug(f"INPUT: RPLidar string: {self._lidar_string}")
-                    logging.debug(f"INPUT: RPLidar valid paths: {self._valid_paths}")
+                    logging.debug(
+                        f"RPLidar string: {self._lidar_string}\nValid paths: {self._valid_paths}"
+                    )
 
                 time.sleep(0.1)
             except Exception as e:
@@ -327,7 +306,9 @@ class RPLidarProvider:
         Returns
         -------
         Optional[list]
-            The currently valid paths latest scan as a NumPy array, or None if not available. The list contains 0 to 10 entries, corresponding to possible paths - for example: [0,3,4,5]
+            The currently valid paths latest scan as a NumPy array, or
+            None if not available. The list contains 0 to 10 entries,
+            corresponding to possible paths - for example: [0,3,4,5]
         """
         return self._valid_paths
 
@@ -351,6 +332,6 @@ class RPLidarProvider:
         Returns
         -------
         str
-            A natural lange summary of possible motion paths
+            A natural language summary of possible motion paths
         """
         return self._lidar_string

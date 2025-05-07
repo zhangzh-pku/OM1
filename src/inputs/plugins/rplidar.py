@@ -1,10 +1,8 @@
 import asyncio
-import json
-import logging
 import time
 from dataclasses import dataclass
 from queue import Empty, Queue
-from typing import Dict, List, Optional
+from typing import List, Optional
 
 from inputs.base import SensorConfig
 from inputs.base.loop import FuserInput
@@ -33,21 +31,11 @@ class RPLidar(FuserInput[str]):
     """
     RPLidar input handler.
 
-    A class that processes image inputs and generates text descriptions using
-    a vision language model. It maintains an internal buffer of processed messages
-    and interfaces with a VLM provider for image analysis.
-
-    The class handles asynchronous processing of images, maintains message history,
-    and provides formatted output of the latest processed messages.
+    A class that processes RPLidar inputs and generates text descriptions.
+    It maintains an internal buffer of processed messages.
     """
 
     def __init__(self, config: SensorConfig = SensorConfig()):
-        """
-        Initialize VLM input handler.
-
-        Sets up the required providers and buffers for handling VLM processing.
-        Initializes connection to the VLM service and registers message handlers.
-        """
         super().__init__(config)
 
         # Track IO
@@ -59,7 +47,7 @@ class RPLidar(FuserInput[str]):
         # Buffer for storing messages
         self.message_buffer: Queue[str] = Queue()
 
-        # Initialize RP Lidar Provider
+        # Initialize RPLidar Provider based on .json5 config file
         serial_port = getattr(self.config, "serial_port", "/dev/cu.usbserial-0001")
         half_width_robot = getattr(self.config, "half_width_robot", 0.20)
         angles_blanked = getattr(self.config, "angles_blanked", [])
@@ -67,22 +55,22 @@ class RPLidar(FuserInput[str]):
         sensor_mounting_angle = getattr(self.config, "sensor_mounting_angle", 180.0)
 
         self.lidar: RPLidarProvider = RPLidarProvider(
-            False,
+            False,  # this is the one and only place in the codebase where we init this driver
             serial_port,
             half_width_robot,
             angles_blanked,
             max_relevant_distance,
-            sensor_mounting_angle
+            sensor_mounting_angle,
         )
 
-        # this is now done automatically 
+        # this is now done automatically
         self.lidar.start()
-        
-        self.descriptor_for_LLM = "Information about objects and walls around you, useful to plan your movements and avoid bumping into things."
+
+        self.descriptor_for_LLM = "Information about objects and walls around you. Use this information to plan your movements and avoid bumping into things."
 
     async def _poll(self) -> Optional[str]:
         """
-        Poll for new messages from the PR Lidar Provider.
+        Poll for new messages from the RPLidar Provider.
 
         Checks the message buffer for new messages with a brief delay
         to prevent excessive CPU usage.
@@ -95,10 +83,7 @@ class RPLidar(FuserInput[str]):
         await asyncio.sleep(0.2)
         # logging.info("LIDAR message poll")
         try:
-            lidar_string = self.lidar.lidar_string
-            # logging.info(f"LIDAR string message: {lidar_string}")
-            message = lidar_string
-            return message
+            return self.lidar.lidar_string
         except Empty:
             return None
 
