@@ -29,7 +29,7 @@ print(parser.format_help())
 args = parser.parse_args()
 
 """
-precompute Bezier trajectories 
+precompute Bezier trajectories
 """
 curves = [
     bezier.Curve(np.asfortranarray([[0.0, -0.3, -0.75], [0.0, 0.5, 0.40]]), degree=2),
@@ -115,6 +115,19 @@ if args.URID:  # TurtleBot4 is always mounted -90.0
 
 # display the blanked regions of the scan
 for b in angles_blanked:
+    start_angle = b[0] * np.pi / 180.0
+    end_angle = b[1] * np.pi / 180.0
+
+    theta = np.linspace(start_angle, end_angle, 50)
+    r = max_relevant_distance
+
+    x = r * np.sin(theta - sensor_mounting_angle * np.pi / 180.0)
+    y = -r * np.cos(theta - sensor_mounting_angle * np.pi / 180.0)
+
+    ax2.plot(x, y, "--", color="grey", linewidth=1.5)
+    ax2.plot([0, x[0]], [0, y[0]], "--", color="grey", linewidth=1)
+    ax2.plot([0, x[-1]], [0, y[-1]], "--", color="grey", linewidth=1)
+
     width = abs(b[1] - b[0])
     ax3.add_patch(Rectangle((b[0], 0.2), width, 1.0, fc="grey"))
 
