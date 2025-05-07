@@ -24,6 +24,8 @@ class LLMConfig(BaseModel):
         Name of the LLM model to use
     history_length : int, optional
         Number of interactions to store in the history buffer
+    use_rag: bool, optional
+        Whether to use RAG functionality
     """
 
     base_url: T.Optional[str] = None
@@ -31,6 +33,7 @@ class LLMConfig(BaseModel):
     model: T.Optional[str] = None
     agent_name: T.Optional[str] = "IRIS"
     history_length: T.Optional[int] = 0
+    use_rag: T.Optional[bool] = False
 
 
 class LLM(T.Generic[R]):
