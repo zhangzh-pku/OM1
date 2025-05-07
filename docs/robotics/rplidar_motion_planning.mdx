@@ -5,19 +5,43 @@ description: "RPLidar A1M8 Setup and Use"
 
 ## RPLidar
 
-These instructions are for an [RPLidar A1M8](https://bucket-download.slamtec.com/d1e428e7efbdcd65a8ea111061794fb8d4ccd3a0/LD108_SLAMTEC_rplidar_datasheet_A1M8_v3.0_en.pdf).
+These instructions are for an [RPLidar A1M8](https://bucket-download.slamtec.com/d1e428e7efbdcd65a8ea111061794fb8d4ccd3a0/LD108_SLAMTEC_rplidar_datasheet_A1M8_v3.0_en.pdf). This unit is used on the turtlebot4 and can be added to the Unitree Go2. 
 
-First, determine the serial port the sensor is using:
+## Setup
+
+Run the `rptest.py` (located in `/system_hw_test/`) to determine the `sensor_mounting_angle` and the `angles_blanked`. These values depend on how you mounted the sensor and the radial position of any fixed obstructions, such as mounting brackets. You can figure out which value to use for your system by changing these values as neecded:
+
+```py
+"""
+Robot and sensor configuration
+"""
+half_width_robot = 0.20  # the width of the robot is 40 cm
+max_relevant_distance = 1.1  # meters
+sensor_mounting_angle = 180.0  # corrects for how sensor is mounted
+angles_blanked = [[-180.0, -160.0], [32.0, 46.6]] 
+```
+
+## Unitree RPLidar
+
+Determine the serial port the sensor is using:
 
 ```bash
 ls /dev/tty.*  
 ls /dev/cu.*  
 ```
 
-Then run the `rptest.py` to determine the `sensor_mounting_angle` and the `angles_blanked`. These values depend on how you mounted the sensor and the radial position of any fixed obstructions, such as mounting brackets.
+Then, run
 
 ```bash
-uv run rptest.py /dev/cu.usbserial-0001 # for example 
+uv run rptest.py --serial /dev/cu.usbserial-0001
+```
+
+## TurtleBot4
+
+Connect to the `scan` Zenoh topic:
+
+```bash
+uv run rptest.py --URID OM123435Cc1234
 ```
 
 ## Using the RPLidar A1M8 in OM1
@@ -47,10 +71,3 @@ The system pre-computes 9 different paths, 4 to the left, one straight ahead, 4 
 ## Assumptions
 
 The code assumes that any unpredictable barriers (e.g. humans crossing the path of the robot) will be avoided using separate code within the `action` driver, such as by issuing a "STOP" command when an object is detected in front of the robot.   
-
-## Unitree Test System 
-
-Run
-```bash
-uv run src/run.py unitree_go2_lidar
-```

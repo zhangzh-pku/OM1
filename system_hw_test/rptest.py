@@ -6,16 +6,24 @@ import time
 
 import bezier
 import numpy as np
+import zenoh
 from matplotlib import pyplot as plot
 from matplotlib.animation import FuncAnimation
 from matplotlib.patches import Circle, Rectangle
 from rpdriver import RPDriver
 
+sys.path.insert(0, "../src")
+
+try:
+    from zenoh_idl import sensor_msgs
+except ImportError:
+    print("Please run this script from inside /system_hw_test")
+
 parser = argparse.ArgumentParser()
 parser.add_argument(
     "--serial", help="serial port to use, when using the low level driver", type=str
 )
-parser.add_argument("--URID", help="your robot's URID, when using zenoh", type=str)
+parser.add_argument("--URID", help="your robot's URID, when using Zenoh", type=str)
 print(parser.format_help())
 
 args = parser.parse_args()
@@ -46,8 +54,8 @@ for curve in curves:
     pairs = list(zip(cp[0], cp[1]))
     pp.append(pairs)
 
-# print(paths)
-# print(pp)
+print(paths)
+print(pp)
 
 fig = plot.figure()
 ax1 = plot.subplot(131)
@@ -98,7 +106,12 @@ Robot and sensor configuration
 half_width_robot = 0.20  # the width of the robot is 40 cm
 max_relevant_distance = 1.1  # meters
 sensor_mounting_angle = 180.0  # corrects for how sensor is mounted
-angles_blanked = [[-180.0, -160.0], [32.0, 46.6]]
+angles_blanked = [[-180.0, -160.0], [160.0, 180.0]]
+
+if args.URID:  # TurtleBot4 is always mounted -90.0
+    sensor_mounting_angle = -90.0  # corrects for how sensor is mounted
+    # angles_blanked = [[-180.0, -70.0], [70.0, 180.0]]
+    angles_blanked = [[-180.0, -160.0], [110.0, 180.0]]
 
 # display the blanked regions of the scan
 for b in angles_blanked:
@@ -106,36 +119,68 @@ for b in angles_blanked:
     ax3.add_patch(Rectangle((b[0], 0.2), width, 1.0, fc="grey"))
 
 
+def continuous_serial(lidar):
+
+    for i, scan in enumerate(
+        lidar.iter_scans(scan_type="express", max_buf_meas=3000, min_len=5)
+    ):
+
+        array = np.array(scan)
+
+        # the driver sends angles in degrees between from 0 to 360
+        # warning - the driver may send two or more readings per angle,
+        # this can be confusing for the code
+        angles = array[:, 1]
+
+        # distances are in millimeters
+        distances_mm = array[:, 2]
+        distances_m = [i / 1000 for i in distances_mm]
+
+        data = list(zip(angles, distances_m))
+        array_ready = np.array(data)
+        # print(f"Array {array_ready}")
+        process(array_ready)
+
+
+def zenoh_scan(sample):
+
+    scan = sensor_msgs.LaserScan.deserialize(sample.payload.to_bytes())
+    # print(f"Scan {scan}")
+
+    # angle_min=-3.1241390705108643, angle_max=3.1415927410125732
+    angles = list(
+        map(
+            lambda x: 360.0 * (x + math.pi) / (2 * math.pi),
+            np.arange(scan.angle_min, scan.angle_max, scan.angle_increment),
+        )
+    )
+
+    angles_final = np.flip(angles)
+    # angles now run from 360.0 to 0 degress
+    data = list(zip(angles_final, scan.ranges))
+    array_ready = np.array(data)
+    # print(f"Array {array_ready}")
+    process(array_ready)
+
+
 def process(data):
-
-    array = np.array(data)
-
-    # the driver sends angles in degrees
-    # between from 0 to 360
-    angles = array[:, 1]
-
-    # warning - the driver may send two or more readings per angle,
-    # this can be confusing for the code
-
-    # distances are in millimeters
-    distances = array[:, 2]
 
     complexes = []
 
-    for angle, distance in list(zip(angles, distances)):
+    for angle, distance in data:
 
-        # convert distance to meters
-        d_m = distance / 1000.0
+        d_m = distance
 
         # don't worry about distant objects
         if d_m > 5.0:
             continue
 
         # first, correctly orient the sensor zero to the robot zero
-        # sensor_mounting_angle = 180.0
         angle = angle + sensor_mounting_angle
         if angle >= 360.0:
             angle = angle - 360.0
+        elif angle < 0.0:
+            angle = 360.0 + angle
 
         # then, convert to radians
         a_rad = angle * math.pi / 180.0
@@ -153,7 +198,7 @@ def process(data):
 
         keep = True
         for b in angles_blanked:
-            if angle > b[0] and angle < b[1]:
+            if angle >= b[0] and angle <= b[1]:
                 # this is a permanent reflection based on the robot
                 # disregard
                 keep = False
@@ -176,9 +221,6 @@ def process(data):
     Y = array[:, 1]
     A = array[:, 2]
     D = array[:, 3]
-
-    # print(array)
-    # print(A)
 
     global points
     points.set_data(X, Y)
@@ -252,14 +294,6 @@ def process(data):
         lines[p].set_color("red")
 
 
-def continuous_subscribe(lidar):
-
-    for i, scan in enumerate(
-        lidar.iter_scans(scan_type="express", max_buf_meas=3000, min_len=5)
-    ):
-        process(scan)
-
-
 if __name__ == "__main__":
 
     if args.serial:
@@ -276,9 +310,7 @@ if __name__ == "__main__":
             # reset to clear buffers
             lidar.reset()
 
-            subscribe_thread = threading.Thread(
-                target=continuous_subscribe, args=(lidar,)
-            )
+            subscribe_thread = threading.Thread(target=continuous_serial, args=(lidar,))
             subscribe_thread.daemon = True
             subscribe_thread.start()
 
@@ -297,5 +329,14 @@ if __name__ == "__main__":
     elif args.URID:
         URID = args.URID
         print(f"Using Zenoh to connect to robot using {URID}")
+        print("[INFO] Opening zenoh session...")
+        conf = zenoh.Config()
+        z = zenoh.open(conf)
+
+        print("[INFO] Creating Subscribers")
+        scans = z.declare_subscriber(f"{URID}/pi/scan", zenoh_scan)
+
+        ani = FuncAnimation(fig, lambda _: None)
+        plot.show()
     else:
         print("No sensor")
