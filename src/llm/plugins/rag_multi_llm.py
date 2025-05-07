@@ -85,13 +85,11 @@ class RagMultiLLM(LLM[R]):
             if self.use_rag:
                 try:
                     voice_obj = self.io_provider.inputs.get("Voice")
-                    recent_voice: str | None = None
-
-                    if voice_obj is not None:
-                        if isinstance(voice_obj, dict):
-                            recent_voice = voice_obj.get("input")
-                        else:
-                            recent_voice = getattr(voice_obj, "input", None)
+                    recent_voice: str | None = (
+                        voice_obj.get("input")
+                        if isinstance(voice_obj, dict)
+                        else getattr(voice_obj, "input", None)
+                    )
 
                     if not recent_voice:
                         logging.info("No Voice input found – skipping RAG retrieval")
