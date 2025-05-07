@@ -17,6 +17,14 @@ from providers.io_provider import IOProvider
 from unitree.unitree_sdk2py.core.channel import ChannelSubscriber, ChannelFactoryInitialize
 from unitree.unitree_sdk2py.idl.unitree_go.msg.dds_ import SportModeState_
 
+CARDINAL_MAP = {
+    "N": "North", "NNE": "North-Northeast", "NE": "Northeast", "ENE": "East-Northeast",
+    "E": "East", "ESE": "East-Southeast", "SE": "Southeast", "SSE": "South-Southeast",
+    "S": "South", "SSW": "South-Southwest", "SW": "Southwest", "WSW": "West-Southwest",
+    "W": "West", "WNW": "West-Northwest", "NW": "Northwest", "NNW": "North-Northwest",
+}
+
+
 # ─── EKF implementation ───────────────────────────────────────────────────────────
 class GPSOdomEKF:
     """4‑state EKF where odometry *corrects* GPS‑predicted motion."""
@@ -197,7 +205,6 @@ class GPSMagSerialReader(FuserInput[str]):
         try:
             if raw.startswith("GPS:"):
                 parts = raw[4:].split(",")
-                # parse like "GPS:37.781731N,122.393898W"
                 lat = float(parts[0][:-1]) * (1 if parts[0].endswith("N") else -1)
                 lon = float(parts[1][:-1]) * (1 if parts[1].endswith("E") else -1)
 
@@ -209,20 +216,36 @@ class GPSMagSerialReader(FuserInput[str]):
                 self.ekf.update_gps(lat, lon)
                 x, y = self.ekf.xy
                 vx, vy = self.ekf.x[2, 0], self.ekf.x[3, 0]
-                txt = (
-                    f"GPS fix → ({x:.2f} m, {y:.2f} m)  vel=({vx:.2f},{vy:.2f}) m/s"
-                )
+                txt = f"GPS fix → ({x:.2f} m, {y:.2f} m)  vel=({vx:.2f},{vy:.2f}) m/s"
 
-                # expose lat/lon for external logging
                 lat_f, lon_f = self.ekf.latlon
                 self.io_provider.add_dynamic_variable("latitude", lat_f)
                 self.io_provider.add_dynamic_variable("longitude", lon_f)
-                logging.info(
-                    f"GPS: {lat_f:.5f} N, {lon_f:.5f} E  vel=({vx:.2f},{vy:.2f}) m/s"
-                )
+                logging.info(f"GPS: {lat_f:.5f} N, {lon_f:.5f} E  vel=({vx:.2f},{vy:.2f}) m/s")
+
+            elif raw.startswith("HDG (DEG):"):
+                parts = raw.split()
+                if len(parts) >= 4:
+                    cardinal_abbr = parts[3]
+                    direction = CARDINAL_MAP.get(cardinal_abbr, cardinal_abbr)
+                    txt = f"You are facing {direction}."
+                    self.io_provider.add_dynamic_variable("direction", direction)
+                else:
+                    txt = f"Unable to parse heading: {raw}"
+
+            elif raw.startswith("YPR:"):
+                try:
+                    yaw, pitch, roll = map(str.strip, raw[4:].split(","))
+                    txt = f"Orientation is Yaw: {yaw}°, Pitch: {pitch}°, Roll: {roll}°."
+                    self.io_provider.add_dynamic_variable("yaw", yaw)
+                    self.io_provider.add_dynamic_variable("pitch", pitch)
+                    self.io_provider.add_dynamic_variable("roll", roll)
+                except Exception as e:
+                    txt = f"Failed to parse YPR: {e}"
 
             else:
-                txt = raw  # pass‑through any other serial messages
+                txt = raw  # pass through any other message
+
         except Exception as e:
             txt = f"Parse error: {e}"
             logging.error(txt)
