@@ -2,15 +2,15 @@ import importlib
 import inspect
 import os
 import typing as T
-from dataclasses import dataclass
+
+from pydantic import BaseModel, ConfigDict, Field
 
 from providers.io_provider import IOProvider
 
 R = T.TypeVar("R")
 
 
-@dataclass
-class LLMConfig:
+class LLMConfig(BaseModel):
     """
     Configuration class for Language Learning Models.
 
@@ -24,17 +24,53 @@ class LLMConfig:
         Name of the LLM model to use
     history_length : int, optional
         Number of interactions to store in the history buffer
+    extra_params : dict, optional
+        Additional parameters for the LLM API request
     """
+
+    model_config = ConfigDict(extra="allow")
 
     base_url: T.Optional[str] = None
     api_key: T.Optional[str] = None
     model: T.Optional[str] = None
     agent_name: T.Optional[str] = "IRIS"
     history_length: T.Optional[int] = 0
+    extra_params: T.Dict[str, T.Any] = Field(default_factory=dict)
 
-    def __init__(self, **kwargs):
-        for key, value in kwargs.items():
+    def __getitem__(self, item: str) -> T.Any:
+        """
+        Get an item from the configuration.
+
+        Parameters
+        ----------
+        item : str
+            The key to retrieve from the configuration
+
+        Returns
+        -------
+        T.Any
+            The value associated with the key in the configuration
+        """
+        try:
+            return getattr(self, item)
+        except AttributeError:
+            return self.extra_params[item]
+
+    def __setitem__(self, key: str, value: T.Any) -> None:
+        """
+        Set an item in the configuration.
+
+        Parameters
+        ----------
+        key : str
+            The key to set in the configuration
+        value : T.Any
+            The value to associate with the key in the configuration
+        """
+        if hasattr(self, key):
             setattr(self, key, value)
+        else:
+            self.extra_params[key] = value
 
 
 class LLM(T.Generic[R]):
