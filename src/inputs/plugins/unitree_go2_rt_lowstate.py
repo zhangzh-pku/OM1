@@ -50,7 +50,7 @@ class UnitreeGo2Lowstate(FuserInput[str]):
         # IO provider
         self.io_provider = IOProvider()
 
-        # Staus provider
+        # Status provider
         self.status_provider = StatusProvider(api_key=api_key)
 
         # Messages buffer

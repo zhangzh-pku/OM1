@@ -40,7 +40,7 @@ class TurtleBot4BattLIDARBump(FuserInput[str]):
         # IO provider
         self.io_provider = IOProvider()
 
-        # Staus provider
+        # Status provider
         self.status_provider = StatusProvider(api_key=api_key)
 
         # Buffer for storing the final output
