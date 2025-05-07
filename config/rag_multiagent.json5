@@ -32,7 +32,10 @@
     }
   ],
   "cortex_llm": {
-    "type": "MultiLLM"
+    "type": "RagMultiLLM",
+    "config": {
+      "use_rag": true
+    }
   },
   "agent_actions": [
     {

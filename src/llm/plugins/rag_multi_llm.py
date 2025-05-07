@@ -84,49 +84,51 @@ class RagMultiLLM(LLM[R]):
             tools_summary = ""
             if self.use_rag:
                 try:
-                    recent_voice = None
-                    # try:
-                    #     recent_voice = self.io_provider.inputs.get("Voice").input
-                    # except Exception:
-                    #     pass
-                    if "Voice" not in self.io_provider.inputs:
-                        recent_voice = self.io_provider.inputs.get("Voice", {}).get(
-                            "input", None
+                    voice_obj = self.io_provider.inputs.get("Voice")
+                    recent_voice: str | None = None
+
+                    if voice_obj is not None:
+                        if isinstance(voice_obj, dict):
+                            recent_voice = voice_obj.get("input")
+                        else:
+                            recent_voice = getattr(voice_obj, "input", None)
+
+                    if not recent_voice:
+                        logging.info("No Voice input found – skipping RAG retrieval")
+                    else:
+                        rag_request = {"query": recent_voice, "skip_cache": False}
+
+                        logging.debug(f"Sending RAG request to {self.rag_endpoint}")
+                        rag_response = requests.post(
+                            self.rag_endpoint,
+                            json=rag_request,
+                            headers=headers,
                         )
 
-                    rag_query_text = recent_voice or prompt
+                        logging.debug(
+                            f"RAG response status: {rag_response.status_code}"
+                        )
+                        if rag_response.status_code == 200:
+                            rag_data = rag_response.json()
+                            logging.debug(f"RAG response data: {rag_data}")
+                            if rag_data.get("success") and "data" in rag_data:
+                                rag_content = rag_data["data"].get("content", "")
+                                rag_tools = rag_data["data"].get("tools", [])
 
-                    rag_request = {"query": rag_query_text, "skip_cache": False}
+                                if rag_tools:
+                                    logging.info(f"RAG tools data: {rag_tools}")
+                                    tools_lines = [
+                                        "\n\nThe following tools were used to gather this information:"
+                                    ]
+                                    tools_lines += [
+                                        f"- {tool.get('tool_name', 'Unknown tool')}"
+                                        for tool in rag_tools
+                                    ]
+                                    tools_summary = "\n".join(tools_lines)
 
-                    logging.debug(f"Sending RAG request to {self.rag_endpoint}")
-                    rag_response = requests.post(
-                        self.rag_endpoint,
-                        json=rag_request,
-                        headers=headers,
-                    )
-
-                    logging.debug(f"RAG response status: {rag_response.status_code}")
-                    if rag_response.status_code == 200:
-                        rag_data = rag_response.json()
-                        logging.debug(f"RAG response data: {rag_data}")
-                        if rag_data.get("success") and "data" in rag_data:
-                            rag_content = rag_data["data"].get("content", "")
-                            rag_tools = rag_data["data"].get("tools", [])
-
-                            if rag_tools:
-                                logging.info(f"RAG tools data: {rag_tools}")
-                                tools_lines = [
-                                    "\n\nThe following tools were used to gather this information:"
-                                ]
-                                tools_lines += [
-                                    f"- {tool.get('tool_name', 'Unknown tool')}"
-                                    for tool in rag_tools
-                                ]
-                                tools_summary = "\n".join(tools_lines)
-
-                            if rag_content:
-                                rag_context = rag_content.strip()
-                                logging.info(f"RAG context added: {rag_context}")
+                                if rag_content:
+                                    rag_context = rag_content.strip()
+                                    logging.info(f"RAG context added: {rag_context}")
 
                 except Exception as e:
                     logging.error(f"Error querying RAG endpoint: {str(e)}")
