@@ -147,7 +147,11 @@ class MultiLLM(LLM[R]):
 
             if rag_context:
                 request["system_prompt"] = (
-                    f"{request['system_prompt']}\n\nYou are provided with a 'KNOWLEDGE BASE CONTEXT' section inside the user inputs. Consult it when crafting your answer."
+                    request["system_prompt"] = (
+                        f"{request['system_prompt']}\n\n"
+                        "You are provided with a 'KNOWLEDGE BASE CONTEXT' section inside "
+                        "the user inputs. Consult it when crafting your answer."
+                    )
                 )
 
             logging.debug(f"MultiLLM system_prompt: {request['system_prompt']}")
