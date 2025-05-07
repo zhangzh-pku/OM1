@@ -7,18 +7,9 @@ from typing import List, Optional
 from inputs.base import SensorConfig
 from inputs.base.loop import FuserInput
 from providers import BatteryStatus, IOProvider, StatusProvider, TeleopsStatus
-
-try:
-    from unitree.unitree_sdk2py.core.channel import ChannelSubscriber
-    from unitree.unitree_sdk2py.idl.geometry_msgs.msg.dds_ import PoseStamped_
-    from unitree.unitree_sdk2py.idl.unitree_go.msg.dds_ import LowState_
-except ImportError:
-    logging.warning(
-        "Unitree SDK not found. Please install the Unitree SDK to use this plugin."
-    )
-    raise ImportError(
-        "Unitree SDK not found. Please install the Unitree SDK to use this plugin."
-    )
+from unitree.unitree_sdk2py.core.channel import ChannelSubscriber
+from unitree.unitree_sdk2py.idl.geometry_msgs.msg.dds_ import PoseStamped_
+from unitree.unitree_sdk2py.idl.unitree_go.msg.dds_ import LowState_
 
 
 @dataclass
