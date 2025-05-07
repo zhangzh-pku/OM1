@@ -32,6 +32,7 @@ class LLMConfig(BaseModel):
     agent_name: T.Optional[str] = "IRIS"
     history_length: T.Optional[int] = 0
     question_states: T.Optional[dict] = None
+    use_rag: T.Optional[bool] = False
 
 
 class LLM(T.Generic[R]):
