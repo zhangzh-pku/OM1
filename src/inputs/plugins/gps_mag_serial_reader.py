@@ -1,34 +1,80 @@
+#!/usr/bin/env python3
 import asyncio
 import logging
 import time
-from dataclasses import dataclass
+import math
 from typing import Optional
-
 import serial
+import numpy as np
 
 from inputs.base import SensorConfig
 from inputs.base.loop import FuserInput
 from providers.io_provider import IOProvider
 
-# Map of abbreviated compass directions to full words
-CARDINAL_MAP = {
-    "N": "North",
-    "NNE": "North-Northeast",
-    "NE": "Northeast",
-    "ENE": "East-Northeast",
-    "E": "East",
-    "ESE": "East-Southeast",
-    "SE": "Southeast",
-    "SSE": "South-Southeast",
-    "S": "South",
-    "SSW": "South-Southwest",
-    "SW": "Southwest",
-    "WSW": "West-Southwest",
-    "W": "West",
-    "WNW": "West-Northwest",
-    "NW": "Northwest",
-    "NNW": "North-Northwest",
-}
+# SportClient from unitree package
+from unitree.unitree_sdk2py.go2.sport.sport_client import SportClient
+
+
+# ——— 3‑state EKF for [x, y, θ] ——————————————————————————————————————————————————
+class GPSOdomEKF:
+    def __init__(
+        self,
+        origin_lat: float,
+        origin_lon: float,
+        init_var: float = 1.0,
+        var_v: float = 0.1,
+        var_omega: float = 0.1,
+        gps_var: float = 5.0,
+    ):
+        self.x = np.zeros((3, 1))  # [x, y, θ]
+        self.P = np.eye(3) * init_var
+
+        self.var_v = var_v
+        self.var_omega = var_omega
+        self.R_gps = np.eye(2) * gps_var
+
+        # ENU origin
+        self.lat0 = math.radians(origin_lat)
+        self.lon0 = math.radians(origin_lon)
+        self.R_e = 6371000.0
+
+    def latlon_to_xy(self, lat: float, lon: float) -> np.ndarray:
+        φ = math.radians(lat)
+        λ = math.radians(lon)
+        x = self.R_e * (λ - self.lon0) * math.cos(self.lat0)
+        y = self.R_e * (φ - self.lat0)
+        return np.array([[x], [y]])
+
+    def predict(self, dt: float, v: float, omega: float) -> None:
+        θ = self.x[2, 0]
+        F = np.array(
+            [[1, 0, -v * math.sin(θ) * dt], [0, 1, v * math.cos(θ) * dt], [0, 0, 1]]
+        )
+        V = np.array([[math.cos(θ) * dt, 0], [math.sin(θ) * dt, 0], [0, dt]])
+        self.x[0, 0] += v * math.cos(θ) * dt
+        self.x[1, 0] += v * math.sin(θ) * dt
+        # θ unchanged here
+
+        M = np.diag([self.var_v, self.var_omega])
+        Q = V @ M @ V.T
+        self.P = F @ self.P @ F.T + Q
+
+    def update_gps(self, lat: float, lon: float) -> None:
+        z = self.latlon_to_xy(lat, lon)
+        H = np.array([[1, 0, 0], [0, 1, 0]])
+        y = z - H @ self.x
+        S = H @ self.P @ H.T + self.R_gps
+        K = self.P @ H.T @ np.linalg.inv(S)
+        self.x += K @ y
+        self.P = (np.eye(3) - K @ H) @ self.P
+
+    @property
+    def state(self):
+        return self.x.flatten().tolist()
+
+
+# ——— GPS+Odometry Reader with EKF —————————————————————————————————
+from dataclasses import dataclass
 
 
 @dataclass
@@ -50,144 +96,93 @@ class Message:
 
 class GPSMagSerialReader(FuserInput[str]):
     """
-    Reads GPS and Magnetometer data from serial port.
-    Parses lines like:
-    - GPS:37.7749N,-122.4194W,KN:0.12,HEAD:84.1,ALT:30.5,SAT:7
-    - YPR: 134.57, -3.20, 1.02
-    - HDG (DEG): 225.0 SW NTC_HDG: 221.3
+    Reads GPS serial lines, polls Unitree SportClient for odom,
+    fuses in EKF, and exposes filtered (x,y) via IOProvider.
     """
 
     def __init__(self, config: SensorConfig = SensorConfig()):
         super().__init__(config)
 
         port = getattr(config, "port", None)
-        baudrate = 115200
-        timeout = 1
-
-        self.ser = None
         try:
-            self.ser = serial.Serial(port, baudrate, timeout=timeout)
-            logging.info(f"Connected to {port} at {baudrate} baud")
-        except serial.SerialException as e:
-            logging.error(f"Error: {e}")
+            self.ser = serial.Serial(port, 115200, timeout=1)
+            logging.info(f"Opened GPS serial on {port}")
+        except Exception as e:
+            logging.error(f"GPS serial open error: {e}")
+            self.ser = None
+
+        self.sport = SportClient()
+        self.sport.Init()
+
+        self.ekf = None
+        self.origin_set = False
+        self.last_time = time.time()
 
         self.io_provider = IOProvider()
-        self.messages: list[Message] = []
+        self.messages = []
         self.descriptor_for_LLM = "Location and Orientation"
 
-    async def _poll(self) -> str | None:
-        """
-        Poll for serial data.
-
-        Returns
-        -------
-        str
-            message on serial bus
-        """
-
+    async def _poll(self) -> Optional[str]:
         await asyncio.sleep(0.5)
         if not self.ser:
             return None
+        line = self.ser.readline().decode(errors="ignore").strip()
+        return line or None
 
-        data = self.ser.readline().decode("utf-8").strip()
-        # Read a line, decode, and remove whitespace
+    async def _raw_to_text(self, raw: str) -> Message:
+        now = time.time()
+        dt = now - self.last_time
+        self.last_time = now
 
-        if data:
-            logging.info(f"Serial: {data}")
-            return data
-        return None
+        # EKF predict with odometry
+        if self.ekf:
+            code, data = self.sport.GetState(["Position", "Velocity"])
+            if code == 0:
+                vx, vy, _ = data["Velocity"]
+                v = math.hypot(vx, vy)
+                self.ekf.predict(dt, v, 0.0)
+                x_p, y_p, _ = self.ekf.state
+                self.io_provider.add_dynamic_variable("pred_x", x_p)
+                self.io_provider.add_dynamic_variable("pred_y", y_p)
 
-    async def _raw_to_text(self, raw_input: str) -> Message:
         msg = "Unrecognized data"
-
         try:
-            if raw_input.startswith("HDG (DEG):"):
-                parts = raw_input.split()
-                if len(parts) >= 4:
-                    cardinal_abbr = parts[3]
-                    direction = CARDINAL_MAP.get(cardinal_abbr, cardinal_abbr)
-                    msg = f"You are facing {direction}."
-                    self.io_provider.add_dynamic_variable("direction", direction)
-                else:
-                    msg = f"Unable to parse heading: {raw_input}"
+            if raw.startswith("GPS:"):
+                parts = raw[4:].split(",")
+                lat = float(parts[0][:-1]) * (1 if parts[0].endswith("N") else -1)
+                lon = float(parts[1][:-1]) * (1 if parts[1].endswith("E") else -1)
+                sats = int(parts[5].split(":")[1])
 
-            elif raw_input.startswith("YPR:"):
-                yaw, pitch, roll = map(str.strip, raw_input[4:].split(","))
-                msg = f"Orientation is Yaw: {yaw}°, Pitch: {pitch}°, Roll: {roll}°."
-                self.io_provider.add_dynamic_variable("yaw", yaw)
-                self.io_provider.add_dynamic_variable("pitch", pitch)
-                self.io_provider.add_dynamic_variable("roll", roll)
+                if not self.origin_set:
+                    self.ekf = GPSOdomEKF(lat, lon)
+                    self.origin_set = True
 
-            elif raw_input.startswith("GPS:"):
-                try:
-                    parts = raw_input[4:].split(",")
-                    # Validate latitude format
-                    if parts[0][-1] not in {"N", "S"}:
-                        raise ValueError(f"Invalid latitude format: {parts[0]}")
-                    lat = float(parts[0][:-1]) * (1 if parts[0][-1] == "N" else -1)
+                self.ekf.update_gps(lat, lon)
+                x_f, y_f, _ = self.ekf.state
+                self.io_provider.add_dynamic_variable("filt_x", x_f)
+                self.io_provider.add_dynamic_variable("filt_y", y_f)
 
-                    # Validate longitude format
-                    if parts[1][-1] not in {"E", "W"}:
-                        raise ValueError(f"Invalid longitude format: {parts[1]}")
-                    lon = float(parts[1][:-1]) * (1 if parts[1][-1] == "E" else -1)
-                    heading = parts[3].split(":")[1]
-                    alt = float(parts[4].split(":")[1])
-                    sats = int(parts[5].split(":")[1])
-
-                    self.io_provider.add_dynamic_variable("latitude", lat)
-                    self.io_provider.add_dynamic_variable("longitude", lon)
-                    self.io_provider.add_dynamic_variable("altitude", alt)
-                    self.io_provider.add_dynamic_variable("heading", heading)
-                    self.io_provider.add_dynamic_variable("sats", sats)
-
-                    msg = (
-                        f"Current location is {lat}, {lon} at {alt} meters altitude, "
-                        f"heading {heading}°, with {sats} satellites locked."
-                    )
-                except Exception as e:
-                    msg = f"Failed to parse GPS: {raw_input} ({e})"
-
+                msg = f"GPS {lat:.6f},{lon:.6f} sats={sats} → filt=({x_f:.2f}m,{y_f:.2f}m)"
         except Exception as e:
-            msg = f"Error processing input: {raw_input} ({e})"
+            msg = f"Parse error [{raw}]: {e}"
 
-        return Message(timestamp=time.time(), message=msg)
+        return Message(timestamp=now, message=msg)
 
-    async def raw_to_text(self, raw_input: str):
-        """
-        Update message buffer.
-        """
-        pending_message = await self._raw_to_text(raw_input)
-
-        if pending_message is not None:
-            self.messages.append(pending_message)
+    async def raw_to_text(self, raw: str):
+        m = await self._raw_to_text(raw)
+        if m:
+            self.messages.append(m)
 
     def formatted_latest_buffer(self) -> Optional[str]:
-        """
-        Format and clear the latest buffer contents.
-
-        Formats the most recent message with timestamp and class name,
-        adds it to the IO provider, then clears the buffer.
-
-        Returns
-        -------
-        Optional[str]
-            Formatted string of buffer contents or None if buffer is empty
-        """
-        if len(self.messages) == 0:
+        if not self.messages:
             return None
-
-        latest_message = self.messages[-1]
-
-        result = f"""
+        m = self.messages[-1]
+        out = f"""
 {self.descriptor_for_LLM} INPUT
 // START
-{latest_message.message}
+{m.message}
 // END
 """
-
-        self.io_provider.add_input(
-            self.__class__.__name__, latest_message.message, latest_message.timestamp
-        )
-        self.messages = []
-
-        return result
+        self.io_provider.add_input(self.__class__.__name__, m.message, m.timestamp)
+        self.messages.clear()
+        return out
