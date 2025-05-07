@@ -64,6 +64,7 @@ class TeleopsStatus:
 
     update_time: str
     battery_status: BatteryStatus
+    machine_name: str = "unknown"
     video_status: bool = False
 
     def to_dict(self) -> dict:
@@ -76,6 +77,7 @@ class TeleopsStatus:
             Dictionary representation of the TeleopsStatus object.
         """
         return {
+            "machine_name": self.machine_name,
             "update_time": self.update_time,
             "battery_status": self.battery_status.to_dict(),
             "video_status": self.video_status,
@@ -94,6 +96,7 @@ class TeleopsStatus:
         return cls(
             update_time=data.get("update_time", time.time()),
             battery_status=BatteryStatus.from_dict(data.get("battery_status", {})),
+            machine_name=data.get("machine_name", "unknown"),
             video_status=data.get("video_status", False),
         )
 
@@ -130,7 +133,7 @@ class StatusProvider:
         """
         pass
 
-    def _share_status_worker(self, status: dict):
+    def _share_status_worker(self, status: TeleopsStatus):
         """
         Worker function to share the status of the machine.
         This function runs in a separate thread to avoid blocking the main thread.
@@ -140,8 +143,6 @@ class StatusProvider:
         status : dict
             The status of the machine to be shared.
         """
-        teleops_status = TeleopsStatus.from_dict(status)
-
         if self.api_key is None or self.api_key == "":
             logging.error("API key is missing. Cannot share status.")
             return
@@ -150,7 +151,7 @@ class StatusProvider:
             request = requests.post(
                 self.base_url,
                 headers={"Authorization": f"Bearer {self.api_key}"},
-                json=teleops_status.to_dict(),
+                json=status.to_dict(),
             )
 
             if request.status_code == 200:
@@ -162,7 +163,7 @@ class StatusProvider:
         except Exception as e:
             logging.error(f"Error sharing status: {str(e)}")
 
-    def share_status(self, status: dict):
+    def share_status(self, status: TeleopsStatus):
         """
         Share the status of the machine.
         This function submits the status sharing task to a thread pool executor

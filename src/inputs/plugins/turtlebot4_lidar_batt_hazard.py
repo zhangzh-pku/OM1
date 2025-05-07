@@ -12,7 +12,7 @@ from scipy.signal import find_peaks
 
 from inputs.base import SensorConfig
 from inputs.base.loop import FuserInput
-from providers import IOProvider, StatusProvider
+from providers import BatteryStatus, IOProvider, StatusProvider, TeleopsStatus
 from zenoh_idl import sensor_msgs
 
 
@@ -200,6 +200,24 @@ class TurtleBot4BattLIDARBump(FuserInput[str]):
         dock = sensor_msgs.DockStatus.deserialize(sample.payload.to_bytes())
         self.is_docked = dock.is_docked
 
+    async def update_status(self):
+        """
+        Report the battery status to the status provider.
+        """
+        self.status_provider.share_status(
+            TeleopsStatus(
+                machine_name="TurtleBot4",
+                update_time=time.time(),
+                battery_status=BatteryStatus(
+                    battery_level=self.battery_percent,
+                    temperature=self.battery_temperature,
+                    voltage=self.battery_voltage,
+                    timestamp=self.battery_timestamp,
+                    charging_status=self.is_docked,
+                ),
+            )
+        )
+
     async def _poll(self) -> List[str]:
         """
         Poll for new state data.
@@ -212,6 +230,8 @@ class TurtleBot4BattLIDARBump(FuserInput[str]):
         # Does the complexity of this seem confusing and kinda pointless to you?
         # It's on our radar and your patience is appreciated
         await asyncio.sleep(2.0)
+
+        await self.update_status()
 
         logging.info(
             f"TB4 batt:{self.battery_status} lidar:{self.lidar_status} hazard:{self.hazard_status}"
@@ -291,19 +311,5 @@ class TurtleBot4BattLIDARBump(FuserInput[str]):
 
         self.messages = []
         self.hazard_status = None
-
-        self.status_provider.share_status(
-            {
-                "machine_name": "turtlebot4",
-                "update_time": time.time(),
-                "battery_status": {
-                    "battery_level": self.battery_percent,
-                    "charging_status": self.is_docked,
-                    "temperature": self.battery_temperature,
-                    "voltage": self.battery_voltage,
-                    "timestamp": self.battery_timestamp,
-                },
-            }
-        )
 
         return result
