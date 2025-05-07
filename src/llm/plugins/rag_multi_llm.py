@@ -48,7 +48,6 @@ class RagMultiLLM(LLM[R]):
         self.endpoint = "https://api.openmind.org/api/core/agent"
         self.rag_endpoint = "https://api.openmind.org/api/core/rag/query"
 
-        # Access use_rag from config
         self.use_rag = config.use_rag
 
     async def ask(
