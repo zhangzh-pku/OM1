@@ -24,8 +24,13 @@ class LLMConfig(BaseModel):
         Name of the LLM model to use
     history_length : int, optional
         Number of interactions to store in the history buffer
-    use_rag: bool, optional
-        Whether to use RAG functionality
+    agent_name : str, optional
+        Name of the agent that is using the LLM (default "IRIS")
+    question_states : dict, optional
+        Dictionary containing question state data to send with requests
+    use_rag : bool, optional
+        Whether to enable Retrieval-Augmented Generation (RAG) functionality
+
     """
 
     base_url: T.Optional[str] = None
@@ -33,6 +38,7 @@ class LLMConfig(BaseModel):
     model: T.Optional[str] = None
     agent_name: T.Optional[str] = "IRIS"
     history_length: T.Optional[int] = 0
+    question_states: T.Optional[dict] = None
     use_rag: T.Optional[bool] = False
 
 
