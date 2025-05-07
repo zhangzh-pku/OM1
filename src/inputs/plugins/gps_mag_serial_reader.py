@@ -1,82 +1,111 @@
 #!/usr/bin/env python3
 import asyncio
 import logging
-import time
 import math
+import time
+from dataclasses import dataclass
 from typing import Optional
-import serial
+
 import numpy as np
+import serial
 
 from inputs.base import SensorConfig
 from inputs.base.loop import FuserInput
 from providers.io_provider import IOProvider
 
-# SportClient from unitree package
-from unitree.unitree_sdk2py.go2.sport.sport_client import SportClient
+# Cyclone DDS channel imports
+from unitree.unitree_sdk2py.core.channel import ChannelSubscriber, ChannelFactoryInitialize
+from unitree.unitree_sdk2py.idl.unitree_go.msg.dds_ import SportModeState_
 
-
-# ——— 3‑state EKF for [x, y, θ] ——————————————————————————————————————————————————
+# ─── EKF implementation ───────────────────────────────────────────────────────────
 class GPSOdomEKF:
+    """4‑state EKF where odometry *corrects* GPS‑predicted motion."""
+
     def __init__(
         self,
         origin_lat: float,
         origin_lon: float,
-        init_var: float = 1.0,
-        var_v: float = 0.1,
-        var_omega: float = 0.1,
-        gps_var: float = 5.0,
+        pos_var_init: float = 25.0,
+        vel_var_init: float = 1.0,
+        acc_var: float = 0.5,
+        gps_pos_var: float = 25.0,
+        odo_vel_var: float = 0.05,
     ):
-        self.x = np.zeros((3, 1))  # [x, y, θ]
-        self.P = np.eye(3) * init_var
+        # state: [x, y, vx, vy]ᵀ (m, m, m/s, m/s)
+        self.x = np.zeros((4, 1))
+        self.P = np.diag([pos_var_init, pos_var_init, vel_var_init, vel_var_init])
 
-        self.var_v = var_v
-        self.var_omega = var_omega
-        self.R_gps = np.eye(2) * gps_var
+        self.q_acc = acc_var  # process noise (m/s²)
+        self.R_gps = np.diag([gps_pos_var, gps_pos_var])
+        self.R_odo = np.diag([odo_vel_var, odo_vel_var])
 
-        # ENU origin
+        # origin for ENU conversion
         self.lat0 = math.radians(origin_lat)
         self.lon0 = math.radians(origin_lon)
-        self.R_e = 6371000.0
+        self.R_e = 6_371_000.0  # mean Earth radius
 
-    def latlon_to_xy(self, lat: float, lon: float) -> np.ndarray:
+    # ── helpers ───────────────────────────────────────────────────────────────────
+    def _latlon_to_xy(self, lat: float, lon: float):
         φ = math.radians(lat)
         λ = math.radians(lon)
         x = self.R_e * (λ - self.lon0) * math.cos(self.lat0)
         y = self.R_e * (φ - self.lat0)
         return np.array([[x], [y]])
 
-    def predict(self, dt: float, v: float, omega: float) -> None:
-        θ = self.x[2, 0]
-        F = np.array(
-            [[1, 0, -v * math.sin(θ) * dt], [0, 1, v * math.cos(θ) * dt], [0, 0, 1]]
-        )
-        V = np.array([[math.cos(θ) * dt, 0], [math.sin(θ) * dt, 0], [0, dt]])
-        self.x[0, 0] += v * math.cos(θ) * dt
-        self.x[1, 0] += v * math.sin(θ) * dt
-        # θ unchanged here
+    def _xy_to_latlon(self, x: float, y: float):
+        φ = self.lat0 + y / self.R_e
+        λ = self.lon0 + x / (self.R_e * math.cos(self.lat0))
+        return math.degrees(φ), math.degrees(λ)
 
-        M = np.diag([self.var_v, self.var_omega])
-        Q = V @ M @ V.T
+    # ── EKF core ───────────────────────────────────────────────────────────────────
+    def predict(self, dt: float):
+        # State‑transition & process noise
+        F = np.array([
+            [1, 0, dt, 0],
+            [0, 1, 0, dt],
+            [0, 0, 1, 0],
+            [0, 0, 0, 1],
+        ])
+        G = np.array([
+            [0.5 * dt ** 2, 0],
+            [0, 0.5 * dt ** 2],
+            [dt, 0],
+            [0, dt],
+        ])
+        Q = G @ (self.q_acc * np.eye(2)) @ G.T
+
+        self.x = F @ self.x
         self.P = F @ self.P @ F.T + Q
 
-    def update_gps(self, lat: float, lon: float) -> None:
-        z = self.latlon_to_xy(lat, lon)
-        H = np.array([[1, 0, 0], [0, 1, 0]])
+    def update_gps(self, lat: float, lon: float):
+        z = self._latlon_to_xy(lat, lon)
+        H = np.array([[1, 0, 0, 0], [0, 1, 0, 0]])
         y = z - H @ self.x
         S = H @ self.P @ H.T + self.R_gps
         K = self.P @ H.T @ np.linalg.inv(S)
         self.x += K @ y
-        self.P = (np.eye(3) - K @ H) @ self.P
+        self.P = (np.eye(4) - K @ H) @ self.P
+
+    def update_odom(self, vx: float, vy: float):
+        z = np.array([[vx], [vy]])
+        H = np.array([[0, 0, 1, 0], [0, 0, 0, 1]])
+        y = z - H @ self.x
+        S = H @ self.P @ H.T + self.R_odo
+        K = self.P @ H.T @ np.linalg.inv(S)
+        self.x += K @ y
+        self.P = (np.eye(4) - K @ H) @ self.P
+
+    # ── convenient accessors ──────────────────────────────────────────────────────
+    @property
+    def xy(self):
+        return self.x[0, 0], self.x[1, 0]
 
     @property
-    def state(self):
-        return self.x.flatten().tolist()
+    def latlon(self):
+        return self._xy_to_latlon(*self.xy)
 
 
-# ——— GPS+Odometry Reader with EKF —————————————————————————————————
-from dataclasses import dataclass
-
-
+# ─── Reader/Fuser ─────────────────────────────────────────────────────────────────
 @dataclass
 class Message:
     """
@@ -91,18 +120,21 @@ class Message:
     """
 
     timestamp: float
-    message: str
+    text: str
 
 
 class GPSMagSerialReader(FuserInput[str]):
-    """
-    Reads GPS serial lines, polls Unitree SportClient for odom,
-    fuses in EKF, and exposes filtered (x,y) via IOProvider.
-    """
+    """Polls serial GPS NMEA + Unitree odometry and fuses with EKF."""
 
     def __init__(self, config: SensorConfig = SensorConfig()):
         super().__init__(config)
 
+        # DDS – subscribe to odometry
+        self.odom_sub = ChannelSubscriber("rt/sportmodestate", SportModeState_)
+        self.odom_sub.Init(self._odom_cb, 10)
+        self.last_odom: Optional[SportModeState_] = None
+
+        # Serial – GPS
         port = getattr(config, "port", None)
         try:
             self.ser = serial.Serial(port, 115200, timeout=1)
@@ -111,78 +143,107 @@ class GPSMagSerialReader(FuserInput[str]):
             logging.error(f"GPS serial open error: {e}")
             self.ser = None
 
-        self.sport = SportClient()
-        self.sport.Init()
-
-        self.ekf = None
+        # EKF
+        self.ekf: Optional[GPSOdomEKF] = None
         self.origin_set = False
-        self.last_time = time.time()
 
+        # timing
+        now = time.time()
+        self.t_last_predict = now
+        self.t_last_gps     = now
+
+        # misc
         self.io_provider = IOProvider()
-        self.messages = []
-        self.descriptor_for_LLM = "Location and Orientation"
+        self.buf: list[Message] = []
+        self.descriptor_for_LLM = "Location and Velocity"
 
+    # ── DDS callback ─────────────────────────────────────────────────────────────
+    def _odom_cb(self, msg: SportModeState_):
+        self.last_odom = msg
+        # velocity update is done in *_predict_step below to keep timing consistent
+
+    # ── internal helpers ─────────────────────────────────────────────────────────
+    async def _predict_step(self):
+        if not self.ekf:
+            return
+        now = time.time()
+        dt = now - self.t_last_predict
+        self.t_last_predict = now
+        self.ekf.predict(dt)
+
+        # correct velocity with most recent odometry
+        if self.last_odom is not None:
+            try:
+                vx, vy, _ = self.last_odom.velocity
+                self.ekf.update_odom(vx, vy)
+            except Exception as e:
+                logging.warning(f"Odom update failed: {e}")
+
+    # ── serial polling ───────────────────────────────────────────────────────────
     async def _poll(self) -> Optional[str]:
-        await asyncio.sleep(0.5)
+        # predict every loop even if no new GPS line
+        await self._predict_step()
+
         if not self.ser:
+            await asyncio.sleep(0.1)
             return None
         line = self.ser.readline().decode(errors="ignore").strip()
         return line or None
 
     async def _raw_to_text(self, raw: str) -> Message:
         now = time.time()
-        dt = now - self.last_time
-        self.last_time = now
+        txt = "Unrecognised data"
 
-        # EKF predict with odometry
-        if self.ekf:
-            code, data = self.sport.GetState(["Position", "Velocity"])
-            if code == 0:
-                vx, vy, _ = data["Velocity"]
-                v = math.hypot(vx, vy)
-                self.ekf.predict(dt, v, 0.0)
-                x_p, y_p, _ = self.ekf.state
-                self.io_provider.add_dynamic_variable("pred_x", x_p)
-                self.io_provider.add_dynamic_variable("pred_y", y_p)
-
-        msg = "Unrecognized data"
         try:
             if raw.startswith("GPS:"):
                 parts = raw[4:].split(",")
+                # parse like "GPS:37.781731N,122.393898W"
                 lat = float(parts[0][:-1]) * (1 if parts[0].endswith("N") else -1)
                 lon = float(parts[1][:-1]) * (1 if parts[1].endswith("E") else -1)
-                sats = int(parts[5].split(":")[1])
 
                 if not self.origin_set:
                     self.ekf = GPSOdomEKF(lat, lon)
                     self.origin_set = True
+                    logging.info("EKF origin established")
 
                 self.ekf.update_gps(lat, lon)
-                x_f, y_f, _ = self.ekf.state
-                self.io_provider.add_dynamic_variable("filt_x", x_f)
-                self.io_provider.add_dynamic_variable("filt_y", y_f)
+                x, y = self.ekf.xy
+                vx, vy = self.ekf.x[2, 0], self.ekf.x[3, 0]
+                txt = (
+                    f"GPS fix → ({x:.2f} m, {y:.2f} m)  vel=({vx:.2f},{vy:.2f}) m/s"
+                )
 
-                msg = f"GPS {lat:.6f},{lon:.6f} sats={sats} → filt=({x_f:.2f}m,{y_f:.2f}m)"
+                # expose lat/lon for external logging
+                lat_f, lon_f = self.ekf.latlon
+                self.io_provider.add_dynamic_variable("latitude", lat_f)
+                self.io_provider.add_dynamic_variable("longitude", lon_f)
+                logging.info(
+                    f"GPS: {lat_f:.5f} N, {lon_f:.5f} E  vel=({vx:.2f},{vy:.2f}) m/s"
+                )
+
+            else:
+                txt = raw  # pass‑through any other serial messages
         except Exception as e:
-            msg = f"Parse error [{raw}]: {e}"
+            txt = f"Parse error: {e}"
+            logging.error(txt)
 
-        return Message(timestamp=now, message=msg)
+        self.io_provider.add_input(self.__class__.__name__, txt, now)
+        return Message(timestamp=now, text=txt)
 
     async def raw_to_text(self, raw: str):
+        if not raw:
+            return
         m = await self._raw_to_text(raw)
-        if m:
-            self.messages.append(m)
+        self.buf.append(m)
 
     def formatted_latest_buffer(self) -> Optional[str]:
-        if not self.messages:
+        if not self.buf:
             return None
-        m = self.messages[-1]
-        out = f"""
+        m = self.buf[-1]
+        self.buf.clear()
+        return f"""
 {self.descriptor_for_LLM} INPUT
 // START
-{m.message}
+{m.text}
 // END
 """
-        self.io_provider.add_input(self.__class__.__name__, m.message, m.timestamp)
-        self.messages.clear()
-        return out
