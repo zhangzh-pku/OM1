@@ -52,7 +52,7 @@ class TurtleBot4BattLIDARBump(FuserInput[str]):
         self.hazard_status = None
 
         # Battery status variables
-        self.battery_percent = 0.0
+        self.battery_percentage = 0.0
         self.battery_voltage = 0.0
         self.battery_temperature = 0
         self.battery_timestamp = time.time()
@@ -97,14 +97,14 @@ class TurtleBot4BattLIDARBump(FuserInput[str]):
         Process battery status updates
         """
         battery = sensor_msgs.BatteryState.deserialize(sample.payload.to_bytes())
-        self.battery_percent = int(battery.percentage * 100)
+        self.battery_percentage = int(battery.percentage * 100)
         self.battery_voltage = battery.voltage
         self.battery_temperature = round(battery.temperature, 2)
         self.battery_timestamp = battery.header.stamp.sec
 
-        if self.battery_percent < 5:
+        if self.battery_percentage < 5:
             self.battery_status = "CRITICAL: your battery is almost empty. Immediately move to your charging station and recharge."
-        elif self.battery_percent < 15:
+        elif self.battery_percentage < 15:
             self.battery_status = "Caution: your battery is running low. Consider finding your charging station and recharging."
         else:
             self.battery_status = None
@@ -209,7 +209,7 @@ class TurtleBot4BattLIDARBump(FuserInput[str]):
                 machine_name="TurtleBot4",
                 update_time=time.time(),
                 battery_status=BatteryStatus(
-                    battery_level=self.battery_percent,
+                    battery_level=self.battery_percentage,
                     temperature=self.battery_temperature,
                     voltage=self.battery_voltage,
                     timestamp=self.battery_timestamp,
