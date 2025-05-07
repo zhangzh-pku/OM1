@@ -82,9 +82,18 @@ class MultiLLM(LLM[R]):
 
             logging.info(f"self.use_rag: {self.use_rag}")
             rag_context = ""
+            tools_summary = "" 
             if self.use_rag:
                 try:
-                    rag_request = {"query": prompt, "skip_cache": False}
+                    recent_voice = None
+                    try:
+                        recent_voice = self.io_provider.inputs.get("Voice").input
+                    except Exception:
+                        pass
+
+                    rag_query_text = recent_voice or prompt
+
+                    rag_request = {"query": rag_query_text, "skip_cache": False}
 
                     logging.debug(f"Sending RAG request to {self.rag_endpoint}")
                     rag_response = requests.post(
@@ -101,18 +110,12 @@ class MultiLLM(LLM[R]):
                             rag_content = rag_data["data"].get("content", "")
                             rag_tools = rag_data["data"].get("tools", [])
                             
-                            # Log tools data
                             if rag_tools:
                                 logging.info(f"RAG tools data: {rag_tools}")
-                                
-                                # Generate tools summary text
-                                tools_summary = "\n\nThe following tools were used to gather this information:\n"
-                                for tool in rag_tools:
-                                    tool_name = tool.get("tool_name", "Unknown tool")
-                                    tools_summary += f"- {tool_name}\n"
-                            else:
-                                tools_summary = ""
-                                
+                                tools_lines = ["\n\nThe following tools were used to gather this information:"]
+                                tools_lines += [f"- {tool.get('tool_name', 'Unknown tool')}" for tool in rag_tools]
+                                tools_summary = "\n".join(tools_lines)
+
                             if rag_content:
                                 rag_context = rag_content.strip()
                                 logging.info(f"RAG context added: {rag_context}")
@@ -130,12 +133,21 @@ class MultiLLM(LLM[R]):
             }
 
             if rag_context:
-                # Append tools_summary to the instruction if available
-                tools_text = tools_summary if 'tools_summary' in locals() and tools_summary else ""
-                
-                rag_instruction = f"The following information from the user's knowledge base is relevant to the query:\n\n---\n{rag_context}\n---\n{tools_text}\n\nUse this information to provide a more accurate and contextually relevant response."
+                kb_block = (
+                    "\n\n--- KNOWLEDGE BASE CONTEXT ---\n"
+                    f"{rag_context}\n"
+                    "---\n"
+                )
+
+                if tools_summary:
+                    kb_block += f"{tools_summary}\n"
+
+                existing_inputs = request.get("inputs") or ""
+                request["inputs"] = f"{existing_inputs}{kb_block}".strip()
+
+            if rag_context:
                 request["system_prompt"] = (
-                    f"{request['system_prompt']}\n\n{rag_instruction}"
+                    f"{request['system_prompt']}\n\nYou are provided with a 'KNOWLEDGE BASE CONTEXT' section inside the user inputs. Consult it when crafting your answer."
                 )
 
             logging.debug(f"MultiLLM system_prompt: {request['system_prompt']}")
