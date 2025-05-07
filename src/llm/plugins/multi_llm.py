@@ -82,7 +82,7 @@ class MultiLLM(LLM[R]):
 
             logging.info(f"self.use_rag: {self.use_rag}")
             rag_context = ""
-            tools_summary = "" 
+            tools_summary = ""
             if self.use_rag:
                 try:
                     recent_voice = None
@@ -109,11 +109,16 @@ class MultiLLM(LLM[R]):
                         if rag_data.get("success") and "data" in rag_data:
                             rag_content = rag_data["data"].get("content", "")
                             rag_tools = rag_data["data"].get("tools", [])
-                            
+
                             if rag_tools:
                                 logging.info(f"RAG tools data: {rag_tools}")
-                                tools_lines = ["\n\nThe following tools were used to gather this information:"]
-                                tools_lines += [f"- {tool.get('tool_name', 'Unknown tool')}" for tool in rag_tools]
+                                tools_lines = [
+                                    "\n\nThe following tools were used to gather this information:"
+                                ]
+                                tools_lines += [
+                                    f"- {tool.get('tool_name', 'Unknown tool')}"
+                                    for tool in rag_tools
+                                ]
                                 tools_summary = "\n".join(tools_lines)
 
                             if rag_content:
@@ -134,9 +139,7 @@ class MultiLLM(LLM[R]):
 
             if rag_context:
                 kb_block = (
-                    "\n\n--- KNOWLEDGE BASE CONTEXT ---\n"
-                    f"{rag_context}\n"
-                    "---\n"
+                    "\n\n--- KNOWLEDGE BASE CONTEXT ---\n" f"{rag_context}\n" "---\n"
                 )
 
                 if tools_summary:
@@ -147,11 +150,9 @@ class MultiLLM(LLM[R]):
 
             if rag_context:
                 request["system_prompt"] = (
-                    request["system_prompt"] = (
-                        f"{request['system_prompt']}\n\n"
-                        "You are provided with a 'KNOWLEDGE BASE CONTEXT' section inside "
-                        "the user inputs. Consult it when crafting your answer."
-                    )
+                    f"{request['system_prompt']}\n\n"
+                    "You are provided with a 'KNOWLEDGE BASE CONTEXT' section inside "
+                    "the user inputs. Consult it when crafting your answer."
                 )
 
             logging.debug(f"MultiLLM system_prompt: {request['system_prompt']}")
