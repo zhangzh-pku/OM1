@@ -40,9 +40,9 @@ CARDINAL_MAP = {
 }
 
 
-# ─── EKF implementation ───────────────────────────────────────────────────────────
+# ─── EKF (unchanged) ─────────────────────────────────────────────────────────────
 class GPSOdomEKF:
-    """4‑state EKF where odometry *corrects* GPS‑predicted motion."""
+    """4-state EKF where odometry *corrects* GPS-predicted motion."""
 
     def __init__(
         self,
@@ -54,23 +54,19 @@ class GPSOdomEKF:
         gps_pos_var: float = 25.0,
         odo_vel_var: float = 0.05,
     ):
-        # state: [x, y, vx, vy]ᵀ (m, m, m/s, m/s)
         self.x = np.zeros((4, 1))
         self.P = np.diag([pos_var_init, pos_var_init, vel_var_init, vel_var_init])
 
-        self.q_acc = acc_var  # process noise (m/s²)
+        self.q_acc = acc_var
         self.R_gps = np.diag([gps_pos_var, gps_pos_var])
         self.R_odo = np.diag([odo_vel_var, odo_vel_var])
 
-        # origin for ENU conversion
         self.lat0 = math.radians(origin_lat)
         self.lon0 = math.radians(origin_lon)
-        self.R_e = 6_371_000.0  # mean Earth radius
+        self.R_e = 6_371_000.0
 
-    # ── helpers ───────────────────────────────────────────────────────────────────
     def _latlon_to_xy(self, lat: float, lon: float):
-        φ = math.radians(lat)
-        λ = math.radians(lon)
+        φ, λ = map(math.radians, (lat, lon))
         x = self.R_e * (λ - self.lon0) * math.cos(self.lat0)
         y = self.R_e * (φ - self.lat0)
         return np.array([[x], [y]])
@@ -78,29 +74,12 @@ class GPSOdomEKF:
     def _xy_to_latlon(self, x: float, y: float):
         φ = self.lat0 + y / self.R_e
         λ = self.lon0 + x / (self.R_e * math.cos(self.lat0))
-        return math.degrees(φ), math.degrees(λ)
+        return map(math.degrees, (φ, λ))
 
-    # ── EKF core ───────────────────────────────────────────────────────────────────
     def predict(self, dt: float):
-        # State‑transition & process noise
-        F = np.array(
-            [
-                [1, 0, dt, 0],
-                [0, 1, 0, dt],
-                [0, 0, 1, 0],
-                [0, 0, 0, 1],
-            ]
-        )
-        G = np.array(
-            [
-                [0.5 * dt**2, 0],
-                [0, 0.5 * dt**2],
-                [dt, 0],
-                [0, dt],
-            ]
-        )
+        F = np.array([[1, 0, dt, 0], [0, 1, 0, dt], [0, 0, 1, 0], [0, 0, 0, 1]])
+        G = np.array([[0.5 * dt**2, 0], [0, 0.5 * dt**2], [dt, 0], [0, dt]])
         Q = G @ (self.q_acc * np.eye(2)) @ G.T
-
         self.x = F @ self.x
         self.P = F @ self.P @ F.T + Q
 
@@ -122,7 +101,6 @@ class GPSOdomEKF:
         self.x += K @ y
         self.P = (np.eye(4) - K @ H) @ self.P
 
-    # ── convenient accessors ──────────────────────────────────────────────────────
     @property
     def xy(self):
         return self.x[0, 0], self.x[1, 0]
@@ -132,7 +110,7 @@ class GPSOdomEKF:
         return self._xy_to_latlon(*self.xy)
 
 
-# ─── Reader/Fuser ─────────────────────────────────────────────────────────────────
+# ─── Reader/Fuser ────────────────────────────────────────────────────────────────
 @dataclass
 class Message:
     """
@@ -142,7 +120,7 @@ class Message:
     ----------
     timestamp : float
         Unix timestamp of the message
-    message : str
+    text : str
         Content of the message
     """
 
@@ -151,7 +129,7 @@ class Message:
 
 
 class GPSMagSerialReader(FuserInput[str]):
-    """Polls serial GPS NMEA + Unitree odometry and fuses with EKF."""
+    """Polls serial GPS NMEA + Unitree odometry and fuses with EKF if available."""
 
     def __init__(self, config: SensorConfig = SensorConfig()):
         super().__init__(config)
@@ -162,43 +140,43 @@ class GPSMagSerialReader(FuserInput[str]):
         self.last_odom: Optional[SportModeState_] = None
 
         # Serial – GPS
-        port = getattr(config, "port", None)
         try:
-            self.ser = serial.Serial(port, 115200, timeout=1)
-            logging.info(f"Opened GPS serial on {port}")
+            self.ser = serial.Serial(getattr(config, "port", None), 115200, timeout=1)
+            logging.info("Opened GPS serial")
         except Exception as e:
             logging.error(f"GPS serial open error: {e}")
             self.ser = None
 
         # EKF
         self.ekf: Optional[GPSOdomEKF] = None
-        self.origin_set = False
+        self.filter_enabled = False  # <──── NEW
+        self.pending_origin: Optional[tuple] = None
 
-        # timing
         now = time.time()
         self.t_last_predict = now
-        self.t_last_gps = now
-
-        # misc
         self.io_provider = IOProvider()
         self.buf: list[Message] = []
         self.descriptor_for_LLM = "Location and Velocity"
 
-    # ── DDS callback ─────────────────────────────────────────────────────────────
+    # ── DDS callback ────────────────────────────────────────────────────────────
     def _odom_cb(self, msg: SportModeState_):
         self.last_odom = msg
-        # velocity update is done in *_predict_step below to keep timing consistent
+        if not self.filter_enabled:
+            self.filter_enabled = True
+            if self.pending_origin:
+                lat0, lon0 = self.pending_origin
+                self.ekf = GPSOdomEKF(lat0, lon0)
+                logging.info("EKF instantiated after odometry became available")
 
-    # ── internal helpers ─────────────────────────────────────────────────────────
+    # ── prediction step (runs only if filter active) ────────────────────────────
     async def _predict_step(self):
-        if not self.ekf:
+        if not (self.filter_enabled and self.ekf):
             return
         now = time.time()
         dt = now - self.t_last_predict
         self.t_last_predict = now
         self.ekf.predict(dt)
 
-        # correct velocity with most recent odometry
         if self.last_odom is not None:
             try:
                 vx, vy, _ = self.last_odom.velocity
@@ -206,16 +184,13 @@ class GPSMagSerialReader(FuserInput[str]):
             except Exception as e:
                 logging.warning(f"Odom update failed: {e}")
 
-    # ── serial polling ───────────────────────────────────────────────────────────
+    # ── serial polling ──────────────────────────────────────────────────────────
     async def _poll(self) -> Optional[str]:
-        # predict every loop even if no new GPS line
         await self._predict_step()
-
         if not self.ser:
             await asyncio.sleep(0.1)
             return None
-        line = self.ser.readline().decode(errors="ignore").strip()
-        return line or None
+        return self.ser.readline().decode(errors="ignore").strip() or None
 
     async def _raw_to_text(self, raw: str) -> Message:
         now = time.time()
@@ -227,45 +202,44 @@ class GPSMagSerialReader(FuserInput[str]):
                 lat = float(parts[0][:-1]) * (1 if parts[0].endswith("N") else -1)
                 lon = float(parts[1][:-1]) * (1 if parts[1].endswith("E") else -1)
 
-                if not self.origin_set:
-                    self.ekf = GPSOdomEKF(lat, lon)
-                    self.origin_set = True
-                    logging.info("EKF origin established")
+                # store origin until odom arrives
+                if self.pending_origin is None:
+                    self.pending_origin = (lat, lon)
 
-                self.ekf.update_gps(lat, lon)
-                x, y = self.ekf.xy
-                vx, vy = self.ekf.x[2, 0], self.ekf.x[3, 0]
-                txt = f"GPS fix → ({x:.2f} m, {y:.2f} m)  vel=({vx:.2f},{vy:.2f}) m/s"
+                if self.filter_enabled and self.ekf:
+                    self.ekf.update_gps(lat, lon)
+                    x, y = self.ekf.xy
+                    vx, vy = self.ekf.x[2, 0], self.ekf.x[3, 0]
+                    txt = f"GPS→({x:.2f} m, {y:.2f} m)  vel=({vx:.2f},{vy:.2f}) m/s"
 
-                lat_f, lon_f = self.ekf.latlon
-                self.io_provider.add_dynamic_variable("latitude", lat_f)
-                self.io_provider.add_dynamic_variable("longitude", lon_f)
-                logging.info(
-                    f"GPS: {lat_f:.5f} N, {lon_f:.5f} E  vel=({vx:.2f},{vy:.2f}) m/s"
-                )
+                    lat_f, lon_f = self.ekf.latlon
+                    self.io_provider.add_dynamic_variable("latitude", lat_f)
+                    self.io_provider.add_dynamic_variable("longitude", lon_f)
+                else:  # filter disabled → raw lat/lon only
+                    txt = f"GPS raw → {lat:.5f}°, {lon:.5f}°"
+                    self.io_provider.add_dynamic_variable("latitude", lat)
+                    self.io_provider.add_dynamic_variable("longitude", lon)
 
             elif raw.startswith("HDG (DEG):"):
                 parts = raw.split()
                 if len(parts) >= 4:
-                    cardinal_abbr = parts[3]
-                    direction = CARDINAL_MAP.get(cardinal_abbr, cardinal_abbr)
-                    txt = f"You are facing {direction}."
-                    self.io_provider.add_dynamic_variable("direction", direction)
+                    cardinal = CARDINAL_MAP.get(parts[3], parts[3])
+                    txt = f"You are facing {cardinal}."
+                    self.io_provider.add_dynamic_variable("direction", cardinal)
                 else:
                     txt = f"Unable to parse heading: {raw}"
 
             elif raw.startswith("YPR:"):
                 try:
                     yaw, pitch, roll = map(str.strip, raw[4:].split(","))
-                    txt = f"Orientation is Yaw: {yaw}°, Pitch: {pitch}°, Roll: {roll}°."
-                    self.io_provider.add_dynamic_variable("yaw", yaw)
-                    self.io_provider.add_dynamic_variable("pitch", pitch)
-                    self.io_provider.add_dynamic_variable("roll", roll)
+                    txt = f"Orientation YPR=({yaw}°, {pitch}°, {roll}°)"
+                    for k, v in zip(("yaw", "pitch", "roll"), (yaw, pitch, roll)):
+                        self.io_provider.add_dynamic_variable(k, v)
                 except Exception as e:
                     txt = f"Failed to parse YPR: {e}"
 
             else:
-                txt = raw  # pass through any other message
+                txt = raw
 
         except Exception as e:
             txt = f"Parse error: {e}"
