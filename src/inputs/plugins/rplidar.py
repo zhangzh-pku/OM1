@@ -53,6 +53,7 @@ class RPLidar(FuserInput[str]):
         # Initialize RPLidar Provider based on .json5 config file
         serial_port = getattr(self.config, "serial_port", None)
         use_zenoh = getattr(self.config, "use_zenoh", False)
+        URID = ""
         if use_zenoh:
             # probably a turtlebot
             URID = getattr(self.config, "URID")
@@ -156,7 +157,7 @@ class RPLidar(FuserInput[str]):
         latest_message = self.messages[-1]
 
         result = f"""
-INPUT: {self.descriptor_for_LLM} 
+INPUT: {self.descriptor_for_LLM}
 // START
 {latest_message.message}
 // END
