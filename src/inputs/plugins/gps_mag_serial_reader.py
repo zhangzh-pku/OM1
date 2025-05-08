@@ -14,14 +14,29 @@ from inputs.base.loop import FuserInput
 from providers.io_provider import IOProvider
 
 # Cyclone DDS channel imports
-from unitree.unitree_sdk2py.core.channel import ChannelSubscriber, ChannelFactoryInitialize
+from unitree.unitree_sdk2py.core.channel import (
+    ChannelSubscriber,
+    ChannelFactoryInitialize,
+)
 from unitree.unitree_sdk2py.idl.unitree_go.msg.dds_ import SportModeState_
 
 CARDINAL_MAP = {
-    "N": "North", "NNE": "North-Northeast", "NE": "Northeast", "ENE": "East-Northeast",
-    "E": "East", "ESE": "East-Southeast", "SE": "Southeast", "SSE": "South-Southeast",
-    "S": "South", "SSW": "South-Southwest", "SW": "Southwest", "WSW": "West-Southwest",
-    "W": "West", "WNW": "West-Northwest", "NW": "Northwest", "NNW": "North-Northwest",
+    "N": "North",
+    "NNE": "North-Northeast",
+    "NE": "Northeast",
+    "ENE": "East-Northeast",
+    "E": "East",
+    "ESE": "East-Southeast",
+    "SE": "Southeast",
+    "SSE": "South-Southeast",
+    "S": "South",
+    "SSW": "South-Southwest",
+    "SW": "Southwest",
+    "WSW": "West-Southwest",
+    "W": "West",
+    "WNW": "West-Northwest",
+    "NW": "Northwest",
+    "NNW": "North-Northwest",
 }
 
 
@@ -68,18 +83,22 @@ class GPSOdomEKF:
     # ── EKF core ───────────────────────────────────────────────────────────────────
     def predict(self, dt: float):
         # State‑transition & process noise
-        F = np.array([
-            [1, 0, dt, 0],
-            [0, 1, 0, dt],
-            [0, 0, 1, 0],
-            [0, 0, 0, 1],
-        ])
-        G = np.array([
-            [0.5 * dt ** 2, 0],
-            [0, 0.5 * dt ** 2],
-            [dt, 0],
-            [0, dt],
-        ])
+        F = np.array(
+            [
+                [1, 0, dt, 0],
+                [0, 1, 0, dt],
+                [0, 0, 1, 0],
+                [0, 0, 0, 1],
+            ]
+        )
+        G = np.array(
+            [
+                [0.5 * dt**2, 0],
+                [0, 0.5 * dt**2],
+                [dt, 0],
+                [0, dt],
+            ]
+        )
         Q = G @ (self.q_acc * np.eye(2)) @ G.T
 
         self.x = F @ self.x
@@ -158,7 +177,7 @@ class GPSMagSerialReader(FuserInput[str]):
         # timing
         now = time.time()
         self.t_last_predict = now
-        self.t_last_gps     = now
+        self.t_last_gps = now
 
         # misc
         self.io_provider = IOProvider()
@@ -221,7 +240,9 @@ class GPSMagSerialReader(FuserInput[str]):
                 lat_f, lon_f = self.ekf.latlon
                 self.io_provider.add_dynamic_variable("latitude", lat_f)
                 self.io_provider.add_dynamic_variable("longitude", lon_f)
-                logging.info(f"GPS: {lat_f:.5f} N, {lon_f:.5f} E  vel=({vx:.2f},{vy:.2f}) m/s")
+                logging.info(
+                    f"GPS: {lat_f:.5f} N, {lon_f:.5f} E  vel=({vx:.2f},{vy:.2f}) m/s"
+                )
 
             elif raw.startswith("HDG (DEG):"):
                 parts = raw.split()
