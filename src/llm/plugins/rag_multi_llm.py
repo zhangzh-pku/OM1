@@ -10,9 +10,9 @@ from llm import LLM, LLMConfig
 R = T.TypeVar("R", bound=BaseModel)
 
 
-class MultiLLM(LLM[R]):
+class RagMultiLLM(LLM[R]):
     """
-    MultiLLM implementation that sends requests to the robotic team endpoint.
+    RagMultiLLM implementation that sends requests to the robotic team endpoint.
 
     This plugin maintains the same output structure as other LLM plugins
     while routing requests through the agent-based robotic team.
@@ -46,6 +46,9 @@ class MultiLLM(LLM[R]):
             self._config.model = "gpt-4.1-nano"
 
         self.endpoint = "https://api.openmind.org/api/core/agent"
+        self.rag_endpoint = "https://api.openmind.org/api/core/rag/query"
+
+        self.use_rag = config.use_rag
 
     async def ask(
         self, prompt: str, messages: T.List[T.Dict[str, str]] = []
@@ -76,6 +79,58 @@ class MultiLLM(LLM[R]):
                 "Content-Type": "application/json",
             }
 
+            logging.info(f"self.use_rag: {self.use_rag}")
+            rag_context = ""
+            tools_summary = ""
+            if self.use_rag:
+                try:
+                    voice_obj = self.io_provider.inputs.get("Voice")
+                    recent_voice: str | None = (
+                        voice_obj.get("input")
+                        if isinstance(voice_obj, dict)
+                        else getattr(voice_obj, "input", None)
+                    )
+
+                    if not recent_voice:
+                        logging.info("No Voice input found – skipping RAG retrieval")
+                    else:
+                        rag_request = {"query": recent_voice, "skip_cache": False}
+
+                        logging.debug(f"Sending RAG request to {self.rag_endpoint}")
+                        rag_response = requests.post(
+                            self.rag_endpoint,
+                            json=rag_request,
+                            headers=headers,
+                        )
+
+                        logging.debug(
+                            f"RAG response status: {rag_response.status_code}"
+                        )
+                        if rag_response.status_code == 200:
+                            rag_data = rag_response.json()
+                            logging.debug(f"RAG response data: {rag_data}")
+                            if rag_data.get("success") and "data" in rag_data:
+                                rag_content = rag_data["data"].get("content", "")
+                                rag_tools = rag_data["data"].get("tools", [])
+
+                                if rag_tools:
+                                    logging.info(f"RAG tools data: {rag_tools}")
+                                    tools_lines = [
+                                        "\n\nThe following tools were used to gather this information:"
+                                    ]
+                                    tools_lines += [
+                                        f"- {tool.get('tool_name', 'Unknown tool')}"
+                                        for tool in rag_tools
+                                    ]
+                                    tools_summary = "\n".join(tools_lines)
+
+                                if rag_content:
+                                    rag_context = rag_content.strip()
+                                    logging.info(f"RAG context added: {rag_context}")
+
+                except Exception as e:
+                    logging.error(f"Error querying RAG endpoint: {str(e)}")
+
             request = {
                 "system_prompt": self.io_provider.fuser_system_prompt,
                 "inputs": self.io_provider.fuser_inputs,
@@ -84,6 +139,24 @@ class MultiLLM(LLM[R]):
                 "response_format": self._output_model.model_json_schema(),
                 "structured_outputs": True,
             }
+
+            if rag_context:
+                kb_block = (
+                    "\n\n--- KNOWLEDGE BASE CONTEXT ---\n" f"{rag_context}\n" "---\n"
+                )
+
+                if tools_summary:
+                    kb_block += f"{tools_summary}\n"
+
+                existing_inputs = request.get("inputs") or ""
+                request["inputs"] = f"{existing_inputs}{kb_block}".strip()
+
+            if rag_context:
+                request["system_prompt"] = (
+                    f"{request['system_prompt']}\n\n"
+                    "You are provided with a 'KNOWLEDGE BASE CONTEXT' section inside "
+                    "the user inputs. Consult it when crafting your answer."
+                )
 
             logging.debug(f"MultiLLM system_prompt: {request['system_prompt']}")
             logging.debug(f"MultiLLM inputs: {request['inputs']}")
