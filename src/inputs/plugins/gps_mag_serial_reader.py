@@ -129,10 +129,25 @@ class Message:
 
 
 class GPSMagSerialReader(FuserInput[str]):
-    """Polls serial GPS NMEA + Unitree odometry and fuses with EKF if available."""
+    """Polls serial GPS NMEA + Unitree odometry and fuses with EKF if available.
+
+    Origin latitude and longitude can now be supplied via `SensorConfig` as
+    `origin_lat` and `origin_lon` to avoid using the first GPS fix as origin.
+    """
 
     def __init__(self, config: SensorConfig = SensorConfig()):
         super().__init__(config)
+
+        # ── NEW: optional origin from config ───────────────────────────────────
+        self.origin_lat = getattr(config, "origin_lat", None)
+        self.origin_lon = getattr(config, "origin_lon", None)
+
+        # EKF is instantiated once odometry becomes available; until then we
+        # keep the origin in `pending_origin`.
+        self.pending_origin: Optional[tuple[float, float]] = None
+        if (self.origin_lat is not None) and (self.origin_lon is not None):
+            self.pending_origin = (self.origin_lat, self.origin_lon)
+            logging.info(f"Using origin from config: {self.pending_origin}")
 
         # DDS – subscribe to odometry
         self.odom_sub = ChannelSubscriber("rt/sportmodestate", SportModeState_)
@@ -147,10 +162,9 @@ class GPSMagSerialReader(FuserInput[str]):
             logging.error(f"GPS serial open error: {e}")
             self.ser = None
 
-        # EKF
+        # EKF machinery
         self.ekf: Optional[GPSOdomEKF] = None
-        self.filter_enabled = False  # <──── NEW
-        self.pending_origin: Optional[tuple] = None
+        self.filter_enabled = False  # becomes True once odometry arrives
 
         now = time.time()
         self.t_last_predict = now
@@ -202,7 +216,7 @@ class GPSMagSerialReader(FuserInput[str]):
                 lat = float(parts[0][:-1]) * (1 if parts[0].endswith("N") else -1)
                 lon = float(parts[1][:-1]) * (1 if parts[1].endswith("E") else -1)
 
-                # store origin until odom arrives
+                # store origin until odom arrives (if not provided)
                 if self.pending_origin is None:
                     self.pending_origin = (lat, lon)
 
