@@ -1,4 +1,5 @@
 import asyncio
+import logging
 import time
 from dataclasses import dataclass
 from queue import Empty, Queue
@@ -47,23 +48,31 @@ class RPLidar(FuserInput[str]):
         # Buffer for storing messages
         self.message_buffer: Queue[str] = Queue()
 
+        logging.info(f"Config: {self.config}")
+        
         # Initialize RPLidar Provider based on .json5 config file
-        serial_port = getattr(self.config, "serial_port", "/dev/cu.usbserial-0001")
+        serial_port = getattr(self.config, "serial_port", None)
+        use_zenoh = getattr(self.config, "use_zenoh", False)
+        if use_zenoh:
+            # probably a turtlebot
+            URID = getattr(self.config, "URID")
+            logging.info(f"RPLidar using Zenoh and URID: {URID}")
         half_width_robot = getattr(self.config, "half_width_robot", 0.20)
         angles_blanked = getattr(self.config, "angles_blanked", [])
         max_relevant_distance = getattr(self.config, "max_relevant_distance", 1.1)
         sensor_mounting_angle = getattr(self.config, "sensor_mounting_angle", 180.0)
 
         self.lidar: RPLidarProvider = RPLidarProvider(
-            False,  # this is the one and only place in the codebase where we init this driver
+            False,  # wait= this is the one and only place we init this driver
             serial_port,
             half_width_robot,
             angles_blanked,
             max_relevant_distance,
             sensor_mounting_angle,
+            URID,
+            use_zenoh
         )
 
-        # this is now done automatically
         self.lidar.start()
 
         self.descriptor_for_LLM = "Information about objects and walls around you. Use this information to plan your movements and avoid bumping into things"

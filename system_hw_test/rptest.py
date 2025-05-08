@@ -71,14 +71,34 @@ ax1.set_xlim(-5, 5)
 ax1.set_ylim(-5, 5)
 ax1.set_aspect("equal")
 
+"""
+Robot and sensor configuration
+"""
+half_width_robot = 0.20  # the width of the robot is 40 cm
+max_relevant_distance = 1.1  # meters
+sensor_mounting_angle = 180.0  # corrects for how sensor is mounted
+angles_blanked = [[-180.0, -160.0], [160.0, 180.0]]
+
 # Figure 2 - the zoom and the possible paths
 centerZoom = ax2.plot([0], [0], "o", color="blue")[0]  # the robot
-circleZoom = ax2.add_patch(
-    Circle((0, 0), 0.20, ls="--", lw=1, ec="red", fc="none")
-)  # the robot head
-outline = ax2.add_patch(
-    Rectangle((-0.2, -0.7), 0.40, 0.70, ls="--", lw=1, ec="red", fc="none")
-)  # the robot body
+
+if args.URID:
+    sensor_mounting_angle = 270.0
+    angles_blanked = [[-180.0, -160.0],[110.0, 180.0]]
+    circleZoom = ax2.add_patch(
+        Circle((0, 0), 0.20, ls="--", lw=1, ec="red", fc="none")
+    )  # the robot head
+    outline = ax2.add_patch(
+        Rectangle((-0.05, -0.15), 0.20, 0.06, ls="--", fc="black")
+    )  # the robot electronics
+    
+else:
+    circleZoom = ax2.add_patch(
+        Circle((0, 0), 0.20, ls="--", lw=1, ec="red", fc="none")
+    )  # the robot head
+    outline = ax2.add_patch(
+        Rectangle((-0.2, -0.7), 0.40, 0.70, ls="--", lw=1, ec="red", fc="none")
+    )  # the robot body
 pointsZoom = ax2.plot([], [], ".", color="black")[0]
 ax2.set_xlim(-1.2, 1.2)
 ax2.set_ylim(-1.2, 1.2)
@@ -100,34 +120,33 @@ ax3.annotate("Left", xytext=(-125, 1.1), xy=(0, 0.5))
 ax3.annotate("Front", xytext=(-20, 1.1), xy=(0, 0.5))
 ax3.annotate("Right", xytext=(85, 1.1), xy=(0, 0.5))
 
-"""
-Robot and sensor configuration
-"""
-half_width_robot = 0.20  # the width of the robot is 40 cm
-max_relevant_distance = 1.1  # meters
-sensor_mounting_angle = 180.0  # corrects for how sensor is mounted
-angles_blanked = [[-180.0, -160.0], [160.0, 180.0]]
 
-if args.URID:  # TurtleBot4 is always mounted -90.0
-    sensor_mounting_angle = -90.0  # corrects for how sensor is mounted
-    # angles_blanked = [[-180.0, -70.0], [70.0, 180.0]]
-    angles_blanked = [[-180.0, -160.0], [110.0, 180.0]]
 
 # display the blanked regions of the scan
 for b in angles_blanked:
-    start_angle = b[0] * np.pi / 180.0
-    end_angle = b[1] * np.pi / 180.0
-
+    
+    deg_to_rad = np.pi / 180.0
+    plot_flip_turn = 270.0 * deg_to_rad 
+    # the plot is flipped and turned relative to 
+    # everything else
+    
+    start_angle = (b[0] - sensor_mounting_angle) * deg_to_rad
+    end_angle   = (b[1] - sensor_mounting_angle) * deg_to_rad
+    
     theta = np.linspace(start_angle, end_angle, 50)
     r = max_relevant_distance
 
-    x = r * np.sin(theta - sensor_mounting_angle * np.pi / 180.0)
-    y = -r * np.cos(theta - sensor_mounting_angle * np.pi / 180.0)
+    x = r * np.sin(theta + plot_flip_turn)
+    y = r * np.cos(theta + plot_flip_turn)
 
+    # the arc
     ax2.plot(x, y, "--", color="grey", linewidth=1.5)
-    ax2.plot([0, x[0]], [0, y[0]], "--", color="grey", linewidth=1)
+    
+    # the straight lines
+    ax2.plot([0, x[ 0]], [0, y[ 0]], "--", color="grey", linewidth=1)
     ax2.plot([0, x[-1]], [0, y[-1]], "--", color="grey", linewidth=1)
 
+    # for panel 3 - this is in the correct units
     width = abs(b[1] - b[0])
     ax3.add_patch(Rectangle((b[0], 0.2), width, 1.0, fc="grey"))
 
