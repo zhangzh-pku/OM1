@@ -84,14 +84,14 @@ centerZoom = ax2.plot([0], [0], "o", color="blue")[0]  # the robot
 
 if args.URID:
     sensor_mounting_angle = 270.0
-    angles_blanked = [[-180.0, -160.0],[110.0, 180.0]]
+    angles_blanked = [[-180.0, -160.0], [110.0, 180.0]]
     circleZoom = ax2.add_patch(
         Circle((0, 0), 0.20, ls="--", lw=1, ec="red", fc="none")
     )  # the robot head
     outline = ax2.add_patch(
         Rectangle((-0.05, -0.15), 0.20, 0.06, ls="--", fc="black")
     )  # the robot electronics
-    
+
 else:
     circleZoom = ax2.add_patch(
         Circle((0, 0), 0.20, ls="--", lw=1, ec="red", fc="none")
@@ -121,18 +121,17 @@ ax3.annotate("Front", xytext=(-20, 1.1), xy=(0, 0.5))
 ax3.annotate("Right", xytext=(85, 1.1), xy=(0, 0.5))
 
 
-
 # display the blanked regions of the scan
 for b in angles_blanked:
-    
+
     deg_to_rad = np.pi / 180.0
-    plot_flip_turn = 270.0 * deg_to_rad 
-    # the plot is flipped and turned relative to 
+    plot_flip_turn = 270.0 * deg_to_rad
+    # the plot is flipped and turned relative to
     # everything else
-    
+
     start_angle = (b[0] - sensor_mounting_angle) * deg_to_rad
-    end_angle   = (b[1] - sensor_mounting_angle) * deg_to_rad
-    
+    end_angle = (b[1] - sensor_mounting_angle) * deg_to_rad
+
     theta = np.linspace(start_angle, end_angle, 50)
     r = max_relevant_distance
 
@@ -141,9 +140,9 @@ for b in angles_blanked:
 
     # the arc
     ax2.plot(x, y, "--", color="grey", linewidth=1.5)
-    
+
     # the straight lines
-    ax2.plot([0, x[ 0]], [0, y[ 0]], "--", color="grey", linewidth=1)
+    ax2.plot([0, x[0]], [0, y[0]], "--", color="grey", linewidth=1)
     ax2.plot([0, x[-1]], [0, y[-1]], "--", color="grey", linewidth=1)
 
     # for panel 3 - this is in the correct units

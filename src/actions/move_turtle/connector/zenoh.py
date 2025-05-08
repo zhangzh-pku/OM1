@@ -8,12 +8,8 @@ import zenoh
 
 from actions.base import ActionConfig, ActionConnector
 from actions.move_turtle.interface import MoveInput
-
-from zenoh_idl import geometry_msgs
-from zenoh_idl import nav_msgs
-from zenoh_idl import sensor_msgs
-
 from providers.rplidar_provider import RPLidarProvider
+from zenoh_idl import geometry_msgs, nav_msgs, sensor_msgs
 
 rad_to_deg = 57.2958
 
@@ -91,15 +87,12 @@ class MoveZenohConnector(ActionConnector[MoveInput]):
             self.session = zenoh.open(zenoh.Config())
             logging.info(f"Zenoh move client opened {self.session}")
             logging.info(f"TurtleBot4 move listeners starting with URID: {URID}")
-            self.session.declare_subscriber(
-                f"{URID}/c3/odom", listenerOdom
-            )
+            self.session.declare_subscriber(f"{URID}/c3/odom", listenerOdom)
             self.session.declare_subscriber(
                 f"{URID}/c3/hazard_detection", listenerHazard
             )
         except Exception as e:
             logging.error(f"Error opening Zenoh client: {e}")
-
 
         self.lidar_on = False
         self.lidar = None
@@ -117,7 +110,9 @@ class MoveZenohConnector(ActionConnector[MoveInput]):
         if gHazard is not None and gHazard.detections and len(gHazard.detections) > 0:
             for haz in gHazard.detections:
                 if haz.type == 1:
-                    logging.info(f"Hazard Type:{haz.type} direction:{haz.header.frame_id}")
+                    logging.info(
+                        f"Hazard Type:{haz.type} direction:{haz.header.frame_id}"
+                    )
                     if "right" in haz.header.frame_id:
                         self.hazard = "TURN_LEFT"
                     elif "left" in haz.header.frame_id:
@@ -192,7 +187,7 @@ class MoveZenohConnector(ActionConnector[MoveInput]):
             logging.info("Waiting for location data")
             return
 
-        # reconfirm possible paths 
+        # reconfirm possible paths
         # this is needed due to the 2s latency of the LLMs
         possible_paths = self.lidar.valid_paths
         logging.info(f"Action - Valid paths: {possible_paths}")
@@ -202,9 +197,9 @@ class MoveZenohConnector(ActionConnector[MoveInput]):
 
         for p in possible_paths:
             pi = p.item()
-            if pi == 4: 
+            if pi == 4:
                 advance_danger = False
-            elif pi == 9: 
+            elif pi == 9:
                 retreat_danger = False
 
         if output_interface.action == "turn left":
@@ -220,10 +215,12 @@ class MoveZenohConnector(ActionConnector[MoveInput]):
                 target_yaw -= 360.0
             self.pending_movements.put([0.0, target_yaw, "turn"])
         elif output_interface.action == "move forwards":
-            if advance_danger: return
+            if advance_danger:
+                return
             self.pending_movements.put([0.5, 0.0, "advance", self.x, self.y])
         elif output_interface.action == "move back":
-            if retreat_danger: return
+            if retreat_danger:
+                return
             self.pending_movements.put([0.5, 0.0, "retreat", self.x, self.y])
         elif output_interface.action == "stand still":
             logging.info(f"AI movement command: {output_interface.action}")
@@ -307,7 +304,7 @@ class MoveZenohConnector(ActionConnector[MoveInput]):
             # when there is a hazard, focus on clearing it
             return
 
-        # if we got to this point, we have good data and there is hard wall 
+        # if we got to this point, we have good data and there is hard wall
         # touch emergency
 
         target = list(self.pending_movements.queue)
@@ -345,11 +342,11 @@ class MoveZenohConnector(ActionConnector[MoveInput]):
                     logging.debug("gap is small enough, done, pop 1 off queue")
                     self.pending_movements.get()
             else:
-                
-                # reconfirm possible paths 
+
+                # reconfirm possible paths
                 pp = self.lidar.valid_paths.tolist()
                 logging.debug(f"Action - Valid paths: {pp}")
-                
+
                 s_x = target[0][3]
                 s_y = target[0][4]
                 distance_traveled = math.sqrt((self.x - s_x) ** 2 + (self.y - s_y) ** 2)
@@ -369,10 +366,12 @@ class MoveZenohConnector(ActionConnector[MoveInput]):
                 if remaining > self.distance_tolerance:
                     if distance_traveled < goal_dx:  # keep advancing
                         logging.debug(f"keep moving. remaining:{remaining} ")
-                        self.move(fb*0.4, 0.0)
+                        self.move(fb * 0.4, 0.0)
                     elif distance_traveled > goal_dx:  # you moved too far
-                        logging.debug(f"OVERSHOOT: move other way. remaining:{remaining} ")
-                        self.move(-1*fb*0.1, 0.0)
+                        logging.debug(
+                            f"OVERSHOOT: move other way. remaining:{remaining} "
+                        )
+                        self.move(-1 * fb * 0.1, 0.0)
                 else:
                     logging.debug("done, pop 1 off queue")
                     self.pending_movements.get()

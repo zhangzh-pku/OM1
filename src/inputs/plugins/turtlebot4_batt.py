@@ -3,6 +3,7 @@ import logging
 import time
 from dataclasses import dataclass
 from typing import List, Optional
+
 import zenoh
 
 from inputs.base import SensorConfig
@@ -10,12 +11,15 @@ from inputs.base.loop import FuserInput
 from providers.io_provider import IOProvider
 from zenoh_idl import sensor_msgs
 
+
 @dataclass
 class Message:
     timestamp: float
     message: str
 
+
 g_battery = None
+
 
 def listenerBattery(sample):
     battery = sensor_msgs.BatteryState.deserialize(sample.payload.to_bytes())
@@ -28,6 +32,7 @@ def listenerBattery(sample):
         g_battery = "IMPORTANT: your battery is running low. Consider finding your charging station and recharging."
     else:
         g_battery = None
+
 
 class TurtleBot4Batt(FuserInput[str]):
     """
@@ -97,7 +102,7 @@ class TurtleBot4Batt(FuserInput[str]):
             Timestamped message containing description
         """
         battery = raw_input
-        
+
         if battery:
             message = battery
             return Message(timestamp=time.time(), message=message)

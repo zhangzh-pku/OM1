@@ -6,20 +6,22 @@ from typing import Optional
 
 import bezier
 import numpy as np
+import zenoh
 from numpy.typing import NDArray
+
+from zenoh_idl import sensor_msgs
 
 from .rplidar_driver import RPDriver
 from .singleton import singleton
 
-import zenoh
-from zenoh_idl import sensor_msgs
-
 gScan = None
+
 
 def listenerScan(sample):
     global gScan
     gScan = sensor_msgs.LaserScan.deserialize(sample.payload.to_bytes())
     logging.debug(f"Zenoh Laserscan data: {gScan}")
+
 
 @singleton
 class RPLidarProvider:
@@ -53,7 +55,7 @@ class RPLidarProvider:
         max_relevant_distance: float = 1.1,
         sensor_mounting_angle: float = 180.0,
         URID: str = "",
-        use_zenoh: bool = False
+        use_zenoh: bool = False,
     ):
         """
         Robot and sensor configuration
@@ -150,15 +152,17 @@ class RPLidarProvider:
 
             except Exception as e:
                 logging.error(f"Error in RPLidar provider: {e}")
-        elif self.use_zenoh: 
+        elif self.use_zenoh:
             try:
                 self.zen = zenoh.open(zenoh.Config())
                 logging.info(f"Zenoh move client opened {self.zen}")
-                logging.info(f"TurtleBot4 move listeners starting with URID: {self.URID}")
+                logging.info(
+                    f"TurtleBot4 move listeners starting with URID: {self.URID}"
+                )
                 self.zen.declare_subscriber(f"{self.URID}/pi/scan", listenerScan)
             except Exception as e:
                 logging.error(f"Error opening Zenoh client: {e}")
-            
+
     def start(self):
         """
         Starts the RPLidar and processing thread
@@ -172,9 +176,9 @@ class RPLidarProvider:
         self._thread.start()
 
     def _preprocess_zenoh(self, scan):
-        
+
         if scan is None:
-            logging.info(f"waiting for Zenoh Laserscan data...")
+            logging.info("waiting for Zenoh Laserscan data...")
             self._raw_scan = []
             self._lidar_string = "You might be surrounded by objects and cannot safely move in any direction. DO NOT MOVE."
             self._valid_paths = []
@@ -212,7 +216,6 @@ class RPLidarProvider:
         array_ready = np.array(data)
         # print(f"Array {array_ready}")
         self._process(array_ready)
-
 
     def _process(self, data):
 
@@ -270,7 +273,7 @@ class RPLidarProvider:
 
         X = array[:, 0]
         Y = array[:, 1]
-        A = array[:, 2]
+        # A = array[:, 2]
         D = array[:, 3]
 
         """
@@ -312,7 +315,7 @@ class RPLidarProvider:
 
         if len(possible_paths) > 0:
             return_string = "The safe movement choices are: "
-            if self.use_zenoh: # i.e. you are controlling a TurtleBot4
+            if self.use_zenoh:  # i.e. you are controlling a TurtleBot4
                 return_string += "You can turn left. You can turn right. "
                 if len(advance) > 0:
                     return_string += "You can move forwards. "
@@ -348,7 +351,7 @@ class RPLidarProvider:
                 self._preprocess_zenoh(gScan)
                 time.sleep(0.1)
             else:
-                # we are using serial 
+                # we are using serial
                 try:
                     for i, scan in enumerate(
                         self.lidar.iter_scans(
@@ -382,7 +385,7 @@ class RPLidarProvider:
         Returns
         -------
         Optional[list]
-            The currently valid paths as a NumPy array, or None if not 
+            The currently valid paths as a NumPy array, or None if not
             available. The list contains 0 to 10 entries,
             corresponding to possible paths - for example: [0,3,4,5]
         """
@@ -396,7 +399,7 @@ class RPLidarProvider:
         Returns
         -------
         Optional[NDArray]
-            The latest raw scan result as a NumPy array, or None if not 
+            The latest raw scan result as a NumPy array, or None if not
             available.
         """
         return self._raw_scan

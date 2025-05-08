@@ -49,7 +49,7 @@ class RPLidar(FuserInput[str]):
         self.message_buffer: Queue[str] = Queue()
 
         logging.info(f"Config: {self.config}")
-        
+
         # Initialize RPLidar Provider based on .json5 config file
         serial_port = getattr(self.config, "serial_port", None)
         use_zenoh = getattr(self.config, "use_zenoh", False)
@@ -70,7 +70,7 @@ class RPLidar(FuserInput[str]):
             max_relevant_distance,
             sensor_mounting_angle,
             URID,
-            use_zenoh
+            use_zenoh,
         )
 
         self.lidar.start()
