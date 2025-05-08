@@ -75,7 +75,7 @@ class RPLidar(FuserInput[str]):
 
         self.lidar.start()
 
-        self.descriptor_for_LLM = "Here is information about objects and walls around you. Use this information to plan your movements and avoid bumping into things"
+        self.descriptor_for_LLM = "Here is information about objects and walls around you, to plan your movements and avoid bumping into things."
 
     async def _poll(self) -> Optional[str]:
         """
@@ -156,7 +156,7 @@ class RPLidar(FuserInput[str]):
         latest_message = self.messages[-1]
 
         result = f"""
-{self.descriptor_for_LLM} INPUT
+INPUT: {self.descriptor_for_LLM} 
 // START
 {latest_message.message}
 // END

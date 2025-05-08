@@ -20,8 +20,8 @@ class FaceInput:
 @dataclass
 class Face(Interface[FaceInput, FaceInput]):
     """
-    A facial expression to be performed by the agent.
-    Effect: Performs a given facial expression.
+    A facial expression to be performed by the agent.    
+    Effect: Shows a given facial expression.
     """
 
     input: FaceInput
