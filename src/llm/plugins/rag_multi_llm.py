@@ -79,15 +79,11 @@ class RagMultiLLM(LLM[R]):
                 "Content-Type": "application/json",
             }
 
-            logging.info(f"self.use_rag: {self.use_rag}")
-
             recent_voice = ""
             rag_context = ""
             tools_summary = ""
             if self.io_provider.inputs.get("Voice", None):
                 recent_voice = self.io_provider.inputs["Voice"].input
-
-            logging.info(f"recent_voice: {recent_voice}")
 
             if self.use_rag and recent_voice:
                 try:
