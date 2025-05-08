@@ -1,6 +1,6 @@
 # Integration Tests
 
-This directory contains integration tests for the entire system, from input (images, ETH transactionas, and etc.) to output (robot commands).
+This directory contains integration tests for the entire system, from input (images, ETH transactions, and etc.) to output (robot commands).
 
 ## Test Case Approach
 
