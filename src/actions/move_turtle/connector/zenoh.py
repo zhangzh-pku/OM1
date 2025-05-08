@@ -161,13 +161,13 @@ class MoveZenohConnector(ActionConnector[MoveInput]):
         """
         generate movement commands
         """
-        logging.info("move: {} - {}".format(vx, vyaw))
+        logging.debug("move: {} - {}".format(vx, vyaw))
 
         if self.session is None:
             logging.info("No open Zenoh session, returning")
             return
 
-        logging.info("Pub twist: {} - {}".format(vx, vyaw))
+        logging.debug("Pub twist: {} - {}".format(vx, vyaw))
         t = geometry_msgs.Twist(
             linear=geometry_msgs.Vector3(x=float(vx), y=0.0, z=0.0),
             angular=geometry_msgs.Vector3(x=0.0, y=0.0, z=float(vyaw)),
