@@ -316,19 +316,27 @@ async def evaluate_with_llm(
         "keywords": expected_output.get("keywords", []),
     }
 
-    system_prompt = """You are an AI evaluator specialized in analyzing robotic system test results. Your task is to assess how well the actual output matches the expected output based on specific criteria.
+    system_prompt = """You are an AI evaluator specialized in analyzing robotic \
+system test results. Your task is to assess how well the actual output matches \
+the expected output based on specific criteria.
 
     Evaluation criteria:
-    1. MOVEMENT ACCURACY: Does the robot's movement command match or fulfill the intended purpose of the expected movement?
-    2. KEYWORD DETECTION: Were the expected keywords correctly identified in the system's vision results?
-    3. OVERALL BEHAVIOR: Does the combined response (movement, speech, emotion) appropriately respond to the detected objects?
+    1. MOVEMENT ACCURACY: Does the robot's movement command match or fulfill \
+the intended purpose of the expected movement?
+    2. KEYWORD DETECTION: Were the expected keywords correctly identified in \
+the system's vision results?
+    3. OVERALL BEHAVIOR: Does the combined response (movement, speech, emotion) \
+appropriately respond to the detected objects?
 
     Rate on a scale of 1-5:
     • 1: Completely mismatched; wrong movement and few/no keywords detected
     • 2: Mostly incorrect; movement intent doesn't align, or most keywords missed
-    • 3: Partially correct; movement is acceptable but not ideal, or only some keywords detected
-    • 4: Mostly correct; movement closely matches expected intent, most keywords detected
-    • 5: Perfect match; movement is exactly as expected, all keywords properly detected
+    • 3: Partially correct; movement is acceptable but not ideal, or only some \
+keywords detected
+    • 4: Mostly correct; movement closely matches expected intent, most keywords \
+detected
+    • 5: Perfect match; movement is exactly as expected, all keywords properly \
+detected
 
     Your response must follow this format exactly:
     Rating: [number 1-5]
@@ -337,7 +345,8 @@ async def evaluate_with_llm(
     user_prompt = f"""
     TEST CASE: "Indoor scene object detection test"
 
-    CONTEXT: A robot with vision capabilities is analyzing an indoor scene and should respond appropriately to what it detects.
+    CONTEXT: A robot with vision capabilities is analyzing an indoor scene and \
+should respond appropriately to what it detects.
 
     EXPECTED OUTPUT:
     - Movement command: "{formatted_expected['movement']}"
@@ -347,7 +356,9 @@ async def evaluate_with_llm(
     - Movement command: "{formatted_actual['movement']}"
     - Keywords successfully detected: {formatted_actual['keywords_found']}
 
-    Compare these results carefully. Does the actual movement match the expected movement? Were the expected keywords detected? Does the response make sense for what was detected in the scene?
+    Compare these results carefully. Does the actual movement match the expected \
+movement? Were the expected keywords detected? Does the response make sense for \
+what was detected in the scene?
 
     Provide your evaluation in exactly this format:
     Rating: [1-5]
