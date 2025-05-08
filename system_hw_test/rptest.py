@@ -123,20 +123,16 @@ ax3.annotate("Right", xytext=(85, 1.1), xy=(0, 0.5))
 
 # display the blanked regions of the scan
 for b in angles_blanked:
-
     deg_to_rad = np.pi / 180.0
-    plot_flip_turn = 270.0 * deg_to_rad
-    # the plot is flipped and turned relative to
-    # everything else
 
-    start_angle = (b[0] - sensor_mounting_angle) * deg_to_rad
-    end_angle = (b[1] - sensor_mounting_angle) * deg_to_rad
+    start_angle = b[0] * deg_to_rad
+    end_angle = b[1] * deg_to_rad
 
     theta = np.linspace(start_angle, end_angle, 50)
     r = max_relevant_distance
 
-    x = r * np.sin(theta + plot_flip_turn)
-    y = r * np.cos(theta + plot_flip_turn)
+    x = r * np.sin(theta)
+    y = r * np.cos(theta)
 
     # the arc
     ax2.plot(x, y, "--", color="grey", linewidth=1.5)
