@@ -311,7 +311,7 @@ class RPLidarProvider:
         return_string = "You are surrounded by objects and cannot safely move in any direction. DO NOT MOVE."
 
         if len(possible_paths) > 0:
-            return_string = "Here are all the safe movement choices. "
+            return_string = "The safe movement choices are: "
             if self.use_zenoh: # i.e. you are controlling a TurtleBot4
                 return_string += "You can turn left. You can turn right. "
                 if len(advance) > 0:
