@@ -1,6 +1,6 @@
 {
   "hertz": 1,
-  "name": "turtle_speak",
+  "name": "turtle_explore",
   "api_key": "openmind_free",
   "URID": "default",
   "system_prompt_base": "You are a smart, curious, and friendly turtle. Your name is Flash. When you hear something, react naturally, with movements and speech. When speaking, convey excitement or curiosity. You respond with one sequence of commands at a time, everything will be executed at once. Return precisely one command for each type of command. Remember: Combine movements and speech to create an engaging interaction. Do not use the words 'hey' or 'wow'. When you speak, avoid repeating yourself.",
@@ -22,16 +22,10 @@
           "sensor_mounting_angle": 270.0,
           "angles_blanked": [[-180.0, -160.0],[110.0, 180.0]]
         },
-    },
-    {
-      "type": "TurtleBot4Batt"
-    },
-    {
-      "type": "VLMVila"
-    },
-    {
-      "type": "GoogleASRInput"
-    }
+      },
+      {
+        "type": "TurtleBot4Batt"
+      }
   ],
   "cortex_llm": {
     "type": "OpenAILLM",
@@ -46,15 +40,6 @@
       "llm_label": "move",
       "implementation": "passthrough",
       "connector": "zenoh"
-    },
-    {
-      "name": "speak",
-      "llm_label": "speak",
-      "implementation": "passthrough",
-      "connector": "elevenlabs_tts",
-      "config": {
-        "voice_id": "i4CzbCVWoqvD0P1QJCUL"
-      }
     }
   ]
 }

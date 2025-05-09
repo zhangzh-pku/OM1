@@ -66,11 +66,14 @@ def test_fuser_with_inputs_and_actions(mock_describe):
         result = fuser.fuse(inputs, [])
 
         system_prompt = (
-            "system prompt base"
+            "BASIC CONTEXT:\n"
+            + config.system_prompt_base
             + "\n"
-            + "system governance"
+            + "\nLAWS:\n"
+            + config.system_governance
             + "\n"
-            + "system prompt examples"
+            + "\nEXAMPLES:\n"
+            + config.system_prompt_examples
         )
         expected = f"{system_prompt}\n\ntest input\n\nAVAILABLE ACTIONS:\naction description\n\n\naction description\n\nWhat will you do? Command: "
         assert result == expected
