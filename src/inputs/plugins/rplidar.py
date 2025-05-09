@@ -1,44 +1,46 @@
 import asyncio
-import json
 import logging
 import time
 from dataclasses import dataclass
 from queue import Empty, Queue
-from typing import Dict, List, Optional
+from typing import List, Optional
 
 from inputs.base import SensorConfig
 from inputs.base.loop import FuserInput
 from providers.io_provider import IOProvider
-from providers.unitree_realsense_dev_vlm_provider import UnitreeRealSenseDevVLMProvider
+from providers.rplidar_provider import RPLidarProvider
 
 
 @dataclass
 class Message:
+    """
+    Container for timestamped messages.
+
+    Parameters
+    ----------
+    timestamp : float
+        Unix timestamp of the message
+    message : str
+        Content of the message
+    """
+
     timestamp: float
     message: str
 
 
-class UnitreeG1CameraVLMCloud(FuserInput[str]):
+class RPLidar(FuserInput[str]):
     """
-    Unitree G1 Camera VLM bridge.
+    RPLidar input handler.
 
-    Takes Unitree G1 Camera images, sends them to a cloud VLM provider,
-    converts the responses to text strings, and sends them to the fuser.
+    A class that processes RPLidar inputs and generates text descriptions.
+    It maintains an internal buffer of processed messages.
     """
 
     def __init__(self, config: SensorConfig = SensorConfig()):
-        """
-        Initialize VLM input handler.
-
-        Sets up the required providers and buffers for handling VLM processing.
-        Initializes connection to the VLM service and registers message handlers.
-        """
         super().__init__(config)
 
         # Track IO
         self.io_provider = IOProvider()
-
-        self.descriptor_for_LLM = "Your Eyes"
 
         # Buffer for storing the final output
         self.messages: List[Message] = []
@@ -46,38 +48,39 @@ class UnitreeG1CameraVLMCloud(FuserInput[str]):
         # Buffer for storing messages
         self.message_buffer: Queue[str] = Queue()
 
-        # Initialize VLM provider
-        base_url = getattr(self.config, "base_url", "wss://api-vila.openmind.org")
-        self.vlm: UnitreeRealSenseDevVLMProvider = UnitreeRealSenseDevVLMProvider(
-            ws_url=base_url
+        logging.info(f"Config: {self.config}")
+
+        # Initialize RPLidar Provider based on .json5 config file
+        serial_port = getattr(self.config, "serial_port", None)
+        use_zenoh = getattr(self.config, "use_zenoh", False)
+        URID = ""
+        if use_zenoh:
+            # probably a turtlebot
+            URID = getattr(self.config, "URID")
+            logging.info(f"RPLidar using Zenoh and URID: {URID}")
+        half_width_robot = getattr(self.config, "half_width_robot", 0.20)
+        angles_blanked = getattr(self.config, "angles_blanked", [])
+        max_relevant_distance = getattr(self.config, "max_relevant_distance", 1.1)
+        sensor_mounting_angle = getattr(self.config, "sensor_mounting_angle", 180.0)
+
+        self.lidar: RPLidarProvider = RPLidarProvider(
+            False,  # wait= this is the one and only place we init this driver
+            serial_port,
+            half_width_robot,
+            angles_blanked,
+            max_relevant_distance,
+            sensor_mounting_angle,
+            URID,
+            use_zenoh,
         )
-        self.vlm.start()
-        self.vlm.register_message_callback(self._handle_vlm_message)
 
-    def _handle_vlm_message(self, raw_message: str):
-        """
-        Process incoming VLM messages.
+        self.lidar.start()
 
-        Parses JSON messages from the VLM service and adds valid responses
-        to the message buffer for further processing.
-
-        Parameters
-        ----------
-        raw_message : str
-            Raw JSON message received from the VLM service
-        """
-        try:
-            json_message: Dict = json.loads(raw_message)
-            if "vlm_reply" in json_message:
-                vlm_reply = json_message["vlm_reply"]
-                self.message_buffer.put(vlm_reply)
-                logging.info("Detected VLM message: %s", vlm_reply)
-        except json.JSONDecodeError:
-            pass
+        self.descriptor_for_LLM = "Here is information about objects and walls around you, to plan your movements and avoid bumping into things."
 
     async def _poll(self) -> Optional[str]:
         """
-        Poll for new messages from the VLM service.
+        Poll for new messages from the RPLidar Provider.
 
         Checks the message buffer for new messages with a brief delay
         to prevent excessive CPU usage.
@@ -87,10 +90,10 @@ class UnitreeG1CameraVLMCloud(FuserInput[str]):
         Optional[str]
             The next message from the buffer if available, None otherwise
         """
-        await asyncio.sleep(0.5)
+        await asyncio.sleep(0.2)
+        # logging.info("LIDAR message poll")
         try:
-            message = self.message_buffer.get_nowait()
-            return message
+            return self.lidar.lidar_string
         except Empty:
             return None
 
@@ -154,7 +157,7 @@ class UnitreeG1CameraVLMCloud(FuserInput[str]):
         latest_message = self.messages[-1]
 
         result = f"""
-INPUT: {self.descriptor_for_LLM} 
+INPUT: {self.descriptor_for_LLM}
 // START
 {latest_message.message}
 // END

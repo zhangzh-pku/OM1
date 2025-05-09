@@ -5,7 +5,7 @@ description: "TurtleBot4 Basic Setup"
 
 ## Suggested Operating System Versions
 
-OM1 only supports TurtleBot4 with Humble and Create3 with H.2.6.
+OM1 supports TurtleBot4 with Humble and Create3 with H.2.6.
 
 Turtlebot4 Onboard:
 
@@ -18,7 +18,7 @@ NOTE: choose turtlebot4 lite image file if your turtlebot4 is lite version.
 
 ## Prepare the Turtlebot4
 
-1. Flash the turtlebot4 image to an SD card if needed.
+1. Flash the TurtleBot4 image to an SD card if needed.
 2. Upgrade/downgrade the Create3 firmware to H.2.6 if needed.
 3. Insert the SD card into the Turtlebot4 and power it on.
 4. Set up your TurtleBot4 following the [Basic Setup](https://turtlebot.github.io/turtlebot4-user-manual/setup/basic.html#robot). 
@@ -43,15 +43,13 @@ URID=OM742d35Cc6634 # yours will be different!
 
 ## Configure the Turtlebot4
 
-Once the Turtlebot4 is set up, you can configure it as follows:
+Once the TurtleBot4 is set up, you can configure it as follows:
 
-- configure on turtlebot4 onboard RPi4 through `turtlebot4-setup`
-- configure on turtlebot4 onboard Create3 through web server
-- install docker and configure the docker-compose.yaml file 
+- Configure the RPi4 through `turtlebot4-setup`
+- Configure the Create3 through web server
+- Install docker and configure the docker-compose.yaml file 
 
-### Configure the Turtlebot4 onboard RPi4
-
-As you have just experienced first-hand, there are numerous issues connecting to a TurtleBot4 in a university/enterprise network. To solve many of those, we follow the dual Zenoh bridge approach developed by [theconstruct.ai](https://www.theconstruct.ai/), which is to give the Raspberry Pi and the Create3 their own ROS2 DOMAIN_IDs, and then use Zenoh bridges to filter message traffic between the RPi and the Create3. This allows you to filter messages on a per topic level (see the `config_create3.json5` file for an example of how this is done).
+### Configure the TurtleBot4's onboard RPi4
 
 Make the following `ROS_DOMAIN_ID` changes to the TurtleBot4. Use the `turtlebot4-setup` tool to access `ROS Setup:Bash Setup` and set it to the following:
 
@@ -65,7 +63,7 @@ CYCLONEDDS_URI=[] # Empty
 
 Click "Save", "Esc", and then "Apply Settings". The TurtleBot4 will reboot. 
 
-### Configure the Turtlebot4 onboard Create3
+### Configure the TurtleBot4's onboard Create3
 
 Once the reboot is complete (wait for chime, 1 min), access the Create3's App config page at its web server (e.g. `192.168.1.XXX:8080/ros-config`). Change the ROS_DOMAIN_ID to 1. The correct settings are:
 
@@ -102,14 +100,13 @@ The TurtleBot4 will now be more stable, can discover other computers running **Z
 
 You can install and run OM1 
 
-- offboard (your laptop) or
-- onboard (Raspberry Pi, on Turtlebot4)
+- on your laptop, or
+- onboard the Raspberry Pi on the TurtleBot4
 
 **NOTE**: Before running OM1, double check the [following configurations](#identity-and-keys):
 
 - API Key
 - URID
-
 
 ### Run OM1 onboard (Raspberry Pi) on Turtlebot4  
 
@@ -302,3 +299,25 @@ sudo apt install v4l-utils
 v4l2-ctl --list-devices
 v4l2-ctl -d /dev/video0 --stream-mmap --all
 ```
+
+## Establishing basic networking and connectivity. 
+
+For many development tasks, you will need to ssh to the RPi on the TB4. 
+
+```bash
+ssh ubuntu@192.168.1.116
+```
+
+The password is `turtlebot4`.
+
+Once on the command line, you can use `turtlebot4-setup` to configure ROS2, the wifi, etc. 
+
+## RPLidar
+
+```bash
+ls /dev/tty.*  
+ls /dev/cu.*  
+uv run rptest.py /dev/cu.usbserial-0001 # for example
+```
+
+

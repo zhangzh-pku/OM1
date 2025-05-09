@@ -176,7 +176,7 @@ class VLMVila(FuserInput[str]):
         latest_message = self.messages[-1]
 
         result = f"""
-{self.descriptor_for_LLM} INPUT
+INPUT: {self.descriptor_for_LLM} 
 // START
 {latest_message.message}
 // END
