@@ -141,7 +141,7 @@ class TurtleBot4Batt(FuserInput[str]):
 
         logging.info(f"TB4 batt:{self.battery_status}")
 
-        return self.battery_status
+        return [self.battery_status]
 
     async def _raw_to_text(self, raw_input: str) -> Optional[Message]:
         """
@@ -157,11 +157,10 @@ class TurtleBot4Batt(FuserInput[str]):
         Message
             Timestamped message containing description
         """
-        battery = raw_input
+        if raw_input and raw_input[0]:
+            return Message(timestamp=time.time(), message=raw_input[0])
 
-        if battery:
-            message = battery
-            return Message(timestamp=time.time(), message=message)
+        return None
 
     async def raw_to_text(self, raw_input: List[float]):
         """
