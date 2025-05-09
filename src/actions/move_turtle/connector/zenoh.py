@@ -195,12 +195,10 @@ class MoveZenohConnector(ActionConnector[MoveInput]):
         advance_danger = True
         retreat_danger = True
 
-        for p in possible_paths:
-            pi = p.item()
-            if pi == 4:
-                advance_danger = False
-            elif pi == 9:
-                retreat_danger = False
+        if 4 in possible_paths:
+            advance_danger = False
+        if 9 in possible_paths:
+            retreat_danger = False
 
         if output_interface.action == "turn left":
             # turn 90 Deg to the left (CCW)
@@ -344,7 +342,7 @@ class MoveZenohConnector(ActionConnector[MoveInput]):
             else:
 
                 # reconfirm possible paths
-                pp = self.lidar.valid_paths.tolist()
+                pp = self.lidar.valid_paths
                 logging.debug(f"Action - Valid paths: {pp}")
 
                 s_x = target[0][3]

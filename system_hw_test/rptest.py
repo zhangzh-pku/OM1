@@ -282,12 +282,15 @@ def process(data):
 
     # print(f"possible: {possible_paths}")
 
+    # convert to simple list
+    ppl = possible_paths.tolist()
+
     turn_left = []
     advance = []
     turn_right = []
     retreat = []
 
-    for p in possible_paths:
+    for p in ppl:
         # all the possible paths
         if p < 4:
             turn_left.append(p)
@@ -300,8 +303,8 @@ def process(data):
         lines[p].set_data(paths[p][0], paths[p][1])
         lines[p].set_color("green")
 
-    if len(possible_paths) > 0:
-        print(f"There are {len(possible_paths)} possible paths.")
+    if len(ppl) > 0:
+        print(f"There are {len(ppl)} possible paths.")
         if len(turn_left) > 0:
             print(f"You can turn left using paths: {turn_left}.")
         if len(advance) > 0:
@@ -316,7 +319,7 @@ def process(data):
         )
 
     for p in bad_paths:
-        # the are all the bad paths
+        # these are all the bad paths
         lines[p].set_data(paths[p][0], paths[p][1])
         lines[p].set_color("red")
 
