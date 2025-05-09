@@ -43,7 +43,7 @@ class OpenAILLM(LLM[R]):
         if not config.api_key:
             raise ValueError("config file missing api_key")
         if not config.model:
-            self._config.model = "gpt-4.1-nano"
+            self._config.model = "gpt-4o-mini"
 
         self._client = openai.AsyncClient(
             base_url=config.base_url or "https://api.openmind.org/api/core/openai",
