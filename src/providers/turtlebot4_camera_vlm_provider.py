@@ -59,7 +59,11 @@ class TurtleBot4CameraVideoStream(VideoStream):
             Enable debug mode for writing images to local files. Default is False.
         """
         super().__init__(
-            frame_callback=frame_callback, frame_callbacks=frame_callbacks, fps=fps
+            frame_callback=frame_callback,
+            frame_callbacks=frame_callbacks,
+            fps=fps,
+            resolution=resolution,
+            jpeg_quality=jpeg_quality,
         )
 
         self.session = zenoh.open(zenoh.Config())
@@ -69,15 +73,8 @@ class TurtleBot4CameraVideoStream(VideoStream):
         )
         self.camera = self.session.declare_subscriber(topic, self.camera_listener)
 
-        # Set the camera resolution
         self.lock = threading.Lock()
         self.image = None
-        self.resolution = resolution
-        self.encode_quality = [
-            cv2.IMWRITE_JPEG_QUALITY,
-            jpeg_quality,
-        ]
-
         self.debug = debug
 
     def camera_listener(self, sample: zenoh.Sample):

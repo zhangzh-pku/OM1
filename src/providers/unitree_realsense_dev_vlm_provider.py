@@ -4,7 +4,7 @@ import logging
 import os
 import threading
 import time
-from typing import Callable, Optional
+from typing import Callable, List, Optional, Tuple
 
 import cv2
 from om1_utils import ws
@@ -15,10 +15,6 @@ from .singleton import singleton
 root_package_name = __name__.split(".")[0] if "." in __name__ else __name__
 logger = logging.getLogger(root_package_name)
 
-# Resize target for video stream
-TARGET_WIDTH = 640
-TARGET_HEIGHT = 480
-
 
 class UnitreeRealSenseDevVideoStream(VideoStream):
     """
@@ -26,14 +22,23 @@ class UnitreeRealSenseDevVideoStream(VideoStream):
 
     Captures frames from a camera, encodes them to base64, and sends them
     through the callback. Supports both macOS and Linux devices.
-
-    Parameters
-    ----------
-    frame_callback : Optional[Callable[[str], None]]
-        Callback function to handle processed frame data.
-    fps : Optional[int]
-        Frames per second to capture (default: 30).
     """
+
+    def __init__(
+        self,
+        frame_callback: Optional[Callable[[str], None]] = None,
+        frame_callbacks: Optional[List[Callable[[str], None]]] = None,
+        fps: Optional[int] = 30,
+        resolution: Optional[Tuple[int, int]] = (640, 480),
+        jpeg_quality: int = 70,
+    ):
+        super().__init__(
+            frame_callback=frame_callback,
+            frame_callbacks=frame_callbacks,
+            fps=fps,
+            resolution=resolution,
+            jpeg_quality=jpeg_quality,
+        )
 
     def on_video(self):
         """
@@ -112,9 +117,7 @@ class UnitreeRealSenseDevVideoStream(VideoStream):
 
                 # Convert frame to base64, and catch any encoding errors.
                 try:
-                    _, buffer = cv2.imencode(
-                        ".jpg", frame, [cv2.IMWRITE_JPEG_QUALITY, 80]
-                    )
+                    _, buffer = cv2.imencode(".jpg", frame, self.encode_quality)
                     frame_data = base64.b64encode(buffer).decode("utf-8")
                 except Exception as e:
                     logger.exception("Error encoding frame: %s", e)
@@ -152,12 +155,20 @@ class UnitreeRealSenseDevVideoStream(VideoStream):
             return None
         try:
             cap.set(cv2.CAP_PROP_FPS, self.fps)
-            cap.set(cv2.CAP_PROP_FRAME_WIDTH, TARGET_WIDTH)
-            cap.set(cv2.CAP_PROP_FRAME_HEIGHT, TARGET_HEIGHT)
+            cap.set(cv2.CAP_PROP_FRAME_WIDTH, self.resolution[0])
+            cap.set(cv2.CAP_PROP_FRAME_HEIGHT, self.resolution[1])
         except Exception as e:
             logger.exception(
                 "Error setting camera properties for device %s: %s", cam, e
             )
+        try:
+            cap.set(cv2.CAP_PROP_BUFFERSIZE, 1)
+        except Exception:
+            pass
+        try:
+            cap.set(cv2.CAP_PROP_FOURCC, cv2.VideoWriter_fourcc(*"MJPG"))
+        except Exception:
+            pass
         return cap
 
     def _find_rgb_device(self, skip_devices=None):
@@ -219,7 +230,14 @@ class UnitreeRealSenseDevVLMProvider:
     continuous vlm processing.
     """
 
-    def __init__(self, ws_url: str, fps: int = 5, stream_url: Optional[str] = None):
+    def __init__(
+        self,
+        ws_url: str,
+        fps: int = 15,
+        resolution: Optional[Tuple[int, int]] = (640, 480),
+        jpeg_quality: int = 70,
+        stream_url: Optional[str] = None,
+    ):
         """
         Initialize the VLM Provider.
 
@@ -228,7 +246,11 @@ class UnitreeRealSenseDevVLMProvider:
         ws_url : str
             The websocket URL for the VLM service connection.
         fps : int, optional
-            The fps for the VLM service connection. Default is 5.
+            The fps for the VLM service connection. Default is 15.
+        resolution : tuple of int, optional
+            The resolution for the video stream. Default is (640, 480).
+        jpeg_quality : int, optional
+            The JPEG quality for the video stream. Default is 70.
         stream_url : str, optional
             The URL for the video stream. If not provided, defaults to None.
         """
@@ -238,7 +260,10 @@ class UnitreeRealSenseDevVLMProvider:
             ws.Client(url=stream_url) if stream_url else None
         )
         self.video_stream: VideoStream = UnitreeRealSenseDevVideoStream(
-            self.ws_client.send_message, fps=fps
+            self.ws_client.send_message,
+            fps=fps,
+            resolution=resolution,
+            jpeg_quality=jpeg_quality,
         )
         self._thread: Optional[threading.Thread] = None
 
