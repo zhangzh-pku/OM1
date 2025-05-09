@@ -155,7 +155,7 @@ class UnitreeGo2Lowstate(FuserInput[str]):
         """
 
         battery_percentage = raw_input[0]
-        height = raw_input[2]
+        height = raw_input[3]
         logging.info(f"Battery percentage: {battery_percentage} height: {height}")
 
         if battery_percentage < 15:
@@ -208,7 +208,7 @@ class UnitreeGo2Lowstate(FuserInput[str]):
         latest_message = self.messages[-1]
 
         result = f"""
-INPUT: {self.descriptor_for_LLM} 
+INPUT: {self.descriptor_for_LLM}
 // START
 {latest_message.message}
 // END
