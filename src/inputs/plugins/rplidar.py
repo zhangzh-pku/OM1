@@ -5,12 +5,10 @@ from dataclasses import dataclass
 from queue import Empty, Queue
 from typing import List, Optional
 
-from openai import ChatCompletion
-
 from inputs.base import SensorConfig
 from inputs.base.loop import FuserInput
 from providers.io_provider import IOProvider
-from providers.vlm_gemini_provider import VLMGeminiProvider
+from providers.rplidar_provider import RPLidarProvider
 
 
 @dataclass
@@ -30,25 +28,15 @@ class Message:
     message: str
 
 
-class VLMGemini(FuserInput[str]):
+class RPLidar(FuserInput[str]):
     """
-    Vision Language Model input handler.
+    RPLidar input handler.
 
-    A class that processes image inputs and generates text descriptions using
-    a vision language model. It maintains an internal buffer of processed messages
-    and interfaces with a VLM provider for image analysis.
-
-    The class handles asynchronous processing of images, maintains message history,
-    and provides formatted output of the latest processed messages.
+    A class that processes RPLidar inputs and generates text descriptions.
+    It maintains an internal buffer of processed messages.
     """
 
     def __init__(self, config: SensorConfig = SensorConfig()):
-        """
-        Initialize VLM input handler.
-
-        Sets up the required providers and buffers for handling VLM processing.
-        Initializes connection to the VLM service and registers message handlers.
-        """
         super().__init__(config)
 
         # Track IO
@@ -60,43 +48,39 @@ class VLMGemini(FuserInput[str]):
         # Buffer for storing messages
         self.message_buffer: Queue[str] = Queue()
 
-        # Initialize VLM provider
-        base_url = getattr(
-            self.config, "base_url", "https://api.openmind.org/api/core/gemini"
+        logging.info(f"Config: {self.config}")
+
+        # Initialize RPLidar Provider based on .json5 config file
+        serial_port = getattr(self.config, "serial_port", None)
+        use_zenoh = getattr(self.config, "use_zenoh", False)
+        URID = ""
+        if use_zenoh:
+            # probably a turtlebot
+            URID = getattr(self.config, "URID")
+            logging.info(f"RPLidar using Zenoh and URID: {URID}")
+        half_width_robot = getattr(self.config, "half_width_robot", 0.20)
+        angles_blanked = getattr(self.config, "angles_blanked", [])
+        max_relevant_distance = getattr(self.config, "max_relevant_distance", 1.1)
+        sensor_mounting_angle = getattr(self.config, "sensor_mounting_angle", 180.0)
+
+        self.lidar: RPLidarProvider = RPLidarProvider(
+            False,  # wait= this is the one and only place we init this driver
+            serial_port,
+            half_width_robot,
+            angles_blanked,
+            max_relevant_distance,
+            sensor_mounting_angle,
+            URID,
+            use_zenoh,
         )
-        api_key = getattr(self.config, "api_key", None)
 
-        if api_key is None or api_key == "":
-            raise ValueError("config file missing api_key")
+        self.lidar.start()
 
-        self.vlm: VLMGeminiProvider = VLMGeminiProvider(
-            base_url=base_url, api_key=api_key
-        )
-        self.vlm.start()
-        self.vlm.register_message_callback(self._handle_vlm_message)
-
-        self.descriptor_for_LLM = "Vision"
-
-    def _handle_vlm_message(self, raw_message: ChatCompletion):
-        """
-        Process incoming VLM messages.
-
-        Parses JSON messages from the VLM service and adds valid responses
-        to the message buffer for further processing.
-
-        Parameters
-        ----------
-        raw_message : str
-            Raw JSON message received from the VLM service
-        """
-        logging.info(
-            f"VLM Gemini received message: {raw_message.choices[0].message.content}"
-        )
-        self.message_buffer.put(raw_message.choices[0].message.content)
+        self.descriptor_for_LLM = "Here is information about objects and walls around you, to plan your movements and avoid bumping into things."
 
     async def _poll(self) -> Optional[str]:
         """
-        Poll for new messages from the VLM service.
+        Poll for new messages from the RPLidar Provider.
 
         Checks the message buffer for new messages with a brief delay
         to prevent excessive CPU usage.
@@ -106,10 +90,10 @@ class VLMGemini(FuserInput[str]):
         Optional[str]
             The next message from the buffer if available, None otherwise
         """
-        await asyncio.sleep(0.5)
+        await asyncio.sleep(0.2)
+        # logging.info("LIDAR message poll")
         try:
-            message = self.message_buffer.get_nowait()
-            return message
+            return self.lidar.lidar_string
         except Empty:
             return None
 
@@ -173,14 +157,14 @@ class VLMGemini(FuserInput[str]):
         latest_message = self.messages[-1]
 
         result = f"""
-INPUT: {self.descriptor_for_LLM} 
+INPUT: {self.descriptor_for_LLM}
 // START
 {latest_message.message}
 // END
 """
 
         self.io_provider.add_input(
-            self.__class__.__name__, latest_message.message, latest_message.timestamp
+            self.descriptor_for_LLM, latest_message.message, latest_message.timestamp
         )
         self.messages = []
 

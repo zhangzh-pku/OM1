@@ -237,7 +237,7 @@ class VLM_COCO_Local(FuserInput[Image.Image]):
         logging.info(f"VLM_COCO_Local: {latest_message.message}")
 
         result = f"""
-{self.descriptor_for_LLM} INPUT
+INPUT: {self.descriptor_for_LLM} 
 // START
 {latest_message.message}
 // END
