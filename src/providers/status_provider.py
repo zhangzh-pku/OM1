@@ -140,7 +140,7 @@ class StatusProvider:
 
         Parameters
         ----------
-        status : dict
+        status : TeleopsStatus
             The status of the machine to be shared.
         """
         if self.api_key is None or self.api_key == "":
