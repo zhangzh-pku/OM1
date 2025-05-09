@@ -145,7 +145,7 @@ class CortexRuntime:
                 logging.debug(f"appended: {action_type}")
 
         # Trigger actions
-        if ("INPUT Voice" in prompt) or ("WalletCoinbase" in prompt):
+        if ("INPUT: Voice" in prompt) or ("WalletCoinbase" in prompt):
             # always respond to voice input
             await self.action_orchestrator.promise(output.commands)
         elif "spot" in self.config.name:

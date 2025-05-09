@@ -81,7 +81,7 @@ class RPLidarProvider:
         self.scans = None
 
         self._raw_scan: Optional[NDArray] = None
-        self._valid_paths: Optional[NDArray] = None
+        self._valid_paths: Optional[list] = None
         self._lidar_string: str = None
 
         """
@@ -331,7 +331,7 @@ class RPLidarProvider:
 
         self._raw_scan = array
         self._lidar_string = return_string
-        self._valid_paths = possible_paths
+        self._valid_paths = possible_paths.tolist()
 
         logging.debug(
             f"RPLidar Provider string: {self._lidar_string}\nValid paths: {self._valid_paths}"
@@ -378,14 +378,14 @@ class RPLidarProvider:
             self._thread.join(timeout=5)
 
     @property
-    def valid_paths(self) -> Optional[NDArray]:
+    def valid_paths(self) -> Optional[list]:
         """
         Get the currently valid paths.
 
         Returns
         -------
         Optional[list]
-            The currently valid paths as a NumPy array, or None if not
+            The currently valid paths as a list, or None if not
             available. The list contains 0 to 10 entries,
             corresponding to possible paths - for example: [0,3,4,5]
         """

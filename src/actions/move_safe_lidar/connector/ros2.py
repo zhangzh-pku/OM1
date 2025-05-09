@@ -135,15 +135,14 @@ class MoveRos2Connector(ActionConnector[MoveInput]):
         retreat = []
 
         for p in possible_paths:
-            pi = p.item()
-            if pi < 4:
-                turn_left.append(pi)
-            elif pi == 4:
-                advance.append(pi)
-            elif pi < 9:
-                turn_right.append(pi)
-            elif pi == 9:
-                retreat.append(pi)
+            if p < 4:
+                turn_left.append(p)
+            elif p == 4:
+                advance.append(p)
+            elif p < 9:
+                turn_right.append(p)
+            elif p == 9:
+                retreat.append(p)
 
         if output_interface.action == "turn left":
             logging.info("Unitree AI command: turn left")
