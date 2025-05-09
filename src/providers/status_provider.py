@@ -171,7 +171,7 @@ class StatusProvider:
 
         Parameters
         ----------
-        status : dict
+        status : TeleopsStatus
             The status of the machine to be shared.
         """
         self.executor.submit(self._share_status_worker, status)
