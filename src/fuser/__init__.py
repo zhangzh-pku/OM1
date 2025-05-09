@@ -67,9 +67,14 @@ class Fuser:
 
         # Combine all inputs, memories, and configurations into a single prompt
         system_prompt = (
-            "BASIC CONTEXT:\n" + self.config.system_prompt_base + "\n" +
-            "\nLAWS:\n"+ self.config.system_governance + "\n" + 
-            "\nEXAMPLES:\n" + self.config.system_prompt_examples
+            "BASIC CONTEXT:\n"
+            + self.config.system_prompt_base
+            + "\n"
+            + "\nLAWS:\n"
+            + self.config.system_governance
+            + "\n"
+            + "\nEXAMPLES:\n"
+            + self.config.system_prompt_examples
         )
 
         inputs_fused = " ".join([s for s in input_strings if s is not None])
@@ -79,8 +84,11 @@ class Fuser:
         # since they are flowing from the outside world
         if "Universal Laws" in inputs_fused:
             system_prompt = (
-                "BASIC CONTEXT:\n" + self.config.system_prompt_base + "\n" +
-                "\nEXAMPLES:\n" + self.config.system_prompt_examples
+                "BASIC CONTEXT:\n"
+                + self.config.system_prompt_base
+                + "\n"
+                + "\nEXAMPLES:\n"
+                + self.config.system_prompt_examples
             )
 
         # descriptions of various possible actions
