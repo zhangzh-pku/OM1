@@ -25,10 +25,26 @@ class MoveToPeerRos2Connector(ActionConnector[MoveToPeerInput]):
             return
 
         # else NAVIGATE
-        lat0 = float(self.io.get_dynamic_variable("latitude") or 0)
-        lon0 = float(self.io.get_dynamic_variable("longitude") or 0)
-        lat1 = float(self.io.get_dynamic_variable("closest_peer_lat") or 0)
-        lon1 = float(self.io.get_dynamic_variable("closest_peer_lon") or 0)
+        lat0 = self.io.get_dynamic_variable("latitude")
+        lon0 = self.io.get_dynamic_variable("longitude")
+        lat1 = self.io.get_dynamic_variable("closest_peer_lat")
+        lon1 = self.io.get_dynamic_variable("closest_peer_lon")
+
+        # Ensure lat0 and lon0 are available
+        if lat0 is None or lon0 is None:
+            logging.info("MoveToPeer: own location not available, not moving.")
+            return
+        
+        lat0 = float(lat0)
+        lon0 = float(lon0)
+
+        # Ensure closest_peer_lat and closest_peer_lon are available
+        if lat1 is None or lon1 is None:
+            logging.info("MoveToPeer: closest peer location not available, not moving.")
+            return
+
+        lat1 = float(lat1)
+        lon1 = float(lon1)
 
         # compute approximate bearing vector in meters
         R = 6371000
@@ -50,3 +66,4 @@ class MoveToPeerRos2Connector(ActionConnector[MoveToPeerInput]):
             f"MoveToPeer: moving → Δx={x:.1f}m Δy={y:.1f}m  vx={vx:.2f}, vy={vy:.2f}"
         )
         self.sport_client.Move(vx, vy, 0.0)
+
