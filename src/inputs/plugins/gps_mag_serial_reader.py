@@ -138,7 +138,7 @@ class GPSMagSerialReader(FuserInput[str]):
     def __init__(self, config: SensorConfig = SensorConfig()):
         super().__init__(config)
 
-        # ── NEW: optional origin from config ───────────────────────────────────
+        # ── NEW: optional origin from config ────────────────────────────────
         self.origin_lat = getattr(config, "origin_lat", None)
         self.origin_lon = getattr(config, "origin_lon", None)
 
@@ -149,12 +149,16 @@ class GPSMagSerialReader(FuserInput[str]):
             self.pending_origin = (self.origin_lat, self.origin_lon)
             logging.info(f"Using origin from config: {self.pending_origin}")
 
-        # DDS – subscribe to odometry
-        self.odom_sub = ChannelSubscriber("rt/sportmodestate", SportModeState_)
-        self.odom_sub.Init(self._odom_cb, 10)
+        # ── EKF & odom bookkeeping — MUST exist before we subscribe ────────
+        self.ekf: Optional[GPSOdomEKF] = None
+        self.filter_enabled: bool = False
         self.last_odom: Optional[SportModeState_] = None
 
-        # Serial – GPS
+        # ── DDS – subscribe to odometry ─────────────────────────────────────
+        self.odom_sub = ChannelSubscriber("rt/sportmodestate", SportModeState_)
+        self.odom_sub.Init(self._odom_cb, 10)
+
+        # ── Serial – GPS ────────────────────────────────────────────────────
         try:
             self.ser = serial.Serial(getattr(config, "port", None), 115200, timeout=1)
             logging.info("Opened GPS serial")
@@ -162,12 +166,8 @@ class GPSMagSerialReader(FuserInput[str]):
             logging.error(f"GPS serial open error: {e}")
             self.ser = None
 
-        # EKF machinery
-        self.ekf: Optional[GPSOdomEKF] = None
-        self.filter_enabled = False  # becomes True once odometry arrives
-
-        now = time.time()
-        self.t_last_predict = now
+        # timing / IO bookkeeping
+        self.t_last_predict = time.time()
         self.io_provider = IOProvider()
         self.buf: list[Message] = []
         self.descriptor_for_LLM = "Location and Velocity"
@@ -200,11 +200,16 @@ class GPSMagSerialReader(FuserInput[str]):
 
     # ── serial polling ──────────────────────────────────────────────────────────
     async def _poll(self) -> Optional[str]:
+        await asyncio.sleep(0.5)
         await self._predict_step()
         if not self.ser:
             await asyncio.sleep(0.1)
             return None
-        return self.ser.readline().decode(errors="ignore").strip() or None
+        data = self.ser.readline().decode("utf-8").strip()
+
+        if data:
+            return data
+        return None
 
     async def _raw_to_text(self, raw: str) -> Message:
         now = time.time()
