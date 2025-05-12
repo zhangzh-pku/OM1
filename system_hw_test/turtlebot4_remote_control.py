@@ -13,7 +13,7 @@ logging.basicConfig(
     level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
 )
 
-om1_api_key = "YOUR_API_KEY_HERE"
+OM1_API_KEY = "YOUR_API_KEY_HERE"
 
 
 @dataclass
@@ -64,7 +64,7 @@ class CommandStatus:
 class RemoteMoveController:
     def __init__(self):
         self.ws_client = ws.Client(
-            url=f"wss://api.openmind.org/api/core/teleops/command?api_key={om1_api_key}"
+            url=f"wss://api.openmind.org/api/core/teleops/command?api_key={OM1_API_KEY}"
         )
         self.ws_client.start()
 
@@ -90,8 +90,6 @@ class RemoteMoveController:
 
         if k in self.key_pressed:
             self.key_pressed.remove(k)
-
-        print(self.key_pressed)
 
         self.update_movement()
 

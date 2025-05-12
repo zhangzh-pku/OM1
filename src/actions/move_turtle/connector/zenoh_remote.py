@@ -30,6 +30,7 @@ class MoveZenohRemoteConnector(ActionConnector[MoveInput]):
         URID = getattr(self.config, "URID", None)
         self.cmd_vel = f"{URID}/c3/cmd_vel"
 
+        self.session = None
         try:
             self.session = zenoh.open(zenoh.Config())
             logging.info("Zenoh client opened")
