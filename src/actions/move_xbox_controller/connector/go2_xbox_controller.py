@@ -14,7 +14,7 @@ except ImportError:
     hid = None
 
 
-class XboxControllerConnector(ActionConnector[IDLEInput]):
+class Go2XboxControllerConnector(ActionConnector[IDLEInput]):
     """
     Xbox controller connector
     """
