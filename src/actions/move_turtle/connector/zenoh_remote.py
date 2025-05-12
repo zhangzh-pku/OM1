@@ -1,5 +1,6 @@
 import json
 import logging
+import time
 
 import zenoh
 from om1_utils import ws
@@ -52,7 +53,6 @@ class MoveZenohRemoteConnector(ActionConnector[MoveInput]):
         message : str
             The incoming message.
         """
-        logging.info(f"Received message: {message}")
         if self.session is None:
             logging.info("No open Zenoh session, returning")
             return
@@ -66,7 +66,9 @@ class MoveZenohRemoteConnector(ActionConnector[MoveInput]):
                 ),
             )
             self.session.put(self.cmd_vel, t.serialize())
-            logging.info(f"Published command: {command_status.to_dict()}")
+            logging.info(
+                f"Published command: {command_status.to_dict()} - latency: {(time.time() - float(command_status.timestamp)):.3f} seconds"
+            )
         except Exception as e:
             logging.error(f"Error processing message: {e}")
             return
