@@ -20,6 +20,14 @@ class Go2XboxControllerConnector(ActionConnector[IDLEInput]):
     """
 
     def __init__(self, config: ActionConfig):
+        """
+        Initialize the Xbox controller connector.
+
+        Parameters
+        ----------
+        config : ActionConfig
+            The configuration for the action connector.
+        """
         super().__init__(config)
 
         self.config = config
@@ -50,11 +58,39 @@ class Go2XboxControllerConnector(ActionConnector[IDLEInput]):
         self.turn_speed = 0.5
 
     async def connect(self, output_interface: IDLEInput) -> None:
+        """
+        Connect to actions from LLM
+
+        Parameters
+        ----------
+        output_interface : IDLEInput
+            The output interface to connect to.
+
+        Returns
+        -------
+        None
+        """
         pass
 
     def _move_robot(
         self, move_speed_x: float, move_speed_y: float, rotate_speed: float = 0.0
     ) -> None:
+        """
+        Move the robot using the sport client.
+
+        Parameters
+        ----------
+        move_speed_x : float
+            The speed in the x direction.
+        move_speed_y : float
+            The speed in the y direction.
+        rotate_speed : float
+            The speed of rotation.
+
+        Returns
+        -------
+        None
+        """
         try:
             if move_speed_x == 0.0 and move_speed_y == 0.0 and rotate_speed == 0.0:
                 return
@@ -66,6 +102,14 @@ class Go2XboxControllerConnector(ActionConnector[IDLEInput]):
             logging.error(f"Error moving robot: {e}")
 
     def tick(self) -> None:
+        """
+        Tick function is called periodically to check for input from the Xbox controller.
+        It reads the input from the controller and sends the corresponding commands to the robot.
+
+        Returns
+        -------
+        None
+        """
         if self.gamepad:
             data = list(self.gamepad.read(64))
 
