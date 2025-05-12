@@ -57,6 +57,51 @@ class BatteryStatus:
 
 
 @dataclass
+class CommandStatus:
+    """
+    Data class to represent the command status of a teleops system.
+    """
+
+    vx: float
+    vy: float
+    vyaw: float
+    timestamp: str
+
+    def to_dict(self) -> dict:
+        """
+        Convert the CommandStatus object to a dictionary.
+
+        Returns
+        -------
+        dict
+            Dictionary representation of the CommandStatus object.
+        """
+        return {
+            "vx": self.vx,
+            "vy": self.vy,
+            "vyaw": self.vyaw,
+            "timestamp": self.timestamp,
+        }
+
+    @classmethod
+    def from_dict(cls, data: dict) -> "CommandStatus":
+        """
+        Populate the CommandStatus object from a dictionary.
+
+        Parameters
+        ----------
+        data : dict
+            Dictionary containing command status information.
+        """
+        return cls(
+            vx=data.get("vx", 0.0),
+            vy=data.get("vy", 0.0),
+            vyaw=data.get("vyaw", 0.0),
+            timestamp=data.get("timestamp", time.time()),
+        )
+
+
+@dataclass
 class TeleopsStatus:
     """
     Data class to represent the status of the teleops system.
@@ -64,8 +109,10 @@ class TeleopsStatus:
 
     update_time: str
     battery_status: BatteryStatus
+    command_status: CommandStatus
     machine_name: str = "unknown"
-    video_status: bool = False
+    video_connected: bool = False
+    command_connected: bool = False
 
     def to_dict(self) -> dict:
         """
@@ -80,7 +127,9 @@ class TeleopsStatus:
             "machine_name": self.machine_name,
             "update_time": self.update_time,
             "battery_status": self.battery_status.to_dict(),
-            "video_status": self.video_status,
+            "command_status": self.command_status.to_dict(),
+            "video_connected": self.video_connected,
+            "command_connected": self.command_connected,
         }
 
     @classmethod
@@ -94,10 +143,12 @@ class TeleopsStatus:
             Dictionary containing teleops status information.
         """
         return cls(
-            update_time=data.get("update_time", str(time.time())),
+            update_time=data.get("update_time", time.time()),
             battery_status=BatteryStatus.from_dict(data.get("battery_status", {})),
+            command_status=CommandStatus.from_dict(data.get("command_status", {})),
             machine_name=data.get("machine_name", "unknown"),
-            video_status=data.get("video_status", False),
+            video_connected=data.get("video_connected", False),
+            command_connected=data.get("command_connected", False),
         )
 
 
