@@ -109,10 +109,8 @@ class TeleopsStatus:
 
     update_time: str
     battery_status: BatteryStatus
-    command_status: CommandStatus
     machine_name: str = "unknown"
     video_connected: bool = False
-    command_connected: bool = False
 
     def to_dict(self) -> dict:
         """
@@ -127,9 +125,7 @@ class TeleopsStatus:
             "machine_name": self.machine_name,
             "update_time": self.update_time,
             "battery_status": self.battery_status.to_dict(),
-            "command_status": self.command_status.to_dict(),
             "video_connected": self.video_connected,
-            "command_connected": self.command_connected,
         }
 
     @classmethod
@@ -145,10 +141,8 @@ class TeleopsStatus:
         return cls(
             update_time=data.get("update_time", time.time()),
             battery_status=BatteryStatus.from_dict(data.get("battery_status", {})),
-            command_status=CommandStatus.from_dict(data.get("command_status", {})),
             machine_name=data.get("machine_name", "unknown"),
             video_connected=data.get("video_connected", False),
-            command_connected=data.get("command_connected", False),
         )
 
 
