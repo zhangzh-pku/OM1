@@ -17,7 +17,6 @@ except ImportError:
     logging.warning(
         "Unitree SDK not found. Please install the Unitree SDK to use this plugin."
     )
-    VideoClient = None
 
 
 class UnitreeCameraVideoStream(VideoStream):

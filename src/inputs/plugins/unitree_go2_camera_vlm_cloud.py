@@ -9,7 +9,13 @@ from typing import Dict, List, Optional
 from inputs.base import SensorConfig
 from inputs.base.loop import FuserInput
 from providers.io_provider import IOProvider
-from providers.unitree_camera_vlm_provider import UnitreeCameraVLMProvider
+
+try:
+    from providers.unitree_camera_vlm_provider import UnitreeCameraVLMProvider
+except ImportError:
+    logging.warning(
+        "Unitree SDK not found. Please install the Unitree SDK to use this plugin."
+    )
 
 
 @dataclass
@@ -153,7 +159,7 @@ class UnitreeGo2CameraVLMCloud(FuserInput[str]):
         latest_message = self.messages[-1]
 
         result = f"""
-INPUT: {self.descriptor_for_LLM} 
+INPUT: {self.descriptor_for_LLM}
 // START
 {latest_message.message}
 // END
