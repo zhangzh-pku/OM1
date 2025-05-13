@@ -1,5 +1,6 @@
 import json
 import logging
+import os
 import sys
 import threading
 import time
@@ -13,7 +14,10 @@ logging.basicConfig(
     level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
 )
 
-OM1_API_KEY = "YOUR_API_KEY_HERE"
+OM_API_KEY = os.environ.get("OM_API_KEY", None) or "YOUR_API_KEY"
+if not OM_API_KEY:
+    logging.error("OM_API_KEY environment variable not set.")
+    sys.exit(1)
 
 
 @dataclass
@@ -64,7 +68,7 @@ class CommandStatus:
 class RemoteMoveController:
     def __init__(self):
         self.ws_client = ws.Client(
-            url=f"wss://api.openmind.org/api/core/teleops/command?api_key={OM1_API_KEY}"
+            url=f"wss://api.openmind.org/api/core/teleops/command?api_key={OM_API_KEY}"
         )
         self.ws_client.start()
 
