@@ -147,7 +147,7 @@ class UnitreeCameraVLMProvider:
         Parameters
         ----------
         base_url : str
-            The websocket URL for the VLM service connection.
+            The base URL for the VLM service connection.
         fps : int, optional
             The frames per second for the VLM service connection. Defaults to 15.
         resolution : tuple of int, optional
