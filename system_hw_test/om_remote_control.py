@@ -23,7 +23,7 @@ logging.basicConfig(
     level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
 )
 
-OM_API_KEY = os.environ.get("OM_API_KEY", None) or "YOUR_API_KEY"
+OM_API_KEY = os.environ.get("OM_API_KEY", None)
 if not OM_API_KEY:
     logging.error("OM_API_KEY environment variable not set.")
     sys.exit(1)
