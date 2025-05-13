@@ -1,3 +1,13 @@
+#######
+# This script is designed to control a robot remotely using keyboard inputs.
+# It uses the OpenMind API to send movement commands based on key presses.
+# The script listens for key events and updates the robot's movement accordingly.
+# w - Move forward
+# s - Move backward
+# a - Turn left
+# d - Turn right
+#######
+
 import json
 import logging
 import os
@@ -9,7 +19,6 @@ from dataclasses import dataclass
 from om1_utils import ws
 from pynput import keyboard
 
-# Configure logging
 logging.basicConfig(
     level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
 )

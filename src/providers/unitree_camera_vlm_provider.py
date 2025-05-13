@@ -77,7 +77,6 @@ class UnitreeCameraVideoStream(VideoStream):
         while self.running:
             try:
                 code, data = self.video_client.GetImageSample()
-
                 if code == 0:
                     # Convert to numpy image
                     image_data = np.frombuffer(bytes(data), dtype=np.uint8)
@@ -136,8 +135,8 @@ class UnitreeCameraVLMProvider:
 
     def __init__(
         self,
-        ws_url: str,
-        fps: int = 15,
+        base_url: str,
+        fps: int = 60,
         resolution: Optional[Tuple[int, int]] = (640, 480),
         jpeg_quality: int = 70,
         stream_url: Optional[str] = None,
@@ -147,7 +146,7 @@ class UnitreeCameraVLMProvider:
 
         Parameters
         ----------
-        ws_url : str
+        base_url : str
             The websocket URL for the VLM service connection.
         fps : int, optional
             The frames per second for the VLM service connection. Defaults to 15.
@@ -159,7 +158,7 @@ class UnitreeCameraVLMProvider:
             The URL for the video stream. If not provided, defaults to None.
         """
         self.running: bool = False
-        self.ws_client: ws.Client = ws.Client(url=ws_url)
+        self.ws_client: ws.Client = ws.Client(url=base_url)
         self.stream_ws_client: Optional[ws.Client] = (
             ws.Client(url=stream_url) if stream_url else None
         )
