@@ -17,6 +17,22 @@ except ImportError:
         "Unitree SDK not found. Please install the Unitree SDK to use this plugin."
     )
 
+    class ChannelSubscriber:
+        def __init__(self):
+            pass
+
+    class PoseStamped_:
+        def __init__(self):
+            pass
+
+    class LowState_:
+        def __init__(self):
+            pass
+
+    class BmsState_:
+        def __init__(self):
+            pass
+
 
 @dataclass
 class Message:

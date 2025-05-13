@@ -9,13 +9,7 @@ from typing import Dict, List, Optional
 from inputs.base import SensorConfig
 from inputs.base.loop import FuserInput
 from providers.io_provider import IOProvider
-
-try:
-    from providers.unitree_camera_vlm_provider import UnitreeCameraVLMProvider
-except ImportError:
-    logging.warning(
-        "Unitree SDK not found. Please install the Unitree SDK to use this plugin."
-    )
+from providers.unitree_camera_vlm_provider import UnitreeCameraVLMProvider
 
 
 @dataclass
