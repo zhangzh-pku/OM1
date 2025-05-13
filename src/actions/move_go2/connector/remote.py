@@ -6,7 +6,7 @@ from enum import Enum
 from om1_utils import ws
 
 from actions.base import ActionConfig, ActionConnector
-from actions.move_safe.interface import MoveInput
+from actions.move_go2.interface import MoveInput
 from providers import CommandStatus
 from unitree.unitree_sdk2py.go2.sport.sport_client import SportClient
 
