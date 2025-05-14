@@ -1,6 +1,12 @@
-name: Run Unit Tests
+name: Run Integration Tests
+
+env:
+  OM1_API_KEY: ${{ secrets.OM1_API_KEY }}
 
 on:
+  schedule:
+    - cron: '0 * * * *'  # Every hour UTC
+  workflow_dispatch:     # Allow manual trigger via GitHub UI
   push:
     branches:
       - 'main'
@@ -9,7 +15,7 @@ on:
       - '**'
 
 jobs:
-  test:
+  integration-test:
     runs-on: ubuntu-latest
 
     steps:
@@ -49,15 +55,15 @@ jobs:
         with:
           python-version-file: "pyproject.toml"
 
-      - name: Run unit tests
+      - name: Run integration tests
         run: |
           uv venv
           uv pip install -r pyproject.toml --extra dds
-          uv run pytest -m "not integration" --log-cli-level=DEBUG -s
+          uv run pytest -m "integration" --log-cli-level=DEBUG -s
 
-      - name: Upload test results
-        uses: actions/upload-artifact@v4
-        if: always()
-        with:
-          name: test-results-${{ runner.os }}
-          path: .pytest_cache/
+      - name: Notify Slack on failure
+        if: failure()
+        run: |
+          curl -X POST -H 'Content-type: application/json' \
+            --data '{"text":"❌ Integration tests failed in `${{ github.repository }}` on `${{ github.ref }}`. [View run](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})"}' \
+            ${{ secrets.ONCALL_SLACK_WEBHOOK_URL }}
