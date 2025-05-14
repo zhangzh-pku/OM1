@@ -59,11 +59,27 @@ jobs:
         run: |
           uv venv
           uv pip install -r pyproject.toml --extra dds
-          uv run pytest -m "integration" --log-cli-level=DEBUG -s
+          uv run pytest -m "integration" --log-cli-level=DEBUG --junitxml=test-reports/results.xml -s
 
-      - name: Notify Slack on failure
-        if: failure()
+      - name: Extract test summary
+        id: summary
+        run: |
+          TOTAL=$(grep -oP 'tests="\K[0-9]+' test-reports/results.xml)
+          FAILURES=$(grep -oP 'failures="\K[0-9]+' test-reports/results.xml)
+          ERRORS=$(grep -oP 'errors="\K[0-9]+' test-reports/results.xml)
+          echo "total=$TOTAL" >> $GITHUB_OUTPUT
+          echo "failures=$FAILURES" >> $GITHUB_OUTPUT
+          echo "errors=$ERRORS" >> $GITHUB_OUTPUT
+
+      - name: Notify Slack with test summary
+        if: always()
         run: |
           curl -X POST -H 'Content-type: application/json' \
-            --data '{"text":"❌ Integration tests failed in `${{ github.repository }}` on `${{ github.ref }}`. [View run](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})"}' \
+            --data "{
+              \"text\": \"🧪 *Integration Test Summary*\n\
+                • Total: ${{ steps.summary.outputs.total }}\n\
+                • Failures: ${{ steps.summary.outputs.failures }}\n\
+                • Errors: ${{ steps.summary.outputs.errors }}\n\
+                • Run: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}\"
+            }" \
             ${{ secrets.ONCALL_SLACK_WEBHOOK_URL }}
