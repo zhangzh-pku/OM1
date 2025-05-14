@@ -150,6 +150,8 @@ class RPLidarProvider:
                 # reset to clear buffers
                 self.lidar.reset()
 
+                time.sleep(0.5)
+
             except Exception as e:
                 logging.error(f"Error in RPLidar provider: {e}")
         elif self.use_zenoh:
@@ -200,7 +202,7 @@ class RPLidarProvider:
             self._process(array_ready)
 
     def _preprocess_serial(self, scan):
-        logging.info(f"_preprocess_serial: {scan}")
+        logging.debug(f"_preprocess_serial: {scan}")
         array = np.array(scan)
 
         # the driver sends angles in degrees between from 0 to 360
@@ -359,8 +361,8 @@ class RPLidarProvider:
                         )
                     ):
                         self._preprocess_serial(scan)
-                    # not sure about the level of this?
-                    time.sleep(0.1)
+                        # not sure about the level of this?
+                        time.sleep(0.1)
                 except Exception as e:
                     logging.error(f"Error in Serial RPLidar provider: {e}")
 

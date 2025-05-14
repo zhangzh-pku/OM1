@@ -359,7 +359,7 @@ class RPDriver(object):
     def reset(self):
         """Resets sensor core, reverting it to a similar state as it has
         just been powered up."""
-        self.logger.info("Resetting the sensor")
+        self.logger.info("Resetting the RPLidar")
         self._send_cmd(RESET_BYTE)
         time.sleep(2)
         self.clean_input()

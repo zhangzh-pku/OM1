@@ -56,16 +56,25 @@ class MoveRos2Connector(ActionConnector[MoveInput]):
                         f"Connected {device['product_string']} {self.vendor_id} {self.product_id}"
                     )
                     break
+        else:
+            logging.warn("No Xbox controller found")
 
         self.lidar_on = False
         self.lidar = None
 
+        lidar_timeout = 10 # if the LIDAR does not connect in 5 seconds, we assume there is no LIDAR
+        lidar_attempts = 0
+
         while self.lidar_on is False:
-            logging.info("Waiting for RPLidar Provider")
+            logging.info(f"Waiting for RPLidar Provider. Attempt: {lidar_attempts}")
             time.sleep(0.5)
             self.lidar = RPLidarProvider(wait=True)
             self.lidar_on = self.lidar.running
             logging.info(f"Action: Lidar running?: {self.lidar_on}")
+            lidar_attempts += 1
+            if lidar_attempts > lidar_timeout:
+                logging.warning(f"RPLidar Provider timeout after {lidar_attempts} attempts - no LIDAR - DANGEROUS")
+                break
 
         # create sport client
         self.sport_client = None
@@ -83,6 +92,8 @@ class MoveRos2Connector(ActionConnector[MoveInput]):
 
         if not self.sport_client:
             return
+
+        logging.info(f"_execute_command_thread {command}")
 
         try:
             if command == "StandUp" and self.current_state == RobotState.STANDING:
@@ -105,11 +116,34 @@ class MoveRos2Connector(ActionConnector[MoveInput]):
         finally:
             self.thread_lock.release()
 
-    async def _execute_sport_command(self, command: str) -> None:
+    def _execute_sport_command_sync(self, command: str) -> None:
+        if not self.sport_client:
+            return
 
         if not self.thread_lock.acquire(blocking=False):
             logging.info("Action already in progress, skipping")
             return
+
+        try:
+            thread = threading.Thread(
+                target=self._execute_command_thread, args=(command,), daemon=True
+            )
+            thread.start()
+        except Exception as e:
+            logging.error(f"Error executing Unitree command {command}: {e}")
+            self.thread_lock.release()
+
+    async def _execute_sport_command(self, command: str) -> None:
+
+        # does this one work??
+
+        logging.info(f"_execute_sport_command1 {command}")
+
+        if not self.thread_lock.acquire(blocking=False):
+            logging.info("Action already in progress, skipping")
+            return
+
+        logging.info(f"_execute_sport_command2 {command}")
 
         try:
             thread = threading.Thread(
@@ -226,6 +260,7 @@ class MoveRos2Connector(ActionConnector[MoveInput]):
         if self.gamepad:
 
             data = list(self.gamepad.read(64))
+            
             # Process triggers for rotation
             # RT is typically on byte 9, LT on byte 8 for Xbox controllers
             rt_value = data[11]  # Right Trigger
@@ -282,14 +317,15 @@ class MoveRos2Connector(ActionConnector[MoveInput]):
                     logging.info("D-pad RIGHT - Turning right")
                     self._move_robot(0.0, -self.move_speed)
                 elif d_pad_value == 0:  # Nothing pressed
-                    logging.debug("D-pad released - Stopping movement")
+                    logging.debug("D-pad released - Stopping")
                     self._move_robot(0.0, 0.0)
 
             button_value = data[14]
 
             if self.button_previous == 0 and button_value > 0:
                 # User just pressed a button
-
+                logging.info(f"Gamepad button depressed edge {button_value}")
+                
                 # stop other motion
                 self.motion_buffer = None
 
@@ -303,52 +339,50 @@ class MoveRos2Connector(ActionConnector[MoveInput]):
 
                 # A button
                 if button_value == 1:
-                    self._execute_sport_command("StandUp", 0)
+                    self._execute_sport_command_sync("StandUp")
                     logging.info("Controller unitree: stand_up")
                 # B button
                 elif button_value == 2:
-                    self._execute_sport_command("StandDown", 0)
+                    self._execute_sport_command_sync("StandDown")
                     logging.info("Controller unitree: lay_down")
                 # X button
                 elif button_value == 8:
-                    self._execute_sport_command("Hello", 0)
+                    self._execute_sport_command_sync("Hello")
                     logging.info("Controller unitree: say_hello")
                 # Y button
                 elif button_value == 16:
-                    self._execute_sport_command("Stretch", 0)
+                    self._execute_sport_command_sync("Stretch")
                     logging.info("Controller unitree: stretch")
-
-                logging.info(f"Gamepad button depressed edge {button_value}")
 
             self.button_previous = button_value
 
-        if self.motion_buffer:
+        # if self.motion_buffer:
 
-            logging.info(f"MOTION BUFFER {self.motion_buffer}")
+        #     logging.info(f"MOTION BUFFER {self.motion_buffer}")
 
-            possible_paths = self.lidar.valid_paths
-            # check for new possible collisons right before each move
-            logging.info(f"FAST - Valid paths: {possible_paths}")
+        #     possible_paths = self.lidar.valid_paths
+        #     # check for new possible collisons right before each move
+        #     logging.info(f"FAST - Valid paths: {possible_paths}")
 
-            if self.motion_buffer[0] == "TurnLeft":
-                turn_type = self.motion_buffer[1]
-                if turn_type not in possible_paths:
-                    return
-                turn_rate = 0.1 * (4 - turn_type)
-                self._move_robot(self.move_speed, 0.0, turn_rate)
-            elif self.motion_buffer[0] == "MoveForwards":
-                if 5 not in possible_paths:
-                    return
-                self._move_robot(self.move_speed, 0.0, 0.0)
-            elif self.motion_buffer[0] == "TurnRight":
-                turn_type = self.motion_buffer[1]
-                if turn_type not in possible_paths:
-                    return
-                turn_rate = -0.1 * (turn_type - 4)
-                self._move_robot(self.move_speed, 0.0, turn_rate)
-            elif self.motion_buffer[0] == "MoveBack":
-                if 9 not in possible_paths:
-                    return
-                self._move_robot(-self.move_speed, 0.0, 0.0)
-            elif self.motion_buffer[0] == "StandStill":
-                logging.info("Standing Still")
+        #     if self.motion_buffer[0] == "TurnLeft":
+        #         turn_type = self.motion_buffer[1]
+        #         if turn_type not in possible_paths:
+        #             return
+        #         turn_rate = 0.1 * (4 - turn_type)
+        #         self._move_robot(self.move_speed, 0.0, turn_rate)
+        #     elif self.motion_buffer[0] == "MoveForwards":
+        #         if 5 not in possible_paths:
+        #             return
+        #         self._move_robot(self.move_speed, 0.0, 0.0)
+        #     elif self.motion_buffer[0] == "TurnRight":
+        #         turn_type = self.motion_buffer[1]
+        #         if turn_type not in possible_paths:
+        #             return
+        #         turn_rate = -0.1 * (turn_type - 4)
+        #         self._move_robot(self.move_speed, 0.0, turn_rate)
+        #     elif self.motion_buffer[0] == "MoveBack":
+        #         if 9 not in possible_paths:
+        #             return
+        #         self._move_robot(-self.move_speed, 0.0, 0.0)
+        #     elif self.motion_buffer[0] == "StandStill":
+        #         logging.info("Standing Still")
