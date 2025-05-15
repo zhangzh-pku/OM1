@@ -33,6 +33,12 @@
   },
   "agent_actions": [
     {
+      "name": "move_xbox_controller",
+      "llm_label": "move",
+      "implementation": "passthrough",
+      "connector": "go2_xbox_controller"
+    },
+    {
       "name": "move_safe_lidar",
       "llm_label": "move",
       "implementation": "passthrough",

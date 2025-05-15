@@ -5,13 +5,13 @@ from actions.base import ActionConfig, ActionConnector
 from actions.move_xbox_controller.interface import IDLEInput
 from unitree.unitree_sdk2py.go2.sport.sport_client import SportClient
 
-try:
-    import hid
-except ImportError:
-    logging.warning(
-        "HID library not found. Please install the HIDAPI library to use this plugin."
-    )
-    hid = None
+# try:
+#     import hid
+# except ImportError:
+#     logging.warning(
+#         "HID library not found. Please install the HIDAPI library to use this plugin."
+#     )
+#     hid = None
 
 
 class Go2XboxControllerConnector(ActionConnector[IDLEInput]):
@@ -32,21 +32,27 @@ class Go2XboxControllerConnector(ActionConnector[IDLEInput]):
 
         self.config = config
 
-        self.sport_client = SportClient()
-        self.sport_client.Init()
+        self.sport_client = None
+        # try:
+        #     self.sport_client = SportClient()
+        #     self.sport_client.SetTimeout(10.0)
+        #     self.sport_client.Init()
+        #     logging.info("Unitree sport client initialized")
+        # except Exception as e:
+        #     logging.error(f"Error initializing Unitree sport client: {e}")
 
         self.gamepad = None
-        if hid is not None:
-            for device in hid.enumerate():
-                logging.debug(f"device {device['product_string']}")
-                if "Xbox Wireless Controller" in device["product_string"]:
-                    vendor_id = device["vendor_id"]
-                    product_id = device["product_id"]
-                    self.gamepad = hid.Device(vendor_id, product_id)
-                    logging.info(
-                        f"Connected {device['product_string']} {vendor_id} {product_id}"
-                    )
-                    break
+        # if hid is not None:
+        #     for device in hid.enumerate():
+        #         logging.debug(f"device {device['product_string']}")
+        #         if "Xbox Wireless Controller" in device["product_string"]:
+        #             vendor_id = device["vendor_id"]
+        #             product_id = device["product_id"]
+        #             self.gamepad = hid.Device(vendor_id, product_id)
+        #             logging.info(
+        #                 f"Connected {device['product_string']} {vendor_id} {product_id}"
+        #             )
+        #             break
 
         # Pad buttons
         self.rt_previous = 0
@@ -97,7 +103,7 @@ class Go2XboxControllerConnector(ActionConnector[IDLEInput]):
             logging.debug(
                 f"Moving robot: move_speed_x={move_speed_x}, move_speed_y={move_speed_y}, rotate_speed={rotate_speed}"
             )
-            self.sport_client.Move(move_speed_x, move_speed_y, rotate_speed)
+            #self.sport_client.Move(move_speed_x, move_speed_y, rotate_speed)
         except Exception as e:
             logging.error(f"Error moving robot: {e}")
 
@@ -110,43 +116,150 @@ class Go2XboxControllerConnector(ActionConnector[IDLEInput]):
         -------
         None
         """
-        if self.gamepad:
-            data = list(self.gamepad.read(64))
 
-            lt_value = data[9]
-            rt_value = data[11]
+        logging.info(f"Gamepad tick")
 
-            rt_changed = abs(rt_value - self.rt_previous) > 5
-            lt_changed = abs(lt_value - self.lt_previous) > 5
+        # if self.gamepad:
+        #     data = list(self.gamepad.read(64))
 
-            if rt_changed or lt_changed or rt_value == 255 or lt_value == 255:
-                self.rt_previous = rt_value
-                self.lt_previous = lt_value
+        #     lt_value = data[9]
+        #     rt_value = data[11]
 
-                rt_normalized = rt_value / 255.0
-                lt_normalized = lt_value / 255.0
+        #     rt_changed = abs(rt_value - self.rt_previous) > 5
+        #     lt_changed = abs(lt_value - self.lt_previous) > 5
 
-                if rt_normalized > 0.1 and rt_normalized > lt_normalized:
-                    self._move_robot(0.0, 0.0, -self.turn_speed)
-                elif lt_normalized > 0.1 and lt_normalized > rt_normalized:
-                    self._move_robot(0.0, 0.0, self.turn_speed)
-                elif rt_normalized <= 0.1 and lt_normalized <= 0.1:
-                    self._move_robot(0.0, 0.0)
+        #     if rt_changed or lt_changed or rt_value == 255 or lt_value == 255:
+        #         self.rt_previous = rt_value
+        #         self.lt_previous = lt_value
 
-            d_pad_value = data[13]
+        #         rt_normalized = rt_value / 255.0
+        #         lt_normalized = lt_value / 255.0
 
-            if d_pad_value != self.d_pad_previous:
-                self.d_pad_previous = d_pad_value
+        #         if rt_normalized > 0.1 and rt_normalized > lt_normalized:
+        #             self._move_robot(0.0, 0.0, -self.turn_speed)
+        #         elif lt_normalized > 0.1 and lt_normalized > rt_normalized:
+        #             self._move_robot(0.0, 0.0, self.turn_speed)
+        #         elif rt_normalized <= 0.1 and lt_normalized <= 0.1:
+        #             self._move_robot(0.0, 0.0)
 
-                if d_pad_value == 1:  # Up
-                    self._move_robot(self.move_speed, 0.0)
-                elif d_pad_value == 5:  # Down
-                    self._move_robot(-self.move_speed, 0.0)
-                elif d_pad_value == 7:  # Left
-                    self._move_robot(0.0, self.move_speed)
-                elif d_pad_value == 3:  # Right
-                    self._move_robot(0.0, -self.move_speed)
-                elif d_pad_value == 0:  # Nothing pressed
-                    self._move_robot(0.0, 0.0)
+        #     d_pad_value = data[13]
+
+        #     if d_pad_value != self.d_pad_previous:
+        #         self.d_pad_previous = d_pad_value
+
+        #         if d_pad_value == 1:  # Up
+        #             self._move_robot(self.move_speed, 0.0)
+        #         elif d_pad_value == 5:  # Down
+        #             self._move_robot(-self.move_speed, 0.0)
+        #         elif d_pad_value == 7:  # Left
+        #             self._move_robot(0.0, self.move_speed)
+        #         elif d_pad_value == 3:  # Right
+        #             self._move_robot(0.0, -self.move_speed)
+        #         elif d_pad_value == 0:  # Nothing pressed
+        #             self._move_robot(0.0, 0.0)
 
         time.sleep(0.1)
+
+
+# def process_gamepad(self, data) -> bool:
+
+#             if self.gamepad:
+                
+#                 # Process triggers for rotation
+#                 # RT is typically on byte 9, LT on byte 8 for Xbox controllers
+#                 rt_value = data[11]  # Right Trigger
+#                 lt_value = data[9]   # Left Trigger
+
+#                 # Trigger values usually range from 0 to 255
+#                 # Check if the triggers have changed significantly
+#                 rt_changed = abs(rt_value - self.rt_previous) > 5
+#                 lt_changed = abs(lt_value - self.lt_previous) > 5
+
+#                 if rt_changed or lt_changed:
+#                     # Update previous values
+#                     self.rt_previous = rt_value
+#                     self.lt_previous = lt_value
+
+#                     # Normalize trigger values from 0-255 to 0-1.0
+#                     rt_normalized = rt_value / 255.0
+#                     lt_normalized = lt_value / 255.0
+
+#                     # Right Trigger - clockwise rotation
+#                     if rt_normalized > 0.8 and rt_normalized > lt_normalized:
+#                         self._move_robot(0.0, 0.0, -self.turn_speed)
+
+#                     # Left Trigger - counter-clockwise rotation
+#                     elif lt_normalized > 0.8 and lt_normalized > rt_normalized:
+#                         self._move_robot(0.0, 0.0, self.turn_speed)
+
+#                     # Both triggers released or below threshold
+#                     elif rt_normalized <= 0.8 and lt_normalized <= 0.8:
+#                         logging.debug("Triggers released - Stopping rotation")
+#                         self._move_robot(0.0, 0.0)
+
+#                     return True
+
+#                 d_pad_value = data[13]
+#                 if d_pad_value != self.d_pad_previous:
+#                     self.d_pad_previous = d_pad_value
+
+#                     # Control robot movement based on D-pad
+#                     if d_pad_value == 1:  # Up
+#                         logging.info("D-pad UP - Moving forward")
+#                         self._move_robot(self.move_speed, 0.0)
+#                     elif d_pad_value == 5:  # Down
+#                         logging.info("D-pad DOWN - Moving backward")
+#                         self._move_robot(-self.move_speed, 0.0)
+#                     elif d_pad_value == 7:  # Left
+#                         logging.info("D-pad LEFT - Turning left")
+#                         self._move_robot(0.0, self.move_speed)
+#                     elif d_pad_value == 3:  # Right
+#                         logging.info("D-pad RIGHT - Turning right")
+#                         self._move_robot(0.0, -self.move_speed)
+#                     elif d_pad_value == 0:  # Nothing pressed
+#                         logging.debug("D-pad released - Stopping movement")
+#                         self._move_robot(0.0, 0.0)
+#                     return True
+
+#                 button_value = data[14]
+#                 if self.button_previous == 0 and button_value > 0:
+
+#                     # User just pressed a button
+
+#                     # We need this logic because when the user presses a button
+#                     # the gamepad sends a 'press' indication numerous times
+#                     # for several hundred ms, creating numerous
+#                     # duplicated movement commands with a single button press.
+#                     # To prevent this, which would freeze/crash the robot,
+#                     # we only act when the button state changes from 0 to > 0
+#                     # This is basically a software button debounce
+
+#                     # A button
+#                     if button_value == 1:
+#                         self._execute_sport_command_sync("StandUp")
+#                         logging.info("Controller unitree: stand_up")
+#                     # B button
+#                     elif button_value == 2:
+#                         self._execute_sport_command_sync("StandDown")
+#                         logging.info("Controller unitree: lay_down")
+#                     # # X button
+#                     # elif button_value == 8:
+#                     #     self._execute_sport_command_sync("Hello")
+#                     #     logging.info("Controller unitree: say_hello")
+#                     # # Y button
+#                     # elif button_value == 16:
+#                     #     self._execute_sport_command_sync("Stretch")
+#                     #     logging.info("Controller unitree: stretch")
+
+#                     logging.info(f"Gamepad button depressed edge {button_value}")
+#                     # refresh the button value for debounce
+#                     self.button_previous = button_value
+#                     return True
+
+#                 # refresh the button value for debounce
+#                 self.button_previous = button_value
+#                 return False
+
+
+
+

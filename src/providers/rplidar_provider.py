@@ -141,11 +141,17 @@ class RPLidarProvider:
 
                 info = self.lidar.get_info()
                 ret = f"RPLidar Info: {info}"
+
                 logging.info(ret)
 
                 health = self.lidar.get_health()
-                ret = f"RPLidar Health: {health}"
+                ret = f"RPLidar Health: {health[0]}"
                 logging.info(ret)
+
+                if health[0] == "Good":
+                    logging.info(ret)
+                else:
+                    logging.info("there is a problem with the LIDARret")
 
                 # reset to clear buffers
                 self.lidar.reset()
@@ -154,6 +160,7 @@ class RPLidarProvider:
 
             except Exception as e:
                 logging.error(f"Error in RPLidar provider: {e}")
+
         elif self.use_zenoh:
             try:
                 self.zen = zenoh.open(zenoh.Config())
@@ -362,7 +369,7 @@ class RPLidarProvider:
                     ):
                         self._preprocess_serial(scan)
                         # not sure about the level of this?
-                        time.sleep(0.1)
+                        #time.sleep(0.1)
                 except Exception as e:
                     logging.error(f"Error in Serial RPLidar provider: {e}")
 
