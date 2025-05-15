@@ -71,15 +71,26 @@ jobs:
           echo "failures=$FAILURES" >> $GITHUB_OUTPUT
           echo "errors=$ERRORS" >> $GITHUB_OUTPUT
 
-      - name: Notify Slack with test summary
-        if: always()
+      - name: Notify Slack on failure
+        if: failure()
         run: |
           curl -X POST -H 'Content-type: application/json' \
             --data "{
-              \"text\": \"🧪 *Integration Test Summary*\n\
-                • Total: ${{ steps.summary.outputs.total }}\n\
-                • Failures: ${{ steps.summary.outputs.failures }}\n\
-                • Errors: ${{ steps.summary.outputs.errors }}\n\
-                • Run: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}\"
+              \"text\": \"❌ @channel *Integration Tests Failed*\n\
+              *Repository:* \`${{ github.repository }}\`\n\
+              *Branch:* \`${{ github.ref_name }}\`\n\
+              *Total:* ${{ steps.summary.outputs.total }}  •  *Failures:* ${{ steps.summary.outputs.failures }}  •  *Errors:* ${{ steps.summary.outputs.errors }}\n\
+              🔗 <${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}|View Workflow Run>\"
+            }" \
+            ${{ secrets.ONCALL_SLACK_WEBHOOK_URL }}
+
+      - name: Notify Slack on success
+        if: success()
+        run: |
+          curl -X POST -H 'Content-type: application/json' \
+            --data "{
+              \"text\": \"✅ *All Integration Tests Passed*\n\
+              *Total:* ${{ steps.summary.outputs.total }}\n\
+              🔗 <${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}|View Workflow>\"
             }" \
             ${{ secrets.ONCALL_SLACK_WEBHOOK_URL }}
