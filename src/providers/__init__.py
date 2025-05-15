@@ -1,9 +1,9 @@
 from .io_provider import IOProvider
-from .status_provider import BatteryStatus, StatusProvider, TeleopsStatus
+from .teleops_status_provider import BatteryStatus, TeleopsStatus, TeleopsStatusProvider
 
 __all__ = [
     "IOProvider",
-    "StatusProvider",
+    "TeleopsStatusProvider",
     "BatteryStatus",
     "TeleopsStatus",
 ]

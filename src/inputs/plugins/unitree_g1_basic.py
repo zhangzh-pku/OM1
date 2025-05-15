@@ -6,7 +6,7 @@ from typing import List, Optional
 
 from inputs.base import SensorConfig
 from inputs.base.loop import FuserInput
-from providers import BatteryStatus, IOProvider, StatusProvider, TeleopsStatus
+from providers import BatteryStatus, IOProvider, TeleopsStatus, TeleopsStatusProvider
 from unitree.unitree_sdk2py.core.channel import ChannelSubscriber
 from unitree.unitree_sdk2py.idl.unitree_hg.msg.dds_ import BmsState_, LowState_
 
@@ -69,7 +69,7 @@ class UnitreeG1Basic(FuserInput[str]):
         self.io_provider = IOProvider()
 
         # Status provider
-        self.status_provider = StatusProvider(api_key=api_key)
+        self.status_provider = TeleopsStatusProvider(api_key=api_key)
 
         # Messages buffer
         self.messages: list[Message] = []
@@ -207,7 +207,7 @@ class UnitreeG1Basic(FuserInput[str]):
         latest_message = self.messages[-1]
 
         result = f"""
-INPUT: {self.descriptor_for_LLM} 
+INPUT: {self.descriptor_for_LLM}
 // START
 {latest_message.message}
 // END

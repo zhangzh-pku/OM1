@@ -102,9 +102,9 @@ class TeleopsStatus:
 
 
 @singleton
-class StatusProvider:
+class TeleopsStatusProvider:
     """
-    Status provider reports the status of the machine.
+    Teleops Status provider reports the status of the machine.
     """
 
     def __init__(
@@ -113,7 +113,7 @@ class StatusProvider:
         base_url: str = "https://api.openmind.org/api/core/teleops/status",
     ):
         """
-        Initialize the StatusProvider.
+        Initialize the TeleopsStatusProvider.
 
         Parameters
         ----------
