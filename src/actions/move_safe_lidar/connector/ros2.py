@@ -8,6 +8,7 @@ from actions.base import ActionConfig, ActionConnector
 from actions.move_safe_lidar.interface import MoveInput
 from unitree.unitree_sdk2py.go2.sport.sport_client import SportClient
 from providers.rplidar_provider import RPLidarProvider
+from providers.navigation_provider import NavigationProvider
 
 class RobotState(Enum):
     STANDING = "standing"
@@ -53,6 +54,28 @@ class MoveRos2Connector(ActionConnector[MoveInput]):
             logging.info("Unitree sport client initialized")
         except Exception as e:
             logging.error(f"Error initializing Unitree sport client: {e}")
+
+        self.navigation_on = False
+        self.navigation = None
+        
+        navigation_timeout = 10
+        navigation_attempts = 0
+
+        while not self.navigation_on:
+            logging.info(f"Waiting for Navigation Provider. Attempt: {navigation_attempts}")
+            self.navigation = NavigationProvider(wait=False)
+            if hasattr(self.navigation, 'running'):
+                self.navigation_on = self.navigation.running
+                logging.info(f"Action: navigation running?: {self.navigation_on}")
+            else:
+                logging.info("Action: waiting for navigation")
+            navigation_attempts += 1
+            if navigation_attempts > navigation_timeout:
+                logging.warning(
+                    f"Navigation Provider timeout after {navigation_attempts} attempts - no Navigation - DANGEROUS"
+                )
+                break
+            time.sleep(0.5)
 
         self.thread_lock = threading.Lock()
 
@@ -210,7 +233,7 @@ class MoveRos2Connector(ActionConnector[MoveInput]):
 
     def tick(self) -> None:
 
-        logging.info(f"Tick")
+        logging.info(f"AI Motion Tick")
 
         if self.motion_buffer:
             logging.info(f"Motion Buffer: {self.motion_buffer}")
