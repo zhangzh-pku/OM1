@@ -72,7 +72,7 @@ jobs:
           echo "errors=$ERRORS" >> $GITHUB_OUTPUT
 
       - name: Notify Slack on failure
-        if: failure()
+        if: failure() && github.event_name == 'schedule'
         run: |
           curl -X POST -H 'Content-type: application/json' \
             --data "{
@@ -85,7 +85,7 @@ jobs:
             ${{ secrets.ONCALL_SLACK_WEBHOOK_URL }}
 
       - name: Notify Slack on success
-        if: success()
+        if: success() && github.event_name == 'schedule'
         run: |
           curl -X POST -H 'Content-type: application/json' \
             --data "{
