@@ -1,6 +1,6 @@
 import logging
-import time
 import threading
+import time
 from enum import Enum
 
 from actions.base import ActionConfig, ActionConnector
@@ -15,9 +15,11 @@ except ImportError:
     )
     hid = None
 
+
 class RobotState(Enum):
     STANDING = "standing"
     SITTING = "sitting"
+
 
 class Go2XboxControllerConnector(ActionConnector[IDLEInput]):
     """
@@ -61,7 +63,7 @@ class Go2XboxControllerConnector(ActionConnector[IDLEInput]):
                     break
 
         if self.gamepad is None:
-            logging.warn(f"Xbox controller not found")
+            logging.warn("Xbox controller not found")
 
         # Pad buttons
         self.rt_previous = 0
@@ -101,7 +103,7 @@ class Go2XboxControllerConnector(ActionConnector[IDLEInput]):
             self.thread_lock.release()
 
     def _execute_sport_command_sync(self, command: str) -> None:
-        
+
         logging.info(f"_execute_sport_command_sync({command})")
 
         if self.sport_client is None:
@@ -136,7 +138,6 @@ class Go2XboxControllerConnector(ActionConnector[IDLEInput]):
         """
         pass
 
-
     def _move_robot(self, vx, vy, vturn=0.0) -> None:
         """
         Move the robot using the sport client.
@@ -154,17 +155,13 @@ class Go2XboxControllerConnector(ActionConnector[IDLEInput]):
         -------
         None
         """
-        logging.info(
-            f"_move_robot: vx={vx}, vy={vy}, vturn={vturn}"
-        )
+        logging.info(f"_move_robot: vx={vx}, vy={vy}, vturn={vturn}")
 
         if not self.sport_client or self.current_state != RobotState.STANDING:
             return
 
         try:
-            logging.info(
-                f"self.sport_client.Move: vx={vx}, vy={vy}, vturn={vturn}"
-            )
+            logging.info(f"self.sport_client.Move: vx={vx}, vy={vy}, vturn={vturn}")
             self.sport_client.Move(vx, vy, vturn)
         except Exception as e:
             logging.error(f"Error moving robot: {e}")
@@ -178,21 +175,21 @@ class Go2XboxControllerConnector(ActionConnector[IDLEInput]):
         -------
         None
         """
-        time.sleep(0.2)
-        logging.info(f"Gamepad tick")
+        time.sleep(0.1)
+        logging.info("Gamepad tick")
 
         data = None
 
         if self.gamepad:
-            # try to read USB data, and if there is nothing there, 
+            # try to read USB data, and if there is nothing there,
             # timeout
-            #data = list(self.gamepad.read(64, timeout=50))
+            # data = list(self.gamepad.read(64, timeout=50))
             data = list(self.gamepad.read(64))
 
         if len(data) > 0:
-            
+
             logging.info(f"Gamepad data: {data}")
-            
+
         #     # Process triggers for rotation
         #     # RT is typically on byte 9, LT on byte 8 for Xbox controllers
         #     rt_value = data[11]  # Right Trigger
@@ -277,6 +274,3 @@ class Go2XboxControllerConnector(ActionConnector[IDLEInput]):
 
         #     # refresh the button value for debounce
         #     self.button_previous = button_value
-
-
-

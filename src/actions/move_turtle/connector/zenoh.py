@@ -131,6 +131,8 @@ class MoveZenohConnector(ActionConnector[MoveInput]):
                 logging.debug(
                     f"TB4 x,y,yaw: {round(self.x,2)},{round(self.y,2)},{round(self.yaw_now,2)}"
                 )
+            else:
+                logging.warn("TB4 x,y,yaw: NAVIGTION NOT PROVIDING DATA")
 
     def move(self, vx, vyaw):
         """
@@ -170,15 +172,16 @@ class MoveZenohConnector(ActionConnector[MoveInput]):
         # reconfirm possible paths
         # this is needed due to the 2s latency of the LLMs
         possible_paths = self.lidar.valid_paths
-        logging.info(f"Action - Valid paths: {possible_paths}")
 
         advance_danger = True
         retreat_danger = True
 
-        if 4 in possible_paths:
-            advance_danger = False
-        if 9 in possible_paths:
-            retreat_danger = False
+        if possible_paths:
+            logging.info(f"Action - Valid paths: {possible_paths}")
+            if 4 in possible_paths:
+                advance_danger = False
+            if 9 in possible_paths:
+                retreat_danger = False
 
         if output_interface.action == "turn left":
             # turn 90 Deg to the left (CCW)
@@ -291,7 +294,7 @@ class MoveZenohConnector(ActionConnector[MoveInput]):
 
             current_target = target[0]
 
-            logging.debug(f"Target: {current_target}")
+            logging.debug(f"Target: {current_target} current yaw: {self.yaw_now}")
 
             goal_dx = current_target[0]
             goal_yaw = current_target[1]
@@ -303,32 +306,35 @@ class MoveZenohConnector(ActionConnector[MoveInput]):
                     gap -= 360.0
                 elif gap < -180.0:
                     gap += 360.0
-                logging.debug(f"GAP: {gap}")
+                logging.info(f"remaining turn GAP: {round(gap,2)}")
                 if abs(gap) > 10.0:
                     logging.debug("gap is big, using large displacements")
                     if gap > 0:
-                        self.move(0.0, 0.3)
+                        self.move(0.0, 0.5)
                     elif gap < 0:
-                        self.move(0.0, -0.3)
+                        self.move(0.0, -0.5)
                 elif abs(gap) > self.angle_tolerance and abs(gap) <= 10.0:
                     logging.debug("gap is getting smaller, using smaller steps")
                     if gap > 0:
-                        self.move(0.0, 0.1)
+                        self.move(0.0, 0.2)
                     elif gap < 0:
-                        self.move(0.0, -0.1)
+                        self.move(0.0, -0.2)
                 elif abs(gap) <= self.angle_tolerance:
-                    logging.debug("gap is small enough, done, pop 1 off queue")
+                    logging.info(
+                        "turn is completed, gap is small enough, done, pop 1 off queue"
+                    )
                     self.pending_movements.get()
             else:
                 # reconfirm possible paths
                 pp = self.lidar.valid_paths
+
                 logging.debug(f"Action - Valid paths: {pp}")
 
                 s_x = target[0][3]
                 s_y = target[0][4]
                 distance_traveled = math.sqrt((self.x - s_x) ** 2 + (self.y - s_y) ** 2)
                 remaining = abs(goal_dx - distance_traveled)
-                logging.debug(f"distance to advance: {remaining}")
+                logging.info(f"remaining advance GAP: {round(remaining,2)}")
 
                 fb = 0
                 if "advance" in direction and 4 in pp:
@@ -350,5 +356,7 @@ class MoveZenohConnector(ActionConnector[MoveInput]):
                         )
                         self.move(-1 * fb * 0.1, 0.0)
                 else:
-                    logging.debug("done, pop 1 off queue")
+                    logging.info(
+                        "advance is completed, gap is small enough, done, pop 1 off queue"
+                    )
                     self.pending_movements.get()

@@ -186,8 +186,8 @@ class NavigationProvider:
 
         self.m180_p180 = angles[2] * rad_to_deg * -1.0
         # the * -1.0 changes the heading to sane convention
-        # turn left to INCREASE your heading
-        # i.e. CW yaw = positive
+        # turn right (CW) to INCREASE your heading
+        # runs from -180 to + 180, where 0 is the "nose" of the robot
 
         # runs from 0 to 360
         self.yaw_odom_0_360 = self.m180_p180 + 180.0
@@ -200,7 +200,7 @@ class NavigationProvider:
             "x": self.x,
             "y": self.y,
             "yaw_odom_0_360": self.yaw_odom_0_360,
-            "yaw_odom_m180_p180": self.yaw_odom_m180_p180,
+            "yaw_odom_m180_p180": self.m180_p180,
             "yaw_mag_0_360": self.yaw_mag_0_360,
             "yaw_mag_cardinal": self.yaw_mag_cardinal,
             "body_height_cm": self.body_height_cm,
@@ -208,7 +208,7 @@ class NavigationProvider:
         }
 
         logging.debug(
-            f"NAV x,y,yaw: {round(self.x,2)},{round(self.y,2)},{round(self.yaw_odom_0_360,2)},{round(self.yaw_mag_0_360,2)}"
+            f"NAV x,y,yaw_odom,yaw_mag: {round(self.x,2)},{round(self.y,2)},{round(self.yaw_odom_0_360,2)},{round(self.yaw_mag_0_360,2)}"
         )
 
     def poseMessageHandler(self, msg: PoseStamped_):
