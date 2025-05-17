@@ -178,7 +178,9 @@ class UnitreeGo2Lowstate(FuserInput[str]):
 
         battery_percentage = raw_input[0]
         height_cm = raw_input[3]
-        logging.info(f"Battery percentage: {battery_percentage} Body height (cm): {height_cm}")
+        logging.info(
+            f"Battery percentage: {battery_percentage} Body height (cm): {height_cm}"
+        )
 
         if battery_percentage < 15:
             message = "WARNING: You are low on energy. SIT DOWN NOW."
@@ -189,13 +191,13 @@ class UnitreeGo2Lowstate(FuserInput[str]):
         # and we do not care about body height
         if height_cm < 24 and self.body_attitude_previous == "standing":
             message = "You just sat down."
-             self.body_attitude_previous = "sitting"
-            logging.info("You just sat down")
+            self.body_attitude_previous = "sitting"
+            logging.info(message)
             return Message(timestamp=time.time(), message=message)
         elif height_cm >= 24 and self.body_attitude_previous == "sitting":
             message = "You just stood up."
-             self.body_attitude_previous = "standing"
-            logging.info("You just stood up")
+            self.body_attitude_previous = "standing"
+            logging.info(message)
             return Message(timestamp=time.time(), message=message)
 
     async def raw_to_text(self, raw_input: List[float]):
