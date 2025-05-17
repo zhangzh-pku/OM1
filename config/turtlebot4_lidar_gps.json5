@@ -26,6 +26,7 @@
     {
       "type": "Navigation",
         "config": {
+          "gps_serial_port": "/dev/cu.usbmodem8401",
           "use_zenoh": true,
         },
     },
