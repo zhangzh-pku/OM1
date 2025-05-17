@@ -167,7 +167,7 @@ class UnitreeGo2Lowstate(FuserInput[str]):
         # and we do not care about body height
         if height_cm < 24 and self.body_attitude_previous == "standing":
             message = "You just sat down."
-            self.body_attitude_previous == "sitting"
+             self.body_attitude_previous = "sitting"
             logging.info("You just sat down")
             return Message(timestamp=time.time(), message=message)
         elif height_cm >= 24 and self.body_attitude_previous == "sitting":
