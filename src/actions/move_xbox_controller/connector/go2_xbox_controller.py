@@ -178,7 +178,7 @@ class Go2XboxControllerConnector(ActionConnector[IDLEInput]):
         -------
         None
         """
-        time.sleep(200)
+        time.sleep(0.2)
         logging.info(f"Gamepad tick")
 
         data = None
