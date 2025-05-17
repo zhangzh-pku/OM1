@@ -40,7 +40,7 @@ angles_blanked = [[-180.0, -160.0], [32.0, 46.6]]
 
 ### How to determine the sensor_mounting_angle and the angles_blanked
 
-- `sensor_mounting_angle`: The `sensor_mounting_angle` refers to the angle between the LIDAR sensor's scanning plane and the horizontal plane of your robot or platform. This parameter is crucial for accurately interpreting the sensor's data within your system'’'s coordinate framework. The `sensor_mounting_angle` can be read physically from the LIDAR. Refer to the following image for guidance:  
+- `sensor_mounting_angle`: The `sensor_mounting_angle` refers to the angle between the LIDAR sensor's scanning plane and the horizontal plane of your robot or platform. This parameter is crucial for accurately interpreting the sensor's data within your system's coordinate framework. The `sensor_mounting_angle` can be read physically from the LIDAR. Refer to the following image for guidance:  
 
 ![sensor_mounting_angle](/docs/assets/lidar_angle.png)  
 
@@ -69,11 +69,13 @@ By default, the TurtleBot4 is configured to use the RPLidar A1M8. You can verify
 ls -l /dev/RPLIDAR
 ```
 
-To see the raw data, provide the robot's URID, such as `OM742d35Cc6634`, as an argument:
+To see the raw LIDAR data, provide the robot's URID (such as `OM742d35Cc6634`) and run:
 
 ```bash
 uv run rptest.py --URID OM123435Cc1234
 ```
+
+Typically, this command would be executed on your laptop, connected to the TurtleBot4 via Zenoh.
 
 ## Using the RPLidar A1M8 in OM1
 
