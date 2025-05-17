@@ -151,7 +151,7 @@ class RPLidarProvider:
                 if health[0] == "Good":
                     logging.info(ret)
                 else:
-                    logging.info("there is a problem with the LIDARret")
+                    logging.info(f"there is a problem with the LIDAR: {ret}")
 
                 # reset to clear buffers
                 self.lidar.reset()
