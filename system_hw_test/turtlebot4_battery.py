@@ -1,10 +1,7 @@
 import argparse
-import sys
 import time
 
 import zenoh
-
-sys.path.insert(0, "../src")
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--URID", help="your robot's URID, when using Zenoh", type=str)
