@@ -3,7 +3,8 @@ import os
 import re
 from pathlib import Path
 from typing import Any, Dict, List, Tuple
-
+import time
+import asyncio
 import json5
 import openai
 import pytest
@@ -246,12 +247,23 @@ async def initialize_mock_inputs(inputs):
     """
     for input_obj in inputs:
         if hasattr(input_obj, "_poll") and hasattr(input_obj, "raw_to_text"):
-            # Poll for input data
-            input_data = await input_obj._poll()
-            if input_data is not None:
-                # Process the input data
-                await input_obj.raw_to_text(input_data)
-                logging.info(f"Initialized mock input: {type(input_obj).__name__}")
+            logging.info(f"Starting to poll for input: {type(input_obj).__name__}")
+            start_time = time.time()
+            timeout = 10.0  # 10 second timeout
+            
+            while time.time() - start_time < timeout:
+                # Poll for input data
+                input_data = await input_obj._poll()
+                if input_data is not None:
+                    # Process the input data
+                    await input_obj.raw_to_text(input_data)
+                    logging.info(f"Initialized mock input: {type(input_obj).__name__}")
+                    break
+                else:
+                    logging.info(f"Waiting for input data from {type(input_obj).__name__}...")
+                    await asyncio.sleep(0.1)  # Check every 100ms
+            else:
+                logging.warning(f"Timeout waiting for input data from {type(input_obj).__name__}")
 
 
 async def evaluate_with_llm(
