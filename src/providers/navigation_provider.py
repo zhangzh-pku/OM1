@@ -14,7 +14,7 @@ try:
     from unitree.unitree_sdk2py.idl.unitree_go.msg.dds_ import LowState_
 except ImportError:
     logging.warning(
-        "Unitree SDK or Cyclone not found. you do not need this unless you are connecting to a Unitree robot."
+        "Unitree SDK or Cyclone not found. You do not need this unless you are connecting to a Unitree robot."
     )
 
 from zenoh_idl import nav_msgs
@@ -69,7 +69,6 @@ class NavigationProvider:
 
         self.session = None
         if self.use_zenoh:
-            self.URID = URID
             if URID is None:
                 logging.warning(
                     "Aborting TurtleBot4 Navigation system, no URID provided"
@@ -77,8 +76,6 @@ class NavigationProvider:
                 return
             else:
                 logging.info(f"TurtleBot4 Navigation system is using URID: {URID}")
-
-            self.cmd_vel = f"{URID}/c3/cmd_vel"
 
             try:
                 self.session = zenoh.open(zenoh.Config())
@@ -142,7 +139,7 @@ class NavigationProvider:
         self._thread: Optional[threading.Thread] = None
         self.start()
 
-    def lowStateMessageHandler(self, msg: LowState_):
+    def lowStateMessageHandler(self, msg):  #: LowState_):
         self.low_state = msg
 
         self.battery_percentage = float(msg.bms_state.soc)
@@ -218,7 +215,7 @@ class NavigationProvider:
             f"NAV x,y,yaw_odom,yaw_mag: {round(self.x,2)},{round(self.y,2)},{round(self.yaw_odom_0_360,2)},{round(self.yaw_mag_0_360,2)}"
         )
 
-    def poseMessageHandler(self, msg: PoseStamped_):
+    def poseMessageHandler(self, msg):  #: PoseStamped_):
         # used by CycloneDDS
         p = msg.pose
 
