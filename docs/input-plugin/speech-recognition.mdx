@@ -1,0 +1,59 @@
+---
+title: Speech Recognition
+description: "Speech recognition input plugin"
+---
+ 
+## Speech Recognition Input Plugin
+
+The Speech Recognition Input Plugin in OM1 provides the ability to recognize and transcribe spoken language. This plugin captures audio input from a microphone and converts it into text, making it available to the agent's runtime core for decision-making.
+
+## ASR Components
+
+The ASR components are responsible for capturing audio input from a microphone and converting it into text. The main components are (take GoogleASRInput as an example):
+
+### Core Components
+
+```
+GoogleASRInput (extends FuserInput[str])
+├── ASRProvider (Singleton)
+│   ├── AudioInputStream
+│   │   ├── Audio capture
+│   │   ├── Chunk processing
+│   │   └── Language code handling
+│   └── WebSocket Client
+│       ├── Real-time streaming
+│       └── Message handling
+├── Message Buffer
+│   ├── Queue for raw messages
+│   └── List for processed messages
+└── IO Provider
+    └── Message formatting and delivery
+```
+
+### Data Flow
+
+Speech Recognition Input Plugin Data Flow:
+
+```
+    A[Microphone Input] --> B[AudioInputStream]
+    B --> C[WebSocket Client]
+    C --> D[Google ASR Service]
+    D --> E[ASR Response]
+    E --> F[Message Buffer]
+    F --> G[Text Processing]
+    G --> H[IO Provider]
+    H --> I[Final Output]
+```
+
+### Example configuration
+
+```json agent_inputs
+  "agent_inputs": [
+    {
+      "type": "GoogleASRInput",
+      "config": {
+        "language": "en-US"
+      }
+    }
+  ]
+```

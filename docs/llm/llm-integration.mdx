@@ -1,0 +1,96 @@
+---
+title: LLM Integration
+description: "LLM Integration"
+---
+
+## LLM Integration
+
+The LLM Integration in OM1 provides the ability to integrate with LLM models. This integration allows AI agents to use LLM models to make decisions and take actions.
+
+## LLM Integration components
+
+### Core Components
+
+```
+LLM Integration System
+├── Base Classes
+│   ├── LLMConfig
+│   │   ├── Configuration parameters
+│   │   └── Dynamic parameter handling
+│   └── LLM[T]
+│       ├── Generic interface
+│       └── Type-safe responses
+├── Output Models
+│   ├── Command
+│   │   ├── Action type
+│   │   └── Action value
+│   └── CortexOutputModel
+│       └── Command sequence
+└── Plugin Implementations
+    ├── OpenAI LLM
+    ├── Multi LLM
+    ├── RAG Multi LLM
+    ├── XAI LLM
+    ├── DeepSeek LLM
+    └── Gemini LLM
+```
+
+### Data Flow
+
+```
+    A[User Input] --> B[LLM Plugin]
+    B --> C[Model Configuration]
+    C --> D[API Request]
+    D --> E[Model Processing]
+    E --> F[Response Parsing]
+    F --> G[Output Model]
+    G --> H[Command Generation]
+    H --> I[Execution]
+```
+
+#### Configuration System
+
+```
+1. LLMConfig
+   ├── Base Parameters
+   │   ├── base_url
+   │   ├── api_key
+   │   ├── model
+   │   └── agent_name
+   ├── Dynamic Parameters
+   │   ├── history_length
+   │   └── extra_params
+   └── Access Methods
+       ├── __getitem__
+       └── __setitem__
+```
+
+#### Plugin System
+
+```
+1. Dynamic Loading
+   ├── Plugin Discovery
+   ├── Class Inspection
+   └── Type Validation
+
+2. Plugin Types
+   ├── Single Model
+   │   └── Direct API integration
+   ├── Multi Model
+   │   └── Model orchestration
+   └── RAG Enhanced
+       └── Retrieval augmentation
+```
+
+### Example configuration
+
+```
+  "cortex_llm": {
+    "type": "OpenAILLM",
+    "config": {
+      "base_url": "", // Optional: URL of the LLM endpoint
+      "agent_name": "Iris", // Optional: Name of the agent
+      "history_length": 10
+    }
+  },
+```

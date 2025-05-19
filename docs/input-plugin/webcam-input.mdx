@@ -1,0 +1,103 @@
+---
+title: Webcam Input
+description: "Webcam input plugin"
+---
+
+## Webcam Input Plugin
+
+The Webcam Input Plugin in OM1 provides the ability to generate texts from a webcam. This plugin captures images from a webcam, translates into texts and makes them available to the agent's runtime core for decision-making.
+
+## Vision Components
+
+### Core Components
+
+```
+VLM_COCO_Local (extends FuserInput[Image.Image])
+├── Model Components
+│   ├── FasterRCNN_MobileNet_V3_Large_320_FPN
+│   │   ├── Pre-trained weights: COCO_V1
+│   │   └── Backbone: MobileNet_V3_Large_Weights.IMAGENET1K_V1
+│   └── Detection Processing
+│       ├── Object detection
+│       ├── Bounding box processing
+│       └── Score thresholding
+├── Camera Interface
+│   ├── OpenCV VideoCapture
+│   ├── Frame processing
+│   └── Device management
+└── Message System
+    ├── Message buffer
+    ├── IO Provider
+    └── Sleep Ticker Provider
+```
+
+### Data Flow
+
+```
+    A[Webcam Input] --> B[OpenCV VideoCapture]
+    B --> C[Frame Processing]
+    C --> D[PyTorch Model]
+    D --> E[Object Detection]
+    E --> F[Detection Filtering]
+    F --> G[Message Generation]
+    G --> H[IO Provider]
+    H --> I[Final Output]
+```
+
+#### Image processing pipeline:
+
+```
+[Processing Steps]
+1. Frame Capture
+   ├── OpenCV VideoCapture
+   └── Frame validation
+
+2. Model Processing
+   ├── Image preprocessing
+   │   ├── Transpose (2, 0, 1)
+   │   ├── Batch expansion
+   │   └── Normalization (0-255 to 0-1)
+   ├── Model inference
+   └── Detection filtering
+
+3. Spatial Analysis
+   ├── Bounding box processing
+   ├── Center point calculation
+   └── Direction determination
+      ├── Left third
+      ├── Middle third
+      └── Right third
+```
+
+#### Message generation
+
+```
+[Message Format]
+1. Primary Object
+   ├── Object label
+   ├── Spatial position
+   └── Confidence score
+
+2. Secondary Object (optional)
+   ├── Object label
+   └── Basic presence
+
+3. Output Format
+   ├── Directional context
+   ├── Object identification
+   └── Natural language formatting
+```
+
+### Example configuration
+
+```json agent_inputs
+  "agent_inputs": [
+    {
+      "type": "VLM_COCO_Local",
+      "config": {
+        "camera_index": 0
+      }
+    }
+  ]
+```
+

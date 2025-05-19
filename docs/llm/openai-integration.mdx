@@ -1,0 +1,61 @@
+---
+title: OpenAI Integration
+description: "OpenAI Integration"
+---
+
+## OpenAI Integration overview
+
+This page provides detailed information about the OpenAI integration in the OM1 system, explaining how it enables agents to leverage OpenAI's language models. 
+
+The OpenAI integration is implemented as a plugin within OM1's LLM system, providing a standardized interface for communicating with OpenAI's language models like GPT-4. It handles authentication, API communication, prompt formatting, response parsing, and conversation history management.
+
+![](/assets/openai-integration-overview.png)
+
+## History Management
+
+The LLMHistoryManager automatically manages conversation context:
+
+- Formats agent inputs and actions into structured messages
+- Maintains a buffer of recent interactions
+- When history exceeds `history_length`, summarizes previous interactions
+- Provides formatted message history to the LLM on each request
+
+## OpenAI Integration components
+
+```
+[Class Hierarchy]
+OpenAILLM
+├── Inheritance
+│   └── LLM[R] (Generic)
+├── Type Parameters
+│   └── R (bound to BaseModel)
+└── Core Components
+    ├── OpenAI Client
+    ├── History Manager
+    └── IO Provider
+```
+
+## Data Flow
+
+```
+    A[User Input] --> B[ask Method]
+    B --> C[History Manager]
+    C --> D[OpenAI API Request]
+    D --> E[Response Processing]
+    E --> F[Model Validation]
+    F --> G[Output Parsing]
+    G --> H[Response Return]
+```
+
+## Example Configuration
+
+```
+  "cortex_llm": {
+    "type": "OpenAILLM",
+    "config": {
+      "base_url": "", // Optional: URL of the LLM endpoint
+      "agent_name": "Iris", // Optional: Name of the agent
+      "history_length": 10
+    }
+  },
+```
