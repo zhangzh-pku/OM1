@@ -61,7 +61,7 @@ class TurtleBot4Batt(FuserInput[str]):
         self.URID = getattr(self.config, "URID", "default")
         logging.info(f"Using TurtleBot4 URID: {self.URID}")
 
-        logging.info("Creating Zenoh TurtleBot4 Subscriber")
+        logging.info("Creating Zenoh TurtleBot4 Subscribers")
         self.batts = self.z.declare_subscriber(
             f"{self.URID}/c3/battery_state", self.listener_battery
         )
@@ -82,6 +82,9 @@ class TurtleBot4Batt(FuserInput[str]):
             Zenoh sample containing battery state data
         """
         battery = sensor_msgs.BatteryState.deserialize(sample.payload.to_bytes())
+
+        logging.info(f"TB4 battery: {battery}")
+
         self.battery_percentage = int(battery.percentage * 100)
         self.battery_voltage = battery.voltage
         self.battery_temperature = round(battery.temperature, 2)
