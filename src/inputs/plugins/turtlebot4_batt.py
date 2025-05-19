@@ -139,7 +139,9 @@ class TurtleBot4Batt(FuserInput[str]):
 
         await self.update_status()
 
-        logging.info(f"TB4 batt:{self.battery_status}")
+        logging.info(
+            f"TB4 batt percent:{self.battery_percentage} low?: {self.battery_status}"
+        )
 
         return [self.battery_status]
 
