@@ -83,7 +83,7 @@ class TurtleBot4Batt(FuserInput[str]):
         """
         battery = sensor_msgs.BatteryState.deserialize(sample.payload.to_bytes())
 
-        logging.info(f"TB4 battery: {battery}")
+        logging.info(f"TB4 battery callback: {battery}")
 
         self.battery_percentage = int(battery.percentage * 100)
         self.battery_voltage = battery.voltage
