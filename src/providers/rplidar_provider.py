@@ -285,6 +285,8 @@ class RPLidarProvider:
         sorted_indices = array[:, 2].argsort()
         array = array[sorted_indices]
 
+        logging.debug(f"_process array: {array}")
+
         X = array[:, 0]
         Y = array[:, 1]
         # A = array[:, 2]
