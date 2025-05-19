@@ -77,7 +77,7 @@ Robot and sensor configuration
 half_width_robot = 0.20  # the width of the robot is 40 cm
 max_relevant_distance = 1.1  # meters
 sensor_mounting_angle = 172.0  # corrects for how sensor is mounted
-angles_blanked = [[-180.0, -160.0], [160.0, 180.0]]
+angles_blanked = [[-180.0, -160.0], [170.0, 180.0]]
 
 # Figure 2 - the zoom and the possible paths
 centerZoom = ax2.plot([0], [0], "o", color="blue")[0]  # the robot
