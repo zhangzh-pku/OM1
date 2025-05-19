@@ -91,7 +91,6 @@ if args.URID:
     outline = ax2.add_patch(
         Rectangle((-0.05, -0.15), 0.20, 0.06, ls="--", fc="black")
     )  # the robot electronics
-
 else:
     circleZoom = ax2.add_patch(
         Circle((0, 0), 0.20, ls="--", lw=1, ec="red", fc="none")

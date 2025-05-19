@@ -67,6 +67,8 @@ class RPLidarProvider:
             # no need to reinit driver
             return
 
+        logging.info("Booting RPLidar for ther first time")
+
         self.serial_port = serial_port
         self.half_width_robot = half_width_robot
         self.angles_blanked = angles_blanked
@@ -162,11 +164,12 @@ class RPLidarProvider:
                 logging.error(f"Error in RPLidar provider: {e}")
 
         elif self.use_zenoh:
+            logging.info("Connecting to the RPLIDAR via Zenoh")
             try:
                 self.zen = zenoh.open(zenoh.Config())
                 logging.info(f"Zenoh move client opened {self.zen}")
                 logging.info(
-                    f"TurtleBot4 move listeners starting with URID: {self.URID}"
+                    f"TurtleBot4 RPLIDAR listener starting with URID: {self.URID}"
                 )
                 self.zen.declare_subscriber(f"{self.URID}/pi/scan", listenerScan)
             except Exception as e:
@@ -187,7 +190,7 @@ class RPLidarProvider:
     def _preprocess_zenoh(self, scan):
 
         if scan is None:
-            logging.info("waiting for Zenoh Laserscan data...")
+            logging.info("Waiting for Zenoh Laserscan data...")
             self._raw_scan = []
             self._lidar_string = "You might be surrounded by objects and cannot safely move in any direction. DO NOT MOVE."
             self._valid_paths = []
@@ -227,6 +230,8 @@ class RPLidarProvider:
         self._process(array_ready)
 
     def _process(self, data):
+
+        logging.debug(f"_process RP Lidar: {data}")
 
         complexes = []
 
@@ -309,6 +314,8 @@ class RPLidarProvider:
         advance = []
         turn_right = []
         retreat = []
+
+        logging.debug(f"possible_paths RP Lidar: {possible_paths}")
 
         for p in possible_paths:
             if p < 4:

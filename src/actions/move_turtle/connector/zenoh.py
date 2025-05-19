@@ -67,6 +67,7 @@ class MoveZenohConnector(ActionConnector[MoveInput]):
         while self.lidar_on is False:
             logging.info("Waiting for RPLidar Provider")
             time.sleep(0.5)
+            # someone else is starting the RPLIDAR, such as
             self.lidar = RPLidarProvider(wait=True)
             self.lidar_on = self.lidar.running
             logging.info(f"TurtleBot4 Action: Lidar running?: {self.lidar_on}")
