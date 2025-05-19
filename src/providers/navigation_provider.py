@@ -7,9 +7,16 @@ from typing import Optional
 import serial
 import zenoh
 
-from unitree.unitree_sdk2py.core.channel import ChannelSubscriber
-from unitree.unitree_sdk2py.idl.geometry_msgs.msg.dds_ import PoseStamped_
-from unitree.unitree_sdk2py.idl.unitree_go.msg.dds_ import LowState_
+try:
+    # there are needed for unitree but not TurtleBot4
+    from unitree.unitree_sdk2py.core.channel import ChannelSubscriber
+    from unitree.unitree_sdk2py.idl.geometry_msgs.msg.dds_ import PoseStamped_
+    from unitree.unitree_sdk2py.idl.unitree_go.msg.dds_ import LowState_
+except ImportError:
+    logging.warning(
+        "Unitree SDK or Cyclone not found. you do not need this unless you are connecting to a Unitree robot."
+    )
+
 from zenoh_idl import nav_msgs
 
 from .singleton import singleton
