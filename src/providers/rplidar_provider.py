@@ -309,6 +309,7 @@ class RPLidarProvider:
                     logging.debug(f"_process dist: {dist}")
                     if dist < self.half_width_robot:
                         # too close - this path will not work
+                        logging.debug(f"removing path: {apath}")
                         path_to_remove = np.array([apath])
                         possible_paths = np.setdiff1d(possible_paths, path_to_remove)
                         break  # no need to keep checking this path - we know this path is bad
