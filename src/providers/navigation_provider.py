@@ -83,7 +83,7 @@ class NavigationProvider:
             except Exception as e:
                 logging.error(f"Error opening Zenoh client: {e}")
 
-        baudrate = 9600
+        baudrate = 115200
         timeout = 1  # Optional: set a timeout for reading
 
         self.ser = None

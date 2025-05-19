@@ -1,6 +1,6 @@
 ---
-title: Arduino GPS and compass support
-description: "Arduino GPS and compass support"
+title: Arduino GPS and Compass Support
+description: "Arduino GPS and Compass Support"
 ---
 
 ## Hardware
@@ -67,3 +67,30 @@ if (strcmp(DeviceID, "38e4bfd6") == 0) {
 ## Usage
 
 Once your Sense/FeatherWing is streaming data on the serial line, it can be fed into OM1. See `src/inputs/plugins/serial_reader` for an example of how to do that. 
+
+### Finding the Arduino on Linux
+
+When connecting the Arduino with a USB cable, you should see it appear as `/dev/ttyACM0` (sometimes the number can be different, for example `/dev/ttyACM1`). Simply run:
+
+```bash
+sudo dmesg | grep ttyACM*
+```
+
+and you should see it. At this point if you’re not sure which device is the Arduino board, run `sudo dmesg` and looks for entires with "Arduino" in it. This way you will easily spot the serial device name of your Arduino. Ypou can read the data with:
+
+```bash
+screen /dev/ttyACM0 115200
+```
+
+Note: on a typical TurtleBot4, the RPLIDAR is using `/dev/ttyUSB0`.
+
+### Finding the Arduino on Mac
+
+Determine the serial port the sensor is using:
+
+```bash
+ls /dev/tty.*  
+# or
+ls /dev/cu.*  
+```
+It should be something similar to `/dev/cu.usbmodem8401`.
