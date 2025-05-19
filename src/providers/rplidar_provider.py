@@ -20,7 +20,7 @@ gScan = None
 def listenerScan(sample):
     global gScan
     gScan = sensor_msgs.LaserScan.deserialize(sample.payload.to_bytes())
-    logging.debug(f"Zenoh Laserscan data: {gScan}")
+    # logging.debug(f"Zenoh Laserscan data: {gScan}")
 
 
 @singleton
@@ -306,6 +306,7 @@ class RPLidarProvider:
                     p1 = x - point[0]
                     p2 = y - point[1]
                     dist = math.sqrt(p1 * p1 + p2 * p2)
+                    logging.debug(f"_process dist: {dist}")
                     if dist < self.half_width_robot:
                         # too close - this path will not work
                         path_to_remove = np.array([apath])
