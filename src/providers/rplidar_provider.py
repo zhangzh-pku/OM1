@@ -312,6 +312,7 @@ class RPLidarProvider:
                         logging.debug(f"removing path: {apath}")
                         path_to_remove = np.array([apath])
                         possible_paths = np.setdiff1d(possible_paths, path_to_remove)
+                        logging.debug(f"remaining paths: {possible_paths}")
                         break  # no need to keep checking this path - we know this path is bad
 
         turn_left = []
