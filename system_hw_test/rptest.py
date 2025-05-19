@@ -279,7 +279,7 @@ def process(data):
                     possible_paths = np.setdiff1d(possible_paths, path_to_remove)
                     break  # no need to keep checking this path - we know this path is bad
 
-    # print(f"possible: {possible_paths}")
+    print(f"possible_paths RP Lidar: {possible_paths}")
 
     # convert to simple list
     ppl = possible_paths.tolist()

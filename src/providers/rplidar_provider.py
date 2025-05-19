@@ -195,7 +195,7 @@ class RPLidarProvider:
             self._lidar_string = "You might be surrounded by objects and cannot safely move in any direction. DO NOT MOVE."
             self._valid_paths = []
         else:
-            logging.debug(f"_preprocess_zenoh: {scan}")
+            # logging.debug(f"_preprocess_zenoh: {scan}")
             # angle_min=-3.1241390705108643, angle_max=3.1415927410125732
             angles = list(
                 map(
@@ -322,7 +322,10 @@ class RPLidarProvider:
 
         logging.debug(f"possible_paths RP Lidar: {possible_paths}")
 
-        for p in possible_paths:
+        # convert to simple list
+        ppl = possible_paths.tolist()
+
+        for p in ppl:
             if p < 4:
                 turn_left.append(p)
             elif p == 4:
@@ -334,7 +337,7 @@ class RPLidarProvider:
 
         return_string = "You are surrounded by objects and cannot safely move in any direction. DO NOT MOVE."
 
-        if len(possible_paths) > 0:
+        if len(ppl) > 0:
             return_string = "The safe movement choices are: {"
             if self.use_zenoh:  # i.e. you are controlling a TurtleBot4
                 if len(advance) > 0:
@@ -354,7 +357,7 @@ class RPLidarProvider:
 
         self._raw_scan = array
         self._lidar_string = return_string
-        self._valid_paths = possible_paths.tolist()
+        self._valid_paths = ppl
 
         logging.debug(
             f"RPLidar Provider string: {self._lidar_string}\nValid paths: {self._valid_paths}"
