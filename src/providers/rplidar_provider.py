@@ -231,7 +231,7 @@ class RPLidarProvider:
 
     def _process(self, data):
 
-        logging.debug(f"_process RP Lidar: {data}")
+        # logging.debug(f"_process RP Lidar: {data}")
 
         complexes = []
 
@@ -285,7 +285,7 @@ class RPLidarProvider:
         sorted_indices = array[:, 2].argsort()
         array = array[sorted_indices]
 
-        logging.debug(f"_process array: {array}")
+        # logging.debug(f"_process array: {array}")
 
         X = array[:, 0]
         Y = array[:, 1]
@@ -306,7 +306,7 @@ class RPLidarProvider:
                     p1 = x - point[0]
                     p2 = y - point[1]
                     dist = math.sqrt(p1 * p1 + p2 * p2)
-                    logging.debug(f"_process dist: {dist}")
+                    # logging.debug(f"_process dist: {dist}")
                     if dist < self.half_width_robot:
                         # too close - this path will not work
                         logging.debug(f"removing path: {apath}")
