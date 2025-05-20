@@ -86,8 +86,9 @@
           {
             "group": "Tutorials",
             "pages": [
+              "examples/overview",
               "examples/conversation",
-              "examples/gazebo"
+              "examples/gazebo"              
             ]
           },
           {
