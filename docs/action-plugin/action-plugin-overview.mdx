@@ -4,3 +4,205 @@ description: "Action plugin overview"
 ---
 
 ## Action Plugin Overview
+
+The Action Plugin is a core component of OM1 that enables agents to drive robots to interact with their environment by executing commands. 
+It serves as the output mechanism for the agent, translating high-level decisions from the Large Language Model (LLM) into concrete physical or digital actions 
+(e.g. moving a robot, speech, etc.). This page covers the architecture of the Action Plugin, the available action types, 
+and how actions are connected to different hardware and software platforms.
+
+## Action Plugin Architecture
+
+Core components of the Action Plugin:
+
+```
+Action Plugin
+├── Base Classes
+│   ├── ActionConfig
+│   │   └── Dynamic configuration
+│   ├── Interface[IT, OT]
+│   │   ├── Input type
+│   │   └── Output type
+│   ├── ActionImplementation[IT, OT]
+│   │   └── Abstract execution
+│   ├── ActionConnector[OT]
+│   │   └── Abstract connection
+│   └── AgentAction
+│       ├── Name
+│       ├── LLM label
+│       ├── Interface
+│       ├── Implementation
+│       └── Connector
+├── Orchestration
+│   ├── ActionOrchestrator
+│   │   ├── Promise queue
+│   │   ├── Implementation threads
+│   │   └── Connector threads
+└── Action Types
+    ├── Move
+    ├── Speak
+    ├── Emotion
+    ├── Face
+    └── Tweet
+```
+
+## Data Flow
+
+```
+    A[LLM Command] --> B[ActionOrchestrator]
+    B --> C[Promise Queue]
+    C --> D[Action Implementation]
+    D --> E[Action Connector]
+    E --> F[Hardware/Service]    
+```
+
+## Detailed implementation
+
+### Move Action
+
+Let's take the `move` Action as an example to illustrate the implementation details of the Action Plugin.
+
+[move codes](https://github.com/OpenmindAGI/OM1/tree/main/src/actions/move)
+
+```
+[Move Action Structure]
+1. Interface
+   ├── Input Protocol
+   │   └── Action command
+   └── Output Protocol
+       └── Movement result
+
+2. Implementation
+   ├── Command Processing
+   ├── Movement Execution
+   └── Result Generation
+
+3. Connector
+   ├── Hardware Interface
+   ├── Movement Control
+   └── Status Reporting
+```
+
+### Speak Action
+
+Let's take the `speak` Action as an example to illustrate the implementation details of the Action Plugin.
+
+[speak codes](https://github.com/OpenmindAGI/OM1/tree/main/src/actions/speak)
+
+```
+[Speak Action Structure]
+1. Interface
+   ├── Input Protocol
+   │   └── Text to speak
+   └── Output Protocol
+       └── Speech result
+
+2. Implementation
+   ├── Text Processing
+   ├── Speech Generation
+   └── Result Handling
+
+3. Connector
+   ├── Audio Output
+   ├── Speech Control
+   └── Status Monitoring
+```
+
+## Action Orchestrator
+
+The Action Orchestrator is the central component that orchestrates the execution of actions. It manages the states, promise queue, and threads for each action.
+
+### Orchestrator architecture
+
+```
+├── State Management
+│   ├── Promise Queue
+│   │   └── List[asyncio.Task[Any]]
+│   ├── Implementation Threads
+│   │   └── Dict[str, Thread]
+│   └── Connector Threads
+│       └── Dict[str, Thread]
+├── Configuration
+│   └── RuntimeConfig
+└── Action Management
+    ├── Action Registration
+    ├── Command Processing
+    └── Response Handling
+```
+
+### Threading model
+
+```
+[Threading Architecture]
+1. Implementation Threads
+   ├── Purpose
+   │   ├── Action execution
+   │   └── Non-blocking operation
+   ├── Management
+   │   ├── Thread creation
+   │   ├── Error handling
+   │   └── Lifecycle control
+   └── Communication
+       ├── Thread-safe operations
+       └── State synchronization
+
+2. Connector Threads
+   ├── Purpose
+   │   ├── Hardware communication
+   │   └── Status monitoring
+   ├── Management
+   │   ├── Thread creation
+   │   ├── Error handling
+   │   └── Lifecycle control
+   └── Communication
+       ├── Thread-safe operations
+       └── State synchronization
+```
+
+### Promise management
+
+```
+[Promise System]
+1. Promise Queue
+   ├── Task Tracking
+   │   ├── Active tasks
+   │   └── Task status
+   ├── Task Management
+   │   ├── Task creation
+   │   ├── Task completion
+   │   └── Error handling
+   └── Queue Operations
+       ├── Task addition
+       ├── Task removal
+       └── Queue cleanup
+
+2. Promise Processing
+   ├── Task Execution
+   │   ├── Async execution
+   │   └── Result handling
+   ├── Error Handling
+   │   ├── Exception catching
+   │   └── Error recovery
+   └── State Management
+       ├── Task state
+       └── Queue state
+```
+
+
+## Example configuration
+
+```
+  "agent_actions": [
+    {
+      "name": "move",
+      "llm_label": "move",
+      "implementation": "passthrough",
+      "connector": "ros2"
+    },
+    {
+      "name": "speak",
+      "llm_label": "speak",
+      "implementation": "passthrough",
+      "connector": "ros2"
+    }
+  ]
+```

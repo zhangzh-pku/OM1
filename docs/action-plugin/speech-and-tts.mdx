@@ -1,0 +1,96 @@
+---
+title: Speech and TTS
+description: "Speech and TTS"
+---
+
+## Speech and TTS
+
+The Speech and TTS action plugin allows agents to speak aloud with a text-to-speech (TTS) system.
+
+## Architecture
+
+The Speech and TTS action plugin is composed of two main components as `move` action plugin:
+
+- Interface Layer
+- Connector Layer
+
+```
+[Speak Action Architecture]
+├── Interface Layer
+│   └── SpeakInput Dataclass
+│       └── action: str
+└── Connector Layer
+    ├── ElevenLabs TTS
+    │   ├── High-quality voice synthesis
+    │   └── ASR integration
+    ├── Riva TTS
+    │   ├── NVIDIA's TTS engine
+    │   └── ASR integration
+    ├── Zenoh Publisher
+    │   ├── Distributed messaging
+    │   └── Topic-based publishing
+    └── ROS2 Connector
+        └── ROS2 message publishing
+```
+
+## Data Flow
+
+```
+    A[LLM Command] --> B[Speak Interface]
+    B --> C[SpeakInput]
+    C --> D[TTS Connector]
+    D --> E[Audio Output]
+```
+
+## Core components
+
+```
+[Implementation Components]
+1. TTS Connectors
+   ├── ElevenLabs TTS
+   │   ├── Voice configuration
+   │   ├── Model selection
+   │   └── Format control
+   ├── Riva TTS
+   │   ├── NVIDIA integration
+   │   └── API configuration
+   └── Common Features
+       ├── ASR integration
+       ├── Device management
+       └── State handling
+
+2. Message Publishers
+   ├── Zenoh Publisher
+   │   ├── Topic management
+   │   └── Message queuing
+   └── ROS2 Connector
+       ├── Message formatting
+       └── ROS2 integration
+```
+
+## Key Features
+
+```
+[Feature Set]
+1. TTS Capabilities
+   ├── Voice Synthesis
+   │   ├── Multiple providers
+   │   └── Quality options
+   ├── Device Management
+   │   ├── Microphone control
+   │   └── Speaker control
+   └── State Management
+       ├── ASR synchronization
+       └── TTS state tracking
+
+2. Message Publishing
+   ├── Distributed Communication
+   │   ├── Zenoh topics
+   │   └── ROS2 messages
+   ├── Message Queuing
+   │   ├── Pending messages
+   │   └── State management
+   └── Integration Points
+       ├── System interfaces
+       └── Provider APIs
+```

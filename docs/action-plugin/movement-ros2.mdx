@@ -1,0 +1,66 @@
+---
+title: Movement through ROS2
+description: "Movement through ROS2"
+---
+
+## Movement through ROS2
+
+The Movement through ROS2 action plugin allows agents to move a robot in a simulated or real robot using ROS2.
+
+## Architecture
+
+```
+[ROS2 Move Action Architecture]
+├── Interface Layer
+│   ├── MovementAction Enum // movement actions types, examples
+│   │   ├── STAND_STILL
+│   │   ├── SIT
+│   │   ├── DANCE
+│   │   ├── SHAKE_PAW
+│   │   ├── WALK
+│   │   ├── WALK_BACK
+│   │   ├── RUN
+│   │   ├── JUMP
+│   │   └── WAG_TAIL
+│   └── MoveInput Dataclass
+│       └── action: MovementAction
+└── Connector Layer
+    └── MoveRos2Connector
+        ├── connect() method
+        └── tick() method
+```
+
+## Data Flow
+
+```
+    A[LLM Command] --> B[Move Interface]
+    B --> C[MoveInput]
+    C --> D[MoveRos2Connector]
+    D --> E[ROS2 Message]
+    E --> F[Robot Control]
+```
+
+## Implementation details
+
+```
+[Implementation Components]
+1. Interface Definition
+   ├── MovementAction Enum
+   │   ├── Predefined movements
+   │   └── String-based values
+   └── MoveInput Dataclass
+       └── Single action field
+
+2. ROS2 Connector
+   ├── Message Format
+   │   └── {"move": action_string}
+   ├── Action Mapping
+   │   ├── Direct enum to string
+   │   └── Logging for unknown
+   └── Timing Control
+       └── tick interval
+```
+
+
+
+

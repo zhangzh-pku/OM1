@@ -67,7 +67,11 @@
           {
             "group": "Action Plugins",
             "pages": [
-              "action-plugin/action-plugin-overview"
+              "action-plugin/action-plugin-overview",
+              "action-plugin/movement-ros2",
+              "action-plugin/movement-zenoh",
+              "action-plugin/ros2-vs-zenoh",
+              "action-plugin/speech-and-tts"
             ]
           },
           {

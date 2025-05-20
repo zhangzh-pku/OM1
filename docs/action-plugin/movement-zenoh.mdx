@@ -1,0 +1,112 @@
+---
+title: Movement through Zenoh
+description: "Movement through Zenoh"
+---
+
+## Movement through Zenoh
+
+The Movement through Zenoh action plugin allows agents to move a robot in a simulated or real robot using Zenoh.
+In this page, we will use the [Move Turtle](https://github.com/OpenmindAGI/OM1/tree/main/src/actions/move_turtle) as an example.
+
+## Architecture
+
+The action plugin is composed of two main components:
+
+- Interface Layer
+- Connector Layer
+
+```
+[Move Turtle Architecture] // as example
+├── Interface Layer
+│   ├── MovementAction Enum
+│   │   ├── TURN_LEFT
+│   │   ├── TURN_RIGHT
+│   │   ├── MOVE_FORWARDS
+│   │   └── STAND_STILL
+│   └── MoveInput Dataclass
+│       └── action: MovementAction
+└── Connector Layer
+    ├── MoveZenohConnector
+    │   ├── Local Control
+    │   └── Hazard Detection
+    └── MoveZenohRemoteConnector
+        ├── Remote Control
+        └── WebSocket Integration
+```
+
+## Data Flow
+
+The data flow is as follows:
+```
+    A[LLM Command] --> B[Move Interface]
+    B --> C[MoveInput]
+    C --> D[Zenoh Connector]
+    D --> E[Zenoh Session]
+    E --> F[Robot Control]
+```
+
+## Core components
+
+There are 2 control modes through zenoh:
+
+- Local control
+- Remote control
+
+### Local control
+
+```
+1. Local Control (MoveZenohConnector)
+   ├── State Management
+   │   ├── Position tracking
+   │   ├── Orientation tracking
+   │   └── Hazard detection
+   ├── Movement Control
+   │   ├── Velocity commands
+   │   └── Angular commands
+   └── Safety Features
+       ├── Hazard avoidance
+       ├── Path validation
+       └── Emergency handling
+```
+
+### Remote control
+
+```
+2. Remote Control (MoveZenohRemoteConnector)
+   ├── WebSocket Integration
+   │   ├── Command reception
+   │   └── Status updates
+   ├── Zenoh Publishing
+   │   ├── Command forwarding
+   │   └── Latency tracking
+   └── Error Handling
+       ├── Connection management
+       └── Command validation
+```
+
+## Key Features
+
+```
+[Feature Set]
+1. Local Control
+   ├── Real-time Odometry
+   │   ├── Position tracking
+   │   └── Orientation calculation
+   ├── Hazard Detection
+   │   ├── Collision avoidance
+   │   └── Path planning
+   └── Movement Commands
+       ├── Linear velocity
+       └── Angular velocity
+
+2. Remote Control
+   ├── WebSocket Communication
+   │   ├── Command streaming
+   │   └── Status monitoring
+   ├── Latency Management
+   │   ├── Timestamp tracking
+   │   └── Performance logging
+   └── Command Processing
+       ├── JSON parsing
+       └── Command validation
+```
