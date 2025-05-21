@@ -19,7 +19,7 @@ class MoveRos2Connector(ActionConnector[MoveInput]):
     def __init__(self, config: ActionConfig):
         super().__init__(config)
 
-        self.current_state = RobotState.STANDING
+        self.current_state = None
 
         self.move_speed = 0.7
         self.turn_speed = 0.6
@@ -72,7 +72,7 @@ class MoveRos2Connector(ActionConnector[MoveInput]):
             navigation_attempts += 1
             if navigation_attempts > navigation_timeout:
                 logging.warning(
-                    f"Navigation Provider timeout after {navigation_attempts} attempts - no Navigation - DANGEROUS"
+                    f"Navigation Provider timeout after {navigation_attempts} attempts - no Navigation data - DANGEROUS"
                 )
                 break
             time.sleep(0.5)
@@ -80,6 +80,7 @@ class MoveRos2Connector(ActionConnector[MoveInput]):
         self.thread_lock = threading.Lock()
 
     def _execute_command_thread(self, command: str) -> None:
+        
         try:
             if command == "StandUp" and self.current_state == RobotState.STANDING:
                 logging.info("Already standing, skipping command")
@@ -91,17 +92,13 @@ class MoveRos2Connector(ActionConnector[MoveInput]):
             code = getattr(self.sport_client, command)()
             logging.info(f"Unitree command {command} executed with code {code}")
 
-            if command == "StandUp":
-                self.current_state = RobotState.STANDING
-            elif command == "StandDown":
-                self.current_state = RobotState.SITTING
-
         except Exception as e:
             logging.error(f"Error in command thread {command}: {e}")
         finally:
             self.thread_lock.release()
 
     def _execute_sport_command_sync(self, command: str) -> None:
+        
         if not self.sport_client:
             return
 
@@ -119,6 +116,7 @@ class MoveRos2Connector(ActionConnector[MoveInput]):
             self.thread_lock.release()
 
     async def _execute_sport_command(self, command: str) -> None:
+        
         if not self.sport_client:
             return
 
@@ -147,7 +145,7 @@ class MoveRos2Connector(ActionConnector[MoveInput]):
 
         if self.lidar:
             possible_paths = self.lidar.valid_paths
-            logging.info(f"Action - Valid paths: {possible_paths}")
+            logging.debug(f"Action - Valid paths: {possible_paths}")
             for p in possible_paths:
                 if p < 4:
                     turn_left.append(p)
@@ -227,6 +225,7 @@ class MoveRos2Connector(ActionConnector[MoveInput]):
             logging.info(
                 f"self.sport_client.Move: vx={vx}, vy={vy}, vturn={vturn}"
             )
+            # do not actually move during testing 
             # self.sport_client.Move(vx, vy, vturn)
         except Exception as e:
             logging.error(f"Error moving robot: {e}")
@@ -235,7 +234,15 @@ class MoveRos2Connector(ActionConnector[MoveInput]):
 
         logging.info(f"AI Motion Tick")
 
+        if hasattr(self.navigation, 'running'):
+            nav = self.navigation.position
+            logging.debug(f"Ros2 Nav data: {nav}")
+            if nav["body_attitude"] == 'standing':
+                self.current_state = RobotState.STANDING
+            else:
+                self.current_state = RobotState.SITTING
+
         if self.motion_buffer:
-            logging.info(f"Motion Buffer: {self.motion_buffer}")
+            logging.info(f"AI command buffer: {self.motion_buffer}")
 
         time.sleep(0.1)

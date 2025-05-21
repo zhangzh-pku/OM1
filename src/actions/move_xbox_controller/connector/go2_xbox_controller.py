@@ -6,6 +6,7 @@ from enum import Enum
 from actions.base import ActionConfig, ActionConnector
 from actions.move_xbox_controller.interface import IDLEInput
 from unitree.unitree_sdk2py.go2.sport.sport_client import SportClient
+from providers.navigation_provider import NavigationProvider
 
 try:
     import hid
@@ -76,7 +77,29 @@ class Go2XboxControllerConnector(ActionConnector[IDLEInput]):
         self.move_speed = 0.5
         self.turn_speed = 0.5
 
-        self.current_state = RobotState.STANDING
+        self.current_state = None
+
+        self.navigation_on = False
+        self.navigation = None
+        
+        navigation_timeout = 10
+        navigation_attempts = 0
+
+        while not self.navigation_on:
+            logging.info(f"Waiting for Navigation Provider. Attempt: {navigation_attempts}")
+            self.navigation = NavigationProvider(wait=True)
+            if hasattr(self.navigation, 'running'):
+                self.navigation_on = self.navigation.running
+                logging.info(f"Action: navigation running?: {self.navigation_on}")
+            else:
+                logging.info("Action: waiting for navigation")
+            navigation_attempts += 1
+            if navigation_attempts > navigation_timeout:
+                logging.warning(
+                    f"Navigation Provider timeout after {navigation_attempts} attempts - no Navigation data - DANGEROUS"
+                )
+                break
+            time.sleep(0.5)
 
         self.thread_lock = threading.Lock()
 
@@ -92,11 +115,6 @@ class Go2XboxControllerConnector(ActionConnector[IDLEInput]):
             code = getattr(self.sport_client, command)()
             logging.info(f"Unitree command {command} executed with code {code}")
 
-            if command == "StandUp":
-                self.current_state = RobotState.STANDING
-            elif command == "StandDown":
-                self.current_state = RobotState.SITTING
-
         except Exception as e:
             logging.error(f"Error in command thread {command}: {e}")
         finally:
@@ -104,24 +122,24 @@ class Go2XboxControllerConnector(ActionConnector[IDLEInput]):
 
     def _execute_sport_command_sync(self, command: str) -> None:
 
-        logging.info(f"_execute_sport_command_sync({command})")
+        logging.debug(f"_execute_sport_command_sync({command})")
 
         if self.sport_client is None:
-            logging.info("No sport client, skipping")
+            logging.debug("No sport client, skipping")
             return
 
-        # if not self.thread_lock.acquire(blocking=False):
-        #     logging.info("Action already in progress, skipping")
-        #     return
+        if not self.thread_lock.acquire(blocking=False):
+            logging.debug("Action already in progress, skipping")
+            return
 
-        # try:
-        #     thread = threading.Thread(
-        #         target=self._execute_command_thread, args=(command,), daemon=True
-        #     )
-        #     thread.start()
-        # except Exception as e:
-        #     logging.error(f"Error executing Unitree command {command}: {e}")
-        #     self.thread_lock.release()
+        try:
+            thread = threading.Thread(
+                target=self._execute_command_thread, args=(command,), daemon=True
+            )
+            thread.start()
+        except Exception as e:
+            logging.error(f"Error executing Unitree command {command}: {e}")
+            self.thread_lock.release()
 
     async def connect(self, output_interface: IDLEInput) -> None:
         """
@@ -178,17 +196,23 @@ class Go2XboxControllerConnector(ActionConnector[IDLEInput]):
         time.sleep(0.1)
         logging.info("Gamepad tick")
 
+        if hasattr(self.navigation, 'running'):
+            nav = self.navigation.position
+            logging.debug(f"XBOX Nav data: {nav}")
+            if nav and nav["body_attitude"] == 'standing':
+                self.current_state = RobotState.STANDING
+            else:
+                self.current_state = RobotState.SITTING
+
         data = None
 
         if self.gamepad:
-            # try to read USB data, and if there is nothing there,
-            # timeout
+            # try to read USB data, and if there is nothing there, timeout
             # data = list(self.gamepad.read(64, timeout=50))
-            data = list(self.gamepad.read(64))
+            data = list(self.gamepad.read(64, timeout=50))
 
         if len(data) > 0:
-
-            logging.info(f"Gamepad data: {data}")
+            logging.debug(f"Gamepad data: {data}")
 
         #     # Process triggers for rotation
         #     # RT is typically on byte 9, LT on byte 8 for Xbox controllers
@@ -222,45 +246,61 @@ class Go2XboxControllerConnector(ActionConnector[IDLEInput]):
         #             logging.debug("Triggers released - Stopping rotation")
         #             self._move_robot(0.0, 0.0)
 
-        #     d_pad_value = data[13]
-        #     if d_pad_value != self.d_pad_previous:
-        #         self.d_pad_previous = d_pad_value
+            d_pad_value  = data[13]
+            button_value = data[14]
 
-        #         # Control robot movement based on D-pad
-        #         if d_pad_value == 1:  # Up
-        #             logging.info("D-pad UP - Moving forward")
-        #             self._move_robot(self.move_speed, 0.0)
-        #         elif d_pad_value == 5:  # Down
-        #             logging.info("D-pad DOWN - Moving backward")
-        #             self._move_robot(-self.move_speed, 0.0)
-        #         elif d_pad_value == 7:  # Left
-        #             logging.info("D-pad LEFT - Turning left")
-        #             self._move_robot(0.0, self.move_speed)
-        #         elif d_pad_value == 3:  # Right
-        #             logging.info("D-pad RIGHT - Turning right")
-        #             self._move_robot(0.0, -self.move_speed)
-        #         elif d_pad_value == 0:  # Nothing pressed
-        #             logging.debug("D-pad released - Stopping movement")
-        #             self._move_robot(0.0, 0.0)
+            #logging.info(f"D-pad: {d_pad_value} {self.d_pad_previous}")
 
-        #     button_value = data[14]
-        #     if self.button_previous == 0 and button_value > 0:
-        #         # We need this logic because when the user presses a button
-        #         # the gamepad sends a 'press' indication numerous times
-        #         # for several hundred ms, creating numerous
-        #         # duplicated movement commands with a single button press.
-        #         # To prevent this, which would freeze/crash the robot,
-        #         # we only act when the button state changes from 0 to > 0
-        #         # This is basically a software button debounce
+            if d_pad_value != self.d_pad_previous:                
+                # Control robot movement based on D-pad
+                logging.debug(f"Gamepad DPAD change: {data}")
+                self.d_pad_previous = d_pad_value
+                if d_pad_value == 1:  # Up
+                    logging.info("D-pad UP - Moving forward")
+                    self._move_robot(self.move_speed, 0.0)
+                    self.button_previous = button_value
+                    return
+                elif d_pad_value == 5:  # Down
+                    logging.info("D-pad DOWN - Moving backward")
+                    self._move_robot(-self.move_speed, 0.0)
+                    self.button_previous = button_value
+                    return
+                elif d_pad_value == 7:  # Left
+                    logging.info("D-pad LEFT - Turning left")
+                    self._move_robot(0.0, self.move_speed)
+                    self.button_previous = button_value
+                    return
+                elif d_pad_value == 3:  # Right
+                    logging.info("D-pad RIGHT - Turning right")
+                    self._move_robot(0.0, -self.move_speed)
+                    self.button_previous = button_value
+                    return
+                elif d_pad_value == 0:  # RELEASE
+                    logging.debug("D-pad released - Stopping movement")
+                    self._move_robot(0.0, 0.0)
+                    self.button_previous = button_value
+                    return
 
-        #         # button A
-        #         if button_value == 1:
-        #             #self._execute_sport_command_sync("StandUp")
-        #             logging.info("Controller unitree: stand_up")
-        #         # button B
-        #         elif button_value == 2:
-        #             #self._execute_sport_command_sync("StandDown")
-        #             logging.info("Controller unitree: lay_down")
+                # # we are moving - do not doublemove
+                # return
+
+            if self.button_previous == 0 and button_value > 0:
+                # We need this logic because when the user presses a button
+                # the gamepad sends a 'press' indication numerous times
+                # for several hundred ms, creating numerous
+                # duplicated movement commands with a single button press.
+                # To prevent this, which would freeze/crash the robot,
+                # we only act when the button state changes from 0 to > 0
+                # This is basically a software button debounce
+
+                # button A
+                if button_value == 1:
+                    self._execute_sport_command_sync("StandUp")
+                    logging.info("Controller unitree: stand_up")
+                # button B
+                elif button_value == 2:
+                    self._execute_sport_command_sync("StandDown")
+                    logging.info("Controller unitree: lay_down")
         #         # # X button
         #         # elif button_value == 8:
         #         #     self._execute_sport_command_sync("Hello")
@@ -270,7 +310,8 @@ class Go2XboxControllerConnector(ActionConnector[IDLEInput]):
         #         #     self._execute_sport_command_sync("Stretch")
         #         #     logging.info("Controller unitree: stretch")
 
-        #         logging.info(f"Gamepad button depressed edge {button_value}")
+                logging.info(f"Gamepad button depressed edge {button_value}")
 
-        #     # refresh the button value for debounce
-        #     self.button_previous = button_value
+            # refresh the button value for debounce
+            #self.d_pad_previous = d_pad_value
+            #self.button_previous = button_value

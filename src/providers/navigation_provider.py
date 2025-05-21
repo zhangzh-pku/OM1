@@ -107,13 +107,17 @@ class NavigationProvider:
         if not use_zenoh:
             # we are using CycloneDDS
             # e.g. for the Unitree Go2
-            self.lowstate_subscriber = ChannelSubscriber("rt/lowstate", LowState_)
-            self.lowstate_subscriber.Init(self.lowStateMessageHandler, 10)
+            try:
+                self.lowstate_subscriber = ChannelSubscriber("rt/lowstate", LowState_)
+                self.lowstate_subscriber.Init(self.lowStateMessageHandler, 10)
 
-            self.pose_subscriber = ChannelSubscriber(
-                "rt/utlidar/robot_pose", PoseStamped_
-            )
-            self.pose_subscriber.Init(self.poseMessageHandler, 10)
+                self.pose_subscriber = ChannelSubscriber(
+                    "rt/utlidar/robot_pose", PoseStamped_
+                )
+                self.pose_subscriber.Init(self.poseMessageHandler, 10)
+            except:
+                logging.info(f"Nav provider: Could not start CycloneDDS")
+
 
         # battery state
         self.battery_percentage = 0.0
@@ -271,8 +275,8 @@ class NavigationProvider:
                 logging.debug("zenohOdomProcessor")
                 self.zenohOdomProcessor()
             else:
-                logging.info(
-                    f"Cyclone Nav Provider: {self.body_height_cm} {self.position}"
+                logging.debug(
+                    f"Cyclone Nav Provider: {self.body_height_cm} position: {self.position}"
                 )
 
             if self.ser:

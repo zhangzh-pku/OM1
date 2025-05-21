@@ -56,18 +56,19 @@ class RPLidarProvider:
         sensor_mounting_angle: float = 180.0,
         URID: str = "",
         use_zenoh: bool = False,
+        simple_paths: bool = False
     ):
         """
         Robot and sensor configuration
         """
 
-        logging.info("Booting RPLidar")
+        logging.info("Checking RPLidar")
 
         if wait:
             # no need to reinit driver
             return
 
-        logging.info("Booting RPLidar for ther first time")
+        logging.info("Booting RPLidar")
 
         self.serial_port = serial_port
         self.half_width_robot = half_width_robot
@@ -76,6 +77,7 @@ class RPLidarProvider:
         self.sensor_mounting_angle = sensor_mounting_angle
         self.URID = URID
         self.use_zenoh = use_zenoh
+        self.simple_paths = simple_paths
 
         self.running: bool = False
         self.lidar = None
@@ -85,6 +87,9 @@ class RPLidarProvider:
         self._raw_scan: Optional[NDArray] = None
         self._valid_paths: Optional[list] = None
         self._lidar_string: str = None
+
+        self.angles = None
+        self.angles_final = None
 
         """
         precompute Bezier trajectories
@@ -197,16 +202,18 @@ class RPLidarProvider:
         else:
             # logging.debug(f"_preprocess_zenoh: {scan}")
             # angle_min=-3.1241390705108643, angle_max=3.1415927410125732
-            angles = list(
-                map(
-                    lambda x: 360.0 * (x + math.pi) / (2 * math.pi),
-                    np.arange(scan.angle_min, scan.angle_max, scan.angle_increment),
-                )
-            )
 
-            angles_final = np.flip(angles)
+            if not self.angles:
+                self.angles = list(
+                    map(
+                        lambda x: 360.0 * (x + math.pi) / (2 * math.pi),
+                        np.arange(scan.angle_min, scan.angle_max, scan.angle_increment),
+                    )
+                )
+                self.angles_final = np.flip(self.angles)
+            
             # angles now run from 360.0 to 0 degress
-            data = list(zip(angles_final, scan.ranges))
+            data = list(zip(self.angles_final, scan.ranges))
             array_ready = np.array(data)
             # print(f"Array {array_ready}")
             self._process(array_ready)
@@ -240,7 +247,7 @@ class RPLidarProvider:
             d_m = distance
 
             # don't worry about distant objects
-            if d_m > 5.0:
+            if d_m > self.max_relevant_distance:
                 continue
 
             # first, correctly orient the sensor zero to the robot zero
@@ -250,7 +257,18 @@ class RPLidarProvider:
             elif angle < 0.0:
                 angle = 360.0 + angle
 
-            # then, convert to radians
+            # convert the angle to -180 to +180 range
+            angle = angle - 180.0
+
+            keep = True
+            for b in self.angles_blanked:
+                if angle >= b[0] and angle <= b[1]:
+                    # this is a permanent robot reflection
+                    # disregard
+                    keep = False
+                    break
+
+            # convert to radians
             a_rad = angle * math.pi / 180.0
 
             v1 = d_m * math.cos(a_rad)
@@ -260,17 +278,6 @@ class RPLidarProvider:
             # x runs backwards to forwards, y runs left to right
             x = -1 * v2
             y = -1 * v1
-
-            # convert the angle to -180 to + 180 range
-            angle = angle - 180.0
-
-            keep = True
-            for b in self.angles_blanked:
-                if angle >= b[0] and angle <= b[1]:
-                    # this is a permanent reflection based on the robot
-                    # disregard
-                    keep = False
-                    break
 
             # the final data ready to use for path planning
             if keep:
@@ -296,11 +303,14 @@ class RPLidarProvider:
         Determine set of possible paths
         """
         possible_paths = np.array([0, 1, 2, 3, 4, 5, 6, 7, 8, 9])
-
+        if self.simple_paths:
+            # for the turtlebot - it can always turn in place, 
+            # only question is wheater it can advance
+            possible_paths = np.array([4])
+        
         # all the possible conflicting points
         for x, y, d in list(zip(X, Y, D)):
-            if d > self.max_relevant_distance:  # too far away - we do not care
-                continue
+
             for apath in possible_paths:
                 for point in self.pp[apath]:
                     p1 = x - point[0]
