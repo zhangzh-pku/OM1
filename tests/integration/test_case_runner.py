@@ -604,6 +604,7 @@ def get_test_cases_by_tags(tags: List[str] = None) -> List[Path]:
 
 @pytest.mark.parametrize("test_case_path", get_test_cases_by_tags())
 @pytest.mark.asyncio
+@pytest.mark.integration
 async def test_from_config(test_case_path: Path):
     """
     Run a test based on a configuration file.
@@ -647,6 +648,7 @@ async def test_from_config(test_case_path: Path):
 
 # Run a specific test case by name
 @pytest.mark.asyncio
+@pytest.mark.integration
 async def test_specific_case():
     """Run a specific test case by name for debugging."""
     test_name = os.environ.get("TEST_CASE", "coco_indoor_detection")
