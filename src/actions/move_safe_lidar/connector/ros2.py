@@ -19,7 +19,8 @@ class MoveRos2Connector(ActionConnector[MoveInput]):
     def __init__(self, config: ActionConfig):
         super().__init__(config)
 
-        self.current_state = None
+        self.dog_attitude = None
+        self.dog_moving = None
 
         self.move_speed = 0.7
         self.turn_speed = 0.6
@@ -82,10 +83,10 @@ class MoveRos2Connector(ActionConnector[MoveInput]):
     def _execute_command_thread(self, command: str) -> None:
         
         try:
-            if command == "StandUp" and self.current_state == RobotState.STANDING:
+            if command == "StandUp" and self.dog_attitude == RobotState.STANDING:
                 logging.info("Already standing, skipping command")
                 return
-            elif command == "StandDown" and self.current_state == RobotState.SITTING:
+            elif command == "StandDown" and self.dog_attitude == RobotState.SITTING:
                 logging.info("Already sitting, skipping command")
                 return
 
@@ -137,6 +138,10 @@ class MoveRos2Connector(ActionConnector[MoveInput]):
 
         # this is used only by the LLM
         logging.info(f"AI command.connect: {output_interface.action}")
+
+        if self.dog_moving:
+            logging.info(f"Disregard AI movment command - robot is moving")
+            return
 
         turn_left = []
         advance = []
@@ -218,7 +223,10 @@ class MoveRos2Connector(ActionConnector[MoveInput]):
             f"_move_robot: vx={vx}, vy={vy}, vturn={vturn}"
         )
 
-        if not self.sport_client or self.current_state != RobotState.STANDING:
+        if not self.sport_client:
+            return
+
+        if self.dog_attitude != RobotState.STANDING:
             return
 
         try:
@@ -238,9 +246,14 @@ class MoveRos2Connector(ActionConnector[MoveInput]):
             nav = self.navigation.position
             logging.debug(f"Ros2 Nav data: {nav}")
             if nav["body_attitude"] == 'standing':
-                self.current_state = RobotState.STANDING
+                self.dog_attitude = RobotState.STANDING
             else:
-                self.current_state = RobotState.SITTING
+                self.dog_attitude = RobotState.SITTING
+            if nav["moving"] == True:
+                # the robot is moving - return
+                self.dog_moving = True
+            else:
+                self.dog_moving = False
 
         if self.motion_buffer:
             logging.info(f"AI command buffer: {self.motion_buffer}")

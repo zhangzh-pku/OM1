@@ -136,13 +136,19 @@ class Navigation(FuserInput[str]):
         #     "body_attitude": self.body_attitude
         # }
 
-        res = "No navigation data yet."
+        res = ""
 
+        moving = raw_input["moving"]
         cardinal = raw_input["yaw_mag_cardinal"]
         heading = round(raw_input["yaw_mag_0_360"])
 
-        if len(raw_input) >= 5:
-            res = f"You are facing {cardinal}. Your magnetic heading is {heading} degrees."
+        if moving:
+            res = f"You are moving - do not generate new movement commands. "
+        else:
+            res = f"You are standing still - you can move if you want to. "
+
+        if cardinal:
+            res += f"You are facing {cardinal}. Your magnetic heading is {heading} degrees. "
 
         return Message(timestamp=time.time(), message=res)
 

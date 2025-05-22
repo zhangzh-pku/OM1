@@ -38,7 +38,7 @@ class Go2XboxControllerConnector(ActionConnector[IDLEInput]):
         """
         super().__init__(config)
 
-        self.config = config
+        self.config = config # never used?
 
         self.sport_client = None
         try:
@@ -70,14 +70,15 @@ class Go2XboxControllerConnector(ActionConnector[IDLEInput]):
         self.rt_previous = 0
         self.lt_previous = 0
         self.d_pad_previous = 0
-
         self.button_previous = 0
 
         # Movement speed
+        # m/s?
         self.move_speed = 0.5
         self.turn_speed = 0.5
 
-        self.current_state = None
+
+        self.dog_attitude = None
 
         self.navigation_on = False
         self.navigation = None
@@ -105,10 +106,10 @@ class Go2XboxControllerConnector(ActionConnector[IDLEInput]):
 
     def _execute_command_thread(self, command: str) -> None:
         try:
-            if command == "StandUp" and self.current_state == RobotState.STANDING:
+            if command == "StandUp" and self.dog_attitude == RobotState.STANDING:
                 logging.info("Already standing, skipping command")
                 return
-            elif command == "StandDown" and self.current_state == RobotState.SITTING:
+            elif command == "StandDown" and self.dog_attitude == RobotState.SITTING:
                 logging.info("Already sitting, skipping command")
                 return
 
@@ -173,9 +174,12 @@ class Go2XboxControllerConnector(ActionConnector[IDLEInput]):
         -------
         None
         """
-        logging.info(f"_move_robot: vx={vx}, vy={vy}, vturn={vturn}")
+        logging.info(f"XBOX _move_robot: vx={vx}, vy={vy}, vturn={vturn}")
 
-        if not self.sport_client or self.current_state != RobotState.STANDING:
+        if not self.sport_client:
+            return
+
+        if self.dog_attitude != RobotState.STANDING:
             return
 
         try:
@@ -200,89 +204,102 @@ class Go2XboxControllerConnector(ActionConnector[IDLEInput]):
             nav = self.navigation.position
             logging.debug(f"XBOX Nav data: {nav}")
             if nav and nav["body_attitude"] == 'standing':
-                self.current_state = RobotState.STANDING
+                self.dog_attitude = RobotState.STANDING
             else:
-                self.current_state = RobotState.SITTING
+                self.dog_attitude = RobotState.SITTING
 
         data = None
 
         if self.gamepad:
-            # try to read USB data, and if there is nothing there, timeout
+            # try to read USB data, and if there is nothing, timeout
             # data = list(self.gamepad.read(64, timeout=50))
             data = list(self.gamepad.read(64, timeout=50))
 
         if len(data) > 0:
             logging.debug(f"Gamepad data: {data}")
 
-        #     # Process triggers for rotation
-        #     # RT is typically on byte 9, LT on byte 8 for Xbox controllers
-        #     rt_value = data[11]  # Right Trigger
-        #     lt_value = data[9]   # Left Trigger
-
-        #     # Trigger values usually range from 0 to 255
-        #     # Check if the triggers have changed significantly
-        #     rt_changed = abs(rt_value - self.rt_previous) > 5
-        #     lt_changed = abs(lt_value - self.lt_previous) > 5
-
-        #     if rt_changed or lt_changed:
-        #         # Update previous values
-        #         self.rt_previous = rt_value
-        #         self.lt_previous = lt_value
-
-        #         # Normalize trigger values from 0-255 to 0-1.0
-        #         rt_normalized = rt_value / 255.0
-        #         lt_normalized = lt_value / 255.0
-
-        #         # Right Trigger - clockwise rotation
-        #         if rt_normalized > 0.8 and rt_normalized > lt_normalized:
-        #             self._move_robot(0.0, 0.0, -self.turn_speed)
-
-        #         # Left Trigger - counter-clockwise rotation
-        #         elif lt_normalized > 0.8 and lt_normalized > rt_normalized:
-        #             self._move_robot(0.0, 0.0, self.turn_speed)
-
-        #         # Both triggers released or below threshold
-        #         elif rt_normalized <= 0.8 and lt_normalized <= 0.8:
-        #             logging.debug("Triggers released - Stopping rotation")
-        #             self._move_robot(0.0, 0.0)
-
+            # Process triggers for rotation
+            # RT is typically on byte 9, LT on byte 8 for Xbox controllers
+            rt_value     = data[11]  # Right Trigger
+            lt_value     = data[9]   # Left Trigger
             d_pad_value  = data[13]
             button_value = data[14]
 
+            move_triggered_RTLT = False
+            move_triggered_dpad = False
+
+            # Trigger values usually range from 0 to 255
+            # Check if the triggers have changed significantly
+            rt_changed = abs(rt_value - self.rt_previous) > 5
+            lt_changed = abs(lt_value - self.lt_previous) > 5
+
+            if rt_changed or lt_changed:
+
+                # Normalize trigger values from 0-255 to 0-1.0
+                rt_normalized = rt_value / 255.0
+                lt_normalized = lt_value / 255.0
+
+                # Right Trigger - clockwise rotation
+                if rt_normalized > 0.8 and rt_normalized > lt_normalized:
+                    move_triggered_RTLT = True
+                    self._move_robot(0.0, 0.0, -self.turn_speed)
+                # Left Trigger - counter-clockwise rotation
+                elif lt_normalized > 0.8 and lt_normalized > rt_normalized:
+                    move_triggered_RTLT = True
+                    self._move_robot(0.0, 0.0, self.turn_speed)
+                # Both triggers released or below threshold
+                elif rt_normalized <= 0.8 and lt_normalized <= 0.8:
+                    move_triggered_RTLT = True
+                    logging.debug("Triggers released - Stopping rotation")
+                    self._move_robot(0.0, 0.0)
+
+            # Update previous values
+            self.rt_previous = rt_value
+            self.lt_previous = lt_value
+
+            if move_triggered_RTLT:
+                # update the previous value of the dpad
+                self.d_pad_previous = d_pad_value
+                # update the previous value of the button
+                self.button_previous = button_value
+                # and return, since we just issued a move command in this tick
+                return
+
             #logging.info(f"D-pad: {d_pad_value} {self.d_pad_previous}")
 
-            if d_pad_value != self.d_pad_previous:                
+            if d_pad_value != self.d_pad_previous:
+                # there has been a change                
                 # Control robot movement based on D-pad
                 logging.debug(f"Gamepad DPAD change: {data}")
-                self.d_pad_previous = d_pad_value
                 if d_pad_value == 1:  # Up
                     logging.info("D-pad UP - Moving forward")
+                    move_triggered_dpad = True
                     self._move_robot(self.move_speed, 0.0)
-                    self.button_previous = button_value
-                    return
                 elif d_pad_value == 5:  # Down
                     logging.info("D-pad DOWN - Moving backward")
+                    move_triggered_dpad = True
                     self._move_robot(-self.move_speed, 0.0)
-                    self.button_previous = button_value
-                    return
                 elif d_pad_value == 7:  # Left
                     logging.info("D-pad LEFT - Turning left")
+                    move_triggered_dpad = True
                     self._move_robot(0.0, self.move_speed)
-                    self.button_previous = button_value
-                    return
                 elif d_pad_value == 3:  # Right
                     logging.info("D-pad RIGHT - Turning right")
+                    move_triggered_dpad = True
                     self._move_robot(0.0, -self.move_speed)
-                    self.button_previous = button_value
-                    return
                 elif d_pad_value == 0:  # RELEASE
                     logging.debug("D-pad released - Stopping movement")
                     self._move_robot(0.0, 0.0)
-                    self.button_previous = button_value
-                    return
+                    move_triggered_dpad = True
+            
+            # update the value of d_pad_previous
+            self.d_pad_previous = d_pad_value
 
-                # # we are moving - do not doublemove
-                # return
+            if move_triggered_dpad:
+                # update the previous value of the button
+                self.button_previous = button_value
+                # and return, since we just issued a move command in this tick
+                return
 
             if self.button_previous == 0 and button_value > 0:
                 # We need this logic because when the user presses a button
@@ -295,23 +312,25 @@ class Go2XboxControllerConnector(ActionConnector[IDLEInput]):
 
                 # button A
                 if button_value == 1:
-                    self._execute_sport_command_sync("StandUp")
                     logging.info("Controller unitree: stand_up")
+                    self._execute_sport_command_sync("StandUp")
                 # button B
                 elif button_value == 2:
-                    self._execute_sport_command_sync("StandDown")
                     logging.info("Controller unitree: lay_down")
-        #         # # X button
-        #         # elif button_value == 8:
-        #         #     self._execute_sport_command_sync("Hello")
-        #         #     logging.info("Controller unitree: say_hello")
-        #         # # Y button
-        #         # elif button_value == 16:
-        #         #     self._execute_sport_command_sync("Stretch")
-        #         #     logging.info("Controller unitree: stretch")
+                    self._execute_sport_command_sync("StandDown")
+                    
+                # # X button
+                # elif button_value == 8:
+                #     self._execute_sport_command_sync("Hello")
+                #     logging.info("Controller unitree: say_hello")
+                # # Y button
+                # elif button_value == 16:
+                #     self._execute_sport_command_sync("Stretch")
+                #     logging.info("Controller unitree: stretch")
 
                 logging.info(f"Gamepad button depressed edge {button_value}")
 
-            # refresh the button value for debounce
-            #self.d_pad_previous = d_pad_value
-            #self.button_previous = button_value
+            # update the value of button_previous
+            self.button_previous = button_value
+
+            # no need to return

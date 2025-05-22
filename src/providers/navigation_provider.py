@@ -7,6 +7,11 @@ from typing import Optional
 import serial
 import zenoh
 
+from queue import LifoQueue
+
+
+
+
 try:
     # there are needed for unitree but not TurtleBot4
     from unitree.unitree_sdk2py.core.channel import ChannelSubscriber
@@ -128,6 +133,12 @@ class NavigationProvider:
         self.body_height_cm = 0
         self.body_attitude = None
 
+        self.moving = None
+        self.previous_x = 0
+        self.previous_y = 0
+        self.previous_z = 0
+        self.move_history = 0
+
         self._position: Optional[dict] = None
 
         self.x = 0.0
@@ -183,12 +194,33 @@ class NavigationProvider:
 
     def processOdom(self, pose):
 
-        # logging.info(f"pose: {pose}")
+        logging.debug(f"pose: {pose}")
 
         x = pose.orientation.x
         y = pose.orientation.y
         z = pose.orientation.z
         w = pose.orientation.w
+
+        dx = (pose.position.x - self.previous_x)**2
+        dy = (pose.position.y - self.previous_y)**2
+        dz = (pose.position.z - self.previous_z)**2
+
+        self.previous_x = pose.position.x
+        self.previous_y = pose.position.y
+        self.previous_z = pose.position.z
+
+        delta = math.sqrt(dx+dy+dz)
+
+        # moving? Use a decay kernal
+        self.move_history = 0.4*delta + 0.6*self.move_history
+
+        if delta > 0.01 or self.move_history > 0.005:
+            # we want to detect movment quickly (False->True), but wait for the 
+            # system to fully stabilize before we turn moving from True to False
+            self.moving = True
+            logging.info(f"delta moving: {delta} {self.move_history}")
+        else:
+            self.moving = False
 
         angles = self.euler_from_quaternion(x, y, z, w)
 
@@ -213,10 +245,11 @@ class NavigationProvider:
             "yaw_mag_cardinal": self.yaw_mag_cardinal,
             "body_height_cm": self.body_height_cm,
             "body_attitude": self.body_attitude,
+            "moving": self.moving
         }
 
         logging.debug(
-            f"NAV x,y,yaw_odom,yaw_mag: {round(self.x,2)},{round(self.y,2)},{round(self.yaw_odom_0_360,2)},{round(self.yaw_mag_0_360,2)}"
+            f"NAV x,y,yaw_odom,yaw_mag: {round(self.x,2)},{round(self.y,2)},{round(self.yaw_odom_0_360,2)},{round(self.yaw_mag_0_360,2)}, moving: {self.moving})"
         )
 
     def poseMessageHandler(self, msg):  #: PoseStamped_):
