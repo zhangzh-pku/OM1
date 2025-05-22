@@ -6,7 +6,7 @@ from typing import List, Optional
 
 from inputs.base import SensorConfig
 from inputs.base.loop import FuserInput
-from providers import BatteryStatus, IOProvider, TeleopsStatusProvider, TeleopsStatus
+from providers import BatteryStatus, IOProvider, TeleopsStatus, TeleopsStatusProvider
 
 try:
     from unitree.unitree_sdk2py.core.channel import ChannelSubscriber
