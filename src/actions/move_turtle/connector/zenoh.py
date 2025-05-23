@@ -133,7 +133,7 @@ class MoveZenohConnector(ActionConnector[MoveInput]):
                     f"TB4 x,y,yaw: {round(self.x,2)},{round(self.y,2)},{round(self.yaw_now,2)}"
                 )
             else:
-                logging.warn("TB4 x,y,yaw: NAVIGTION NOT PROVIDING DATA")
+                logging.warn("TB4 x,y,yaw: NAVIGATION NOT PROVIDING DATA")
 
     def move(self, vx, vyaw):
         """
