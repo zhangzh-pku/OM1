@@ -7,90 +7,96 @@ description: "Speech and TTS"
 
 The Speech and TTS action plugin allows agents to speak aloud with a text-to-speech (TTS) system.
 
-## Architecture
+[github codes](https://github.com/OpenmindAGI/OM1/blob/main/src/actions/speak/connector/elevenlabs_tts.py)
 
-The Speech and TTS action plugin is composed of two main components as `move` action plugin:
+## Architecture class diagram
 
-- Interface Layer
-- Connector Layer
+```mermaid
+classDiagram
+    class ActionConnector~T~ {
+        <<abstract>>
+        +ActionConfig config
+        +async connect(input_protocol: T)
+        +tick()
+    }
 
-```
-[Speak Action Architecture]
-├── Interface Layer
-│   └── SpeakInput Dataclass
-│       └── action: str
-└── Connector Layer
-    ├── ElevenLabs TTS
-    │   ├── High-quality voice synthesis
-    │   └── ASR integration
-    ├── Riva TTS
-    │   ├── NVIDIA's TTS engine
-    │   └── ASR integration
-    ├── Zenoh Publisher
-    │   ├── Distributed messaging
-    │   └── Topic-based publishing
-    └── ROS2 Connector
-        └── ROS2 message publishing
+    class SpeakInput {
+        +str action
+    }
+
+    class SpeakElevenLabsTTSConnector {
+        -ASRProvider asr
+        -ElevenLabsTTSProvider tts
+        +__init__(config: ActionConfig)
+        +async connect(output_interface: SpeakInput)
+    }
+
+    class ASRProvider {
+        +AudioStream audio_stream
+        +on_tts_state_change()
+    }
+
+    class ElevenLabsTTSProvider {
+        +start()
+        +register_tts_state_callback(callback)
+        +add_pending_message(message: str)
+    }
+
+    ActionConnector <|-- SpeakElevenLabsTTSConnector
+    SpeakElevenLabsTTSConnector --> SpeakInput
+    SpeakElevenLabsTTSConnector --> ASRProvider
+    SpeakElevenLabsTTSConnector --> ElevenLabsTTSProvider
 ```
 
 ## Data Flow
 
-```
-    A[LLM Command] --> B[Speak Interface]
-    B --> C[SpeakInput]
-    C --> D[TTS Connector]
-    D --> E[Audio Output]
-```
+```mermaid
+sequenceDiagram
+    participant Client
+    participant SpeakElevenLabsTTSConnector
+    participant ASRProvider
+    participant ElevenLabsTTSProvider
+    participant AudioDevices
 
-## Core components
-
-```
-[Implementation Components]
-1. TTS Connectors
-   ├── ElevenLabs TTS
-   │   ├── Voice configuration
-   │   ├── Model selection
-   │   └── Format control
-   ├── Riva TTS
-   │   ├── NVIDIA integration
-   │   └── API configuration
-   └── Common Features
-       ├── ASR integration
-       ├── Device management
-       └── State handling
-
-2. Message Publishers
-   ├── Zenoh Publisher
-   │   ├── Topic management
-   │   └── Message queuing
-   └── ROS2 Connector
-       ├── Message formatting
-       └── ROS2 integration
+    Note over Client: Initialize SpeakElevenLabsTTSConnector
+    Client->>SpeakElevenLabsTTSConnector: connect(SpeakInput)
+    SpeakElevenLabsTTSConnector->>ElevenLabsTTSProvider: Register TTS state callback
+    SpeakElevenLabsTTSConnector->>ElevenLabsTTSProvider: Add pending message
+    
+    loop TTS Processing
+        ElevenLabsTTSProvider->>ASRProvider: Update TTS state
+        ASRProvider->>AudioDevices: Manage audio stream
+        ElevenLabsTTSProvider->>AudioDevices: Output speech
+    end
 ```
 
-## Key Features
+## configuration parameters
 
 ```
-[Feature Set]
-1. TTS Capabilities
-   ├── Voice Synthesis
-   │   ├── Multiple providers
-   │   └── Quality options
-   ├── Device Management
-   │   ├── Microphone control
-   │   └── Speaker control
-   └── State Management
-       ├── ASR synchronization
-       └── TTS state tracking
+# Example usage
+config = ActionConfig(
+    api_key="your_api_key",
+    elevenlabs_api_key="your_elevenlabs_key",
+    voice_id="custom_voice_id",
+    model_id="eleven_flash_v2_5",
+    output_format="mp3_44100_128",
+    microphone_device_id="mic_id",
+    speaker_device_id="speaker_id"
+)
+connector = SpeakElevenLabsTTSConnector(config)
+await connector.connect(SpeakInput(action="Hello, world!"))
+```
 
-2. Message Publishing
-   ├── Distributed Communication
-   │   ├── Zenoh topics
-   │   └── ROS2 messages
-   ├── Message Queuing
-   │   ├── Pending messages
-   │   └── State management
-   └── Integration Points
-       ├── System interfaces
-       └── Provider APIs
+## example configuration
+
+```
+    {
+      "name": "speak",
+      "llm_label": "speak",
+      "implementation": "passthrough",
+      "connector": "elevenlabs_tts",
+      "config": {
+        "voice_id": "i4CzbCVWoqvD0P1QJCUL"
+      }
+    }
 ```

@@ -10,183 +10,132 @@ It serves as the output mechanism for the agent, translating high-level decision
 (e.g. moving a robot, speech, etc.). This page covers the architecture of the Action Plugin, the available action types, 
 and how actions are connected to different hardware and software platforms.
 
-## Action Plugin Architecture
+[github codes](https://github.com/OpenmindAGI/OM1/tree/main/src/actions)
+
+## Action Plugin Architecture Class Diagram
 
 Core components of the Action Plugin:
 
-```
-Action Plugin
-├── Base Classes
-│   ├── ActionConfig
-│   │   └── Dynamic configuration
-│   ├── Interface[IT, OT]
-│   │   ├── Input type
-│   │   └── Output type
-│   ├── ActionImplementation[IT, OT]
-│   │   └── Abstract execution
-│   ├── ActionConnector[OT]
-│   │   └── Abstract connection
-│   └── AgentAction
-│       ├── Name
-│       ├── LLM label
-│       ├── Interface
-│       ├── Implementation
-│       └── Connector
-├── Orchestration
-│   ├── ActionOrchestrator
-│   │   ├── Promise queue
-│   │   ├── Implementation threads
-│   │   └── Connector threads
-└── Action Types
-    ├── Move
-    ├── Speak
-    ├── Emotion
-    ├── Face
-    └── Tweet
+```mermaid
+classDiagram
+    class ActionConfig {
+        +__init__(**kwargs)
+    }
+
+    class Interface~IT,OT~ {
+        +IT input
+        +OT output
+    }
+
+    class ActionImplementation~IT,OT~ {
+        <<abstract>>
+        +ActionConfig config
+        +async execute(input_protocol: IT) OT
+        +tick()
+    }
+
+    class ActionConnector~OT~ {
+        <<abstract>>
+        +ActionConfig config
+        +async connect(input_protocol: OT)
+        +tick()
+    }
+
+    class AgentAction {
+        +str name
+        +str llm_label
+        +Type[Interface] interface
+        +ActionImplementation implementation
+        +ActionConnector connector
+    }
+
+    class ActionOrchestrator {
+        -List[Task] promise_queue
+        -RuntimeConfig _config
+        -Dict[str, Thread] _impl_threads
+        -Dict[str, Thread] _connector_threads
+        +start()
+        +async flush_promises()
+        +async promise(commands: List[Command])
+    }
+
+    ActionConfig --> ActionImplementation
+    ActionConfig --> ActionConnector
+    Interface --> ActionImplementation
+    ActionImplementation --> AgentAction
+    ActionConnector --> AgentAction
+    AgentAction --> ActionOrchestrator
 ```
 
 ## Data Flow
 
-```
-    A[LLM Command] --> B[ActionOrchestrator]
-    B --> C[Promise Queue]
-    C --> D[Action Implementation]
-    D --> E[Action Connector]
-    E --> F[Hardware/Service]    
-```
+```mermaid
+sequenceDiagram
+    participant Client
+    participant ActionOrchestrator
+    participant AgentAction
+    participant ActionImplementation
+    participant ActionConnector
 
-## Detailed implementation
-
-### Move Action
-
-Let's take the `move` Action as an example to illustrate the implementation details of the Action Plugin.
-
-[move codes](https://github.com/OpenmindAGI/OM1/tree/main/src/actions/move)
-
-```
-[Move Action Structure]
-1. Interface
-   ├── Input Protocol
-   │   └── Action command
-   └── Output Protocol
-       └── Movement result
-
-2. Implementation
-   ├── Command Processing
-   ├── Movement Execution
-   └── Result Generation
-
-3. Connector
-   ├── Hardware Interface
-   ├── Movement Control
-   └── Status Reporting
-```
-
-### Speak Action
-
-Let's take the `speak` Action as an example to illustrate the implementation details of the Action Plugin.
-
-[speak codes](https://github.com/OpenmindAGI/OM1/tree/main/src/actions/speak)
-
-```
-[Speak Action Structure]
-1. Interface
-   ├── Input Protocol
-   │   └── Text to speak
-   └── Output Protocol
-       └── Speech result
-
-2. Implementation
-   ├── Text Processing
-   ├── Speech Generation
-   └── Result Handling
-
-3. Connector
-   ├── Audio Output
-   ├── Speech Control
-   └── Status Monitoring
+    Note over Client: Initialize ActionOrchestrator
+    Client->>ActionOrchestrator: Start actions
+    ActionOrchestrator->>AgentAction: Create implementation thread
+    ActionOrchestrator->>AgentAction: Create connector thread
+    
+    loop Action Execution
+        Client->>ActionOrchestrator: promise(commands)
+        ActionOrchestrator->>AgentAction: Find matching action
+        AgentAction->>ActionImplementation: execute(input)
+        ActionImplementation-->>AgentAction: Return response
+        AgentAction->>ActionConnector: connect(response)
+        ActionOrchestrator->>ActionOrchestrator: flush_promises()
+    end
 ```
 
 ## Action Orchestrator
 
 The Action Orchestrator is the central component that orchestrates the execution of actions. It manages the states, promise queue, and threads for each action.
 
-### Orchestrator architecture
+[github codes](https://github.com/OpenmindAGI/OM1/blob/main/src/actions/orchestrator.py)
 
+### Orchestrator architecture class diagram
+
+```mermaid
+classDiagram
+    class ActionOrchestrator {
+        -List[Task] promise_queue
+        -RuntimeConfig _config
+        -Dict[str, Thread] _impl_threads
+        -Dict[str, Thread] _connector_threads
+        +__init__(config: RuntimeConfig)
+        +start()
+        -_run_implementation_loop(action: AgentAction)
+        -_run_connector_loop(action: AgentAction)
+        +async flush_promises() tuple[List[Any], List[Task]]
+        +async promise(commands: List[Command])
+        -async _promise_action(action: AgentAction, command: Command) Any
+    }
+
+    class RuntimeConfig {
+        +List[AgentAction] agent_actions
+    }
+
+    class AgentAction {
+        +str llm_label
+        +ActionImplementation implementation
+        +ActionConnector connector
+        +Type[Interface] interface
+    }
+
+    class Command {
+        +str type
+        +str value
+    }
+
+    RuntimeConfig --> ActionOrchestrator
+    ActionOrchestrator --> AgentAction
+    AgentAction --> Command
 ```
-├── State Management
-│   ├── Promise Queue
-│   │   └── List[asyncio.Task[Any]]
-│   ├── Implementation Threads
-│   │   └── Dict[str, Thread]
-│   └── Connector Threads
-│       └── Dict[str, Thread]
-├── Configuration
-│   └── RuntimeConfig
-└── Action Management
-    ├── Action Registration
-    ├── Command Processing
-    └── Response Handling
-```
-
-### Threading model
-
-```
-[Threading Architecture]
-1. Implementation Threads
-   ├── Purpose
-   │   ├── Action execution
-   │   └── Non-blocking operation
-   ├── Management
-   │   ├── Thread creation
-   │   ├── Error handling
-   │   └── Lifecycle control
-   └── Communication
-       ├── Thread-safe operations
-       └── State synchronization
-
-2. Connector Threads
-   ├── Purpose
-   │   ├── Hardware communication
-   │   └── Status monitoring
-   ├── Management
-   │   ├── Thread creation
-   │   ├── Error handling
-   │   └── Lifecycle control
-   └── Communication
-       ├── Thread-safe operations
-       └── State synchronization
-```
-
-### Promise management
-
-```
-[Promise System]
-1. Promise Queue
-   ├── Task Tracking
-   │   ├── Active tasks
-   │   └── Task status
-   ├── Task Management
-   │   ├── Task creation
-   │   ├── Task completion
-   │   └── Error handling
-   └── Queue Operations
-       ├── Task addition
-       ├── Task removal
-       └── Queue cleanup
-
-2. Promise Processing
-   ├── Task Execution
-   │   ├── Async execution
-   │   └── Result handling
-   ├── Error Handling
-   │   ├── Exception catching
-   │   └── Error recovery
-   └── State Management
-       ├── Task state
-       └── Queue state
-```
-
 
 ## Example configuration
 

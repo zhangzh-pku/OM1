@@ -9,42 +9,67 @@ This page provides detailed information about the OpenAI integration in the OM1 
 
 The OpenAI integration is implemented as a plugin within OM1's LLM system, providing a standardized interface for communicating with OpenAI's language models like GPT-4. It handles authentication, API communication, prompt formatting, response parsing, and conversation history management.
 
-![](/assets/openai-integration-overview.png)
+[openai LLM](https://github.com/OpenmindAGI/OM1/blob/main/src/llm/plugins/openai_llm.py)
 
-## History Management
+## Class Diagram
 
-The LLMHistoryManager automatically manages conversation context:
+```mermaid
+classDiagram
+    class LLM~R~ {
+        <<abstract>>
+        +LLMConfig _config
+        +Type[R] _output_model
+        +IOProvider io_provider
+        +async ask(prompt: str, messages: List[Dict[str, str]]) R
+    }
 
-- Formats agent inputs and actions into structured messages
-- Maintains a buffer of recent interactions
-- When history exceeds `history_length`, summarizes previous interactions
-- Provides formatted message history to the LLM on each request
+    class OpenAILLM~R~ {
+        -openai.AsyncClient _client
+        -LLMHistoryManager history_manager
+        +__init__(output_model: Type[R], config: LLMConfig)
+        +@LLMHistoryManager.update_history()
+        +async ask(prompt: str, messages: List[Dict[str, str]]) R|None
+    }
 
-## OpenAI Integration components
+    class LLMHistoryManager {
+        +update_history()
+        +manage_history()
+    }
 
-```
-[Class Hierarchy]
-OpenAILLM
-├── Inheritance
-│   └── LLM[R] (Generic)
-├── Type Parameters
-│   └── R (bound to BaseModel)
-└── Core Components
-    ├── OpenAI Client
-    ├── History Manager
-    └── IO Provider
+    class LLMConfig {
+        +str api_key
+        +str model
+        +str base_url
+    }
+
+    LLM <|-- OpenAILLM
+    OpenAILLM --> LLMHistoryManager
+    OpenAILLM --> LLMConfig
 ```
 
 ## Data Flow
 
-```
-    A[User Input] --> B[ask Method]
-    B --> C[History Manager]
-    C --> D[OpenAI API Request]
-    D --> E[Response Processing]
-    E --> F[Model Validation]
-    F --> G[Output Parsing]
-    G --> H[Response Return]
+```mermaid
+sequenceDiagram
+    participant Client
+    participant OpenAILLM
+    participant LLMHistoryManager
+    participant OpenAIAPI
+    participant IOProvider
+
+    Note over Client: Initialize OpenAILLM
+    Client->>OpenAILLM: Create with config
+    OpenAILLM->>LLMHistoryManager: Initialize history manager
+    
+    loop LLM Interaction
+        Client->>OpenAILLM: ask(prompt, messages)
+        OpenAILLM->>IOProvider: Log start time
+        OpenAILLM->>OpenAIAPI: Send request
+        OpenAIAPI-->>OpenAILLM: Get response
+        OpenAILLM->>IOProvider: Log end time
+        OpenAILLM->>OpenAILLM: Parse response
+        OpenAILLM-->>Client: Return parsed response
+    end
 ```
 
 ## Example Configuration

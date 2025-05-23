@@ -11,38 +11,83 @@ The Speech Recognition Input Plugin in OM1 provides the ability to recognize and
 
 The ASR components are responsible for capturing audio input from a microphone and converting it into text. The main components are (take GoogleASRInput as an example):
 
-### Core Components
+[google asr input plugin code](https://github.com/OpenmindAGI/OM1/blob/main/src/inputs/plugins/google_asr.py)
 
-```
-GoogleASRInput (extends FuserInput[str])
-├── ASRProvider (Singleton)
-│   ├── AudioInputStream
-│   │   ├── Audio capture
-│   │   ├── Chunk processing
-│   │   └── Language code handling
-│   └── WebSocket Client
-│       ├── Real-time streaming
-│       └── Message handling
-├── Message Buffer
-│   ├── Queue for raw messages
-│   └── List for processed messages
-└── IO Provider
-    └── Message formatting and delivery
+### Class Diagram
+
+```mermaid
+classDiagram
+    class FuserInput~T~ {
+        <<abstract>>
+        +SensorConfig config
+        +async _poll() T
+        +async _raw_to_text(raw_input: T) str
+        +async raw_to_text(raw_input: T)
+        +formatted_latest_buffer() str|None
+    }
+
+    class GoogleASRInput {
+        -List[str] messages
+        -Queue[str] message_buffer
+        -ASRProvider asr
+        -IOProvider io_provider
+        -SleepTickerProvider global_sleep_ticker_provider
+        +__init__(config: SensorConfig)
+        -_handle_asr_message(raw_message: str)
+        +async _poll() str|None
+        +async _raw_to_text(raw_input: str) str
+        +async raw_to_text(raw_input: str)
+        +formatted_latest_buffer() str|None
+    }
+
+    class ASRProvider {
+        +start()
+        +register_message_callback(callback)
+    }
+
+    class IOProvider {
+        +add_input(descriptor: str, message: str, timestamp: float)
+    }
+
+    class SleepTickerProvider {
+        +skip_sleep: bool
+    }
+
+    FuserInput <|-- GoogleASRInput
+    GoogleASRInput --> ASRProvider
+    GoogleASRInput --> IOProvider
+    GoogleASRInput --> SleepTickerProvider
 ```
 
 ### Data Flow
 
 Speech Recognition Input Plugin Data Flow:
 
-```
-    A[Microphone Input] --> B[AudioInputStream]
-    B --> C[WebSocket Client]
-    C --> D[Google ASR Service]
-    D --> E[ASR Response]
-    E --> F[Message Buffer]
-    F --> G[Text Processing]
-    G --> H[IO Provider]
-    H --> I[Final Output]
+```mermaid
+sequenceDiagram
+    participant User
+    participant GoogleASRInput
+    participant ASRProvider
+    participant MessageBuffer
+    participant IOProvider
+
+    Note over GoogleASRInput: Initialize with config
+    GoogleASRInput->>ASRProvider: Initialize with language & settings
+    ASRProvider->>GoogleASRInput: Start ASR service
+    
+    loop Continuous Speech Recognition
+        User->>ASRProvider: Speak
+        ASRProvider->>GoogleASRInput: _handle_asr_message(raw_message)
+        GoogleASRInput->>MessageBuffer: Store valid messages
+        
+        loop Polling
+            GoogleASRInput->>MessageBuffer: _poll()
+            MessageBuffer-->>GoogleASRInput: Return message if available
+            GoogleASRInput->>GoogleASRInput: _raw_to_text()
+            GoogleASRInput->>GoogleASRInput: raw_to_text()
+            GoogleASRInput->>IOProvider: formatted_latest_buffer()
+        end
+    end
 ```
 
 ### Example configuration
@@ -56,4 +101,19 @@ Speech Recognition Input Plugin Data Flow:
       }
     }
   ]
+```
+
+### configuration parameters
+
+Here is an example of how to configure the ASR input plugin:
+```
+# Example usage
+config = SensorConfig(
+    api_key="your_api_key",
+    language="en-US",
+    rate=48000,
+    chunk=12144,
+    microphone_name="your_mic"
+)
+asr_input = GoogleASRInput(config)
 ```
