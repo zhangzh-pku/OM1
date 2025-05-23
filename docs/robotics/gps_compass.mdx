@@ -76,7 +76,7 @@ When connecting the Arduino with a USB cable, you should see it appear as `/dev/
 sudo dmesg | grep ttyACM*
 ```
 
-and you should see it. At this point if you’re not sure which device is the Arduino board, run `sudo dmesg` and looks for entires with "Arduino" in it. This way you will easily spot the serial device name of your Arduino. Ypou can read the data with:
+and you should see it. At this point if you're not sure which device is the Arduino board, run `sudo dmesg` and looks for entires with "Arduino" in it. This way you will easily spot the serial device name of your Arduino. You can read the data with:
 
 ```bash
 screen /dev/ttyACM0 115200
