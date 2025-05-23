@@ -77,7 +77,7 @@ class Fuser:
             system_prompt += "\nLAWS:\n" + self.config.system_governance
 
         if self.config.system_prompt_examples:
-            system_prompt += "\nEXAMPLES:\n" + self.config.system_prompt_examples
+            system_prompt += "\n\nEXAMPLES:\n" + self.config.system_prompt_examples
 
         # descriptions of possible actions
         actions_fused = "\n\n".join(
