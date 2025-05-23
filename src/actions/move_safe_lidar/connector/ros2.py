@@ -2,7 +2,9 @@ import logging
 import random
 import threading
 import time
+import math
 from enum import Enum
+from queue import Queue
 
 from actions.base import ActionConfig, ActionConnector
 from actions.move_safe_lidar.interface import MoveInput
@@ -26,6 +28,15 @@ class MoveRos2Connector(ActionConnector[MoveInput]):
 
         self.move_speed = 0.7
         self.turn_speed = 0.6
+
+        self.angle_tolerance = 5.0
+        self.distance_tolerance = 0.05  # m
+        self.pending_movements = Queue()
+        self.x = 0.0
+        self.y = 0.0
+        self.z = 0.0
+        self.yaw_now = 0.0
+        self.movement_attempts = 0
 
         self.lidar_on = False
         self.lidar = None
@@ -143,8 +154,21 @@ class MoveRos2Connector(ActionConnector[MoveInput]):
         # this is used only by the LLM
         logging.info(f"AI command.connect: {output_interface.action}")
 
+        self.navigationDataRefresh()
+
         if self.dog_moving:
-            logging.info("Disregard AI movment command - robot is moving")
+            # for example due to a teleops or game controller command
+            logging.info("Disregard new AI movement command - robot is already moving")
+            return
+
+        if self.pending_movements.qsize() > 0:
+            logging.info("Movement in progress: disregarding new AI command")
+            return
+
+        if self.x == 0.0:
+            # this value is never precisely zero EXCEPT while
+            # booting and waiting for data to arrive
+            logging.info("Waiting for location data")
             return
 
         turn_left = []
@@ -153,6 +177,8 @@ class MoveRos2Connector(ActionConnector[MoveInput]):
         retreat = []
 
         if self.lidar:
+            # reconfirm possible paths
+            # this is needed due to the 2s latency of the LLMs
             possible_paths = self.lidar.valid_paths
             logging.debug(f"Action - Valid paths: {possible_paths}")
             for p in possible_paths:
@@ -166,37 +192,44 @@ class MoveRos2Connector(ActionConnector[MoveInput]):
                     retreat.append(p)
 
         if output_interface.action == "turn left":
-            logging.info("Unitree AI command: turn left")
-            if len(turn_left) > 0:
-                path = random.choice(turn_left)
-                self.motion_buffer = ["TurnLeft", path]
-            else:
+            # turn 90 Deg to the left (CCW)
+            if len(turn_left) == 0:
                 logging.warning("Cannot turn left due to barrier")
+                return
+            path = random.choice(turn_left)
+            # ToDo - use specific path value for tight/soft turns
+            # hardcode for now
+            target_yaw = self.yaw_now - 90.0
+            if target_yaw <= -180:
+                target_yaw += 360.0
+            self.pending_movements.put([0.0, target_yaw, "turn"])
         elif output_interface.action == "turn right":
-            logging.info("Unitree AI command: turn right")
-            if len(turn_right) > 0:
-                path = random.choice(turn_right)
-                self.motion_buffer = ["TurnRight", path]
-            else:
+            # turn 90 Deg to the right (CW)
+            if len(turn_right) == 0:
                 logging.warning("Cannot turn right due to barrier")
+                return
+            path = random.choice(turn_right)
+            # ToDo - use specific path value for tight/soft turns
+            # hardcode for now
+            target_yaw = self.yaw_now + 90.0
+            if target_yaw >= 180.0:
+                target_yaw -= 360.0
+            self.pending_movements.put([0.0, target_yaw, "turn"])
         elif output_interface.action == "move forwards":
-            logging.info("Unitree AI command: move forwards")
-            if len(advance) > 0:
-                self.motion_buffer = ["MoveForwards", 0]
-            else:
+            if len(advance) == 0:
                 logging.warning("Cannot advance due to barrier")
+                return
+            self.pending_movements.put([0.5, 0.0, "advance", self.x, self.y])
         elif output_interface.action == "move back":
-            logging.info("Unitree AI command: move back")
-            if len(retreat) > 0:
-                self.motion_buffer = ["MoveBack", 0]
-            else:
+            if len(retreat) == 0:
                 logging.warning("Cannot retreat due to barrier")
+                return
+            self.pending_movements.put([0.5, 0.0, "retreat", self.x, self.y])
         elif output_interface.action == "stand still":
-            logging.info("Unitree AI command: stand still")
-            self.motion_buffer = ["StandStill", 0]
+            logging.info(f"AI movement command: {output_interface.action}")
             # do nothing
         else:
-            logging.info(f"Unknown move type: {output_interface.action}")
+            logging.info(f"AI movement command unknown: {output_interface.action}")
 
         # This is a subset of Go2 movements that are
         # generally safe. Note that the "stretch" action involves
@@ -219,7 +252,35 @@ class MoveRos2Connector(ActionConnector[MoveInput]):
         #     logging.info("Unitree AI command: dance")
         #     await self._execute_sport_command("Dance1")
 
-        # logging.info(f"AI command: {output_interface.action}")
+    def navigationDataRefresh(self):
+        if hasattr(self.navigation, "running"):
+            if self.navigation.running:
+                nav = self.navigation.position
+                logging.debug(f"Go2 Nav data: {nav}")
+                
+                if nav["body_attitude"] == "standing":
+                    self.dog_attitude = RobotState.STANDING
+                else:
+                    self.dog_attitude = RobotState.SITTING
+                
+                if nav["moving"]:
+                    # for conceptual clarity
+                    self.dog_moving = True
+                else:
+                    self.dog_moving = False
+
+                self.yaw_now = nav["yaw_odom_m180_p180"]
+                # CW yaw = positive
+
+                # current position in world frame
+                self.x = nav["x"]
+                self.y = nav["y"]
+
+                logging.debug(
+                    f"Go2 x,y,yaw: {round(self.x,2)},{round(self.y,2)},{round(self.yaw_now,2)}"
+                )
+            else:
+                logging.warn("Go2 x,y,yaw: NAVIGATION NOT PROVIDING DATA")
 
     def _move_robot(self, vx, vy, vturn=0.0) -> None:
 
@@ -242,20 +303,111 @@ class MoveRos2Connector(ActionConnector[MoveInput]):
 
         logging.info("AI Motion Tick")
 
-        if hasattr(self.navigation, "running"):
-            nav = self.navigation.position
-            logging.debug(f"Ros2 Nav data: {nav}")
-            if nav["body_attitude"] == "standing":
-                self.dog_attitude = RobotState.STANDING
-            else:
-                self.dog_attitude = RobotState.SITTING
-            if nav["moving"]:
-                # for conceptual clarity
-                self.dog_moving = True
-            else:
-                self.dog_moving = False
+        self.navigationDataRefresh()
 
-        if self.motion_buffer:
-            logging.info(f"AI command buffer: {self.motion_buffer}")
+        if self.x == 0.0:
+            # this value is never precisely zero except while
+            # booting and waiting for data to arrive
+            logging.info("Waiting for odom data")
+            time.sleep(0.1)
+            return
+
+
+        if self.dog_attitude != RobotState.STANDING:
+            logging.info("Cannot move - dog is sitting")
+            time.sleep(0.1)
+            return
+
+        # if we got to this point, we have good data and we are able to 
+        # safely proceed
+        target = list(self.pending_movements.queue)
+
+        if len(target) > 0:
+
+            current_target = target[0]
+
+            logging.info(f"Target: {current_target} current yaw: {self.yaw_now}")
+
+            if self.movement_attempts > 10:
+                # abort - we are not converging
+                self.movement_attempts = 0
+                self.pending_movements.get()
+                logging.info("TIMEOUT - AI movment command timeout - not converging")
+                return
+
+            goal_dx = current_target[0]
+            goal_yaw = current_target[1]
+            direction = current_target[2]
+
+            if "turn" in direction:
+                gap = self.yaw_now - goal_yaw
+                if gap > 180.0:
+                    gap -= 360.0
+                elif gap < -180.0:
+                    gap += 360.0
+                logging.info(f"remaining turn GAP: {round(gap,2)}")
+                if abs(gap) > 10.0:
+                    logging.debug("gap is big, using large displacements")
+                    if gap > 0:
+                        self.movement_attempts += 1
+                        self._move_robot(0.5, 0, 0.5)
+                        #self.move(0.0, 0.5)
+                    elif gap < 0:
+                        self.movement_attempts += 1
+                        self._move_robot(0.5, 0, -0.5)
+                elif abs(gap) > self.angle_tolerance and abs(gap) <= 10.0:
+                    logging.debug("gap is getting smaller, using smaller steps")
+                    if gap > 0:
+                        self.movement_attempts += 1
+                        self._move_robot(0.2, 0, 0.2)
+                    elif gap < 0:
+                        self.movement_attempts += 1
+                        self._move_robot(0.2, 0, -0.2)
+                elif abs(gap) <= self.angle_tolerance:
+                    logging.info(
+                        "turn is completed, gap is small enough, done, pop 1 off queue"
+                    )
+                    self.movement_attempts = 0
+                    self.pending_movements.get()
+            else:
+                # reconfirm possible paths
+                pp = self.lidar.valid_paths
+
+                logging.debug(f"Action - Valid paths: {pp}")
+
+                s_x = target[0][3]
+                s_y = target[0][4]
+                distance_traveled = math.sqrt((self.x - s_x) ** 2 + (self.y - s_y) ** 2)
+                remaining = abs(goal_dx - distance_traveled)
+                logging.info(f"remaining advance GAP: {round(remaining,2)}")
+
+                fb = 0
+                if "advance" in direction and 4 in pp:
+                    fb = 1
+                elif "retreat" in direction and 9 in pp:
+                    fb = -1
+                else:
+                    logging.info("danger, pop 1 off queue")
+                    self.movement_attempts = 0
+                    self.pending_movements.get()
+                    return
+
+                if remaining > self.distance_tolerance:
+                    if distance_traveled < goal_dx:  # keep advancing
+                        logging.debug(f"keep moving. remaining:{remaining} ")
+                        self.movement_attempts += 1
+                        self._move_robot(fb * 0.5, 0.0, 0.0)
+                    elif distance_traveled > goal_dx:  # you moved too far
+                        logging.debug(
+                            f"OVERSHOOT: move other way. remaining:{remaining} "
+                        )
+                        self.movement_attempts += 1
+                        self._move_robot(-1 * fb * 0.2, 0.0, 0.0)
+                else:
+                    logging.info(
+                        "advance is completed, gap is small enough, done, pop 1 off queue"
+                    )
+                    self.movement_attempts = 0
+                    self.pending_movements.get()
 
         time.sleep(0.1)
