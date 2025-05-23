@@ -8,10 +8,9 @@ import serial
 import zenoh
 
 try:
-    # there are needed for unitree but not TurtleBot4
+    # Needed for Unitree but not TurtleBot4
     from unitree.unitree_sdk2py.core.channel import ChannelSubscriber
     from unitree.unitree_sdk2py.idl.geometry_msgs.msg.dds_ import PoseStamped_
-    from unitree.unitree_sdk2py.idl.unitree_go.msg.dds_ import LowState_
 except ImportError:
     logging.warning(
         "Unitree SDK or Cyclone not found. You do not need this unless you are connecting to a Unitree robot."
@@ -39,7 +38,6 @@ class NavigationProvider:
 
     This class implements a singleton pattern to manage:
         * Odom and pose data using either Zenoh or CycloneDDS
-        * Battery data
         * An optional external IMU/GPS, typically an Arduino Feather
 
     Parameters
@@ -98,12 +96,8 @@ class NavigationProvider:
             except Exception as e:
                 logging.error(f"Error opening Zenoh client: {e}")
         elif not self.use_zenoh:
-            # we are using CycloneDDS
-            # e.g. for the Unitree Go2
+            # we are using CycloneDDS e.g. for the Unitree Go2
             try:
-                self.lowstate_subscriber = ChannelSubscriber("rt/lowstate", LowState_)
-                self.lowstate_subscriber.Init(self.lowStateMessageHandler, 10)
-
                 self.pose_subscriber = ChannelSubscriber(
                     "rt/utlidar/robot_pose", PoseStamped_
                 )
@@ -123,12 +117,6 @@ class NavigationProvider:
                 logging.info(f"Connected to {gps_serial_port} at {baudrate} baud")
             except serial.SerialException as e:
                 logging.error(f"Error: {e}")
-
-        # battery state
-        self.battery_percentage = 0.0
-        self.battery_voltage = 0.0
-        self.battery_amperes = 0.0
-        self.battery_temperature = 0
 
         self.body_height_cm = 0
         self.body_attitude = None
@@ -237,23 +225,6 @@ class NavigationProvider:
             f"NAV x,y,yaw_odom,yaw_mag: {round(self.x,2)},{round(self.y,2)},{round(self.yaw_odom_0_360,2)},{round(self.yaw_mag_0_360,2)}, moving: {self.moving})"
         )
 
-    def lowStateMessageHandler(self, msg):
-        # used by CycloneDDS / Unitree Go2
-
-        self.low_state = msg
-
-        self.battery_percentage = float(msg.bms_state.soc)
-        self.battery_voltage = float(msg.power_v)
-        self.battery_amperes = float(msg.power_a)
-        self.battery_temperature = int(
-            (msg.temperature_ntc1 + msg.temperature_ntc2) / 2
-        )
-
-        # other things you can read
-        # print("FR_0 motor state: ", msg.motor_state[go2.LegID["FR_0"]])
-        # print("IMU state: ", msg.imu_state)
-        # print("Battery state: voltage: ", msg.power_v, "current: ", msg.power_a)
-
     def poseMessageHandler(self, msg):
         # used by CycloneDDS / Unitree Go2
 
@@ -278,7 +249,7 @@ class NavigationProvider:
             self.processOdom(p)
 
     def magProcessor(self, data):
-        # Used genrally as long as there is a connected
+        # Used whenever there is a connected
         # nav Arduino on serial
         value = data.split(" ")
         # HDG (DEG): 102.98 ESE NTC_HDG: 104.83
