@@ -244,7 +244,7 @@ class RPDriver(object):
         if self._serial.inWaiting() > 0:
             self.clean_input()
             time.sleep(0.5)
-            #return "Buffer is full! Run clean_input() to empty the buffer."
+            # return "Buffer is full! Run clean_input() to empty the buffer."
         self._send_cmd(GET_INFO_BYTE)
         dsize, is_single, dtype = self._read_descriptor()
         if dsize != INFO_LEN:
@@ -282,7 +282,7 @@ class RPDriver(object):
         if self._serial.inWaiting() > 0:
             self.clean_input()
             time.sleep(0.5)
-            #return "Data in buffer. " "Run clean_input() to empty the buffer."
+            # return "Data in buffer. " "Run clean_input() to empty the buffer."
         self.logger.info("Asking for health")
         self._send_cmd(GET_HEALTH_BYTE)
         dsize, is_single, dtype = self._read_descriptor()

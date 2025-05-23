@@ -1,18 +1,20 @@
 import logging
+import random
 import threading
 import time
 from enum import Enum
-import random
 
 from actions.base import ActionConfig, ActionConnector
 from actions.move_safe_lidar.interface import MoveInput
-from unitree.unitree_sdk2py.go2.sport.sport_client import SportClient
-from providers.rplidar_provider import RPLidarProvider
 from providers.navigation_provider import NavigationProvider
+from providers.rplidar_provider import RPLidarProvider
+from unitree.unitree_sdk2py.go2.sport.sport_client import SportClient
+
 
 class RobotState(Enum):
     STANDING = "standing"
     SITTING = "sitting"
+
 
 class MoveRos2Connector(ActionConnector[MoveInput]):
 
@@ -58,14 +60,16 @@ class MoveRos2Connector(ActionConnector[MoveInput]):
 
         self.navigation_on = False
         self.navigation = None
-        
+
         navigation_timeout = 10
         navigation_attempts = 0
 
         while not self.navigation_on:
-            logging.info(f"Waiting for Navigation Provider. Attempt: {navigation_attempts}")
+            logging.info(
+                f"Waiting for Navigation Provider. Attempt: {navigation_attempts}"
+            )
             self.navigation = NavigationProvider(wait=False)
-            if hasattr(self.navigation, 'running'):
+            if hasattr(self.navigation, "running"):
                 self.navigation_on = self.navigation.running
                 logging.info(f"Action: navigation running?: {self.navigation_on}")
             else:
@@ -81,7 +85,7 @@ class MoveRos2Connector(ActionConnector[MoveInput]):
         self.thread_lock = threading.Lock()
 
     def _execute_command_thread(self, command: str) -> None:
-        
+
         try:
             if command == "StandUp" and self.dog_attitude == RobotState.STANDING:
                 logging.info("Already standing, skipping command")
@@ -99,7 +103,7 @@ class MoveRos2Connector(ActionConnector[MoveInput]):
             self.thread_lock.release()
 
     def _execute_sport_command_sync(self, command: str) -> None:
-        
+
         if not self.sport_client:
             return
 
@@ -117,7 +121,7 @@ class MoveRos2Connector(ActionConnector[MoveInput]):
             self.thread_lock.release()
 
     async def _execute_sport_command(self, command: str) -> None:
-        
+
         if not self.sport_client:
             return
 
@@ -140,7 +144,7 @@ class MoveRos2Connector(ActionConnector[MoveInput]):
         logging.info(f"AI command.connect: {output_interface.action}")
 
         if self.dog_moving:
-            logging.info(f"Disregard AI movment command - robot is moving")
+            logging.info("Disregard AI movment command - robot is moving")
             return
 
         turn_left = []
@@ -215,13 +219,11 @@ class MoveRos2Connector(ActionConnector[MoveInput]):
         #     logging.info("Unitree AI command: dance")
         #     await self._execute_sport_command("Dance1")
 
-        #logging.info(f"AI command: {output_interface.action}")
+        # logging.info(f"AI command: {output_interface.action}")
 
     def _move_robot(self, vx, vy, vturn=0.0) -> None:
-        
-        logging.info(
-            f"_move_robot: vx={vx}, vy={vy}, vturn={vturn}"
-        )
+
+        logging.info(f"_move_robot: vx={vx}, vy={vy}, vturn={vturn}")
 
         if not self.sport_client:
             return
@@ -230,27 +232,25 @@ class MoveRos2Connector(ActionConnector[MoveInput]):
             return
 
         try:
-            logging.info(
-                f"self.sport_client.Move: vx={vx}, vy={vy}, vturn={vturn}"
-            )
-            # do not actually move during testing 
+            logging.info(f"self.sport_client.Move: vx={vx}, vy={vy}, vturn={vturn}")
+            # do not actually move during testing
             # self.sport_client.Move(vx, vy, vturn)
         except Exception as e:
             logging.error(f"Error moving robot: {e}")
 
     def tick(self) -> None:
 
-        logging.info(f"AI Motion Tick")
+        logging.info("AI Motion Tick")
 
-        if hasattr(self.navigation, 'running'):
+        if hasattr(self.navigation, "running"):
             nav = self.navigation.position
             logging.debug(f"Ros2 Nav data: {nav}")
-            if nav["body_attitude"] == 'standing':
+            if nav["body_attitude"] == "standing":
                 self.dog_attitude = RobotState.STANDING
             else:
                 self.dog_attitude = RobotState.SITTING
-            if nav["moving"] == True:
-                # the robot is moving - return
+            if nav["moving"]:
+                # for conceptual clarity
                 self.dog_moving = True
             else:
                 self.dog_moving = False

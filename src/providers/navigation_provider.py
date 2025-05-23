@@ -7,11 +7,6 @@ from typing import Optional
 import serial
 import zenoh
 
-from queue import LifoQueue
-
-
-
-
 try:
     # there are needed for unitree but not TurtleBot4
     from unitree.unitree_sdk2py.core.channel import ChannelSubscriber
@@ -42,14 +37,21 @@ class NavigationProvider:
     """
     Navigation Provider.
 
-    # This class implements a singleton pattern to manage RPLidar data streaming.
+    This class implements a singleton pattern to manage:
+        * Odom and pose data using either Zenoh or CycloneDDS
+        * Battery data
+        * An optional external IMU/GPS, typically an Arduino Feather
 
-    # Parameters
-    # ----------
-    # wait: bool = False
-    #     Whether to wait for another class to init this driver, somewhere else in the codebase
-    # gps_serial_port: str = "/dev/cu.usbmodem8014"
-    #     The name of the serial port in use by the GPS/Mag sensor.
+    Parameters
+    ----------
+    wait: bool = False
+        Whether to wait for another class to init this driver, somewhere else in the codebase
+    URID: str = ""
+        The URID needed to connect to the right Zenoh publisher in the local network
+    use_zenoh: bool = False
+        Whether to get odom/pose data from Zenoh - typically used by TurtleBot4
+    gps_serial_port: str = "/dev/cu.usbmodem8014"
+        The name of the serial port in use by the GPS/Mag sensor.
     """
 
     def __init__(
@@ -73,7 +75,11 @@ class NavigationProvider:
         self.URID = URID
 
         self.session = None
+        self.low_state = None
+        self.lowstate_subscriber = None
+
         if self.use_zenoh:
+            # typically, TurtleBot4
             if URID is None:
                 logging.warning(
                     "Aborting TurtleBot4 Navigation system, no URID provided"
@@ -91,6 +97,19 @@ class NavigationProvider:
                 self.session.declare_subscriber(f"{URID}/c3/odom", listenerOdom)
             except Exception as e:
                 logging.error(f"Error opening Zenoh client: {e}")
+        elif not self.use_zenoh:
+            # we are using CycloneDDS
+            # e.g. for the Unitree Go2
+            try:
+                self.lowstate_subscriber = ChannelSubscriber("rt/lowstate", LowState_)
+                self.lowstate_subscriber.Init(self.lowStateMessageHandler, 10)
+
+                self.pose_subscriber = ChannelSubscriber(
+                    "rt/utlidar/robot_pose", PoseStamped_
+                )
+                self.pose_subscriber.Init(self.poseMessageHandler, 10)
+            except Exception as e:
+                logging.error(f"Error opening CycloneDDS client: {e}")
 
         baudrate = 115200
         timeout = 1  # Optional: set a timeout for reading
@@ -104,25 +123,6 @@ class NavigationProvider:
                 logging.info(f"Connected to {gps_serial_port} at {baudrate} baud")
             except serial.SerialException as e:
                 logging.error(f"Error: {e}")
-
-        # create subscriber
-        self.low_state = None
-        self.lowstate_subscriber = None
-
-        if not use_zenoh:
-            # we are using CycloneDDS
-            # e.g. for the Unitree Go2
-            try:
-                self.lowstate_subscriber = ChannelSubscriber("rt/lowstate", LowState_)
-                self.lowstate_subscriber.Init(self.lowStateMessageHandler, 10)
-
-                self.pose_subscriber = ChannelSubscriber(
-                    "rt/utlidar/robot_pose", PoseStamped_
-                )
-                self.pose_subscriber.Init(self.poseMessageHandler, 10)
-            except:
-                logging.info(f"Nav provider: Could not start CycloneDDS")
-
 
         # battery state
         self.battery_percentage = 0.0
@@ -153,21 +153,6 @@ class NavigationProvider:
         self.running = False
         self._thread: Optional[threading.Thread] = None
         self.start()
-
-    def lowStateMessageHandler(self, msg):  #: LowState_):
-        self.low_state = msg
-
-        self.battery_percentage = float(msg.bms_state.soc)
-        self.battery_voltage = float(msg.power_v)
-        self.battery_amperes = float(msg.power_a)
-        self.battery_temperature = int(
-            (msg.temperature_ntc1 + msg.temperature_ntc2) / 2
-        )
-
-        # other things you can read
-        # print("FR_0 motor state: ", msg.motor_state[go2.LegID["FR_0"]])
-        # print("IMU state: ", msg.imu_state)
-        # print("Battery state: voltage: ", msg.power_v, "current: ", msg.power_a)
 
     def euler_from_quaternion(self, x, y, z, w):
         """
@@ -201,22 +186,22 @@ class NavigationProvider:
         z = pose.orientation.z
         w = pose.orientation.w
 
-        dx = (pose.position.x - self.previous_x)**2
-        dy = (pose.position.y - self.previous_y)**2
-        dz = (pose.position.z - self.previous_z)**2
+        dx = (pose.position.x - self.previous_x) ** 2
+        dy = (pose.position.y - self.previous_y) ** 2
+        dz = (pose.position.z - self.previous_z) ** 2
 
         self.previous_x = pose.position.x
         self.previous_y = pose.position.y
         self.previous_z = pose.position.z
 
-        delta = math.sqrt(dx+dy+dz)
+        delta = math.sqrt(dx + dy + dz)
 
         # moving? Use a decay kernal
-        self.move_history = 0.4*delta + 0.6*self.move_history
+        self.move_history = 0.4 * delta + 0.6 * self.move_history
 
         if delta > 0.01 or self.move_history > 0.005:
-            # we want to detect movment quickly (False->True), but wait for the 
-            # system to fully stabilize before we turn moving from True to False
+            # we want to detect movement quickly (and flip "moving" False->True), but
+            # wait for the platform to stabilize before we flip "moving" True->False
             self.moving = True
             logging.info(f"delta moving: {delta} {self.move_history}")
         else:
@@ -245,19 +230,34 @@ class NavigationProvider:
             "yaw_mag_cardinal": self.yaw_mag_cardinal,
             "body_height_cm": self.body_height_cm,
             "body_attitude": self.body_attitude,
-            "moving": self.moving
+            "moving": self.moving,
         }
 
         logging.debug(
             f"NAV x,y,yaw_odom,yaw_mag: {round(self.x,2)},{round(self.y,2)},{round(self.yaw_odom_0_360,2)},{round(self.yaw_mag_0_360,2)}, moving: {self.moving})"
         )
 
-    def poseMessageHandler(self, msg):  #: PoseStamped_):
-        # used by CycloneDDS
+    def lowStateMessageHandler(self, msg):
+        # used by CycloneDDS / Unitree Go2
+
+        self.low_state = msg
+
+        self.battery_percentage = float(msg.bms_state.soc)
+        self.battery_voltage = float(msg.power_v)
+        self.battery_amperes = float(msg.power_a)
+        self.battery_temperature = int(
+            (msg.temperature_ntc1 + msg.temperature_ntc2) / 2
+        )
+
+        # other things you can read
+        # print("FR_0 motor state: ", msg.motor_state[go2.LegID["FR_0"]])
+        # print("IMU state: ", msg.imu_state)
+        # print("Battery state: voltage: ", msg.power_v, "current: ", msg.power_a)
+
+    def poseMessageHandler(self, msg):
+        # used by CycloneDDS / Unitree Go2
+
         p = msg.pose
-
-        # logging.info(f"poseMessageHandler: {p}")
-
         self.body_height_cm = round(p.position.z * 100.0)
 
         # only relevant to dog
@@ -269,7 +269,7 @@ class NavigationProvider:
         self.processOdom(p)
 
     def zenohOdomProcessor(self):
-        # used by Zenoh
+        # used by Zenoh / TurtleBot4
         global gOdom
         if gOdom is not None:
             self.body_height_cm = 0.0
@@ -278,6 +278,8 @@ class NavigationProvider:
             self.processOdom(p)
 
     def magProcessor(self, data):
+        # Used genrally as long as there is a connected
+        # nav Arduino on serial
         value = data.split(" ")
         # HDG (DEG): 102.98 ESE NTC_HDG: 104.83
         if value[0] == "HDG" and len(value) == 6:
@@ -305,9 +307,11 @@ class NavigationProvider:
         while self.running:
 
             if self.use_zenoh:
+                # TurtleBot4
                 logging.debug("zenohOdomProcessor")
                 self.zenohOdomProcessor()
             else:
+                # Unitree Go2 - using CycloneDDS
                 logging.debug(
                     f"Cyclone Nav Provider: {self.body_height_cm} position: {self.position}"
                 )

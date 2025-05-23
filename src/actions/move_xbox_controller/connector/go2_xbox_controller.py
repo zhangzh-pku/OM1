@@ -5,8 +5,8 @@ from enum import Enum
 
 from actions.base import ActionConfig, ActionConnector
 from actions.move_xbox_controller.interface import IDLEInput
-from unitree.unitree_sdk2py.go2.sport.sport_client import SportClient
 from providers.navigation_provider import NavigationProvider
+from unitree.unitree_sdk2py.go2.sport.sport_client import SportClient
 
 try:
     import hid
@@ -38,7 +38,7 @@ class Go2XboxControllerConnector(ActionConnector[IDLEInput]):
         """
         super().__init__(config)
 
-        self.config = config # never used?
+        self.config = config  # never used?
 
         self.sport_client = None
         try:
@@ -77,19 +77,20 @@ class Go2XboxControllerConnector(ActionConnector[IDLEInput]):
         self.move_speed = 0.5
         self.turn_speed = 0.5
 
-
         self.dog_attitude = None
 
         self.navigation_on = False
         self.navigation = None
-        
+
         navigation_timeout = 10
         navigation_attempts = 0
 
         while not self.navigation_on:
-            logging.info(f"Waiting for Navigation Provider. Attempt: {navigation_attempts}")
+            logging.info(
+                f"Waiting for Navigation Provider. Attempt: {navigation_attempts}"
+            )
             self.navigation = NavigationProvider(wait=True)
-            if hasattr(self.navigation, 'running'):
+            if hasattr(self.navigation, "running"):
                 self.navigation_on = self.navigation.running
                 logging.info(f"Action: navigation running?: {self.navigation_on}")
             else:
@@ -200,10 +201,10 @@ class Go2XboxControllerConnector(ActionConnector[IDLEInput]):
         time.sleep(0.1)
         logging.info("Gamepad tick")
 
-        if hasattr(self.navigation, 'running'):
+        if hasattr(self.navigation, "running"):
             nav = self.navigation.position
             logging.debug(f"XBOX Nav data: {nav}")
-            if nav and nav["body_attitude"] == 'standing':
+            if nav and nav["body_attitude"] == "standing":
                 self.dog_attitude = RobotState.STANDING
             else:
                 self.dog_attitude = RobotState.SITTING
@@ -220,9 +221,9 @@ class Go2XboxControllerConnector(ActionConnector[IDLEInput]):
 
             # Process triggers for rotation
             # RT is typically on byte 9, LT on byte 8 for Xbox controllers
-            rt_value     = data[11]  # Right Trigger
-            lt_value     = data[9]   # Left Trigger
-            d_pad_value  = data[13]
+            rt_value = data[11]  # Right Trigger
+            lt_value = data[9]  # Left Trigger
+            d_pad_value = data[13]
             button_value = data[14]
 
             move_triggered_RTLT = False
@@ -265,10 +266,10 @@ class Go2XboxControllerConnector(ActionConnector[IDLEInput]):
                 # and return, since we just issued a move command in this tick
                 return
 
-            #logging.info(f"D-pad: {d_pad_value} {self.d_pad_previous}")
+            # logging.info(f"D-pad: {d_pad_value} {self.d_pad_previous}")
 
             if d_pad_value != self.d_pad_previous:
-                # there has been a change                
+                # there has been a change
                 # Control robot movement based on D-pad
                 logging.debug(f"Gamepad DPAD change: {data}")
                 if d_pad_value == 1:  # Up
@@ -291,7 +292,7 @@ class Go2XboxControllerConnector(ActionConnector[IDLEInput]):
                     logging.debug("D-pad released - Stopping movement")
                     self._move_robot(0.0, 0.0)
                     move_triggered_dpad = True
-            
+
             # update the value of d_pad_previous
             self.d_pad_previous = d_pad_value
 
@@ -318,7 +319,7 @@ class Go2XboxControllerConnector(ActionConnector[IDLEInput]):
                 elif button_value == 2:
                     logging.info("Controller unitree: lay_down")
                     self._execute_sport_command_sync("StandDown")
-                    
+
                 # # X button
                 # elif button_value == 8:
                 #     self._execute_sport_command_sync("Hello")

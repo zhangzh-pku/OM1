@@ -56,7 +56,7 @@ class RPLidarProvider:
         sensor_mounting_angle: float = 180.0,
         URID: str = "",
         use_zenoh: bool = False,
-        simple_paths: bool = False
+        simple_paths: bool = False,
     ):
         """
         Robot and sensor configuration
@@ -211,7 +211,7 @@ class RPLidarProvider:
                     )
                 )
                 self.angles_final = np.flip(self.angles)
-            
+
             # angles now run from 360.0 to 0 degress
             data = list(zip(self.angles_final, scan.ranges))
             array_ready = np.array(data)
@@ -304,10 +304,10 @@ class RPLidarProvider:
         """
         possible_paths = np.array([0, 1, 2, 3, 4, 5, 6, 7, 8, 9])
         if self.simple_paths:
-            # for the turtlebot - it can always turn in place, 
+            # for the turtlebot - it can always turn in place,
             # only question is wheater it can advance
             possible_paths = np.array([4])
-        
+
         # all the possible conflicting points
         for x, y, d in list(zip(X, Y, D)):
 

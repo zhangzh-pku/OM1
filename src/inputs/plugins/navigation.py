@@ -143,9 +143,9 @@ class Navigation(FuserInput[str]):
         heading = round(raw_input["yaw_mag_0_360"])
 
         if moving:
-            res = f"You are moving - do not generate new movement commands. "
+            res = "You are moving - do not generate new movement commands. "
         else:
-            res = f"You are standing still - you can move if you want to. "
+            res = "You are standing still - you can move if you want to. "
 
         if cardinal:
             res += f"You are facing {cardinal}. Your magnetic heading is {heading} degrees. "
