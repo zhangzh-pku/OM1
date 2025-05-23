@@ -41,8 +41,7 @@ class XboxProvider:
                     break
 
         if self.gamepad is None:
-            logging.warn("Xbox controller not found")
-
+            logging.warning("Xbox controller not found")
         # Software Debounce
         self.rt_previous = 0
         self.lt_previous = 0
