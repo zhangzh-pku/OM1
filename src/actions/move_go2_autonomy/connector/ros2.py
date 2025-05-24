@@ -1,8 +1,8 @@
 import logging
+import math
 import random
 import threading
 import time
-import math
 from enum import Enum
 from queue import Queue
 
@@ -197,6 +197,7 @@ class MoveRos2Connector(ActionConnector[MoveInput]):
                 logging.warning("Cannot turn left due to barrier")
                 return
             path = random.choice(turn_left)
+            logging.info(f"Path choice: {path}")
             # ToDo - use specific path value for tight/soft turns
             # hardcode for now
             target_yaw = self.yaw_now - 90.0
@@ -209,6 +210,7 @@ class MoveRos2Connector(ActionConnector[MoveInput]):
                 logging.warning("Cannot turn right due to barrier")
                 return
             path = random.choice(turn_right)
+            logging.info(f"Path choice: {path}")
             # ToDo - use specific path value for tight/soft turns
             # hardcode for now
             target_yaw = self.yaw_now + 90.0
@@ -257,12 +259,12 @@ class MoveRos2Connector(ActionConnector[MoveInput]):
             if self.navigation.running:
                 nav = self.navigation.position
                 logging.debug(f"Go2 Nav data: {nav}")
-                
+
                 if nav["body_attitude"] == "standing":
                     self.dog_attitude = RobotState.STANDING
                 else:
                     self.dog_attitude = RobotState.SITTING
-                
+
                 if nav["moving"]:
                     # for conceptual clarity
                     self.dog_moving = True
@@ -312,13 +314,12 @@ class MoveRos2Connector(ActionConnector[MoveInput]):
             time.sleep(0.1)
             return
 
-
         if self.dog_attitude != RobotState.STANDING:
             logging.info("Cannot move - dog is sitting")
             time.sleep(0.1)
             return
 
-        # if we got to this point, we have good data and we are able to 
+        # if we got to this point, we have good data and we are able to
         # safely proceed
         target = list(self.pending_movements.queue)
 
@@ -351,7 +352,7 @@ class MoveRos2Connector(ActionConnector[MoveInput]):
                     if gap > 0:
                         self.movement_attempts += 1
                         self._move_robot(0.5, 0, 0.5)
-                        #self.move(0.0, 0.5)
+                        # self.move(0.0, 0.5)
                     elif gap < 0:
                         self.movement_attempts += 1
                         self._move_robot(0.5, 0, -0.5)

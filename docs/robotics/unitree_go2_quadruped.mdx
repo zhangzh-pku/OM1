@@ -167,8 +167,7 @@ On Mac, you will need to install `hidapi`:
 brew install hidapi
 ```
 
-NOTE: There is a bug on Mac when installing packages with `brew` - some libraries cannot be found by `uv`. If you get errors such as
-`Unable to load any of the following libraries:libhidapi-hidraw.so`, set `export DYLD_FALLBACK_LIBRARY_PATH=$HOMEBREW_PREFIX/lib` in your `.zshenv` or equivalent.
+NOTE: There is a bug on Mac when installing packages with `brew` - some libraries cannot be found by `uv`. If you get errors such as `Unable to load any of the following libraries:libhidapi-hidraw.so`, set `export DYLD_FALLBACK_LIBRARY_PATH=$HOMEBREW_PREFIX/lib` in your `.zshenv` or equivalent.
 
 On Linux, install `hidapi` like this:
 
@@ -177,23 +176,9 @@ sudo apt-get update
 sudo apt-get install python-dev libusb-1.0-0-dev libudev-dev libhidapi-dev
 ```
 
-## Step 4 - Controlling the Quadruped
+## Accessing Unitree Data
 
-Run
-```bash
-uv run src/run.py unitree_go2_lidar
-```
-
-OM1 will control a safe and limited subset of motions (such as `stretch` and `sit down`). You can also manually control the dog via the game controller. Press:
-
-* A to stand up
-* B to sit down
-* X to shake paw
-* Y to stretch
-
-Allowing the dog to `move`, `pounce`, and `run` requires **you** to add this functionality. **Warning: If you add additional movement capabilities, this is at your own risk. Due to the autonomous nature of the system, we recommend to perform such testing in the absence of squirrels, cats, rabbits, or small children (assuming you are providing a `dog` prompt)**.
-
-## Accessing Unitree data
+For debugging, you can access Unitree data as follows:
 
 Front video feed:
 ```bash
@@ -210,10 +195,42 @@ Lowstate system/joint data:
 uv run system_hw_test/go2_data_stream.py en0
 ```
 
-Lidar:
+Lidar: 
 ```bash
 uv run system_hw_test/go2_lidar.py en0
 ```
+
+Note - the internal Go2 LIDAR is currently not used - a separate RPLIDAR mounted to the top of the dog's head is used instead. 
+
+## CONFIGURATION 1: Minimal Quadruped Functionality
+
+In this configuration, the quadruped observes its environment, listens and speaks, but there is no AI-controlled movement. However, you can manually control the dog's movements with an Xbox controller. 
+
+Run
+```bash
+uv run src/run.py unitree_go2_basic
+```
+
+Press:
+
+* A to stand up
+* B to sit down
+* The D-pad allows you to steer the quadruped. 
+
+## CONFIGURATION 2: Full Autonomy
+
+Run
+```bash
+uv run src/run.py unitree_go2_autonomy
+```
+
+OM1 will provide LIDAR and other data to a system of LLMs, allowing them to explore indoor and outdoor environments. You can also manually control the dog via the Xbox game controller. Press:
+
+* A to stand up
+* B to sit down
+* The D-pad allows you to steer the quadruped. 
+
+The Xbox game controller has command precedence over the AI, so game controller inputs will block AI-generated physical actions.  
 
 ## Unitree Go2 EDU Common Problems
 
@@ -226,4 +243,4 @@ uv run system_hw_test/go2_lidar.py en0
 ping 192.168.123.161
 ```
 
-Assuming you can `ping` the robot, then test the `cycloneDDS` middleware (see **STEP 1**). Once you can see data flowing, then the rest of the system should work. 
+Assuming you can `ping` the robot, then test the CycloneDDS middleware (see **STEP 1**). Once you see data flowing, then the rest of the system should work. 

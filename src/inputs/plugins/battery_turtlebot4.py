@@ -18,7 +18,7 @@ class Message:
     message: str
 
 
-class TurtleBot4Batt(FuserInput[str]):
+class TurtleBot4Battery(FuserInput[str]):
     """
     TurtleBot4 Battery inputs.
 
@@ -83,7 +83,7 @@ class TurtleBot4Batt(FuserInput[str]):
         """
         battery = sensor_msgs.BatteryState.deserialize(sample.payload.to_bytes())
 
-        logging.info(f"TB4 battery callback: {battery}")
+        logging.debug(f"TB4 battery callback: {battery}")
 
         self.battery_percentage = int(battery.percentage * 100)
         self.battery_voltage = battery.voltage
@@ -91,9 +91,15 @@ class TurtleBot4Batt(FuserInput[str]):
         self.battery_timestamp = battery.header.stamp.sec
 
         if self.battery_percentage < 5:
-            self.battery_status = "CRITICAL: your battery is almost empty. Immediately move to your charging station and recharge."
+            self.battery_status = (
+                "CRITICAL: your battery is almost empty. "
+                "Immediately move to your charging station and recharge."
+            )
         elif self.battery_percentage < 15:
-            self.battery_status = "IMPORTANT: your battery is running low. Consider finding your charging station and recharging."
+            self.battery_status = (
+                "IMPORTANT: your battery is low. "
+                "Consider finding your charging station and recharging."
+            )
         else:
             self.battery_status = None
 
@@ -109,7 +115,7 @@ class TurtleBot4Batt(FuserInput[str]):
         dock = sensor_msgs.DockStatus.deserialize(sample.payload.to_bytes())
         self.is_docked = dock.is_docked
 
-    async def update_status(self):
+    async def report_status(self):
         """
         Report the battery status to the status provider.
         """
@@ -136,11 +142,8 @@ class TurtleBot4Batt(FuserInput[str]):
         List[str]
         """
 
-        # Does the complexity of this seem confusing and kinda pointless to you?
-        # It's on our radar and your patience is appreciated
         await asyncio.sleep(2.0)
-
-        await self.update_status()
+        await self.report_status()
 
         logging.info(
             f"TB4 batt percent:{self.battery_percentage} low?: {self.battery_status}"
@@ -198,12 +201,10 @@ class TurtleBot4Batt(FuserInput[str]):
 
         latest_message = self.messages[-1]
 
-        result = f"""
-INPUT: {self.descriptor_for_LLM}
-// START
-{latest_message.message}
-// END
-"""
+        result = (
+            f"\nINPUT: {self.descriptor_for_LLM}\n// START\n"
+            f"{latest_message.message}\n// END\n"
+        )
 
         self.io_provider.add_input(
             self.__class__.__name__, latest_message.message, latest_message.timestamp
