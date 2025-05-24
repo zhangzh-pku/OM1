@@ -257,19 +257,24 @@ class RPLidarProvider:
             elif angle < 0.0:
                 angle = 360.0 + angle
 
-            # convert the angle to -180 to +180 range
+            # convert the angle from [0 to 360] to [-180 to +180] range
             angle = angle - 180.0
 
-            keep = True
+            reflection = False
             for b in self.angles_blanked:
                 if angle >= b[0] and angle <= b[1]:
                     # this is a permanent robot reflection
                     # disregard
-                    keep = False
+                    reflection = True
                     break
 
-            # convert to radians
-            a_rad = angle * math.pi / 180.0
+            if reflection:
+                continue
+
+            # bugfix - this calc is based on the [0 to 360]
+            # the goal is to save compute, hence want to do the
+            # slow math as late as possible
+            a_rad = (angle + 180.0) * math.pi / 180.0
 
             v1 = d_m * math.cos(a_rad)
             v2 = d_m * math.sin(a_rad)
@@ -280,8 +285,7 @@ class RPLidarProvider:
             y = -1 * v1
 
             # the final data ready to use for path planning
-            if keep:
-                complexes.append([x, y, angle, d_m])
+            complexes.append([x, y, angle, d_m])
 
         array = np.array(complexes)
 
@@ -305,7 +309,7 @@ class RPLidarProvider:
         possible_paths = np.array([0, 1, 2, 3, 4, 5, 6, 7, 8, 9])
         if self.simple_paths:
             # for the turtlebot - it can always turn in place,
-            # only question is wheater it can advance
+            # only question is whether it can advance
             possible_paths = np.array([4])
 
         # all the possible conflicting points
@@ -396,7 +400,7 @@ class RPLidarProvider:
                     ):
                         self._preprocess_serial(scan)
                         # not sure about the level of this?
-                        # time.sleep(0.1)
+                        # BUG BUG BUG time.sleep(0.1)
                 except Exception as e:
                     logging.error(f"Error in Serial RPLidar provider: {e}")
 
