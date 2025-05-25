@@ -238,11 +238,11 @@ class LLMHistoryManager:
                         "Given that information, **** took these actions: "
                         + (
                             " | ".join(
-                                ACTION_MAP[action.type].format(
+                                ACTION_MAP[action.type.lower()].format(
                                     action.value if action.value else ""
                                 )
                                 for action in response.actions
-                                if action.type in ACTION_MAP
+                                if action.type.lower() in ACTION_MAP
                             )
                         )
                     )

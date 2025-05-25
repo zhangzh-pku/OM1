@@ -87,11 +87,11 @@ class ActionOrchestrator:
         for action in actions:
             logging.debug(f"Sending command: {action}")
             agent_action = next(
-                (m for m in self._config.agent_actions if m.llm_label == action.type),
+                (m for m in self._config.agent_actions if m.llm_label == action.type.lower()),
                 None,
             )
             if agent_action is None:
-                logging.warning(f"Attempted to call non-existant action: {action.type}")
+                logging.warning(f"Attempted to call non-existant action: {action.type.lower()}")
                 continue
             action_response = asyncio.create_task(
                 self._promise_action(agent_action, action)
@@ -100,7 +100,7 @@ class ActionOrchestrator:
 
     async def _promise_action(self, agent_action: AgentAction, action: Action) -> T.Any:
         logging.debug(
-            f"Calling action {agent_action.llm_label} with type {action.type} and argument {action.value}"
+            f"Calling action {agent_action.llm_label} with type {action.type.lower()} and argument {action.value}"
         )
         input_interface = T.get_type_hints(agent_action.interface)["input"](
             **{"action": action.value}
