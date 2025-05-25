@@ -54,10 +54,10 @@
       "connector": "go2_xbox_controller"
     },
     {
-      "name": "move_safe_lidar",
+      "name": "move_go2_autonomy",
       "llm_label": "move",
       "implementation": "passthrough",
-      "connector": "ros2"
+      "connector": "unitree_sdk"
     }
   ]
 }

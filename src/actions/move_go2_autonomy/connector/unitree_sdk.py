@@ -7,7 +7,7 @@ from enum import Enum
 from queue import Queue
 
 from actions.base import ActionConfig, ActionConnector
-from actions.move_safe_lidar.interface import MoveInput
+from actions.move_go2_autonomy.interface import MoveInput
 from providers.navigation_provider import NavigationProvider
 from providers.rplidar_provider import RPLidarProvider
 from unitree.unitree_sdk2py.go2.sport.sport_client import SportClient
@@ -18,7 +18,7 @@ class RobotState(Enum):
     SITTING = "sitting"
 
 
-class MoveRos2Connector(ActionConnector[MoveInput]):
+class MoveUnitreeSDKConnector(ActionConnector[MoveInput]):
 
     def __init__(self, config: ActionConfig):
         super().__init__(config)
