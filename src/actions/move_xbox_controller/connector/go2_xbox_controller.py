@@ -46,7 +46,7 @@ class Go2XboxControllerConnector(ActionConnector[IDLEInput]):
             self.sport_client.SetTimeout(10.0)
             self.sport_client.Init()
             self.sport_client.StopMove()
-            self.sport_client.Move(0.05,0,0)
+            self.sport_client.Move(0.05, 0, 0)
             time.sleep(1)
             # self.sport_client.StandDown()
             # time.sleep(1)
@@ -273,9 +273,9 @@ class Go2XboxControllerConnector(ActionConnector[IDLEInput]):
 
             # logging.info(f"D-pad: {d_pad_value} {self.d_pad_previous}")
 
-            #if d_pad_value != self.d_pad_previous:
-                # there has been a change
-                # Control robot movement based on D-pad
+            # if d_pad_value != self.d_pad_previous:
+            # there has been a change
+            # Control robot movement based on D-pad
             logging.info(f"Gamepad DPAD: {d_pad_value}")
             if d_pad_value == 1:  # Up
                 logging.info("D-pad UP - Moving forward")
@@ -295,7 +295,7 @@ class Go2XboxControllerConnector(ActionConnector[IDLEInput]):
                 self._move_robot(0.0, -self.move_speed)
             elif self.d_pad_previous > 0 and d_pad_value == 0:  # RELEASE
                 logging.debug("D-pad released - Stopping movement")
-                #self._move_robot(0.0, 0.0)
+                # self._move_robot(0.0, 0.0)
                 if self.sport_client:
                     self.sport_client.StopMove()
                 move_triggered_dpad = True
@@ -304,17 +304,17 @@ class Go2XboxControllerConnector(ActionConnector[IDLEInput]):
             self.d_pad_previous = d_pad_value
 
             if move_triggered_dpad:
-                #logging.info(f"Gamepad DPAD: {d_pad_value}")
+                # logging.info(f"Gamepad DPAD: {d_pad_value}")
                 # update the previous value of the button
                 # self.button_previous = button_value
                 # and return, since we just issued a move command in this tick
                 return
 
-            #logging.debug(f"Gamepad button value {button_value}")
+            # logging.debug(f"Gamepad button value {button_value}")
 
             if self.button_previous == 0 and button_value > 0:
 
-                #logging.debug(f"Gamepad button pressed")
+                # logging.debug(f"Gamepad button pressed")
 
                 # We need this logic because when the user presses a button
                 # the gamepad sends a 'press' indication numerous times

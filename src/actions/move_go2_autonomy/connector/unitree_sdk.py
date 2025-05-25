@@ -44,7 +44,6 @@ class MoveUnitreeSDKConnector(ActionConnector[MoveInput]):
         lidar_timeout = 10  # if the LIDAR does not connect in 5 seconds, we assume there is no LIDAR
         lidar_attempts = 0
 
-
         self.turn_left = []
         self.advance = []
         self.turn_right = []
@@ -71,7 +70,7 @@ class MoveUnitreeSDKConnector(ActionConnector[MoveInput]):
             self.sport_client = SportClient()
             self.sport_client.SetTimeout(10.0)
             self.sport_client.Init()
-            #self.sport_client.Move(0.1, 0, 0)
+            # self.sport_client.Move(0.1, 0, 0)
             logging.info("Autonomy Unitree sport client initialized")
         except Exception as e:
             logging.error(f"Error initializing Unitree sport client: {e}")
