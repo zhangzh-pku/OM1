@@ -11,7 +11,7 @@ from fastapi import FastAPI, WebSocket
 from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 
-from llm.output_model import Command
+from llm.output_model import Action
 from providers.io_provider import Input, IOProvider
 from simulators.base import Simulator, SimulatorConfig
 
@@ -587,7 +587,7 @@ class WebSim(Simulator):
 
             time.sleep(0.5)
 
-    def sim(self, commands: List[Command]) -> None:
+    def sim(self, actions: List[Action]) -> None:
         """Handle simulation updates from commands"""
         if not self._initialized:
             logging.warning("WebSim not initialized, skipping sim update")
