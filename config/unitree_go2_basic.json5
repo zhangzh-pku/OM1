@@ -14,8 +14,11 @@
       "type": "GoogleASRInput"
     },
     {
-      "type": "VLMVila"
-    }
+      "type": "VLM_COCO_Local",
+      "config": {
+        "camera_index": 0
+      }
+    },
   ],
   "cortex_llm": {
     "type": "OpenAILLM",

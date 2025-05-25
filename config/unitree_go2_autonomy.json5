@@ -38,6 +38,15 @@
         "angles_blanked": [[-180.0, -170.0], [160, 180]]
       }
     }
+    //{
+    //  "type": "UnitreeGo2Battery"
+    //},
+    //{
+    //  "type": "GoogleASRInput"
+    //},
+    //{
+    //  "type": "VLMVila"
+    //}
   ],
   "cortex_llm": {
     "type": "OpenAILLM",
@@ -58,7 +67,16 @@
       "llm_label": "move",
       "implementation": "passthrough",
       "connector": "unitree_sdk"
-    }
+    },
+    //{
+    // "name": "speak",
+    //  "llm_label": "speak",
+    //  "implementation": "passthrough",
+    //  "connector": "elevenlabs_tts",
+    //  "config": {
+    //    "voice_id": "TbMNBJ27fH2U0VgpSNko"
+    //  }
+    //}
   ]
 }
 

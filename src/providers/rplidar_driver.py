@@ -494,7 +494,7 @@ class ExpressPacket(
         packet = bytearray(data)
 
         if (packet[0] >> 4) != cls.sync1 or (packet[1] >> 4) != cls.sync2:
-            raise ValueError("try to parse corrupted data ({})".format(packet))
+            raise ValueError("trying to parse corrupted data ({})".format(packet))
 
         checksum = 0
         for b in packet[2:]:

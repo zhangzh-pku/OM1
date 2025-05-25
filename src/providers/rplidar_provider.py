@@ -23,6 +23,12 @@ def listenerScan(sample):
     # logging.debug(f"Zenoh Laserscan data: {gScan}")
 
 
+def get_dimensions(list_):
+    if not isinstance(list_, list):
+        return []
+    return [len(list_)] + get_dimensions(list_[0]) if list_ else [0]
+
+
 @singleton
 class RPLidarProvider:
     """
@@ -222,23 +228,29 @@ class RPLidarProvider:
         logging.debug(f"_preprocess_serial: {scan}")
         array = np.array(scan)
 
+        #logging.info(f"_preprocess_serial: {array.ndim}")
+
         # the driver sends angles in degrees between from 0 to 360
         # warning - the driver may send two or more readings per angle,
         # this can be confusing for the code
         angles = array[:, 1]
+
+        #logging.info(f"_preprocess_serial: {angles}")
 
         # distances are in millimeters
         distances_mm = array[:, 2]
         distances_m = [i / 1000 for i in distances_mm]
 
         data = list(zip(angles, distances_m))
+
+        #logging.info(f"_preprocess_serial: {data}")
         array_ready = np.array(data)
         # print(f"Array {array_ready}")
         self._process(array_ready)
 
     def _process(self, data):
 
-        # logging.debug(f"_process RP Lidar: {data}")
+        # logging.info(f"_process RP Lidar: {data}")
 
         complexes = []
 
@@ -289,19 +301,12 @@ class RPLidarProvider:
 
         array = np.array(complexes)
 
+        #logging.info(f"final: {array.ndim}")
+
         # sort data into strictly increasing angles to deal with sensor issues
         # the sensor sometimes reports part of the previous scan and part of the next scan
         # so you end up with multiple slightly different values for some angles at the
         # junction
-        sorted_indices = array[:, 2].argsort()
-        array = array[sorted_indices]
-
-        # logging.debug(f"_process array: {array}")
-
-        X = array[:, 0]
-        Y = array[:, 1]
-        # A = array[:, 2]
-        D = array[:, 3]
 
         """
         Determine set of possible paths
@@ -312,22 +317,34 @@ class RPLidarProvider:
             # only question is whether it can advance
             possible_paths = np.array([4])
 
-        # all the possible conflicting points
-        for x, y, d in list(zip(X, Y, D)):
+        if array.ndim > 1:
+            # we have valid LIDAR returns
 
-            for apath in possible_paths:
-                for point in self.pp[apath]:
-                    p1 = x - point[0]
-                    p2 = y - point[1]
-                    dist = math.sqrt(p1 * p1 + p2 * p2)
-                    # logging.debug(f"_process dist: {dist}")
-                    if dist < self.half_width_robot:
-                        # too close - this path will not work
-                        logging.debug(f"removing path: {apath}")
-                        path_to_remove = np.array([apath])
-                        possible_paths = np.setdiff1d(possible_paths, path_to_remove)
-                        logging.debug(f"remaining paths: {possible_paths}")
-                        break  # no need to keep checking this path - we know this path is bad
+            sorted_indices = array[:, 2].argsort()
+            array = array[sorted_indices]
+
+            # logging.debug(f"_process array: {array}")
+
+            X = array[:, 0]
+            Y = array[:, 1]
+            # A = array[:, 2]
+            D = array[:, 3]
+
+            # all the possible conflicting points
+            for x, y, d in list(zip(X, Y, D)):
+                for apath in possible_paths:
+                    for point in self.pp[apath]:
+                        p1 = x - point[0]
+                        p2 = y - point[1]
+                        dist = math.sqrt(p1 * p1 + p2 * p2)
+                        # logging.debug(f"_process dist: {dist}")
+                        if dist < self.half_width_robot:
+                            # too close - this path will not work
+                            logging.debug(f"removing path: {apath}")
+                            path_to_remove = np.array([apath])
+                            possible_paths = np.setdiff1d(possible_paths, path_to_remove)
+                            logging.debug(f"remaining paths: {possible_paths}")
+                            break  # no need to keep checking this path - we know this path is bad
 
         turn_left = []
         advance = []
@@ -395,12 +412,12 @@ class RPLidarProvider:
                 try:
                     for i, scan in enumerate(
                         self.lidar.iter_scans(
-                            scan_type="express", max_buf_meas=3000, min_len=5
+                            scan_type="express", max_buf_meas=1200, min_len=50
                         )
                     ):
                         self._preprocess_serial(scan)
-                        # not sure about the level of this?
-                        # BUG BUG BUG time.sleep(0.1)
+                        # BUG BUG BUG 
+                        # time.sleep(0.1)
                 except Exception as e:
                     logging.error(f"Error in Serial RPLidar provider: {e}")
 
