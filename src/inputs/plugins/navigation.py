@@ -139,10 +139,14 @@ class Navigation(FuserInput[str]):
         res = ""
 
         moving = raw_input["moving"]
+        attitude = raw_input["body_attitude"]
         cardinal = raw_input["yaw_mag_cardinal"]
         heading = round(raw_input["yaw_mag_0_360"])
 
-        if moving:
+        if attitude == "sitting":
+            res = "You are sitting down - do not generate new movement commands. "
+        elif moving:
+            # already moving
             res = "You are moving - do not generate new movement commands. "
         else:
             res = "You are standing still - you can move if you want to. "
@@ -192,12 +196,10 @@ class Navigation(FuserInput[str]):
 
         latest_message = self.messages[-1]
 
-        result = f"""
-INPUT: {self.descriptor_for_LLM}
-// START
-{latest_message.message}
-// END
-"""
+        result = (
+            f"\nINPUT: {self.descriptor_for_LLM}\n// START\n"
+            f"{latest_message.message}\n// END\n"
+        )
 
         self.io_provider.add_input(
             self.descriptor_for_LLM, latest_message.message, latest_message.timestamp
