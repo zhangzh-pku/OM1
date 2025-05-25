@@ -632,19 +632,19 @@ class WebSim(Simulator):
                     "complete": llm_end_time - earliest_time if llm_end_time else 0,
                 }
 
-                for command in commands:
-                    if command.type == "move":
-                        new_action = command.value
+                for action in actions:
+                    if action.type == "move":
+                        new_action = action.value
                         if new_action != self.state.current_action:
                             self.state.current_action = new_action
                             updated = True
-                    elif command.type == "speak":
-                        new_speech = command.value
+                    elif action.type == "speak":
+                        new_speech = action.value
                         if new_speech != self.state.last_speech:
                             self.state.last_speech = new_speech
                             updated = True
-                    elif command.type == "emotion":
-                        new_emotion = command.value
+                    elif action.type == "emotion":
+                        new_emotion = action.value
                         if new_emotion != self.state.current_emotion:
                             self.state.current_emotion = new_emotion
                             updated = True
