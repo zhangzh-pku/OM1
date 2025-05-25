@@ -44,6 +44,12 @@ class MoveRos2Connector(ActionConnector[MoveInput]):
         lidar_timeout = 10  # if the LIDAR does not connect in 5 seconds, we assume there is no LIDAR
         lidar_attempts = 0
 
+
+        self.turn_left = []
+        self.advance = []
+        self.turn_right = []
+        self.retreat = []
+
         while self.lidar_on is False:
             logging.info(f"Waiting for RPLidar Provider. Attempt: {lidar_attempts}")
             self.lidar = RPLidarProvider(wait=True)
@@ -65,14 +71,15 @@ class MoveRos2Connector(ActionConnector[MoveInput]):
             self.sport_client = SportClient()
             self.sport_client.SetTimeout(10.0)
             self.sport_client.Init()
-            logging.info("Unitree sport client initialized")
+            #self.sport_client.Move(0.1, 0, 0)
+            logging.info("Autonomy Unitree sport client initialized")
         except Exception as e:
             logging.error(f"Error initializing Unitree sport client: {e}")
 
         self.navigation_on = False
         self.navigation = None
 
-        navigation_timeout = 10
+        navigation_timeout = 20
         navigation_attempts = 0
 
         while not self.navigation_on:
@@ -171,32 +178,12 @@ class MoveRos2Connector(ActionConnector[MoveInput]):
             logging.info("Waiting for location data")
             return
 
-        turn_left = []
-        advance = []
-        turn_right = []
-        retreat = []
-
-        if self.lidar:
-            # reconfirm possible paths
-            # this is needed due to the 2s latency of the LLMs
-            possible_paths = self.lidar.valid_paths
-            logging.debug(f"Action - Valid paths: {possible_paths}")
-            for p in possible_paths:
-                if p < 4:
-                    turn_left.append(p)
-                elif p == 4:
-                    advance.append(p)
-                elif p < 9:
-                    turn_right.append(p)
-                elif p == 9:
-                    retreat.append(p)
-
         if output_interface.action == "turn left":
             # turn 90 Deg to the left (CCW)
-            if len(turn_left) == 0:
+            if len(self.turn_left) == 0:
                 logging.warning("Cannot turn left due to barrier")
                 return
-            path = random.choice(turn_left)
+            path = random.choice(self.turn_left)
             logging.info(f"Path choice: {path}")
             # ToDo - use specific path value for tight/soft turns
             # hardcode for now
@@ -206,10 +193,10 @@ class MoveRos2Connector(ActionConnector[MoveInput]):
             self.pending_movements.put([0.0, target_yaw, "turn"])
         elif output_interface.action == "turn right":
             # turn 90 Deg to the right (CW)
-            if len(turn_right) == 0:
+            if len(self.turn_right) == 0:
                 logging.warning("Cannot turn right due to barrier")
                 return
-            path = random.choice(turn_right)
+            path = random.choice(self.turn_right)
             logging.info(f"Path choice: {path}")
             # ToDo - use specific path value for tight/soft turns
             # hardcode for now
@@ -218,12 +205,12 @@ class MoveRos2Connector(ActionConnector[MoveInput]):
                 target_yaw -= 360.0
             self.pending_movements.put([0.0, target_yaw, "turn"])
         elif output_interface.action == "move forwards":
-            if len(advance) == 0:
+            if len(self.advance) == 0:
                 logging.warning("Cannot advance due to barrier")
                 return
             self.pending_movements.put([0.5, 0.0, "advance", self.x, self.y])
         elif output_interface.action == "move back":
-            if len(retreat) == 0:
+            if len(self.retreat) == 0:
                 logging.warning("Cannot retreat due to barrier")
                 return
             self.pending_movements.put([0.5, 0.0, "retreat", self.x, self.y])
@@ -281,6 +268,27 @@ class MoveRos2Connector(ActionConnector[MoveInput]):
                 logging.debug(
                     f"Go2 x,y,yaw: {round(self.x,2)},{round(self.y,2)},{round(self.yaw_now,2)}"
                 )
+
+                if self.lidar:
+                    self.turn_left = []
+                    self.advance = []
+                    self.turn_right = []
+                    self.retreat = []
+                    # reconfirm possible paths
+                    # this is needed due to the 2s latency of the LLMs
+                    possible_paths = self.lidar.valid_paths
+                    logging.info(f"Action - Valid paths: {possible_paths}")
+                    if possible_paths is not None:
+                        for p in possible_paths:
+                            if p < 4:
+                                self.turn_left.append(p)
+                            elif p == 4:
+                                self.advance.append(p)
+                            elif p < 9:
+                                self.turn_right.append(p)
+                            elif p == 9:
+                                self.retreat.append(p)
+
             else:
                 logging.warn("Go2 x,y,yaw: NAVIGATION NOT PROVIDING DATA")
 
@@ -350,18 +358,31 @@ class MoveRos2Connector(ActionConnector[MoveInput]):
                 if abs(gap) > 10.0:
                     logging.debug("gap is big, using large displacements")
                     if gap > 0:
+                        if len(self.turn_left) < 4:
+                            logging.warning("Cannot turn left due to barrier")
+                            return
                         self.movement_attempts += 1
+                        # turn combines forward motion with rotation
                         self._move_robot(0.5, 0, 0.5)
-                        # self.move(0.0, 0.5)
                     elif gap < 0:
+                        if len(self.turn_right) < 4:
+                            logging.warning("Cannot turn right due to barrier")
+                            return
                         self.movement_attempts += 1
+                        # turn combines forward motion with rotation
                         self._move_robot(0.5, 0, -0.5)
                 elif abs(gap) > self.angle_tolerance and abs(gap) <= 10.0:
                     logging.debug("gap is getting smaller, using smaller steps")
                     if gap > 0:
+                        if len(self.turn_left) < 4:
+                            logging.warning("Cannot turn left due to barrier")
+                            return
                         self.movement_attempts += 1
                         self._move_robot(0.2, 0, 0.2)
                     elif gap < 0:
+                        if len(self.turn_right) < 4:
+                            logging.warning("Cannot turn right due to barrier")
+                            return
                         self.movement_attempts += 1
                         self._move_robot(0.2, 0, -0.2)
                 elif abs(gap) <= self.angle_tolerance:
@@ -374,7 +395,7 @@ class MoveRos2Connector(ActionConnector[MoveInput]):
                 # reconfirm possible paths
                 pp = self.lidar.valid_paths
 
-                logging.debug(f"Action - Valid paths: {pp}")
+                logging.debug(f"Action move/advance - Valid paths: {pp}")
 
                 s_x = target[0][3]
                 s_y = target[0][4]
@@ -383,9 +404,9 @@ class MoveRos2Connector(ActionConnector[MoveInput]):
                 logging.info(f"remaining advance GAP: {round(remaining,2)}")
 
                 fb = 0
-                if "advance" in direction and 4 in pp:
+                if "advance" in direction and len(self.advance) == 1:
                     fb = 1
-                elif "retreat" in direction and 9 in pp:
+                elif "retreat" in direction and len(self.retreat) == 1:
                     fb = -1
                 else:
                     logging.info("danger, pop 1 off queue")
@@ -395,7 +416,7 @@ class MoveRos2Connector(ActionConnector[MoveInput]):
 
                 if remaining > self.distance_tolerance:
                     if distance_traveled < goal_dx:  # keep advancing
-                        logging.debug(f"keep moving. remaining:{remaining} ")
+                        logging.info(f"keep moving. remaining:{remaining} ")
                         self.movement_attempts += 1
                         self._move_robot(fb * 0.5, 0.0, 0.0)
                     elif distance_traveled > goal_dx:  # you moved too far

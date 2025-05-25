@@ -24,7 +24,7 @@
         "config": {
           // on linux, such as Raspberry Pi, the Arduinio will probably be at /dev/ttyACM0
           // on mac, a typical value is /dev/cu.usbmodem8401
-          "gps_serial_port": "/dev/cu.usbmodem8401",
+          "gps_serial_port": "/dev/cu.usbmodem21101",
           "use_zenoh": false,
         },
     },
@@ -48,16 +48,16 @@
   },
   "agent_actions": [
     {
-      "name": "move_safe_lidar",
-      "llm_label": "move",
-      "implementation": "passthrough",
-      "connector": "ros2"
-    },
-    {
       "name": "move_xbox_controller",
       "llm_label": "xbox",
       "implementation": "passthrough",
       "connector": "go2_xbox_controller"
+    },
+    {
+      "name": "move_safe_lidar",
+      "llm_label": "move",
+      "implementation": "passthrough",
+      "connector": "ros2"
     }
   ]
 }

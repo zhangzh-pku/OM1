@@ -45,10 +45,14 @@ class Go2XboxControllerConnector(ActionConnector[IDLEInput]):
             self.sport_client = SportClient()
             self.sport_client.SetTimeout(10.0)
             self.sport_client.Init()
-            logging.info("Unitree sport client initialized")
+            self.sport_client.StopMove()
+            self.sport_client.Move(0.1,0,0)
+            time.sleep(1)
+            #self.sport_client.StandDown()
+            logging.info("XBox Unitree sport client initialized")
         except Exception as e:
             self.sport_client = None
-            logging.error(f"Error initializing Unitree sport client: {e}")
+            logging.error(f"Error initializing XBox Unitree sport client: {e}")
 
         self.gamepad = None
         if hid is not None:
@@ -268,37 +272,39 @@ class Go2XboxControllerConnector(ActionConnector[IDLEInput]):
 
             # logging.info(f"D-pad: {d_pad_value} {self.d_pad_previous}")
 
-            if d_pad_value != self.d_pad_previous:
+            #if d_pad_value != self.d_pad_previous:
                 # there has been a change
                 # Control robot movement based on D-pad
-                logging.debug(f"Gamepad DPAD change: {data}")
-                if d_pad_value == 1:  # Up
-                    logging.info("D-pad UP - Moving forward")
-                    move_triggered_dpad = True
-                    self._move_robot(self.move_speed, 0.0)
-                elif d_pad_value == 5:  # Down
-                    logging.info("D-pad DOWN - Moving backward")
-                    move_triggered_dpad = True
-                    self._move_robot(-self.move_speed, 0.0)
-                elif d_pad_value == 7:  # Left
-                    logging.info("D-pad LEFT - Turning left")
-                    move_triggered_dpad = True
-                    self._move_robot(0.0, self.move_speed)
-                elif d_pad_value == 3:  # Right
-                    logging.info("D-pad RIGHT - Turning right")
-                    move_triggered_dpad = True
-                    self._move_robot(0.0, -self.move_speed)
-                elif d_pad_value == 0:  # RELEASE
-                    logging.debug("D-pad released - Stopping movement")
-                    self._move_robot(0.0, 0.0)
-                    move_triggered_dpad = True
+            logging.debug(f"Gamepad DPAD: {d_pad_value}")
+            if d_pad_value == 1:  # Up
+                logging.info("D-pad UP - Moving forward")
+                move_triggered_dpad = True
+                self._move_robot(self.move_speed, 0.0)
+            elif d_pad_value == 5:  # Down
+                logging.info("D-pad DOWN - Moving backward")
+                move_triggered_dpad = True
+                self._move_robot(-self.move_speed, 0.0)
+            elif d_pad_value == 7:  # Left
+                logging.info("D-pad LEFT - Turning left")
+                move_triggered_dpad = True
+                self._move_robot(0.0, self.move_speed)
+            elif d_pad_value == 3:  # Right
+                logging.info("D-pad RIGHT - Turning right")
+                move_triggered_dpad = True
+                self._move_robot(0.0, -self.move_speed)
+            elif d_pad_value == 0:  # RELEASE
+                logging.debug("D-pad released - Stopping movement")
+                #self._move_robot(0.0, 0.0)
+                if self.sport_client:
+                    self.sport_client.StopMove()
+                move_triggered_dpad = True
 
             # update the value of d_pad_previous
-            self.d_pad_previous = d_pad_value
+            #self.d_pad_previous = d_pad_value
 
             if move_triggered_dpad:
                 # update the previous value of the button
-                self.button_previous = button_value
+                # self.button_previous = button_value
                 # and return, since we just issued a move command in this tick
                 return
 

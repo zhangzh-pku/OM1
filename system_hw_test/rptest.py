@@ -73,7 +73,9 @@ ax1.set_aspect("equal")
 
 """
 Robot and sensor configuration
+UNITREE
 """
+
 half_width_robot = 0.20  # the width of the robot is 40 cm
 max_relevant_distance = 1.1  # meters
 sensor_mounting_angle = 172.0  # corrects for how sensor is mounted
