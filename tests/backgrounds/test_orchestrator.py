@@ -8,7 +8,7 @@ from backgrounds.orchestrator import BackgroundOrchestrator
 
 
 class MockBackground(Background):
-    def __init__(self, config: Background):
+    def __init__(self, config: BackgroundConfig):
         super().__init__(config)
 
     def run(self):
