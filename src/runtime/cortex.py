@@ -2,6 +2,7 @@ import asyncio
 import logging
 
 from actions.orchestrator import ActionOrchestrator
+from backgrounds.orchestrator import BackgroundOrchestrator
 from fuser import Fuser
 from inputs.orchestrator import InputOrchestrator
 from providers.io_provider import IOProvider
@@ -29,6 +30,7 @@ class CortexRuntime:
     fuser: Fuser
     action_orchestrator: ActionOrchestrator
     simulator_orchestrator: SimulatorOrchestrator
+    background_orchestrator: BackgroundOrchestrator
     sleep_ticker_provider: SleepTickerProvider
 
     def __init__(self, config: RuntimeConfig):
@@ -44,6 +46,7 @@ class CortexRuntime:
         self.fuser = Fuser(config)
         self.action_orchestrator = ActionOrchestrator(config)
         self.simulator_orchestrator = SimulatorOrchestrator(config)
+        self.background_orchestrator = BackgroundOrchestrator(config)
         self.sleep_ticker_provider = SleepTickerProvider()
         self.io_provider = IOProvider()
         self.speech_duty_cycle = 0
@@ -64,9 +67,14 @@ class CortexRuntime:
 
         simulator_start = self._start_simulator_task()
         action_start = self._start_action_task()
+        background_start = self._start_background_task()
 
         await asyncio.gather(
-            input_listener_task, cortex_loop_task, simulator_start, action_start
+            input_listener_task,
+            cortex_loop_task,
+            simulator_start,
+            action_start,
+            background_start,
         )
 
     async def _start_input_listeners(self) -> asyncio.Task:
@@ -90,6 +98,9 @@ class CortexRuntime:
 
     async def _start_action_task(self) -> asyncio.Future:
         return self.action_orchestrator.start()
+
+    async def _start_background_task(self) -> asyncio.Future:
+        return self.background_orchestrator.start()
 
     async def _run_cortex_loop(self) -> None:
         """
