@@ -19,11 +19,8 @@
       },
     },
     {
-      "type": "Navigation",
+      "type": "Odom",
         "config": {
-          // on linux, such as Raspberry Pi, the Arduinio will probably be at /dev/ttyACM0
-          // on mac, a typical value is /dev/cu.usbmodem8401
-          "gps_serial_port": "/dev/ttyACM0",
           "use_zenoh": true,
         },
     },

@@ -8,7 +8,7 @@ import zenoh
 
 from actions.base import ActionConfig, ActionConnector
 from actions.move_turtle.interface import MoveInput
-from providers.navigation_provider import NavigationProvider
+from providers.odom_provider import OdomProvider
 from providers.rplidar_provider import RPLidarProvider
 from zenoh_idl import geometry_msgs, sensor_msgs
 
@@ -61,43 +61,8 @@ class MoveZenohConnector(ActionConnector[MoveInput]):
         except Exception as e:
             logging.error(f"Error opening Zenoh client: {e}")
 
-        self.lidar_on = False
-        self.lidar = None
-
-        while self.lidar_on is False:
-            logging.info("Waiting for RPLidar Provider")
-            time.sleep(0.5)
-            # someone else is starting the RPLIDAR, such as
-            self.lidar = RPLidarProvider(wait=True)
-            self.lidar_on = self.lidar.running
-            logging.info(f"TurtleBot4 Action: Lidar running?: {self.lidar_on}")
-
-        # Initialize Navigation Provider based on .json5 config file
-        self.navigation_on = False
-        self.navigation = None
-
-        navigation_timeout = 10
-        navigation_attempts = 0
-
-        while not self.navigation_on:
-            logging.info(
-                f"ACTION: Waiting for Navigation Provider. Attempt: {navigation_attempts}"
-            )
-            self.navigation = NavigationProvider(
-                True,
-            )
-            if hasattr(self.navigation, "running"):
-                self.navigation_on = self.navigation.running
-                logging.info(f"ACTION: Navigation running?: {self.navigation_on}")
-            else:
-                logging.info("ACTION: Waiting for navigation")
-            navigation_attempts += 1
-            if navigation_attempts > navigation_timeout:
-                logging.warning(
-                    f"ACTION: Navigation timeout after {navigation_attempts} attempts - no Navigation - DANGEROUS"
-                )
-                break
-            time.sleep(0.5)
+        self.lidar = RPLidarProvider()
+        self.odom = OdomProvider()
 
     def hazardProcessor(self):
         global gHazard
@@ -120,14 +85,14 @@ class MoveZenohConnector(ActionConnector[MoveInput]):
                     logging.info(f"Hazard decision: {self.hazard}")
 
     def navigationProcessor(self):
-        if hasattr(self.navigation, "running"):
-            if self.navigation.running:
-                self.yaw_now = self.navigation.position["yaw_odom_m180_p180"]
+        if hasattr(self.odom, "running"):
+            if self.odom.running:
+                self.yaw_now = self.odom.odom["yaw_odom_m180_p180"]
                 # CW yaw = positive
 
                 # current position in world frame
-                self.x = self.navigation.position["x"]
-                self.y = self.navigation.position["y"]
+                self.x = self.odom.odom["x"]
+                self.y = self.odom.odom["y"]
 
                 logging.debug(
                     f"TB4 x,y,yaw: {round(self.x,2)},{round(self.y,2)},{round(self.yaw_now,2)}"
@@ -217,7 +182,7 @@ class MoveZenohConnector(ActionConnector[MoveInput]):
         logging.debug("Move tick")
 
         self.hazardProcessor()
-        self.navigationProcessor()
+        self.odomProcessor()
 
         if self.x == 0.0:
             # this value is never precisely zero except while

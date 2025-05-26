@@ -24,7 +24,7 @@
       },
     },
     {
-      "type": "Navigation",
+      "type": "Odom",
         "config": {
           "use_zenoh": true,
         },
