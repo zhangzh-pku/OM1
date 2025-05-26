@@ -481,6 +481,38 @@ class RPDriver(object):
             if distance > 0:
                 scan_list.append((quality, angle, distance))
 
+    def iter_scans_local(
+        self, scan_type="normal", max_buf_meas=3000, min_len=5, max_distance_mm=2000
+    ):
+        """Iterate over scans. Note that consumer must be fast enough,
+        otherwise data will accumulate inside buffer and consumer will get
+        data with increasing lag.
+
+        Parameters
+        ----------
+        max_buf_meas : int
+            Maximum number of measures to be stored inside the buffer. Once
+            number exceeds this limit buffer will be cleared.
+        min_len : int
+            Minimum number of measures in the scan for it to be returned.
+
+        Yields
+        ------
+        scan : list
+            List of the measurements. Each measurement is a tuple with following
+            format: (angle, distance). For values description please
+            refer to `iter_measures` method's documentation.
+        """
+        scan_list = []
+        iterator = self.iter_measures(scan_type, max_buf_meas)
+        for new_scan, quality, angle, distance in iterator:
+            if new_scan:
+                if len(scan_list) > min_len:
+                    yield scan_list
+                scan_list = []
+            if distance < max_distance_mm:
+                scan_list.append((angle, distance))
+
 
 class ExpressPacket(
     namedtuple("express_packet", "distance angle new_scan start_angle")

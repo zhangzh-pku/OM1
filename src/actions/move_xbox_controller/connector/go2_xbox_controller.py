@@ -5,7 +5,7 @@ from enum import Enum
 
 from actions.base import ActionConfig, ActionConnector
 from actions.move_xbox_controller.interface import IDLEInput
-from providers.navigation_provider import NavigationProvider
+from providers.odom_provider import OdomProvider
 from unitree.unitree_sdk2py.go2.sport.sport_client import SportClient
 
 try:
@@ -84,26 +84,24 @@ class Go2XboxControllerConnector(ActionConnector[IDLEInput]):
 
         self.dog_attitude = None
 
-        self.navigation_on = False
-        self.navigation = None
+        self.odom_on = False
+        self.odom = None
 
-        navigation_timeout = 10
-        navigation_attempts = 0
+        timeout = 10
+        attempts = 0
 
-        while not self.navigation_on:
-            logging.info(
-                f"Waiting for Navigation Provider. Attempt: {navigation_attempts}"
-            )
-            self.navigation = NavigationProvider(wait=True)
-            if hasattr(self.navigation, "running"):
-                self.navigation_on = self.navigation.running
-                logging.info(f"Action: navigation running?: {self.navigation_on}")
+        while not self.odom_on:
+            logging.info(f"Waiting for Navigation Provider. Attempt: {attempts}")
+            self.odom = OdomProvider()
+            if hasattr(self.odom, "running"):
+                self.odom_on = self.odom.running
+                logging.info(f"Action: navigation running?: {self.odom_on}")
             else:
-                logging.info("Action: waiting for navigation")
-            navigation_attempts += 1
-            if navigation_attempts > navigation_timeout:
+                logging.info("Action: waiting for Odom")
+            attempts += 1
+            if attempts > timeout:
                 logging.warning(
-                    f"Navigation Provider timeout after {navigation_attempts} attempts - no Navigation data - DANGEROUS"
+                    f"Odom Provider timeout after {attempts} attempts - no Odom data - DANGEROUS"
                 )
                 break
             time.sleep(0.5)
@@ -206,8 +204,8 @@ class Go2XboxControllerConnector(ActionConnector[IDLEInput]):
         time.sleep(0.1)
         logging.info("Gamepad tick")
 
-        if hasattr(self.navigation, "running"):
-            nav = self.navigation.position
+        if hasattr(self.odom, "running"):
+            nav = self.odom.odom
             logging.debug(f"XBOX Nav data: {nav}")
             if nav and nav["body_attitude"] == "standing":
                 self.dog_attitude = RobotState.STANDING

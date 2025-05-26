@@ -38,8 +38,6 @@ class RPLidarProvider:
 
     Parameters
     ----------
-    wait: bool = False
-        Whether to wait for another class to init this driver, somewhere else in the codebase
     serial_port: str = "/dev/cu.usbserial-0001"
         The name of the serial port in use by the RPLidar sensor.
     half_width_robot: float = 0.20
@@ -54,7 +52,6 @@ class RPLidarProvider:
 
     def __init__(
         self,
-        wait: bool = False,
         serial_port: str = "/dev/cu.usbserial-0001",
         half_width_robot: float = 0.20,
         angles_blanked: list = [],
@@ -67,12 +64,6 @@ class RPLidarProvider:
         """
         Robot and sensor configuration
         """
-
-        logging.info("Checking RPLidar")
-
-        if wait:
-            # no need to reinit driver
-            return
 
         logging.info("Booting RPLidar")
 
@@ -225,7 +216,7 @@ class RPLidarProvider:
             self._process(array_ready)
 
     def _preprocess_serial(self, scan):
-        logging.debug(f"_preprocess_serial: {scan}")
+        logging.info(f"_preprocess_serial: {scan}")
         array = np.array(scan)
 
         # logging.info(f"_preprocess_serial: {array.ndim}")
@@ -233,12 +224,12 @@ class RPLidarProvider:
         # the driver sends angles in degrees between from 0 to 360
         # warning - the driver may send two or more readings per angle,
         # this can be confusing for the code
-        angles = array[:, 1]
+        angles = array[:, 0]
 
         # logging.info(f"_preprocess_serial: {angles}")
 
         # distances are in millimeters
-        distances_mm = array[:, 2]
+        distances_mm = array[:, 1]
         distances_m = [i / 1000 for i in distances_mm]
 
         data = list(zip(angles, distances_m))
@@ -413,13 +404,16 @@ class RPLidarProvider:
                 # we are using serial
                 try:
                     for i, scan in enumerate(
-                        self.lidar.iter_scans(
-                            scan_type="express", max_buf_meas=1200, min_len=50
+                        self.lidar.iter_scans_local(
+                            scan_type="express",
+                            max_buf_meas=2000,
+                            min_len=50,
+                            max_distance_mm=2000,
                         )
                     ):
                         self._preprocess_serial(scan)
                         # BUG BUG BUG
-                        # time.sleep(0.1)
+                        time.sleep(0.1)
                 except Exception as e:
                     logging.error(f"Error in Serial RPLidar provider: {e}")
 

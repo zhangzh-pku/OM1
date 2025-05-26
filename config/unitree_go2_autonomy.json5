@@ -20,13 +20,12 @@
       }
     },
     {
-      "type": "Navigation",
+      "type": "Odom",
         "config": {
-          // on linux, such as Raspberry Pi, the Arduinio will probably be at /dev/ttyACM0
-          // on mac, a typical value is /dev/cu.usbmodem8401
-          "gps_serial_port": "/dev/cu.usbmodem21101",
           "use_zenoh": false,
-        },
+          "URID": "",     // only needed for Zenoh
+          "silent": false // set to true to just spin up the provider
+        }
     },
     {
       "type": "RPLidar",
@@ -35,7 +34,8 @@
         "half_width_robot": 0.21,
         "max_relevant_distance": 1.1,
         "sensor_mounting_angle": 172.0,
-        "angles_blanked": [[-180.0, -170.0], [160, 180]]
+        "angles_blanked": [[-180.0, -170.0], [160, 180]],
+        "silent": false
       }
     }
     //{
@@ -62,12 +62,12 @@
       "implementation": "passthrough",
       "connector": "go2_xbox_controller"
     },
-    {
-      "name": "move_go2_autonomy",
-      "llm_label": "move",
-      "implementation": "passthrough",
-      "connector": "unitree_sdk"
-    },
+    //{
+    //  "name": "move_go2_autonomy",
+    //  "llm_label": "move",
+    //  "implementation": "passthrough",
+    //  "connector": "unitree_sdk"
+    //},
     //{
     // "name": "speak",
     //  "llm_label": "speak",

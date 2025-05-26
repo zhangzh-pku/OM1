@@ -4,7 +4,6 @@ import threading
 import time
 from typing import Optional
 
-import serial
 import zenoh
 
 try:
@@ -13,7 +12,7 @@ try:
     from unitree.unitree_sdk2py.idl.geometry_msgs.msg.dds_ import PoseStamped_
 except ImportError:
     logging.warning(
-        "Unitree SDK or Cyclone not found. You do not need this unless you are connecting to a Unitree robot."
+        "Unitree SDK or CycloneDDS not found. You do not need this unless you are connecting to a Unitree robot."
     )
 
 from zenoh_idl import nav_msgs
@@ -25,6 +24,7 @@ rad_to_deg = 57.2958
 gOdom = None
 
 
+# Needed for Zenoh / TurtleBot4
 def listenerOdom(data):
     global gOdom
     gOdom = nav_msgs.Odometry.deserialize(data.payload.to_bytes())
@@ -32,49 +32,31 @@ def listenerOdom(data):
 
 
 @singleton
-class NavigationProvider:
+class OdomProvider:
     """
-    Navigation Provider.
+    Odom Provider.
 
     This class implements a singleton pattern to manage:
         * Odom and pose data using either Zenoh or CycloneDDS
-        * An optional external IMU/GPS, typically an Arduino Feather
 
     Parameters
     ----------
-    wait: bool = False
-        Whether to wait for another class to init this driver, somewhere else in the codebase
     URID: str = ""
         The URID needed to connect to the right Zenoh publisher in the local network
     use_zenoh: bool = False
-        Whether to get odom/pose data from Zenoh - typically used by TurtleBot4
-    gps_serial_port: str = "/dev/cu.usbmodem8014"
-        The name of the serial port in use by the GPS/Mag sensor.
+        If true, get odom/pose data from Zenoh - typically used by TurtleBot4
+        Otherwise, use CycloneDDS
     """
 
-    def __init__(
-        self,
-        wait: bool = False,
-        URID: str = "",
-        use_zenoh: bool = False,
-        gps_serial_port: str = None,
-    ):
+    def __init__(self, URID: str = "", use_zenoh: bool = False):
         """
         Robot and sensor configuration
         """
 
-        logging.info("Booting Navigation and State Provider")
-
-        if wait:
-            # no need to reinit driver
-            return
+        logging.info("Booting Odom Provider")
 
         self.use_zenoh = use_zenoh
         self.URID = URID
-
-        self.session = None
-        self.low_state = None
-        self.lowstate_subscriber = None
 
         if self.use_zenoh:
             # typically, TurtleBot4
@@ -105,19 +87,6 @@ class NavigationProvider:
             except Exception as e:
                 logging.error(f"Error opening CycloneDDS client: {e}")
 
-        baudrate = 115200
-        timeout = 1  # Optional: set a timeout for reading
-
-        self.ser = None
-
-        if gps_serial_port:
-            try:
-                # Open the serial port
-                self.ser = serial.Serial(gps_serial_port, baudrate, timeout=timeout)
-                logging.info(f"Connected to {gps_serial_port} at {baudrate} baud")
-            except serial.SerialException as e:
-                logging.error(f"Error: {e}")
-
         self.body_height_cm = 0
         self.body_attitude = None
 
@@ -127,7 +96,7 @@ class NavigationProvider:
         self.previous_z = 0
         self.move_history = 0
 
-        self._position: Optional[dict] = None
+        self._odom: Optional[dict] = None
 
         self.x = 0.0
         self.y = 0.0
@@ -135,13 +104,6 @@ class NavigationProvider:
 
         self.yaw_odom_0_360 = 0.0
         self.yaw_odom_m180_p180 = 0.0
-
-        self.yaw_mag_0_360 = 0.0
-        self.yaw_mag_cardinal = ""
-        self.gps_lat = 0.0
-        self.gps_lon = 0.0
-        self.gps_alt = 0.0
-        self.gps_time = ""
 
         self.running = False
         self._thread: Optional[threading.Thread] = None
@@ -214,24 +176,21 @@ class NavigationProvider:
         self.x = pose.position.x
         self.y = pose.position.y
 
-        self._position = {
+        self._odom = {
             "x": self.x,
             "y": self.y,
             "yaw_odom_0_360": self.yaw_odom_0_360,
             "yaw_odom_m180_p180": self.m180_p180,
-            "yaw_mag_0_360": self.yaw_mag_0_360,
-            "yaw_mag_cardinal": self.yaw_mag_cardinal,
             "body_height_cm": self.body_height_cm,
             "body_attitude": self.body_attitude,
             "moving": self.moving,
-            "gps_lat": self.gps_lat,
-            "gps_lon": self.gps_lon,
-            "gps_alt": self.gps_alt,
-            "gps_time": self.gps_time,
         }
 
         logging.debug(
-            f"NAV x,y,yaw_odom,yaw_mag: {round(self.x,2)},{round(self.y,2)},{round(self.yaw_odom_0_360,2)},{round(self.yaw_mag_0_360,2)}, moving: {self.moving})"
+            (
+                f"NAV x,y,yaw_odom,yaw_mag,moving:{round(self.x,2)},{round(self.y,2)},",
+                f"{round(self.yaw_odom_0_360,2)},{self.moving})",
+            )
         )
 
     def poseMessageHandler(self, msg):
@@ -250,78 +209,19 @@ class NavigationProvider:
 
     def zenohOdomProcessor(self):
         # used by Zenoh / TurtleBot4
+
         global gOdom
-        if gOdom is not None:
-            self.body_height_cm = 0.0
-            self.body_attitude = None
-            p = gOdom.pose.pose
-            self.processOdom(p)
+        if gOdom is None:
+            return
 
-    def magGPSProcessor(self, data):
-        # Used whenever there is a connected
-        # nav Arduino on serial
-        # Parses lines like:
-        # - GPS:37.7749N,-122.4194W,KN:0.12,HEAD:84.1,ALT:30.5,SAT:7,TIME:3:14:24:546
-        # - YPR: 134.57, -3.20, 1.02
-        # - HDG (DEG): 225.0 SW NTC_HDG: 221.3
-        try:
-            if data.startswith("HDG (DEG):"):
-                parts = data.split()
-                if len(parts) >= 4:
-                    # that's a HDG packet
-                    self.yaw_mag_0_360 = float(parts[2])
-                    self.yaw_mag_cardinal = parts[3]
-                    logging.debug(f"MAG: {self.yaw_mag_0_360}")
-                else:
-                    logging.warning(f"Unable to parse heading: {data}")
-            elif data.startswith("YPR:"):
-                yaw, pitch, roll = map(str.strip, data[4:].split(","))
-                logging.debug(
-                    f"Orientation is Yaw: {yaw}°, Pitch: {pitch}°, Roll: {roll}°."
-                )
-            elif data.startswith("GPS:"):
-                try:
-                    parts = data[4:].split(",")
-                    lat = parts[0]
-                    lon = parts[1]
-                    heading = parts[3].split(":")[1]
-                    alt = parts[4].split(":")[1]
-                    sats = parts[5].split(":")[1]
-                    time = parts[6][5:]
-                    self.gps_lat = lat
-                    self.gps_lon = lon
-                    self.gps_alt = alt
-                    self.gps_time = time
-                    logging.debug(
-                        (
-                            f"Current location is {lat}, {lon} at {alt} meters altitude, "
-                            f"heading {heading}°, with {sats} satellites locked. The time is {time}."
-                        )
-                    )
-                except Exception as e:
-                    logging.warning(f"Failed to parse GPS: {data} ({e})")
-        except Exception as e:
-            logging.warning(f"Error processing serial MAG/GPSinput: {data} ({e})")
-
-        self._position = {
-            "x": self.x,
-            "y": self.y,
-            "yaw_odom_0_360": self.yaw_odom_0_360,
-            "yaw_odom_m180_p180": self.m180_p180,
-            "yaw_mag_0_360": self.yaw_mag_0_360,
-            "yaw_mag_cardinal": self.yaw_mag_cardinal,
-            "body_height_cm": self.body_height_cm,
-            "body_attitude": self.body_attitude,
-            "moving": self.moving,
-            "gps_lat": self.gps_lat,
-            "gps_lon": self.gps_lon,
-            "gps_alt": self.gps_alt,
-            "gps_time": self.gps_time,
-        }
+        p = gOdom.pose.pose
+        self.body_height_cm = 0.0
+        self.body_attitude = None
+        self.processOdom(p)
 
     def start(self):
         """
-        Starts the Navigation Provider and processing thread
+        Starts the Odom Provider and processing thread
         if not already running.
         """
         if self._thread and self._thread.is_alive():
@@ -333,40 +233,34 @@ class NavigationProvider:
 
     def _run(self):
         """
-        Main loop for the Navigation provider.
+        Main loop for the Odom provider.
         """
         while self.running:
 
             if self.use_zenoh:
-                # TurtleBot4
+                # TurtleBot4, use Zenoh
                 logging.debug("zenohOdomProcessor")
                 self.zenohOdomProcessor()
             else:
-                # Unitree Go2 - using CycloneDDS
+                # Unitree Go2, use CycloneDDS
                 logging.debug(
-                    f"Cyclone Nav Provider: {self.body_height_cm} position: {self.position}"
+                    f"Cyclone Nav Provider: {self.body_height_cm} position: {self.odom}"
                 )
-
-            if self.ser:
-                # Read a line, decode, and remove whitespace
-                data = self.ser.readline().decode("utf-8").strip()
-                self.magGPSProcessor(data)
-                logging.debug(f"Serial GPS: {data}")
 
             time.sleep(0.1)
 
     def stop(self):
         """
-        Stop the Navigation provider.
+        Stop the Odom provider.
         """
         self.running = False
         if self._thread:
-            logging.info("Stopping Navigation provider")
+            logging.info("Stopping Odom provider")
             self._thread.join(timeout=5)
 
     @property
-    def position(self) -> Optional[dict]:
+    def odom(self) -> Optional[dict]:
         # """
-        # Get the current robot position
+        # Get the current robot odom
         # """
-        return self._position
+        return self._odom

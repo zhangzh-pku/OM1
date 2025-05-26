@@ -8,7 +8,7 @@ from typing import List, Optional
 from inputs.base import SensorConfig
 from inputs.base.loop import FuserInput
 from providers.io_provider import IOProvider
-from providers.navigation_provider import NavigationProvider
+from providers.odom_provider import OdomProvider
 
 
 @dataclass
@@ -28,11 +28,11 @@ class Message:
     message: str
 
 
-class Navigation(FuserInput[str]):
+class Odom(FuserInput[str]):
     """
-    Navigation input handler.
+    Odom input handler.
 
-    A class that processes navigation inputs and generates text descriptions.
+    A class that processes odometry inputs and generates text descriptions.
     It maintains an internal buffer of processed messages.
     """
 
@@ -50,60 +50,56 @@ class Navigation(FuserInput[str]):
 
         logging.info(f"Config: {self.config}")
 
-        # Initialize Navigation Provider based on .json5 config file
-        self.navigation_on = False
-        self.navigation = None
+        # Initialize Odom Provider based on .json5 config file
+        self.odom_on = False
+        self.odom = None
 
-        gps_serial_port = getattr(self.config, "gps_serial_port", None)
         use_zenoh = getattr(self.config, "use_zenoh", False)
-        URID = ""
+        self.silent = getattr(config, "silent", False)
+        self.URID = getattr(config, "URID", "")
         if use_zenoh:
             # probably a turtlebot
-            URID = getattr(self.config, "URID")
-            logging.info(f"RPLidar using Zenoh and URID: {URID}")
+            logging.info(f"RPLidar using Zenoh and URID: {self.URID}")
 
-        navigation_timeout = 10
-        navigation_attempts = 0
+        timeout = 10
+        attempts = 0
 
-        while not self.navigation_on:
-            logging.info(
-                f"Waiting for Navigation Provider. Attempt: {navigation_attempts}"
-            )
-            self.navigation = NavigationProvider(
-                False, URID, use_zenoh, gps_serial_port
-            )
-            if hasattr(self.navigation, "running"):
-                self.navigation_on = self.navigation.running
-                logging.info(f"Navigation running?: {self.navigation_on}")
+        while not self.odom_on:
+            logging.info(f"Waiting for Odom Provider. Attempt: {attempts}")
+            self.odom = OdomProvider(self.URID, use_zenoh)
+            if hasattr(self.odom, "running"):
+                self.odom_on = self.odom.running
+                logging.info(f"Odom running?: {self.odom_on}")
             else:
-                logging.info("Waiting for navigation")
-            navigation_attempts += 1
-            if navigation_attempts > navigation_timeout:
+                logging.info("Waiting for Odom Provider")
+            attempts += 1
+            if attempts > timeout:
                 logging.warning(
-                    f"Navigation timeout after {navigation_attempts} attempts - no Navigation - DANGEROUS"
+                    f"Odom Provider timeout after {attempts} attempts - no Odometry - DANGEROUS"
                 )
                 break
             time.sleep(0.5)
 
-        self.descriptor_for_LLM = (
-            "Information about your location, to plan your movements."
-        )
+        self.descriptor_for_LLM = "Information about your location and bosy pose, to help plan your movements."
 
     async def _poll(self) -> Optional[dict]:
         """
-        Poll for new messages from the Navigation Provider.
+        Poll for new messages from the Odom Provider.
 
         Checks the message buffer for new messages with a brief delay
         to prevent excessive CPU usage.
 
         Returns
         -------
-        Optional[list]
+        Optional[dict]
             The next message from the buffer if available, None otherwise
         """
         await asyncio.sleep(0.1)
+        if self.silent:
+            return None
+
         try:
-            return self.navigation.position
+            return self.odom.odom
         except Empty:
             return None
 
@@ -124,14 +120,12 @@ class Navigation(FuserInput[str]):
         Message
             A timestamped message containing the processed input
         """
-        logging.debug(f"nav: {raw_input}")
+        logging.debug(f"odom: {raw_input}")
 
         # self._position = {
         #     "x": self.x,
         #     "y": self.y,
         #     "yaw_odom_0_360": self.yaw_odom_0_360,
-        #     "yaw_mag_0_360": self.yaw_mag_0_360,
-        #     "yaw_mag_cardinal": self.yaw_mag_cardinal,
         #     "body_height_cm": self.body_height_cm,
         #     "body_attitude": self.body_attitude
         # }
@@ -140,8 +134,6 @@ class Navigation(FuserInput[str]):
 
         moving = raw_input["moving"]
         attitude = raw_input["body_attitude"]
-        cardinal = raw_input["yaw_mag_cardinal"]
-        heading = round(raw_input["yaw_mag_0_360"])
 
         if attitude == "sitting":
             res = "You are sitting down - do not generate new movement commands. "
@@ -150,9 +142,6 @@ class Navigation(FuserInput[str]):
             res = "You are moving - do not generate new movement commands. "
         else:
             res = "You are standing still - you can move if you want to. "
-
-        if cardinal:
-            res += f"You are facing {cardinal}. Your magnetic heading is {heading} degrees. "
 
         return Message(timestamp=time.time(), message=res)
 
