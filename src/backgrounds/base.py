@@ -34,7 +34,7 @@ class Background:
             Configuration object for the background
         """
         self.config = config
-        self.name = getattr(config, "name", __class__.__name__)
+        self.name = getattr(config, "name", type(self).__name__)
 
     def run(self) -> None:
         """
