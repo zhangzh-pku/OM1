@@ -10,27 +10,19 @@ In this page, we will use the [Move Turtle](https://github.com/OpenmindAGI/OM1/t
 
 ## Architecture class diagram
 
+In order to simplify the diagram, we only show the most important classes and their relationships.
 ```mermaid
 classDiagram
     class ActionConnector~T~ {
         <<abstract>>
-        +ActionConfig config
         +async connect(input_protocol: T)
         +tick()
     }
 
     class MoveInput {
-        +str action
     }
 
     class MoveZenohConnector {
-        -float angle_tolerance
-        -float distance_tolerance
-        -Queue pending_movements
-        -float x, y, z, yaw_now
-        -str hazard, emergency
-        -zenoh.Session session
-        -RPLidarProvider lidar
         +__init__(config: ActionConfig)
         +hazardProcessor()
         +odomProcessor()
@@ -40,8 +32,6 @@ classDiagram
     }
 
     class RPLidarProvider {
-        +bool running
-        +List[int] valid_paths
     }
 
     ActionConnector <|-- MoveZenohConnector

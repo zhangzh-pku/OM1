@@ -13,19 +13,16 @@ The OpenAI integration is implemented as a plugin within OM1's LLM system, provi
 
 ## Class Diagram
 
+In order to simplify the diagram, we only show the most important classes and their relationships.
+
 ```mermaid
 classDiagram
     class LLM~R~ {
         <<abstract>>
-        +LLMConfig _config
-        +Type[R] _output_model
-        +IOProvider io_provider
         +async ask(prompt: str, messages: List[Dict[str, str]]) R
     }
 
     class OpenAILLM~R~ {
-        -openai.AsyncClient _client
-        -LLMHistoryManager history_manager
         +__init__(output_model: Type[R], config: LLMConfig)
         +@LLMHistoryManager.update_history()
         +async ask(prompt: str, messages: List[Dict[str, str]]) R|None
@@ -37,9 +34,6 @@ classDiagram
     }
 
     class LLMConfig {
-        +str api_key
-        +str model
-        +str base_url
     }
 
     LLM <|-- OpenAILLM

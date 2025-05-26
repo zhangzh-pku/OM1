@@ -14,11 +14,12 @@ Let's take VLM Villa as an example.
 
 ### Class Diagram
 
+In order to simplify the diagram, we only show the most important classes and their relationships.
+
 ```mermaid
 classDiagram
     class FuserInput~T~ {
         <<abstract>>
-        +SensorConfig config
         +async _poll() T
         +async _raw_to_text(raw_input: T) str
         +async raw_to_text(raw_input: T)
@@ -26,16 +27,9 @@ classDiagram
     }
 
     class Message {
-        +float timestamp
-        +str message
     }
 
     class VLMVila {
-        -List[Message] messages
-        -Queue[str] message_buffer
-        -VLMVilaProvider vlm
-        -IOProvider io_provider
-        +str descriptor_for_LLM
         +__init__(config: SensorConfig)
         -_handle_vlm_message(raw_message: str)
         +async _poll() str|None

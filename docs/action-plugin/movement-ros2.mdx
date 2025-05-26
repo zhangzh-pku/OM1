@@ -11,17 +11,17 @@ The Movement through ROS2 action plugin allows agents to move a robot in a simul
 
 ## Architecture class diagram
 
+In order to simplify the diagram, we only show the most important classes and their relationships.
+
 ```mermaid
 classDiagram
     class ActionConnector~T~ {
         <<abstract>>
-        +ActionConfig config
         +async connect(input_protocol: T)
         +tick()
     }
 
     class MoveInput {
-        +str action
     }
 
     class MoveRos2Connector {

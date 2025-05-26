@@ -11,28 +11,25 @@ The Speech and TTS action plugin allows agents to speak aloud with a text-to-spe
 
 ## Architecture class diagram
 
+In order to simplify the diagram, we only show the most important classes and their relationships.
+
 ```mermaid
 classDiagram
     class ActionConnector~T~ {
         <<abstract>>
-        +ActionConfig config
         +async connect(input_protocol: T)
         +tick()
     }
 
     class SpeakInput {
-        +str action
     }
 
     class SpeakElevenLabsTTSConnector {
-        -ASRProvider asr
-        -ElevenLabsTTSProvider tts
         +__init__(config: ActionConfig)
         +async connect(output_interface: SpeakInput)
     }
 
     class ASRProvider {
-        +AudioStream audio_stream
         +on_tts_state_change()
     }
 

@@ -15,11 +15,12 @@ The ASR components are responsible for capturing audio input from a microphone a
 
 ### Class Diagram
 
+In order to simplify the diagram, we only show the most important classes and their relationships.
+
 ```mermaid
 classDiagram
     class FuserInput~T~ {
         <<abstract>>
-        +SensorConfig config
         +async _poll() T
         +async _raw_to_text(raw_input: T) str
         +async raw_to_text(raw_input: T)
@@ -27,11 +28,6 @@ classDiagram
     }
 
     class GoogleASRInput {
-        -List[str] messages
-        -Queue[str] message_buffer
-        -ASRProvider asr
-        -IOProvider io_provider
-        -SleepTickerProvider global_sleep_ticker_provider
         +__init__(config: SensorConfig)
         -_handle_asr_message(raw_message: str)
         +async _poll() str|None
@@ -50,7 +46,6 @@ classDiagram
     }
 
     class SleepTickerProvider {
-        +skip_sleep: bool
     }
 
     FuserInput <|-- GoogleASRInput

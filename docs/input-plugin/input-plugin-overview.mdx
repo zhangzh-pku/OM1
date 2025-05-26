@@ -13,6 +13,8 @@ The Input Plugins in OM1 provide the sensory capabilities that allow AI agents t
 
 ### Classes Diagram
 
+In order to simplify the diagram, we only show the most important classes and their relationships.
+
 ```mermaid
 classDiagram
     class SensorConfig {
@@ -21,7 +23,6 @@ classDiagram
 
     class Sensor~R~ {
         <<abstract>>
-        +SensorConfig config
         +__init__(config: SensorConfig)
         +async _raw_to_text(raw_input: R) str
         +async raw_to_text(raw_input: R)
@@ -30,15 +31,11 @@ classDiagram
     }
 
     class VLMBase {
-        +str model_name
-        +str prompt_template
         +async _raw_to_text(raw_input: bytes) str
         +formatted_latest_buffer() str
     }
 
     class SerialReader {
-        +str port
-        +int baud_rate
         +async _listen_loop() AsyncIterator[bytes]
     }
 
@@ -47,27 +44,22 @@ classDiagram
     }
 
     class VLMCOCOLocal {
-        +str model_path
         +async _raw_to_text(raw_input: bytes) str
     }
 
     class VLMOpenAI {
-        +str api_key
         +async _raw_to_text(raw_input: bytes) str
     }
 
     class VLMVila {
-        +str api_key
         +async _raw_to_text(raw_input: bytes) str
     }
 
     class UnitreeGo2Camera {
-        +str camera_topic
         +async _listen_loop() AsyncIterator[bytes]
     }
 
     class UnitreeGo2LowState {
-        +str state_topic
         +async _listen_loop() AsyncIterator[bytes]
     }
 
