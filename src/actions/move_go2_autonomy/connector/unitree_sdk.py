@@ -278,7 +278,7 @@ class MoveUnitreeSDKConnector(ActionConnector[MoveInput]):
 
         logging.info("AI Motion Tick")
 
-        self.navigationDataRefresh()
+        self.odomDataRefresh()
 
         if self.x == 0.0:
             # this value is never precisely zero except while
