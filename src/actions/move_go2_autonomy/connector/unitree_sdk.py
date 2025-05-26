@@ -323,32 +323,32 @@ class MoveUnitreeSDKConnector(ActionConnector[MoveInput]):
                 if abs(gap) > 10.0:
                     logging.debug("gap is big, using large displacements")
                     if gap > 0:
+                        self.movement_attempts += 1
                         if len(self.turn_left) < 4:
                             logging.warning("Cannot turn left due to barrier")
                             return
-                        self.movement_attempts += 1
                         # turn combines forward motion with rotation
                         self._move_robot(0.5, 0, 0.5)
                     elif gap < 0:
+                        self.movement_attempts += 1
                         if len(self.turn_right) < 4:
                             logging.warning("Cannot turn right due to barrier")
                             return
-                        self.movement_attempts += 1
                         # turn combines forward motion with rotation
                         self._move_robot(0.5, 0, -0.5)
                 elif abs(gap) > self.angle_tolerance and abs(gap) <= 10.0:
                     logging.debug("gap is getting smaller, using smaller steps")
                     if gap > 0:
+                        self.movement_attempts += 1
                         if len(self.turn_left) < 4:
                             logging.warning("Cannot turn left due to barrier")
                             return
-                        self.movement_attempts += 1
                         self._move_robot(0.2, 0, 0.2)
                     elif gap < 0:
+                        self.movement_attempts += 1
                         if len(self.turn_right) < 4:
                             logging.warning("Cannot turn right due to barrier")
                             return
-                        self.movement_attempts += 1
                         self._move_robot(0.2, 0, -0.2)
                 elif abs(gap) <= self.angle_tolerance:
                     logging.info(
