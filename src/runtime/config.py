@@ -7,6 +7,8 @@ import json5
 
 from actions import load_action
 from actions.base import AgentAction
+from backgrounds import load_background
+from backgrounds.base import Background, BackgroundConfig
 from inputs import load_input
 from inputs.base import Sensor, SensorConfig
 from llm import LLM, LLMConfig, load_llm
@@ -29,6 +31,7 @@ class RuntimeConfig:
     cortex_llm: LLM
     simulators: List[Simulator]
     agent_actions: List[AgentAction]
+    backgrounds: List[Background]
 
     # Optional API key for the runtime configuration
     api_key: Optional[str] = None
@@ -165,6 +168,14 @@ def load_config(config_name: str) -> RuntimeConfig:
                 }
             )
             for action in raw_config.get("agent_actions", [])
+        ],
+        "backgrounds": [
+            load_background(bg["type"])(
+                config=BackgroundConfig(
+                    **add_meta(bg.get("config", {}), g_api_key, g_ut_eth, g_URID)
+                )
+            )
+            for bg in raw_config.get("backgrounds", [])
         ],
     }
 
