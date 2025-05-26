@@ -27,5 +27,5 @@ class ExampleBackground(Background):
         This method will run indefinitely, simulating a long-running task.
         """
         while True:
-            logging.info(f"Background {self.name} is running...")
+            logging.info(f"Background {self.name} is running... {time.time()}")
             time.sleep(5)

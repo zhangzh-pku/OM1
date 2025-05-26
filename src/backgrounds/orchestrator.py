@@ -1,3 +1,4 @@
+import asyncio
 import logging
 import threading
 import typing as T
@@ -37,7 +38,8 @@ class BackgroundOrchestrator:
                 )
                 self._background_threads[background.name] = thread
                 thread.start()
-        return threading.Event()
+
+        return asyncio.Future()
 
     def _run_background_loop(self, background: Background):
         """

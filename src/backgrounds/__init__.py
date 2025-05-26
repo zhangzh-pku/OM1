@@ -19,7 +19,7 @@ def load_background(background_name: str) -> T.Type[Background]:
     Returns:
     ---------
     T.Type[Background]
-        An instance of the background.
+        A class (type) of the background.
     """
     # Get all files in plugins directory
     plugins_dir = os.path.join(os.path.dirname(__file__), "plugins")
@@ -37,7 +37,7 @@ def load_background(background_name: str) -> T.Type[Background]:
             ):
                 background_classes[name] = obj
 
-    logging.info(f"Background classes: {background_classes}")
+    logging.debug(f"Background classes: {background_classes}")
 
     # Find requested background class
     if background_name not in background_classes:
