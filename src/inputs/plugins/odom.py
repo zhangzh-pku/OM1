@@ -80,7 +80,7 @@ class Odom(FuserInput[str]):
                 break
             time.sleep(0.5)
 
-        self.descriptor_for_LLM = "Information about your location and bosy pose, to help plan your movements."
+        self.descriptor_for_LLM = "Information about your location and body pose, to help plan your movements."
 
     async def _poll(self) -> Optional[dict]:
         """
