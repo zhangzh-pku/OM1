@@ -224,7 +224,15 @@ void loop()
       Serial.print(",ALT:"); 
       Serial.print(GPS.altitude);
       Serial.print(",SAT:"); 
-      Serial.println((int)GPS.satellites);
+      Serial.print((int)GPS.satellites);
+      Serial.print(",TIME:"); 
+      Serial.print(GPS.hour);
+      Serial.print(":"); 
+      Serial.print(GPS.minute);
+      Serial.print(":"); 
+      Serial.print(GPS.seconds);
+      Serial.print(":"); 
+      Serial.println(GPS.milliseconds);
     }
   }
 
