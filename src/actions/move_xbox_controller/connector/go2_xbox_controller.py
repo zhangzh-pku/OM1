@@ -84,27 +84,8 @@ class Go2XboxControllerConnector(ActionConnector[IDLEInput]):
 
         self.dog_attitude = None
 
-        self.odom_on = False
-        self.odom = None
-
-        timeout = 10
-        attempts = 0
-
-        while not self.odom_on:
-            logging.info(f"Waiting for Navigation Provider. Attempt: {attempts}")
-            self.odom = OdomProvider()
-            if hasattr(self.odom, "running"):
-                self.odom_on = self.odom.running
-                logging.info(f"Action: navigation running?: {self.odom_on}")
-            else:
-                logging.info("Action: waiting for Odom")
-            attempts += 1
-            if attempts > timeout:
-                logging.warning(
-                    f"Odom Provider timeout after {attempts} attempts - no Odom data - DANGEROUS"
-                )
-                break
-            time.sleep(0.5)
+        self.odom = OdomProvider()
+        logging.info(f"XBOX Odom Provider: {self.odom}")
 
         self.thread_lock = threading.Lock()
 
@@ -206,7 +187,7 @@ class Go2XboxControllerConnector(ActionConnector[IDLEInput]):
 
         if hasattr(self.odom, "running"):
             nav = self.odom.odom
-            logging.debug(f"XBOX Nav data: {nav}")
+            logging.debug(f"XBOX odom data: {nav}")
             if nav and nav["body_attitude"] == "standing":
                 self.dog_attitude = RobotState.STANDING
             else:
@@ -220,7 +201,7 @@ class Go2XboxControllerConnector(ActionConnector[IDLEInput]):
             data = list(self.gamepad.read(64, timeout=50))
 
         if len(data) > 0:
-            logging.info(f"Gamepad data: {data}")
+            logging.debug(f"Gamepad data: {data}")
 
             # Process triggers for rotation
             # RT is typically on byte 9, LT on byte 8 for Xbox controllers

@@ -8,7 +8,7 @@ from queue import Queue
 
 from actions.base import ActionConfig, ActionConnector
 from actions.move_go2_autonomy.interface import MoveInput
-from providers.navigation_provider import NavigationProvider
+from providers.odom_provider import OdomProvider
 from providers.rplidar_provider import RPLidarProvider
 from unitree.unitree_sdk2py.go2.sport.sport_client import SportClient
 
@@ -41,26 +41,13 @@ class MoveUnitreeSDKConnector(ActionConnector[MoveInput]):
         self.lidar_on = False
         self.lidar = None
 
-        lidar_timeout = 10  # if the LIDAR does not connect in 5 seconds, we assume there is no LIDAR
-        lidar_attempts = 0
-
         self.turn_left = []
         self.advance = []
         self.turn_right = []
         self.retreat = []
 
-        while self.lidar_on is False:
-            logging.info(f"Waiting for RPLidar Provider. Attempt: {lidar_attempts}")
-            self.lidar = RPLidarProvider(wait=True)
-            self.lidar_on = self.lidar.running
-            logging.info(f"Action: Lidar running?: {self.lidar_on}")
-            lidar_attempts += 1
-            if lidar_attempts > lidar_timeout:
-                logging.warning(
-                    f"RPLidar Provider timeout after {lidar_attempts} attempts - no LIDAR - DANGEROUS"
-                )
-                break
-            time.sleep(0.5)
+        self.lidar = RPLidarProvider()
+        self.lidar_on = self.lidar.running
 
         self.motion_buffer = None
 
@@ -75,29 +62,8 @@ class MoveUnitreeSDKConnector(ActionConnector[MoveInput]):
         except Exception as e:
             logging.error(f"Error initializing Unitree sport client: {e}")
 
-        self.navigation_on = False
-        self.navigation = None
-
-        navigation_timeout = 20
-        navigation_attempts = 0
-
-        while not self.navigation_on:
-            logging.info(
-                f"Waiting for Navigation Provider. Attempt: {navigation_attempts}"
-            )
-            self.navigation = NavigationProvider(wait=False)
-            if hasattr(self.navigation, "running"):
-                self.navigation_on = self.navigation.running
-                logging.info(f"Action: navigation running?: {self.navigation_on}")
-            else:
-                logging.info("Action: waiting for navigation")
-            navigation_attempts += 1
-            if navigation_attempts > navigation_timeout:
-                logging.warning(
-                    f"Navigation Provider timeout after {navigation_attempts} attempts - no Navigation data - DANGEROUS"
-                )
-                break
-            time.sleep(0.5)
+        self.odom = OdomProvider()
+        logging.info(f"Autonomy Odom Provider: {self.odom}")
 
         self.thread_lock = threading.Lock()
 
@@ -160,7 +126,7 @@ class MoveUnitreeSDKConnector(ActionConnector[MoveInput]):
         # this is used only by the LLM
         logging.info(f"AI command.connect: {output_interface.action}")
 
-        self.navigationDataRefresh()
+        self.odomDataRefresh()
 
         if self.dog_moving:
             # for example due to a teleops or game controller command
@@ -240,11 +206,11 @@ class MoveUnitreeSDKConnector(ActionConnector[MoveInput]):
         #     logging.info("Unitree AI command: dance")
         #     await self._execute_sport_command("Dance1")
 
-    def navigationDataRefresh(self):
-        if hasattr(self.navigation, "running"):
-            if self.navigation.running:
-                nav = self.navigation.position
-                logging.debug(f"Go2 Nav data: {nav}")
+    def odomDataRefresh(self):
+        if hasattr(self.odom, "running"):
+            if self.odom.running:
+                nav = self.odom.odom
+                logging.debug(f"Go2 Odom data: {nav}")
 
                 if nav["body_attitude"] == "standing":
                     self.dog_attitude = RobotState.STANDING
@@ -340,7 +306,7 @@ class MoveUnitreeSDKConnector(ActionConnector[MoveInput]):
                 # abort - we are not converging
                 self.movement_attempts = 0
                 self.pending_movements.get()
-                logging.info("TIMEOUT - AI movment command timeout - not converging")
+                logging.info("TIMEOUT - AI movement command timeout - not converging")
                 return
 
             goal_dx = current_target[0]
