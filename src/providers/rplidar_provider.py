@@ -216,7 +216,7 @@ class RPLidarProvider:
             self._process(array_ready)
 
     def _preprocess_serial(self, scan):
-        logging.info(f"_preprocess_serial: {scan}")
+        logging.debug(f"_preprocess_serial: {scan}")
         array = np.array(scan)
 
         # logging.info(f"_preprocess_serial: {array.ndim}")
