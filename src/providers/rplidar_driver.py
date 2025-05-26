@@ -510,7 +510,7 @@ class RPDriver(object):
                 if len(scan_list) > min_len:
                     yield scan_list
                 scan_list = []
-            if distance < max_distance_mm:
+            if distance > 0 and distance < max_distance_mm:
                 scan_list.append((angle, distance))
 
 
