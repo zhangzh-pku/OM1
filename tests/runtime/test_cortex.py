@@ -23,6 +23,7 @@ def mock_dependencies():
         "fuser": Mock(),
         "action_orchestrator": Mock(),
         "simulator_orchestrator": Mock(),
+        "background_orchestrator": Mock(),
         "sleep_ticker_provider": Mock(),
         "input_orchestrator": Mock(),
     }
@@ -43,6 +44,10 @@ def runtime(mock_config, mock_dependencies):
         patch(
             "runtime.cortex.SleepTickerProvider",
             return_value=mock_dependencies["sleep_ticker_provider"],
+        ),
+        patch(
+            "runtime.cortex.BackgroundOrchestrator",
+            return_value=mock_dependencies["background_orchestrator"],
         ),
     ):
         return CortexRuntime(mock_config), mock_dependencies
@@ -67,6 +72,7 @@ async def test_tick_successful_execution(runtime):
 
     mocks["simulator_orchestrator"].promise = AsyncMock()
     mocks["action_orchestrator"].promise = AsyncMock()
+    mocks["background_orchestrator"].promise = AsyncMock()
 
     await cortex_runtime._tick()
 
@@ -92,6 +98,7 @@ async def test_tick_no_prompt(runtime):
     cortex_runtime.config.cortex_llm.ask.assert_not_called()
     mocks["simulator_orchestrator"].promise.assert_not_called()
     mocks["action_orchestrator"].promise.assert_not_called()
+    mocks["background_orchestrator"].promise.assert_not_called()
 
 
 @pytest.mark.asyncio
@@ -108,6 +115,7 @@ async def test_tick_no_llm_output(runtime):
 
     mocks["simulator_orchestrator"].promise.assert_not_called()
     mocks["action_orchestrator"].promise.assert_not_called()
+    mocks["background_orchestrator"].promise.assert_not_called()
 
 
 @pytest.mark.asyncio
