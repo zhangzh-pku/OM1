@@ -52,7 +52,7 @@ class SerialReader(FuserInput[str]):
     """
     Reads GPS and Magnetometer data from serial port.
     Parses lines like:
-    - GPS:37.7749N,-122.4194W,KN:0.12,HEAD:84.1,ALT:30.5,SAT:7
+    - GPS:37.7749N,-122.4194W,KN:0.12,HEAD:84.1,ALT:30.5,SAT:7,TIME:3:14:24:546
     - YPR: 134.57, -3.20, 1.02
     - HDG (DEG): 225.0 SW NTC_HDG: 221.3
     """

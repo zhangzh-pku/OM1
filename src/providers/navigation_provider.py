@@ -135,8 +135,13 @@ class NavigationProvider:
 
         self.yaw_odom_0_360 = 0.0
         self.yaw_odom_m180_p180 = 0.0
+
         self.yaw_mag_0_360 = 0.0
         self.yaw_mag_cardinal = ""
+        self.gps_lat = 0.0
+        self.gps_lon = 0.0
+        self.gps_alt = 0.0
+        self.gps_time = ""
 
         self.running = False
         self._thread: Optional[threading.Thread] = None
@@ -219,6 +224,10 @@ class NavigationProvider:
             "body_height_cm": self.body_height_cm,
             "body_attitude": self.body_attitude,
             "moving": self.moving,
+            "gps_lat": self.gps_lat,
+            "gps_lon": self.gps_lon,
+            "gps_alt": self.gps_alt,
+            "gps_time": self.gps_time,
         }
 
         logging.debug(
@@ -248,16 +257,67 @@ class NavigationProvider:
             p = gOdom.pose.pose
             self.processOdom(p)
 
-    def magProcessor(self, data):
+    def magGPSProcessor(self, data):
         # Used whenever there is a connected
         # nav Arduino on serial
-        value = data.split(" ")
-        # HDG (DEG): 102.98 ESE NTC_HDG: 104.83
-        if value[0] == "HDG" and len(value) == 6:
-            # that's a HDG packet
-            self.yaw_mag_0_360 = float(value[2])
-            self.yaw_mag_cardinal = value[3]
-            logging.debug(f"MAG: {self.yaw_mag_0_360}")
+        # Parses lines like:
+        # - GPS:37.7749N,-122.4194W,KN:0.12,HEAD:84.1,ALT:30.5,SAT:7,TIME:3:14:24:546
+        # - YPR: 134.57, -3.20, 1.02
+        # - HDG (DEG): 225.0 SW NTC_HDG: 221.3
+        try:
+            if data.startswith("HDG (DEG):"):
+                parts = data.split()
+                if len(parts) >= 4:
+                    # that's a HDG packet
+                    self.yaw_mag_0_360 = float(parts[2])
+                    self.yaw_mag_cardinal = parts[3]
+                    logging.debug(f"MAG: {self.yaw_mag_0_360}")
+                else:
+                    logging.warning(f"Unable to parse heading: {data}")
+            elif data.startswith("YPR:"):
+                yaw, pitch, roll = map(str.strip, data[4:].split(","))
+                logging.debug(
+                    f"Orientation is Yaw: {yaw}°, Pitch: {pitch}°, Roll: {roll}°."
+                )
+            elif data.startswith("GPS:"):
+                try:
+                    parts = data[4:].split(",")
+                    lat = parts[0]
+                    lon = parts[1]
+                    heading = parts[3].split(":")[1]
+                    alt = parts[4].split(":")[1]
+                    sats = parts[5].split(":")[1]
+                    time = parts[6][5:]
+                    self.gps_lat = lat
+                    self.gps_lon = lon
+                    self.gps_alt = alt
+                    self.gps_time = time
+                    logging.debug(
+                        (
+                            f"Current location is {lat}, {lon} at {alt} meters altitude, "
+                            f"heading {heading}°, with {sats} satellites locked. The time is {time}."
+                        )
+                    )
+                except Exception as e:
+                    logging.warning(f"Failed to parse GPS: {data} ({e})")
+        except Exception as e:
+            logging.warning(f"Error processing serial MAG/GPSinput: {data} ({e})")
+
+        self._position = {
+            "x": self.x,
+            "y": self.y,
+            "yaw_odom_0_360": self.yaw_odom_0_360,
+            "yaw_odom_m180_p180": self.m180_p180,
+            "yaw_mag_0_360": self.yaw_mag_0_360,
+            "yaw_mag_cardinal": self.yaw_mag_cardinal,
+            "body_height_cm": self.body_height_cm,
+            "body_attitude": self.body_attitude,
+            "moving": self.moving,
+            "gps_lat": self.gps_lat,
+            "gps_lon": self.gps_lon,
+            "gps_alt": self.gps_alt,
+            "gps_time": self.gps_time,
+        }
 
     def start(self):
         """
@@ -290,7 +350,7 @@ class NavigationProvider:
             if self.ser:
                 # Read a line, decode, and remove whitespace
                 data = self.ser.readline().decode("utf-8").strip()
-                self.magProcessor(data)
+                self.magGPSProcessor(data)
                 logging.debug(f"Serial GPS: {data}")
 
             time.sleep(0.1)
