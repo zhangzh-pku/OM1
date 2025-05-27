@@ -28,7 +28,7 @@
             "group": "Getting Started",
             "pages": [
               "getting-started/introduction",
-              "getting-started/get-started",              
+              "getting-started/get-started",
               "getting-started/run-om1"
             ]
           },
@@ -36,7 +36,7 @@
             "group": "Architecture",
             "pages": [
               "getting-started/architecture",
-              "getting-started/core-concept",              
+              "getting-started/core-concept",
               "getting-started/configuration"
             ]
           },
@@ -45,14 +45,14 @@
             "pages": [
               "input-plugin/input-plugin-overview",
               "input-plugin/speech-recognition",
-              "input-plugin/webcam-input",              
-              "robotics/gps_compass",              
+              "input-plugin/webcam-input",
+              "robotics/gps_compass",
               {
                 "group": "RPLidar",
                 "pages": [
                   "robotics/motion_planning_lidarA1M8",
-                  "robotics/motion_planning_unitree_go2",                     
-                  "robotics/motion_planning_turtlebot4"              
+                  "robotics/motion_planning_unitree_go2",
+                  "robotics/motion_planning_turtlebot4"
                 ]
               }
             ]
@@ -78,9 +78,9 @@
             "group": "Robot Integration",
             "pages": [
               "robotics/unitree_g1_humanoid",
-              "robotics/unitree_go2_quadruped",   
+              "robotics/unitree_go2_quadruped",
               "robotics/tesla_dimo",
-              "robotics/turtlebot4_zenoh"          
+              "robotics/turtlebot4_zenoh"
             ]
           },
           {
@@ -88,7 +88,7 @@
             "pages": [
               "examples/overview",
               "examples/conversation",
-              "examples/gazebo"              
+              "examples/gazebo"
             ]
           },
           {
@@ -100,9 +100,9 @@
           },
           {
             "group": "Miscellaneous",
-            "pages": [  
+            "pages": [
               "robotics/asimov_governance",
-              "robotics/coinbase-x402"          
+              "robotics/coinbase-x402"
             ]
           }
         ]
@@ -119,7 +119,15 @@
             ]
           },
           {
-            "group": "Core Endpoints",
+            "group": "API Key Endpoints",
+            "pages": [
+              "api-reference/endpoints/list_api_keys",
+              "api-reference/endpoints/create_api_keys",
+              "api-reference/endpoints/delete_api_keys"
+            ]
+          },
+          {
+            "group": "OM Core Endpoints",
             "pages": [
               "api-reference/endpoints/llm",
               "api-reference/endpoints/multi_llm",
@@ -128,7 +136,7 @@
             ]
           },
           {
-            "group": "Core Websocket Endpoints",
+            "group": "OM Core Websocket Endpoints",
             "pages": [
               "api-reference/endpoints/vila_vlm",
               "api-reference/endpoints/google_asr",
