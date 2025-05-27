@@ -107,7 +107,7 @@ void setup()
     float ms[]  = { +0.948, +0.046, -0.038, \
                     +0.047, +1.087, -0.033, \
                     -0.036, -0.033, +0.974 }; 
-    float gc[] = { 0.0, 0.0, 0.0 };
+    float gc[] = { -0.0055, 0.0111, 0.0017 };
     memcpy(mag_hardiron,  mh, sizeof(mag_hardiron));
     memcpy(mag_softiron,  ms, sizeof(mag_softiron));
     memcpy(gyro_zerorate, gc, sizeof(gyro_zerorate));
@@ -116,7 +116,7 @@ void setup()
     float ms[]  = { +0.954, +0.061, -0.033, \
                     +0.061, +1.085, +0.002, \
                     -0.033, +0.002, +0.969 }; 
-    float gc[] = { 0.0, 0.0, 0.0 };
+    float gc[] = { -0.0328, +0.0521, 0.0156 };
     memcpy(mag_hardiron,  mh, sizeof(mag_hardiron));
     memcpy(mag_softiron,  ms, sizeof(mag_softiron));
     memcpy(gyro_zerorate, gc, sizeof(gyro_zerorate));
