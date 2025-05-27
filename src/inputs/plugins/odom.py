@@ -8,7 +8,7 @@ from typing import List, Optional
 from inputs.base import SensorConfig
 from inputs.base.loop import FuserInput
 from providers.io_provider import IOProvider
-from providers.rplidar_provider import RPLidarProvider
+from providers.odom_provider import OdomProvider
 
 
 @dataclass
@@ -28,11 +28,11 @@ class Message:
     message: str
 
 
-class RPLidar(FuserInput[str]):
+class Odom(FuserInput[str]):
     """
-    RPLidar input handler.
+    Odom input handler.
 
-    A class that processes RPLidar inputs and generates text descriptions.
+    A class that processes odometry inputs and generates text descriptions.
     It maintains an internal buffer of processed messages.
     """
 
@@ -50,76 +50,102 @@ class RPLidar(FuserInput[str]):
 
         logging.info(f"Config: {self.config}")
 
-        # Initialize RPLidar Provider based on .json5 config file
-        self.silent = getattr(config, "silent", False)
-        serial_port = getattr(self.config, "serial_port", None)
+        # Initialize Odom Provider based on .json5 config file
+        self.odom_on = False
+        self.odom = None
+
         use_zenoh = getattr(self.config, "use_zenoh", False)
-        URID = ""
+        self.silent = getattr(config, "silent", False)
+        self.URID = getattr(config, "URID", "")
         if use_zenoh:
             # probably a turtlebot
-            URID = getattr(self.config, "URID")
-            logging.info(f"RPLidar using Zenoh and URID: {URID}")
-        half_width_robot = getattr(self.config, "half_width_robot", 0.20)
-        angles_blanked = getattr(self.config, "angles_blanked", [])
-        max_relevant_distance = getattr(self.config, "max_relevant_distance", 1.1)
-        sensor_mounting_angle = getattr(self.config, "sensor_mounting_angle", 180.0)
+            logging.info(f"RPLidar using Zenoh and URID: {self.URID}")
 
-        self.lidar: RPLidarProvider = RPLidarProvider(
-            serial_port,
-            half_width_robot,
-            angles_blanked,
-            max_relevant_distance,
-            sensor_mounting_angle,
-            URID,
-            use_zenoh,
-        )
+        timeout = 10
+        attempts = 0
 
-        self.lidar.start()
+        while not self.odom_on:
+            logging.info(f"Waiting for Odom Provider. Attempt: {attempts}")
+            self.odom = OdomProvider(self.URID, use_zenoh)
+            if hasattr(self.odom, "running"):
+                self.odom_on = self.odom.running
+                logging.info(f"Odom running?: {self.odom_on}")
+            else:
+                logging.info("Waiting for Odom Provider")
+            attempts += 1
+            if attempts > timeout:
+                logging.warning(
+                    f"Odom Provider timeout after {attempts} attempts - no Odometry - DANGEROUS"
+                )
+                break
+            time.sleep(0.5)
 
-        self.descriptor_for_LLM = "Information about objects and walls around you, to plan your movements and avoid bumping into things."
+        self.descriptor_for_LLM = "Information about your location and body pose, to help plan your movements."
 
-    async def _poll(self) -> Optional[str]:
+    async def _poll(self) -> Optional[dict]:
         """
-        Poll for new messages from the RPLidar Provider.
+        Poll for new messages from the Odom Provider.
 
         Checks the message buffer for new messages with a brief delay
         to prevent excessive CPU usage.
 
         Returns
         -------
-        Optional[str]
+        Optional[dict]
             The next message from the buffer if available, None otherwise
         """
-        await asyncio.sleep(0.2)
-
+        await asyncio.sleep(0.1)
         if self.silent:
             return None
 
         try:
-            return self.lidar.lidar_string
+            return self.odom.odom
         except Empty:
             return None
 
-    async def _raw_to_text(self, raw_input: str) -> Message:
+    async def _raw_to_text(self, raw_input: dict) -> Message:
         """
         Process raw input to generate a timestamped message.
 
-        Creates a Message object from the raw input string, adding
+        Creates a Message object from the raw input, adding
         the current timestamp.
 
         Parameters
         ----------
-        raw_input : str
-            Raw input string to be processed
+        raw_input : list
+            Raw input to be processed
 
         Returns
         -------
         Message
             A timestamped message containing the processed input
         """
-        return Message(timestamp=time.time(), message=raw_input)
+        logging.debug(f"odom: {raw_input}")
 
-    async def raw_to_text(self, raw_input: Optional[str]):
+        # self._position = {
+        #     "x": self.x,
+        #     "y": self.y,
+        #     "yaw_odom_0_360": self.yaw_odom_0_360,
+        #     "body_height_cm": self.body_height_cm,
+        #     "body_attitude": self.body_attitude
+        # }
+
+        res = ""
+
+        moving = raw_input["moving"]
+        attitude = raw_input["body_attitude"]
+
+        if attitude == "sitting":
+            res = "You are sitting down - do not generate new movement commands. "
+        elif moving:
+            # already moving
+            res = "You are moving - do not generate new movement commands. "
+        else:
+            res = "You are standing still - you can move if you want to. "
+
+        return Message(timestamp=time.time(), message=res)
+
+    async def raw_to_text(self, raw_input: Optional[list]):
         """
         Convert raw input to text and update message buffer.
 
@@ -128,7 +154,7 @@ class RPLidar(FuserInput[str]):
 
         Parameters
         ----------
-        raw_input : Optional[str]
+        raw_input : Optional[list]
             Raw input to be processed, or None if no input is available
         """
         if raw_input is None:
