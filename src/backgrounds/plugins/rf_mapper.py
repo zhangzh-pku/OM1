@@ -8,6 +8,7 @@ from bleak import AdvertisementData, BleakScanner
 from backgrounds.base import Background, BackgroundConfig
 from providers.fabric_map_provider import FabricData, FabricDataSubmitter
 from providers.gps_provider import GpsProvider
+from providers.odom_provider import OdomProvider
 
 
 class RFmapper(Background):
@@ -35,8 +36,16 @@ class RFmapper(Background):
         self.scan_results = None
         self.gps_data = None
 
+        self.x = 0.0
+        self.y = 0.0
+        self.yaw_odom_0_360 = 0.0
+        self.yaw_odom_m180_p180 = 0.0
+
         self.gps = GpsProvider()
         self.gps_on = self.gps.running
+
+        self.odom = OdomProvider()
+        logging.info(f"Mapper Odom Provider: {self.odom}")
 
         self.fds = FabricDataSubmitter(api_key=self.api_key, write_to_local_file=True)
 
@@ -96,6 +105,15 @@ class RFmapper(Background):
                         # logging.info(f"Mapper data: {self.json_payload}")
                         g = self.gps.data
                         logging.debug(f"GPS data: {g}")
+
+                        if hasattr(self.odom, "running"):
+                            o = self.odom.odom
+                            logging.debug(f"Odom data: {o}")
+                            self.x = o["x"]
+                            self.y = o["y"]
+                            self.yaw_odom_0_360 = o["yaw_odom_0_360"]
+                            self.yaw_odom_m180_p180 = o["yaw_odom_m180_p180"]
+
                         self.fds.share_data(
                             FabricData(
                                 machine_id=self.URID,
@@ -103,10 +121,12 @@ class RFmapper(Background):
                                 gps_lat=g["gps_lat"],
                                 gps_lon=g["gps_lon"],
                                 gps_alt=g["gps_alt"],
+                                mag=g["yaw_mag_0_360"],
                                 update_time_local=time.time(),
-                                odom_x=0.0,  # TODO
-                                odom_y=0.0,  # TODO
-                                odom_yaw=0.0,  # TODO
+                                odom_x=self.x,
+                                odom_y=self.x,
+                                yaw_odom_0_360=self.yaw_odom_0_360,
+                                yaw_odom_m180_p180=self.yaw_odom_m180_p180,
                                 rf_data=self.scan_results,
                             )
                         )
