@@ -43,6 +43,7 @@ class RFmapper(Background):
 
         self.gps = GpsProvider()
         self.gps_on = self.gps.running
+        logging.info(f"Mapper Gps Provider: {self.gps}")
 
         self.odom = OdomProvider()
         logging.info(f"Mapper Odom Provider: {self.odom}")
@@ -72,6 +73,7 @@ class RFmapper(Background):
         sorted_devices = sorted(
             seen_devices.values(), key=lambda d: d["rssi"], reverse=True
         )[:10]
+        #logging.info(f"Scan...{sorted_devices}")
         return sorted_devices
 
     def _scan_task(self):

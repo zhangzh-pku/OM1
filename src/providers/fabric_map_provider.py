@@ -48,8 +48,8 @@ class FabricData:
             "update_time_local": self.update_time_local,
             "odom_x": self.odom_x,
             "odom_y": self.odom_y,
-            "yaw_odom_0_360": self.odom_yaw,
-            "yaw_odom_m180_p180": self.odom_yaw,
+            "yaw_odom_0_360": self.yaw_odom_0_360,
+            "yaw_odom_m180_p180": self.yaw_odom_m180_p180,
             "rf_data": self.rf_data,
         }
 
@@ -94,7 +94,7 @@ class FabricDataSubmitter:
         - base_filename: Base name for the file (e.g., 'log.jsonl')
         - max_file_size_bytes: Maximum allowed size before rolling over to a new file
         """
-        logging.info(f"write_dict_to_file: {data}")
+        #logging.info(f"write_dict_to_file: {data}")
 
         if not isinstance(data, dict):
             raise ValueError("Provided data must be a dictionary.")
@@ -130,7 +130,11 @@ class FabricDataSubmitter:
             The data to be shared.
         """
 
-        json_dict = data.to_dict()
+        #logging.info(f"prepare data: {data}")
+        try:
+            json_dict = data.to_dict()
+        except Exception as e:
+            logging.error(f"Error converting to dict: {str(e)}")
 
         if self.write_to_local_file:
             name_used = self.write_dict_to_file(
@@ -169,4 +173,5 @@ class FabricDataSubmitter:
         data : FabricData
             A mapping data payload to submit.
         """
+        #logging.info(f"data: {data}")
         self.executor.submit(self._share_data_worker, data)
