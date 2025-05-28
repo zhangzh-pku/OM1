@@ -13,7 +13,15 @@
         "serial_port": "/dev/cu.usbmodem84401",
         "silent": false // set to true to just spin up the provider
       }
-    }
+    },
+    {
+      "type": "Odom",
+        "config": {
+          "use_zenoh": false,
+          "URID": "",     // only needed for Zenoh
+          "silent": false // set to true to just spin up the provider
+        }
+    },
   ],
   "cortex_llm": {
     "type": "OpenAILLM",

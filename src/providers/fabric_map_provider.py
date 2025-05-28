@@ -21,10 +21,12 @@ class FabricData:
     gps_lat: str
     gps_lon: str
     gps_alt: float
+    mag: float
     update_time_local: str
     odom_x: float
     odom_y: float
-    odom_yaw: float
+    yaw_odom_0_360: float
+    yaw_odom_m180_p180: float
     rf_data: list
 
     def to_dict(self) -> dict:
@@ -42,10 +44,12 @@ class FabricData:
             "gps_lat": self.gps_lat,
             "gps_lon": self.gps_lon,
             "gps_alt": self.gps_alt,
+            "mag": self.mag,
             "update_time_local": self.update_time_local,
             "odom_x": self.odom_x,
             "odom_y": self.odom_y,
-            "odom_yaw": self.odom_yaw,
+            "yaw_odom_0_360": self.odom_yaw,
+            "yaw_odom_m180_p180": self.odom_yaw,
             "rf_data": self.rf_data,
         }
 
