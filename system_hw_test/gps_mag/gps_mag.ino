@@ -234,6 +234,9 @@ void loop()
       Serial.print(GPS.seconds);
       Serial.print(":"); 
       Serial.println(GPS.milliseconds);
+    } else {
+      Serial.print("STAT: Waiting for GPS fix. SAT:");
+      Serial.println((int)GPS.satellites);
     }
   }
 
