@@ -119,6 +119,12 @@
             ]
           },
           {
+            "group": "Account Endpoints",
+            "pages": [
+              "api-reference/endpoints/account_balance"
+            ]
+          },
+          {
             "group": "API Key Endpoints",
             "pages": [
               "api-reference/endpoints/list_api_keys",

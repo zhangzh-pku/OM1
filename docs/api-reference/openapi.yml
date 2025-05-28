@@ -494,6 +494,30 @@ paths:
       security:
         - bearerAuth: []
 
+  /account/balance:
+    get:
+      summary: Get account balance
+      description: Retrieve the current balance of the user's account.
+      responses:
+        '200':
+          description: Successful response with account balance
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  balance:
+                    type: number
+                    format: float
+                    description: The current balance of the user's account.
+                    example: 100.50
+        '400':
+          description: Bad request - Invalid parameters or missing authentication.
+        '401':
+          description: Unauthorized - Invalid or missing authentication token.
+      security:
+        - bearerAuth: []
+
 components:
   securitySchemes:
     apiKeyAuth:
