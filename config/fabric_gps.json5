@@ -25,11 +25,11 @@
         }
     },
     {
-        "type": "GPSMagSerialReader",
+        "type": "GPSOdomReader",
         "config": {
-          "port": "/dev/cu.usbmodem31201",
           "origin_lat": 37.7818286,
-          "origin_lon": -122.394063
+          "origin_lon": -122.394063,
+          "origin_yaw_deg": 105,
         }
     }
   ],

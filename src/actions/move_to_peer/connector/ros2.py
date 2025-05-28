@@ -25,9 +25,9 @@ class MoveToPeerRos2Connector(ActionConnector[MoveToPeerInput]):
     """
 
     # ─────────────────────────── CONFIG CONSTANTS ────────────────────────────
-    MAX_ROT_SPEED = 0.6      # rad/s (≈ 34 deg/s)
+    MAX_ROT_SPEED = 0.2      # rad/s (≈ 34 deg/s)
     FWD_SPEED = 0.4          # m/s forward once aligned
-    ANG_TOL_DEG = 10.0       # degrees, acceptable pointing error
+    ANG_TOL_DEG = 5.0       # degrees, acceptable pointing error
     STOP_DIST = 4.0          # metres to stop in front of peer
 
     def __init__(self, config: ActionConfig):
@@ -52,9 +52,7 @@ class MoveToPeerRos2Connector(ActionConnector[MoveToPeerInput]):
         lon0 = self.io.get_dynamic_variable("longitude")
         lat1 = self.io.get_dynamic_variable("closest_peer_lat")
         lon1 = self.io.get_dynamic_variable("closest_peer_lon")
-        yaw_var = (self.io.get_dynamic_variable("fused_yaw_deg")
-           or self.io.get_dynamic_variable("heading_deg")
-           or self.io.get_dynamic_variable("yaw"))
+        yaw_var = self.io.get_dynamic_variable("yaw_deg")
 
         # validate -----------------------------------------------------------
         if None in (lat0, lon0):
@@ -81,7 +79,7 @@ class MoveToPeerRos2Connector(ActionConnector[MoveToPeerInput]):
             return
 
         # desired bearing (deg clockwise from North) ————————
-        bearing_deg = (math.degrees(math.atan2(x_east, y_north)) + 360.0) % 360.0
+        bearing_deg = -(math.degrees(math.atan2(x_east, y_north)) + 360.0) % 360.0
 
         # --------------------------------------------------------------------
         if yaw_deg is None:
@@ -101,7 +99,7 @@ class MoveToPeerRos2Connector(ActionConnector[MoveToPeerInput]):
 
         # phase 1 — rotate toward peer --------------------------------------
         if abs(heading_err) > self.ANG_TOL_DEG:
-            yaw_rate = math.copysign(self.MAX_ROT_SPEED, -math.radians(heading_err))
+            yaw_rate = math.copysign(self.MAX_ROT_SPEED, math.radians(heading_err))
             logging.info(f"MoveToPeer: rotating in place at {yaw_rate:.2f} rad/s")
             self.sport_client.Move(0.0, 0.0, yaw_rate)
             # give the robot time to rotate a bit before this action returns
