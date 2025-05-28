@@ -26,6 +26,8 @@ class RFmapper(Background):
         """
         super().__init__(config)
         self.name = getattr(config, "name", "RFmapper")
+        self.api_key = getattr(config, "api_key", None)
+        self.URID = getattr(config, "URID", None)
         self.loop = asyncio.new_event_loop()
         self.thread = threading.Thread(target=self._scan_task)
         self.running = False
@@ -36,9 +38,7 @@ class RFmapper(Background):
         self.gps = GpsProvider()
         self.gps_on = self.gps.running
 
-        # self.silent = getattr(config, "silent", False)
-
-        self.fds = FabricDataSubmitter(api_key="", write_to_local_file=True)
+        self.fds = FabricDataSubmitter(api_key=self.api_key, write_to_local_file=True)
 
         self.start()
 
@@ -98,7 +98,7 @@ class RFmapper(Background):
                         logging.debug(f"GPS data: {g}")
                         self.fds.share_data(
                             FabricData(
-                                machine_id="Go2LA",
+                                machine_id=self.URID,
                                 gps_time_utc=g["gps_time_utc"],
                                 gps_lat=g["gps_lat"],
                                 gps_lon=g["gps_lon"],
