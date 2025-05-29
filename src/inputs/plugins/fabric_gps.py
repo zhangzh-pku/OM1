@@ -1,147 +1,107 @@
 import asyncio
 import logging
+import random
 import time
 from dataclasses import dataclass
 from queue import Queue
 from typing import List, Optional
 
-import requests
+# `requests` is **optional** while we mock — keep import guarded
+try:
+    import requests  # type: ignore
+except ImportError:  # unit‑test env without requests installed
+    requests = None  # pylint: disable=invalid-name
 
 from inputs.base import SensorConfig
 from inputs.base.loop import FuserInput
 from providers.io_provider import IOProvider
 
-
+# ────────────────────────────────────────────────────────────────────────────────
 @dataclass
 class Message:
-    """
-    Container for timestamped messages.
-
-    Parameters
-    ----------
-    timestamp : float
-        Unix timestamp of the message
-    message : str
-        Content of the message
-    """
-
     timestamp: float
     message: str
 
 
 class FabricGPSInput(FuserInput[str]):
-    """
-    This input share GPS coordinates with the Fabric network and
-    retrieves the closest node to the current position.
+    """Share our GPS position with the Fabric network and fetch the closest peer.
+
+    **Mock‑friendly:** set `mock_mode=True` in the plugin config (or environment)
+    and the connector will fabricate a plausible peer 30‑50 m away instead of
+    calling the REST endpoint.  Useful for local testing before the chain is up.
     """
 
     def __init__(self, config: SensorConfig = SensorConfig()):
-        """
-        Initialize FabricGPSInput instance.
-        """
         super().__init__(config)
 
         self.descriptor_for_LLM = "Fabric Network GPS Input"
-
-        # Buffer for storing the final output
+        self.io = IOProvider()
         self.messages: List[str] = []
+        self.msg_q: Queue[str] = Queue()
 
-        # Set IO Provider
-        self.io_provider = IOProvider()
+        # endpoint / mock toggle -------------------------------------------------
+        self.fabric_endpoint = getattr(config, "fabric_endpoint", "http://localhost:8545")
+        self.mock_mode: bool = bool(getattr(config, "mock_mode", True))  # default ON for now
 
-        # Buffer for storing messages
-        self.message_buffer: Queue[str] = Queue()
-
-        # Fabric endpoint confguration
-        self.fabric_endpoint = getattr(
-            self.config, "fabric_endpoint", "http://localhost:8545"
-        )
-
+    # ────────────────────────────────────────────────────────────────────────
     async def _poll(self) -> Optional[str]:
-        """
-        Share GPS coordinates with the Fabric network and retrieve the closest node.
-
-        Returns
-        -------
-        Optional[str]
-            The closest node to the current position.
-        """
         await asyncio.sleep(0.5)
 
-        # Find the closest node
-        try:
-            find_closest_node_response = requests.post(
-                f"{self.fabric_endpoint}",
-                json={
-                    "method": "omp2p_findClosestPeer",
-                    "params": [{"latitude": 0, "longitude": 0}],
-                    "id": 1,
-                    "jsonrpc": "2.0",
-                },
-                headers={"Content-Type": "application/json"},
-            )
-            response = find_closest_node_response.json()
-            logging.info(f"Find closest node response: {response}")
-            if "result" in response and response["result"] and len(response["result"]) > 0:
-                logging.info(f"Found closest node: {response['result']}")
-                # Access the first result
-                peer_info = response["result"][0]["peer"]
-                lat = peer_info["latitude"]
-                lon = peer_info["longitude"]
-
-                # Save for others
-                self.io_provider.add_dynamic_variable("closest_peer_lat", lat)
-                self.io_provider.add_dynamic_variable("closest_peer_lon", lon)
-
-                # Optionally enqueue a human‑readable message
-                self.message_buffer.put(f"Closest peer at {lat:.5f}, {lon:.5f}")
-            else:
-                logging.info("No closest node found.")
+        # --------------------------------------------------------------------
+        if self.mock_mode:
+            peer_lat = getattr(self.config, "mock_lat")
+            peer_lon = getattr(self.config, "mock_lon")
+            logging.info(f"FabricGPS (mock): fabricated peer {peer_lat:.6f},{peer_lon:.6f}")
+        else:
+            if requests is None:
+                logging.error("FabricGPS: requests not available and mock_mode=False")
                 return None
-        except Exception as e:
-            logging.error(f"Error while finding the closest node: {e}")
-            return None
+            try:
+                resp = requests.post(
+                    self.fabric_endpoint,
+                    json={
+                        "method": "omp2p_findClosestPeer",
+                        "params": [{"latitude": lat, "longitude": lon}],
+                        "id": 1,
+                        "jsonrpc": "2.0",
+                    },
+                    timeout=3.0,
+                    headers={"Content-Type": "application/json"},
+                )
+                data = resp.json()
+                logging.debug(f"FabricGPS response: {data}")
+                peer_info = (data.get("result") or [{}])[0].get("peer")
+                if not peer_info:
+                    logging.info("FabricGPS: no peer found.")
+                    return None
+                peer_lat = peer_info["latitude"]
+                peer_lon = peer_info["longitude"]
+            except Exception as exc:  # pylint: disable=broad-except
+                logging.error(f"FabricGPS: error calling Fabric endpoint – {exc}")
+                return None
 
+        # store & enqueue ------------------------------------------------------
+        self.io.add_dynamic_variable("closest_peer_lat", peer_lat)
+        self.io.add_dynamic_variable("closest_peer_lon", peer_lon)
+
+        human_msg = f"Closest peer at {peer_lat:.5f}, {peer_lon:.5f}"
+        self.msg_q.put(human_msg)
+        return human_msg
+
+    # ────────────────────────────────────────────────────────────────────────
     async def raw_to_text(self, raw_input: Optional[str]):
-        """
-        Convert raw input to text and update message buffer.
-
-        Processes the raw input if present and adds the resulting
-        message to the internal message buffer.
-
-        Parameters
-        ----------
-        raw_input : Optional[str]
-            Raw input to be processed, or None if no input is available
-        """
         if raw_input is None:
             return
-
-        pending_message = await self._raw_to_text(raw_input)
-
-        if pending_message is not None:
-            self.messages.append(pending_message)
+        self.messages.append(raw_input)
 
     def formatted_latest_buffer(self) -> Optional[str]:
-        """
-        Format and clear the latest buffer contents.
-
-        Returns
-        -------
-        Optional[str]
-            Formatted string of buffer contents or None if buffer is empty
-        """
-        if len(self.messages) == 0:
+        if not self.msg_q.qsize():
             return None
-
-        result = f"""
+        msg = self.msg_q.get()
+        self.io.add_input(self.descriptor_for_LLM, msg, time.time())
+        return f"""
 {self.descriptor_for_LLM} INPUT
 // START
-{self.messages[-1]}
+{msg}
 // END
 """
-        self.io_provider.add_input(
-            self.descriptor_for_LLM, self.messages[-1], time.time()
-        )
-        self.messages = []
-        return result
