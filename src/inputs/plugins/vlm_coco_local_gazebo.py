@@ -1,9 +1,7 @@
 import asyncio
 import collections
 import logging
-import os
 import subprocess
-import sys
 import time
 from dataclasses import dataclass
 from typing import Optional
@@ -12,21 +10,13 @@ import cv2
 import numpy as np
 import torch
 from google.protobuf import text_format
+from om1_vlm.gz.msgs import image_pb2  # noqa
 from PIL import Image
 from torchvision.models import detection as detection_model
 
 from inputs.base import SensorConfig
 from inputs.base.loop import FuserInput
 from providers.io_provider import IOProvider
-
-# Get the absolute path of the directory containing image_pb2.py
-msgs_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../../gazebo"))
-
-# Add it to sys.path
-sys.path.append(msgs_path)
-
-# And now we can find this library...
-from gz.msgs import image_pb2  # noqa
 
 Detection = collections.namedtuple("Detection", "label, bbox, score")
 
@@ -93,6 +83,8 @@ class VLM_COCO_Local_Gazebo(FuserInput[Image.Image]):
         logging.info("COCO Object Detector Started")
 
         self.cam_third = 0  # This will be updated for _process_image is called
+
+        self.topic = getattr(self.config, "topic", "/camera")
 
     def _parse_text_message(self, text_data):
         """
@@ -172,7 +164,7 @@ class VLM_COCO_Local_Gazebo(FuserInput[Image.Image]):
         """
         try:
             result = subprocess.run(
-                ["gz", "topic", "-e", "-t", "/camera", "-n", "1"],
+                ["gz", "topic", "-e", "-t", self.topic, "-n", "1"],
                 capture_output=True,
                 text=True,
                 timeout=5,  # Avoid indefinite hangs
@@ -185,7 +177,9 @@ class VLM_COCO_Local_Gazebo(FuserInput[Image.Image]):
             return result.stdout
 
         except subprocess.TimeoutExpired:
-            logging.error("Subprocess timed out while fetching message from /camera.")
+            logging.error(
+                f"Subprocess timed out while fetching message from {self.topic}."
+            )
             return None
 
         except FileNotFoundError:
@@ -357,7 +351,7 @@ class VLM_COCO_Local_Gazebo(FuserInput[Image.Image]):
         logging.info(f"VLM_COCO_Local_Gazebo: {latest_message.message}")
 
         result = f"""
-{self.descriptor_for_LLM} INPUT
+INPUT: {self.descriptor_for_LLM}
 // START
 {latest_message.message}
 // END

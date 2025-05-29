@@ -20,14 +20,14 @@ def config():
 def mock_response():
     """Mock API response with markdown content"""
     return {
-        "structured_output": '{"commands":[{"type":"move","value":"wag tail"},{"type":"move","value":"walk"},{"type":"speak","value":"Woof! Hello there! I see you!"},{"type":"emotion","value":"joy"}]}'
+        "content": '{"actions":[{"type":"move","value":"wag tail"},{"type":"move","value":"walk"},{"type":"speak","value":"Woof! Hello there! I see you!"},{"type":"emotion","value":"joy"}]}'
     }
 
 
 @pytest.fixture
 def mock_structured_output_response():
     """Mock API response with structured output matching our model"""
-    return {"structured_output": {"result": "This is a structured result"}}
+    return {"content": {"result": "This is a structured result"}}
 
 
 @pytest.fixture
@@ -38,7 +38,7 @@ def llm(config):
 def test_init_with_config(llm, config):
     """Test initialization with provided configuration"""
     assert llm._config.api_key == config.api_key
-    assert llm.endpoint == "https://api.openmind.org/api/core/agent/robotic_team/runs"
+    assert llm.endpoint == "https://api.openmind.org/api/core/agent"
     assert llm._config.model == config.model
 
 
@@ -46,7 +46,7 @@ def test_init_with_default_model():
     """Test that the MultiLLM uses the default model when not specified"""
     config = LLMConfig(api_key="test_key")
     llm = MultiLLM(CortexOutputModel, config)
-    assert llm._config.model == "gemini-2.0-flash"
+    assert llm._config.model == "gpt-4.1-nano"
 
 
 def test_init_empty_key():

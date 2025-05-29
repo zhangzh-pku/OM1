@@ -1,4 +1,3 @@
-import json
 import logging
 import time
 import typing as T
@@ -44,16 +43,16 @@ class MultiLLM(LLM[R]):
             raise ValueError("config file missing api_key")
 
         if not config.model:
-            self._config.model = "gemini-2.0-flash"  # Use the exp version
+            self._config.model = "gpt-4.1-nano"
 
-        # Configure the API endpoint
-        self.endpoint = "https://api.openmind.org/api/core/agent/robotic_team/runs"
+        self.endpoint = "https://api.openmind.org/api/core/agent"
 
     async def ask(
         self, prompt: str, messages: T.List[T.Dict[str, str]] = []
     ) -> R | None:
         """
-        Send a prompt to the robotic team endpoint and get a structured response.
+        Send a prompt to the appropriate endpoint and get a structured response.
+        If RAG is enabled, it will query the knowledge base first.
 
         Parameters
         ----------
@@ -69,34 +68,26 @@ class MultiLLM(LLM[R]):
             parsing fails.
         """
         try:
-            logging.debug(f"MultiLLM input: {prompt}")
-
             self.io_provider.llm_start_time = time.time()
             self.io_provider.set_llm_prompt(prompt)
-
-            # Create a more detailed system prompt to ensure proper formatting
-            system_message = {
-                "role": "system",
-                "content": f"You are a robotic control system. Respond with valid structured output for these commands. Output schema: {json.dumps(self._output_model.model_json_schema(), indent=2)}",
-            }
-
-            # Add system message at the beginning
-            all_messages = [system_message]
-            if messages:
-                all_messages.extend(messages)
-            all_messages.append({"role": "user", "content": prompt})
 
             headers = {
                 "Authorization": f"Bearer {self._config.api_key}",
                 "Content-Type": "application/json",
             }
+
             request = {
-                "message": prompt,
+                "system_prompt": self.io_provider.fuser_system_prompt,
+                "inputs": self.io_provider.fuser_inputs,
+                "available_actions": self.io_provider.fuser_available_actions,
                 "model": self._config.model,
-                "messages": all_messages,
-                "response_model": self._output_model.model_json_schema(),
+                "response_format": self._output_model.model_json_schema(),
                 "structured_outputs": True,
             }
+
+            logging.debug(f"MultiLLM system_prompt: {request['system_prompt']}")
+            logging.debug(f"MultiLLM inputs: {request['inputs']}")
+            logging.debug(f"MultiLLM available_actions: {request['available_actions']}")
 
             response = requests.post(
                 self.endpoint,
@@ -108,11 +99,9 @@ class MultiLLM(LLM[R]):
             self.io_provider.llm_end_time = time.time()
             logging.info(f"Raw response: {response_json}")
 
-            structured_output = response_json.get("structured_output")
+            output = response_json.get("content")
             try:
-                parsed_response = self._output_model.model_validate_json(
-                    structured_output
-                )
+                parsed_response = self._output_model.model_validate_json(output)
                 logging.debug(f"MultiLLM structured output: {parsed_response}")
                 return parsed_response
             except Exception as e:
@@ -122,3 +111,9 @@ class MultiLLM(LLM[R]):
         except Exception as e:
             logging.error(f"Error during API request: {str(e)}")
             return None
+
+    async def close(self):
+        """Close the session when done."""
+        if self.session:
+            await self.session.close()
+            self.session = None

@@ -84,24 +84,44 @@ void setup()
   Serial.println(DeviceID);
 
   if (strcmp(DeviceID, "38e4bfd6") == 0) {
-    float mh[] = {24.420, -16.87, -3.880}; // in uTesla
-    float ms[] = { 0.959,  0.050, -0.038,  \
-                   0.050,  1.078,  0.002,  \
-                  -0.038,  0.002,  0.970}; 
+    float mh[]  = { 22.84, -11.84, 3.96 }; // in uTesla
+    float ms[]  = { +0.951, +0.059, -0.031, \
+                    +0.059, +1.091, +0.001, \
+                    -0.031, +0.001, +0.968 }; 
     float gc[] = { 0.000,  0.020,  0.010}; // in Radians/s
     memcpy(mag_hardiron,  mh, sizeof(mag_hardiron));
     memcpy(mag_softiron,  ms, sizeof(mag_softiron));
     memcpy(gyro_zerorate, gc, sizeof(gyro_zerorate));
   } else if (strcmp(DeviceID, "cfcdd0fb") == 0) {
-    float mh[]  = { -9.0, -5.0, 10.0 }; // in uTesla
-    float ms[]  = { 1.0, 0.0, 0.0, \
-                              0.0, 1.0, 0.0, \
-                              0.0, 0.0, 1.0 }; 
+    // not sure which Arduino this is
+    float mh[]  = { 22.84, -11.84, 3.96 }; // in uTesla
+    float ms[]  = { +0.951, +0.059, -0.031, \
+                    +0.059, +1.091, +0.001, \
+                    -0.031, +0.001, +0.968 }; 
     float gc[] = { 0.0, 0.0, 0.0 };
     memcpy(mag_hardiron,  mh, sizeof(mag_hardiron));
     memcpy(mag_softiron,  ms, sizeof(mag_softiron));
     memcpy(gyro_zerorate, gc, sizeof(gyro_zerorate));
-  } else {
+  } else if (strcmp(DeviceID, "ec414ffd") == 0) {
+    float mh[]  = { +12.26, -23.74, -9.67 }; // in uTesla
+    float ms[]  = { +0.948, +0.046, -0.038, \
+                    +0.047, +1.087, -0.033, \
+                    -0.036, -0.033, +0.974 }; 
+    float gc[] = { -0.0055, 0.0111, 0.0017 };
+    memcpy(mag_hardiron,  mh, sizeof(mag_hardiron));
+    memcpy(mag_softiron,  ms, sizeof(mag_softiron));
+    memcpy(gyro_zerorate, gc, sizeof(gyro_zerorate));
+  } else if (strcmp(DeviceID, "c80e5b02") == 0) {
+    float mh[]  = { -24.32, +4.52, +12.20 }; // in uTesla
+    float ms[]  = { +0.954, +0.061, -0.033, \
+                    +0.061, +1.085, +0.002, \
+                    -0.033, +0.002, +0.969 }; 
+    float gc[] = { -0.0328, +0.0521, 0.0156 };
+    memcpy(mag_hardiron,  mh, sizeof(mag_hardiron));
+    memcpy(mag_softiron,  ms, sizeof(mag_softiron));
+    memcpy(gyro_zerorate, gc, sizeof(gyro_zerorate));
+  } 
+  else {
     Serial.println("CAUTION: Magnetometer not calibrated - code will yield garbage - please calibrate your Magnetometer and IMU");
   }
 
@@ -194,10 +214,10 @@ void loop()
       
       // use this if you want decimal degrees
       Serial.print("GPS:");
-      Serial.print(latDecimal,6);
+      Serial.print(latDecimal,8);
       Serial.print(GPS.lat);
       Serial.print(",");
-      Serial.print(lonDecimal,6);
+      Serial.print(lonDecimal,8);
       Serial.print(GPS.lon);
 
       Serial.print(",KN:"); 
@@ -207,7 +227,15 @@ void loop()
       Serial.print(",ALT:"); 
       Serial.print(GPS.altitude);
       Serial.print(",SAT:"); 
-      Serial.println((int)GPS.satellites);
+      Serial.print((int)GPS.satellites);
+      Serial.print(",TIME:"); 
+      Serial.print(GPS.hour);
+      Serial.print(":"); 
+      Serial.print(GPS.minute);
+      Serial.print(":"); 
+      Serial.print(GPS.seconds);
+      Serial.print(":"); 
+      Serial.println(GPS.milliseconds);
     }
   }
 
