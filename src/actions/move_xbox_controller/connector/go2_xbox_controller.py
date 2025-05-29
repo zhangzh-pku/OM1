@@ -80,7 +80,7 @@ class Go2XboxControllerConnector(ActionConnector[IDLEInput]):
         # Movement speed
         # m/s?
         self.move_speed = 0.5
-        self.turn_speed = 0.5
+        self.turn_speed = 0.8
 
         self.dog_attitude = None
 
@@ -267,11 +267,11 @@ class Go2XboxControllerConnector(ActionConnector[IDLEInput]):
             elif d_pad_value == 7:  # Left
                 logging.info("D-pad LEFT - Turning left")
                 move_triggered_dpad = True
-                self._move_robot(0.0, self.move_speed)
+                self._move_robot(0.0, self.turn_speed)
             elif d_pad_value == 3:  # Right
                 logging.info("D-pad RIGHT - Turning right")
                 move_triggered_dpad = True
-                self._move_robot(0.0, -self.move_speed)
+                self._move_robot(0.0, -self.turn_speed)
             elif self.d_pad_previous > 0 and d_pad_value == 0:  # RELEASE
                 logging.debug("D-pad released - Stopping movement")
                 # self._move_robot(0.0, 0.0)
