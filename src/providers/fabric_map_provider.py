@@ -22,7 +22,7 @@ class FabricData:
     gps_lon: str
     gps_alt: float
     mag: float
-    update_time_local: str
+    update_time_local: float
     odom_x: float
     odom_y: float
     yaw_odom_0_360: float
