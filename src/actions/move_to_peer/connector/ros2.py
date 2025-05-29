@@ -79,7 +79,7 @@ class MoveToPeerRos2Connector(ActionConnector[MoveToPeerInput]):
             return
 
         # desired bearing (deg clockwise from North) ————————
-        bearing_deg = -(math.degrees(math.atan2(x_east, y_north)) + 360.0) % 360.0
+        bearing_deg = math.degrees(math.atan2(x_east, y_north)) % 360.0
 
         # --------------------------------------------------------------------
         if yaw_deg is None:
