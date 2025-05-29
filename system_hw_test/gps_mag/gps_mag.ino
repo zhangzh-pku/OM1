@@ -94,10 +94,10 @@ void setup()
     memcpy(gyro_zerorate, gc, sizeof(gyro_zerorate));
   } else if (strcmp(DeviceID, "cfcdd0fb") == 0) {
     // not sure which Arduino this is
-    float mh[]  = { 22.84, -11.84, 3.96 }; // in uTesla
-    float ms[]  = { +0.951, +0.059, -0.031, \
-                    +0.059, +1.091, +0.001, \
-                    -0.031, +0.001, +0.968 }; 
+    float mh[]  = { -15.53, 5.38, 19.17 }; // in uTesla
+    float ms[]  = { 0.934, 0.048, -0.021, \
+                              0.048, 1.090, 0.003, \
+                              -0.021, 0.003, 0.985 }; 
     float gc[] = { 0.0, 0.0, 0.0 };
     memcpy(mag_hardiron,  mh, sizeof(mag_hardiron));
     memcpy(mag_softiron,  ms, sizeof(mag_softiron));
