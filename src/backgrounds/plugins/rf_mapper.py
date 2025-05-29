@@ -126,7 +126,7 @@ class RFmapper(Background):
                                 mag=g["yaw_mag_0_360"],
                                 update_time_local=time.time(),
                                 odom_x=self.x,
-                                odom_y=self.x,
+                                odom_y=self.y,
                                 yaw_odom_0_360=self.yaw_odom_0_360,
                                 yaw_odom_m180_p180=self.yaw_odom_m180_p180,
                                 rf_data=self.scan_results,
