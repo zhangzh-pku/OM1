@@ -99,7 +99,7 @@ class MoveToPeerRos2Connector(ActionConnector[MoveToPeerInput]):
 
         # phase 1 — rotate toward peer --------------------------------------
         if abs(heading_err) > self.ANG_TOL_DEG:
-            yaw_rate = math.copysign(self.MAX_ROT_SPEED, math.radians(heading_err))
+            yaw_rate = math.copysign(self.MAX_ROT_SPEED, heading_err)
             logging.info(f"MoveToPeer: rotating in place at {yaw_rate:.2f} rad/s")
             self.sport_client.Move(0.0, 0.0, yaw_rate)
             # give the robot time to rotate a bit before this action returns
