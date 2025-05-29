@@ -137,7 +137,7 @@ class FabricDataSubmitter:
             logging.error(f"Error converting to dict: {str(e)}")
 
         if self.write_to_local_file:
-            name_used = self.write_dict_to_file(
+            self.write_dict_to_file(
                 json_dict, "fabric_log.jsonl", max_file_size_bytes=1024 * 512
             )
             logging.info(f"FDS wrote to this file: {name_used}")
