@@ -1,7 +1,7 @@
 import logging
 import time
 from concurrent.futures import ThreadPoolExecutor
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from enum import Enum
 
 import requests
@@ -159,7 +159,9 @@ class TeleopsStatus:
 
     update_time: str
     battery_status: BatteryStatus
-    action_status: ActionStatus
+    action_status: ActionStatus = field(
+        default_factory=lambda: ActionStatus(ActionType.AI, time.time())
+    )
     machine_name: str = "unknown"
     video_connected: bool = False
 
