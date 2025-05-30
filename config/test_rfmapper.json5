@@ -55,12 +55,12 @@
       "implementation": "passthrough",
       "connector": "go2_xbox_controller"
     },
-    {
-      "name": "move_go2_autonomy",
-      "llm_label": "move",
-      "implementation": "passthrough",
-      "connector": "unitree_sdk"
-    },
+    //{
+    //  "name": "move_go2_autonomy",
+    //  "llm_label": "move",
+    //  "implementation": "passthrough",
+    //  "connector": "unitree_sdk"
+    //},
   ],
   "backgrounds": [
     {
