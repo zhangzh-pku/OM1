@@ -116,8 +116,6 @@ class OdomProvider:
         logging.debug(f"Odom listener: {self._odom}")
 
         p = self._odom.pose.pose
-        self.body_height_cm = 0.0
-        self.body_attitude = None
         self.process_odom(p)
 
     def pose_message_handler(self, msg: PoseStamped_):
@@ -255,7 +253,13 @@ class OdomProvider:
         -------
         dict
             A dictionary containing the current position and orientation of the robot.
-            Keys: x, y, yaw_odom_0_360, body_height_cm, body_attitude.
+            Keys include:
+            - x: The x coordinate of the robot in the world frame.
+            - y: The y coordinate of the robot in the world frame.
+            - moving: A boolean indicating if the robot is currently moving.
+            - yaw_odom_0_360: The yaw angle of the robot in degrees, ranging from 0 to 360.
+            - body_height_cm: The height of the robot's body in centimeters.
+            - body_attitude: The current attitude of the robot (e.g., sitting or standing).
         """
         return {
             "x": self.x,
