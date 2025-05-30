@@ -336,11 +336,11 @@ class MoveUnitreeSDKConnector(ActionConnector[MoveInput]):
                 progress = round(abs(self.gap_previous - gap), 2)
                 self.gap_previous = gap
                 if self.movement_attempts > 0:
-                    logging.info(f"Turn GAP delta: {progress}deg")
-                    if progress < 1.0:  # deg
-                        # we might be stuck or something else is wrong
-                        self.clean_abort()
-                        return
+                    logging.info(f"Turn GAP delta: {progress}DEG")
+                    # if progress < 1.0:  # deg
+                    #     # we might be stuck or something else is wrong
+                    #     self.clean_abort()
+                    #     return
                 if abs(gap) > 10.0:
                     logging.debug("gap is big, using large displacements")
                     self.movement_attempts += 1
@@ -385,10 +385,10 @@ class MoveUnitreeSDKConnector(ActionConnector[MoveInput]):
                 self.gap_previous = gap
                 if self.movement_attempts > 0:
                     logging.info(f"Forward/retreat GAP delta: {progress}m")
-                    if progress < 0.03:  # cm
-                        # we might be stuck or something else is wrong
-                        self.clean_abort()
-                        return
+                    # if progress < 0.03:  # cm
+                    #     # we might be stuck or something else is wrong
+                    #     self.clean_abort()
+                    #     return
 
                 fb = 0
                 if "advance" in direction and self.advance:
