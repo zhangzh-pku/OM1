@@ -77,8 +77,7 @@ class Go2XboxControllerConnector(ActionConnector[IDLEInput]):
 
         self.RTLT_moving = False
 
-        # Movement speed
-        # m/s?
+        # Movement speed m/s and rad/s (?)
         self.move_speed = 0.5
         self.turn_speed = 0.8
 

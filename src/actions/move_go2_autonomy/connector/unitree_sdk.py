@@ -1,6 +1,5 @@
 import logging
 import math
-import random
 import threading
 import time
 from enum import Enum
@@ -26,8 +25,8 @@ class MoveUnitreeSDKConnector(ActionConnector[MoveInput]):
         self.dog_attitude = None
         self.dog_moving = None
 
-        self.move_speed = 0.7
-        self.turn_speed = 0.6
+        self.move_speed = 0.5
+        self.turn_speed = 0.8
 
         self.angle_tolerance = 5.0
         self.distance_tolerance = 0.05  # m
@@ -43,9 +42,9 @@ class MoveUnitreeSDKConnector(ActionConnector[MoveInput]):
         self.lidar = None
 
         self.turn_left = []
-        self.advance = []
+        self.advance = False
         self.turn_right = []
-        self.retreat = []
+        self.retreat = False
 
         self.lidar = RPLidarProvider()
         self.lidar_on = self.lidar.running
@@ -58,7 +57,6 @@ class MoveUnitreeSDKConnector(ActionConnector[MoveInput]):
             self.sport_client = SportClient()
             self.sport_client.SetTimeout(10.0)
             self.sport_client.Init()
-            # self.sport_client.Move(0.1, 0, 0)
             logging.info("Autonomy Unitree sport client initialized")
         except Exception as e:
             logging.error(f"Error initializing Unitree sport client: {e}")
@@ -149,10 +147,6 @@ class MoveUnitreeSDKConnector(ActionConnector[MoveInput]):
             if len(self.turn_left) == 0:
                 logging.warning("Cannot turn left due to barrier")
                 return
-            path = random.choice(self.turn_left)
-            logging.info(f"Path choice: {path}")
-            # ToDo - use specific path value for tight/soft turns
-            # hardcode for now
             target_yaw = self.yaw_now - 90.0
             if target_yaw <= -180:
                 target_yaw += 360.0
@@ -162,21 +156,17 @@ class MoveUnitreeSDKConnector(ActionConnector[MoveInput]):
             if len(self.turn_right) == 0:
                 logging.warning("Cannot turn right due to barrier")
                 return
-            path = random.choice(self.turn_right)
-            logging.info(f"Path choice: {path}")
-            # ToDo - use specific path value for tight/soft turns
-            # hardcode for now
             target_yaw = self.yaw_now + 90.0
             if target_yaw >= 180.0:
                 target_yaw -= 360.0
             self.pending_movements.put([0.0, target_yaw, "turn"])
         elif output_interface.action == "move forwards":
-            if len(self.advance) == 0:
+            if not self.advance:
                 logging.warning("Cannot advance due to barrier")
                 return
             self.pending_movements.put([0.5, 0.0, "advance", self.x, self.y])
         elif output_interface.action == "move back":
-            if len(self.retreat) == 0:
+            if not self.retreat:
                 logging.warning("Cannot retreat due to barrier")
                 return
             self.pending_movements.put([0.5, 0.0, "retreat", self.x, self.y])
@@ -237,9 +227,9 @@ class MoveUnitreeSDKConnector(ActionConnector[MoveInput]):
 
                 if self.lidar:
                     self.turn_left = []
-                    self.advance = []
+                    self.advance = False
                     self.turn_right = []
-                    self.retreat = []
+                    self.retreat = False
                     # reconfirm possible paths
                     # this is needed due to the 2s latency of the LLMs
                     possible_paths = self.lidar.valid_paths
@@ -249,11 +239,15 @@ class MoveUnitreeSDKConnector(ActionConnector[MoveInput]):
                             if p < 4:
                                 self.turn_left.append(p)
                             elif p == 4:
-                                self.advance.append(p)
+                                self.advance = True
                             elif p < 9:
-                                self.turn_right.append(p)
+                                # flip the right turn encoding to make it
+                                # a mirror of the left hand encoding
+                                self.turn_right.append(8 - p)
+                                # so now 8 -> 0, corresponding to a sharp right turn etc
+                                # so now 5 -> 3, corresponding to a gentle right turn etc
                             elif p == 9:
-                                self.retreat.append(p)
+                                self.retreat = True
 
             else:
                 logging.warn("Go2 x,y,yaw: NAVIGATION NOT PROVIDING DATA")
@@ -273,6 +267,14 @@ class MoveUnitreeSDKConnector(ActionConnector[MoveInput]):
             self.sport_client.Move(vx, vy, vturn)
         except Exception as e:
             logging.error(f"Error moving robot: {e}")
+
+    def clean_abort(self) -> None:
+        if self.sport_client:
+            self.sport_client.StopMove()
+        self.movement_attempts = 0
+        self.pending_movements.get()
+        # pop 1 off the pending queue
+        # move to next command
 
     def tick(self) -> None:
 
@@ -304,18 +306,15 @@ class MoveUnitreeSDKConnector(ActionConnector[MoveInput]):
 
             if self.movement_attempts > 10:
                 # abort - we are not converging
-                if self.sport_client:
-                    self.sport_client.StopMove()
-                self.movement_attempts = 0
-                self.pending_movements.get()
-                logging.info("TIMEOUT - AI movement command timeout - not converging - issued StopMove()")
+                self.clean_abort()
+                logging.info(
+                    "TIMEOUT - AI movement command timeout - not converging - issued StopMove()"
+                )
                 return
 
             goal_dx = current_target[0]
             goal_yaw = current_target[1]
             direction = current_target[2]
-
-            turn_rate = 0.8
 
             if "turn" in direction:
                 gap = self.yaw_now - goal_yaw
@@ -324,8 +323,8 @@ class MoveUnitreeSDKConnector(ActionConnector[MoveInput]):
                 elif gap < -180.0:
                     gap += 360.0
                 logging.info(f"remaining turn GAP: {round(gap,2)}")
-                progress = self.gap_previous - round(gap,2)
-                self.gap_previous = round(gap,2)
+                progress = self.gap_previous - round(gap, 2)
+                self.gap_previous = round(gap, 2)
                 if self.movement_attempts > 0:
                     logging.info(f"Turn GAP change: {progress}")
                 # check for responsivity of movement platform
@@ -334,66 +333,60 @@ class MoveUnitreeSDKConnector(ActionConnector[MoveInput]):
                     logging.debug("gap is big, using large displacements")
                     self.movement_attempts += 1
                     if gap > 0:
-                        if len(self.turn_left) < 4:
+                        if len(self.turn_left) == 0:
                             logging.warning("Cannot turn left due to barrier")
+                            self.clean_abort()
                             return
+                        sharpness = min(self.turn_left)
+                        # this can be 0, 1, 2, or 3
                         # turn combines forward motion with rotation
-                        self._move_robot(0.5, 0, turn_rate)
+                        self._move_robot(sharpness * 0.15, 0, self.turn_speed)
                     elif gap < 0:
-                        if len(self.turn_right) < 4:
+                        if len(self.turn_right) == 0:
                             logging.warning("Cannot turn right due to barrier")
+                            self.clean_abort()
                             return
+                        sharpness = min(self.turn_right)
+                        # this can be 0, 1, 2, or 3
                         # turn combines forward motion with rotation
-                        self._move_robot(0.5, 0, -1*turn_rate)
+                        self._move_robot(sharpness * 0.15, 0, -1 * self.turn_speed)
                 elif abs(gap) > self.angle_tolerance and abs(gap) <= 10.0:
                     logging.debug("gap is getting smaller, using smaller steps")
                     self.movement_attempts += 1
+                    # rotate only because we are so close
+                    # no need to check barriers because we are just performing small rotations
                     if gap > 0:
-                        if len(self.turn_left) < 4:
-                            logging.warning("Cannot turn left due to barrier")
-                            return
-                        self._move_robot(0.2, 0, 0.2)
+                        self._move_robot(0, 0, 0.2)
                     elif gap < 0:
-                        if len(self.turn_right) < 4:
-                            logging.warning("Cannot turn right due to barrier")
-                            return
-                        self._move_robot(0.2, 0, -0.2)
+                        self._move_robot(0, 0, -0.2)
                 elif abs(gap) <= self.angle_tolerance:
                     logging.info(
-                        "turn is completed, gap is small enough, done, pop 1 off queue"
+                        "turn completed normally, processing next AI movement command"
                     )
-                    if self.sport_client:
-                        self.sport_client.StopMove()
-                    self.movement_attempts = 0
-                    self.pending_movements.get()
+                    self.clean_abort()
             else:
-                # reconfirm possible paths
-                pp = self.lidar.valid_paths
-
-                logging.debug(f"Action move/advance - Valid paths: {pp}")
-
                 s_x = target[0][3]
                 s_y = target[0][4]
                 distance_traveled = math.sqrt((self.x - s_x) ** 2 + (self.y - s_y) ** 2)
                 remaining = abs(goal_dx - distance_traveled)
-                logging.info(f"remaining advance GAP: {round(remaining,2)}")
+                remaining = round(remaining, 2)
+                logging.info(f"remaining advance/retreat GAP: {remaining}")
 
                 fb = 0
-                if "advance" in direction and len(self.advance) == 1:
+                if "advance" in direction and self.advance:
                     fb = 1
-                elif "retreat" in direction and len(self.retreat) == 1:
+                elif "retreat" in direction and self.retreat:
                     fb = -1
                 else:
-                    logging.info("danger, pop 1 off queue")
-                    self.movement_attempts = 0
-                    self.pending_movements.get()
+                    logging.info("advance/retreat danger, pop 1 off queue")
+                    self.clean_abort()
                     return
 
                 if remaining > self.distance_tolerance:
                     self.movement_attempts += 1
                     if distance_traveled < goal_dx:  # keep advancing
                         logging.info(f"keep moving. remaining:{remaining} ")
-                        self._move_robot(fb * 0.5, 0.0, 0.0)
+                        self._move_robot(fb * self.move_speed, 0.0, 0.0)
                     elif distance_traveled > goal_dx:  # you moved too far
                         logging.debug(
                             f"OVERSHOOT: move other way. remaining:{remaining} "
@@ -401,11 +394,8 @@ class MoveUnitreeSDKConnector(ActionConnector[MoveInput]):
                         self._move_robot(-1 * fb * 0.2, 0.0, 0.0)
                 else:
                     logging.info(
-                        "advance is completed, gap is small enough, done, pop 1 off queue"
+                        "advance/retreat completed normally, processing next AI movement command"
                     )
-                    if self.sport_client:
-                        self.sport_client.StopMove()
-                    self.movement_attempts = 0
-                    self.pending_movements.get()
+                    self.clean_abort()
 
         time.sleep(0.1)
