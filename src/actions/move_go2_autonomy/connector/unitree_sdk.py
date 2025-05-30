@@ -1,6 +1,5 @@
 import logging
 import math
-import threading
 import time
 from queue import Queue
 
@@ -28,13 +27,7 @@ class MoveUnitreeSDKConnector(ActionConnector[MoveInput]):
         self.movement_attempt_limit = 15
         self.gap_previous = 0
 
-        self.turn_left = []
-        self.advance = False
-        self.turn_right = []
-        self.retreat = False
-
         self.lidar = RPLidarProvider()
-        self.lidar_on = self.lidar.running
 
         # create sport client
         self.sport_client = None
@@ -49,70 +42,10 @@ class MoveUnitreeSDKConnector(ActionConnector[MoveInput]):
         self.odom = OdomProvider()
         logging.info(f"Autonomy Odom Provider: {self.odom}")
 
-        self.thread_lock = threading.Lock()
-
-    # def _execute_command_thread(self, command: str) -> None:
-
-    #         try:
-    #             if command == "StandUp" and self.odom.body_attitude == RobotState.STANDING:
-    #                 logging.info("Already standing, skipping command")
-    #                 return
-    #             elif (
-    #                 command == "StandDown" and self.odom.body_attitude == RobotState.SITTING
-    #             ):
-    #                 logging.info("Already sitting, skipping command")
-    #                 return
-
-    #         code = getattr(self.sport_client, command)()
-    #         logging.info(f"Unitree command {command} executed with code {code}")
-
-    #     except Exception as e:
-    #         logging.error(f"Error in command thread {command}: {e}")
-    #     finally:
-    #         self.thread_lock.release()
-
-    # def _execute_sport_command_sync(self, command: str) -> None:
-
-    #     if not self.sport_client:
-    #         return
-
-    #     if not self.thread_lock.acquire(blocking=False):
-    #         logging.info("Action already in progress, skipping")
-    #         return
-
-    #     try:
-    #         thread = threading.Thread(
-    #             target=self._execute_command_thread, args=(command,), daemon=True
-    #         )
-    #         thread.start()
-    #     except Exception as e:
-    #         logging.error(f"Error executing Unitree command {command}: {e}")
-    #         self.thread_lock.release()
-
-    # async def _execute_sport_command(self, command: str) -> None:
-
-    #     if not self.sport_client:
-    #         return
-
-    #     if not self.thread_lock.acquire(blocking=False):
-    #         logging.info("Action already in progress, skipping")
-    #         return
-
-    #     try:
-    #         thread = threading.Thread(
-    #             target=self._execute_command_thread, args=(command,), daemon=True
-    #         )
-    #         thread.start()
-    #     except Exception as e:
-    #         logging.error(f"Error executing Unitree command {command}: {e}")
-    #         self.thread_lock.release()
-
     async def connect(self, output_interface: MoveInput) -> None:
 
         # this is used only by the LLM
         logging.info(f"AI command.connect: {output_interface.action}")
-
-        self.possible_path_refresh()
 
         if self.odom.moving:
             # for example due to a teleops or game controller command
@@ -131,7 +64,7 @@ class MoveUnitreeSDKConnector(ActionConnector[MoveInput]):
 
         if output_interface.action == "turn left":
             # turn 90 Deg to the left (CCW)
-            if len(self.turn_left) == 0:
+            if len(self.lidar.turn_left) == 0:
                 logging.warning("Cannot turn left due to barrier")
                 return
             target_yaw = self.odom.yaw_odom_m180_p180 - 90.0
@@ -140,7 +73,7 @@ class MoveUnitreeSDKConnector(ActionConnector[MoveInput]):
             self.pending_movements.put([0.0, round(target_yaw, 2), "turn"])
         elif output_interface.action == "turn right":
             # turn 90 Deg to the right (CW)
-            if len(self.turn_right) == 0:
+            if len(self.lidar.turn_right) == 0:
                 logging.warning("Cannot turn right due to barrier")
                 return
             target_yaw = self.odom.yaw_odom_m180_p180 + 90.0
@@ -148,14 +81,14 @@ class MoveUnitreeSDKConnector(ActionConnector[MoveInput]):
                 target_yaw -= 360.0
             self.pending_movements.put([0.0, round(target_yaw, 2), "turn"])
         elif output_interface.action == "move forwards":
-            if not self.advance:
+            if not self.lidar.advance:
                 logging.warning("Cannot advance due to barrier")
                 return
             self.pending_movements.put(
                 [0.5, 0.0, "advance", round(self.odom.x, 2), round(self.odom.y, 2)]
             )
         elif output_interface.action == "move back":
-            if not self.retreat:
+            if not self.lidar.retreat:
                 logging.warning("Cannot retreat due to barrier")
                 return
             self.pending_movements.put(
@@ -188,31 +121,6 @@ class MoveUnitreeSDKConnector(ActionConnector[MoveInput]):
         #     logging.info("Unitree AI command: dance")
         #     await self._execute_sport_command("Dance1")
 
-    def possible_path_refresh(self):
-        if self.lidar:
-            self.turn_left = []
-            self.advance = False
-            self.turn_right = []
-            self.retreat = False
-            # reconfirm possible paths
-            # this is needed due to the 2s latency of the LLMs
-            possible_paths = self.lidar.valid_paths
-            logging.info(f"Action - Valid paths: {possible_paths}")
-            if possible_paths is not None:
-                for p in possible_paths:
-                    if p < 4:
-                        self.turn_left.append(p)
-                    elif p == 4:
-                        self.advance = True
-                    elif p < 9:
-                        # flip the right turn encoding to make it
-                        # a mirror of the left hand encoding
-                        self.turn_right.append(8 - p)
-                        # so now 8 -> 0, corresponding to a sharp right turn etc
-                        # so now 5 -> 3, corresponding to a gentle right turn etc
-                    elif p == 9:
-                        self.retreat = True
-
     def _move_robot(self, vx, vy, vturn=0.0) -> None:
 
         logging.info(f"_move_robot: vx={vx}, vy={vy}, vturn={vturn}")
@@ -240,8 +148,6 @@ class MoveUnitreeSDKConnector(ActionConnector[MoveInput]):
     def tick(self) -> None:
 
         logging.debug("AI Motion Tick")
-
-        self.possible_path_refresh()
 
         if self.odom.odom is None:
             # this value is never precisely None except while
@@ -309,20 +215,20 @@ class MoveUnitreeSDKConnector(ActionConnector[MoveInput]):
                     logging.debug("gap is big, using large displacements")
                     self.movement_attempts += 1
                     if gap > 0:
-                        if len(self.turn_left) == 0:
+                        if len(self.lidar.turn_left) == 0:
                             logging.warning("Cannot turn left due to barrier")
                             self.clean_abort()
                             return
-                        sharpness = min(self.turn_left)
+                        sharpness = min(self.lidar.turn_left)
                         # this can be 0, 1, 2, or 3
                         # turn combines forward motion with rotation
                         self._move_robot(sharpness * 0.15, 0, self.turn_speed)
                     elif gap < 0:
-                        if len(self.turn_right) == 0:
+                        if len(self.lidar.turn_right) == 0:
                             logging.warning("Cannot turn right due to barrier")
                             self.clean_abort()
                             return
-                        sharpness = min(self.turn_right)
+                        sharpness = min(self.lidar.turn_right)
                         # this can be 0, 1, 2, or 3
                         # turn combines forward motion with rotation
                         self._move_robot(sharpness * 0.15, 0, -1 * self.turn_speed)
@@ -357,9 +263,9 @@ class MoveUnitreeSDKConnector(ActionConnector[MoveInput]):
                     #     return
 
                 fb = 0
-                if "advance" in direction and self.advance:
+                if "advance" in direction and self.lidar.advance:
                     fb = 1
-                elif "retreat" in direction and self.retreat:
+                elif "retreat" in direction and self.lidar.retreat:
                     fb = -1
                 else:
                     logging.info("advance/retreat danger, pop 1 off queue")

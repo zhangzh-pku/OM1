@@ -1,7 +1,7 @@
 import logging
 import math
 from enum import Enum
-from typing import Any, Optional, Union
+from typing import Optional, Union
 
 import zenoh
 
@@ -104,13 +104,13 @@ class OdomProvider:
         self.yaw_odom_0_360 = 0.0
         self.yaw_odom_m180_p180 = 0.0
 
-    def zenoh_odom_handler(self, data: Any):
+    def zenoh_odom_handler(self, data: zenoh.Sample):
         """
         Zenoh odom handler.
 
         Parameters
         ----------
-        data : Any
+        data : zenoh.Sample
             The data received from the Zenoh subscriber.
         """
         self._odom: Odometry = nav_msgs.Odometry.deserialize(data.payload.to_bytes())
