@@ -158,7 +158,9 @@ class OdomProvider:
             # we want to detect movement quickly (and flip "moving" False->True), but
             # wait for the platform to stabilize before we flip "moving" True->False
             self.moving = True
-            logging.info(f"delta moving: {delta} {self.move_history}")
+            logging.info(
+                f"delta moving (m): {round(delta,3)} {round(self.move_history,3)}"
+            )
         else:
             self.moving = False
 
