@@ -12,14 +12,6 @@ from providers.odom_provider import OdomProvider
 from providers.rplidar_provider import RPLidarProvider
 from zenoh_idl import geometry_msgs, sensor_msgs
 
-gHazard = None
-
-
-def listenerHazard(data):
-    global gHazard
-    gHazard = sensor_msgs.HazardDetectionVector.deserialize(data.payload.to_bytes())
-    logging.debug(f"Hazard listener: {gHazard}")
-
 
 class MoveZenohConnector(ActionConnector[MoveInput]):
 
@@ -32,10 +24,6 @@ class MoveZenohConnector(ActionConnector[MoveInput]):
 
         self.pending_movements = Queue()
 
-        self.x = 0.0
-        self.y = 0.0
-        self.z = 0.0
-        self.yaw_now = 0.0
         self.hazard = None
         self.emergency = None
 
@@ -56,19 +44,33 @@ class MoveZenohConnector(ActionConnector[MoveInput]):
             logging.info(f"Zenoh move client opened {self.session}")
             logging.info(f"TurtleBot4 hazard listener starting with URID: {URID}")
             self.session.declare_subscriber(
-                f"{URID}/c3/hazard_detection", listenerHazard
+                f"{URID}/c3/hazard_detection", self.listen_hazard
             )
         except Exception as e:
             logging.error(f"Error opening Zenoh client: {e}")
 
         self.lidar = RPLidarProvider()
-        self.odom = OdomProvider()
+        self.odom = OdomProvider(URID=URID, use_zenoh=True)
 
-    def hazardProcessor(self):
-        global gHazard
-        logging.debug(f"Hazard processor: {gHazard}")
-        if gHazard is not None and gHazard.detections and len(gHazard.detections) > 0:
-            for haz in gHazard.detections:
+    def listen_hazard(self, data: zenoh.Sample) -> None:
+        """
+        Callback for Zenoh hazard detection messages.
+        This method is called when a hazard detection message is received.
+
+        Parameters
+        ----------
+        data : zenoh.Sample
+            The Zenoh sample containing the hazard detection data.
+        """
+        self.hazard = sensor_msgs.HazardDetectionVector.deserialize(
+            data.payload.to_bytes()
+        )
+        if (
+            self.hazard is not None
+            and self.hazard.detections
+            and len(self.hazard.detections) > 0
+        ):
+            for haz in self.hazard.detections:
                 if haz.type == 1:
                     logging.info(
                         f"Hazard Type:{haz.type} direction:{haz.header.frame_id}"
@@ -83,22 +85,6 @@ class MoveZenohConnector(ActionConnector[MoveInput]):
                         else:
                             self.hazard = "TURN_RIGHT"
                     logging.info(f"Hazard decision: {self.hazard}")
-
-    def navigationProcessor(self):
-        if hasattr(self.odom, "running"):
-            if self.odom.running:
-                self.yaw_now = self.odom.odom["yaw_odom_m180_p180"]
-                # CW yaw = positive
-
-                # current position in world frame
-                self.x = self.odom.odom["x"]
-                self.y = self.odom.odom["y"]
-
-                logging.debug(
-                    f"TB4 x,y,yaw: {round(self.x,2)},{round(self.y,2)},{round(self.yaw_now,2)}"
-                )
-            else:
-                logging.warn("TB4 x,y,yaw: NAVIGATION NOT PROVIDING DATA")
 
     def move(self, vx, vyaw):
         """
@@ -129,7 +115,7 @@ class MoveZenohConnector(ActionConnector[MoveInput]):
             logging.info("Avoiding barrier: disregarding new AI command")
             return
 
-        if self.x == 0.0:
+        if self.odom.x == 0.0:
             # this value is never precisely zero EXCEPT while
             # booting and waiting for data to arrive
             logging.info("Waiting for location data")
@@ -151,24 +137,24 @@ class MoveZenohConnector(ActionConnector[MoveInput]):
 
         if output_interface.action == "turn left":
             # turn 90 Deg to the left (CCW)
-            target_yaw = self.yaw_now - 90.0
+            target_yaw = self.odom.yaw_odom_m180_p180 - 30.0
             if target_yaw <= -180:
                 target_yaw += 360.0
             self.pending_movements.put([0.0, target_yaw, "turn"])
         elif output_interface.action == "turn right":
             # turn 90 Deg to the right (CW)
-            target_yaw = self.yaw_now + 90.0
+            target_yaw = self.odom.yaw_odom_m180_p180 + 30.0
             if target_yaw >= 180.0:
                 target_yaw -= 360.0
             self.pending_movements.put([0.0, target_yaw, "turn"])
         elif output_interface.action == "move forwards":
             if advance_danger:
                 return
-            self.pending_movements.put([0.5, 0.0, "advance", self.x, self.y])
+            self.pending_movements.put([0.5, 0.0, "advance", self.odom.x, self.odom.y])
         elif output_interface.action == "move back":
             if retreat_danger:
                 return
-            self.pending_movements.put([0.5, 0.0, "retreat", self.x, self.y])
+            self.pending_movements.put([0.5, 0.0, "retreat", self.odom.x, self.odom.y])
         elif output_interface.action == "stand still":
             logging.info(f"AI movement command: {output_interface.action}")
             # do nothing
@@ -181,10 +167,7 @@ class MoveZenohConnector(ActionConnector[MoveInput]):
 
         logging.debug("Move tick")
 
-        self.hazardProcessor()
-        self.odomProcessor()
-
-        if self.x == 0.0:
+        if self.odom.x == 0.0:
             # this value is never precisely zero except while
             # booting and waiting for data to arrive
             logging.info("Waiting for odom data")
@@ -193,12 +176,12 @@ class MoveZenohConnector(ActionConnector[MoveInput]):
         # physical collision event ALWAYS takes precedence
         if self.hazard is not None:
             if self.hazard == "TURN_RIGHT":
-                target_yaw = self.yaw_now + 100.0
+                target_yaw = self.odom.yaw_odom_m180_p180 + 100.0
                 if target_yaw >= 180.0:
                     target_yaw -= 360.0
                 self.emergency = target_yaw
             elif self.hazard == "TURN_LEFT":
-                target_yaw = self.yaw_now - 100.0
+                target_yaw = self.odom.yaw_odom_m180_p180 - 100.0
                 if target_yaw <= -180:
                     target_yaw += 360.0
                 self.emergency = target_yaw
@@ -214,7 +197,7 @@ class MoveZenohConnector(ActionConnector[MoveInput]):
             target = self.emergency
             logging.info(f"Emergency target: {target}")
 
-            gap = self.yaw_now - target
+            gap = self.odom.yaw_odom_m180_p180 - target
             if gap > 180.0:
                 gap -= 360.0
             elif gap < -180.0:
@@ -223,9 +206,9 @@ class MoveZenohConnector(ActionConnector[MoveInput]):
             """
             gap is a SIGNED value indicating:
                 * the direction to turn to get to goal, and
-                * the magnitude remaining to turn 
+                * the magnitude remaining to turn
 
-            a mathematically equivalent way to do this is 
+            a mathematically equivalent way to do this is
 
             a = targetA - sourceA
             a = (a + 180) % 360 - 180
@@ -260,14 +243,16 @@ class MoveZenohConnector(ActionConnector[MoveInput]):
 
             current_target = target[0]
 
-            logging.debug(f"Target: {current_target} current yaw: {self.yaw_now}")
+            logging.debug(
+                f"Target: {current_target} current yaw: {self.odom.yaw_odom_m180_p180}"
+            )
 
             goal_dx = current_target[0]
             goal_yaw = current_target[1]
             direction = current_target[2]
 
             if "turn" in direction:
-                gap = self.yaw_now - goal_yaw
+                gap = self.odom.yaw_odom_m180_p180 - goal_yaw
                 if gap > 180.0:
                     gap -= 360.0
                 elif gap < -180.0:
@@ -298,7 +283,9 @@ class MoveZenohConnector(ActionConnector[MoveInput]):
 
                 s_x = target[0][3]
                 s_y = target[0][4]
-                distance_traveled = math.sqrt((self.x - s_x) ** 2 + (self.y - s_y) ** 2)
+                distance_traveled = math.sqrt(
+                    (self.odom.x - s_x) ** 2 + (self.odom.y - s_y) ** 2
+                )
                 remaining = abs(goal_dx - distance_traveled)
                 logging.info(f"remaining advance GAP: {round(remaining,2)}")
 

@@ -207,55 +207,54 @@ class MoveUnitreeSDKConnector(ActionConnector[MoveInput]):
         #     await self._execute_sport_command("Dance1")
 
     def odomDataRefresh(self):
-        if hasattr(self.odom, "running"):
-            if self.odom.running:
-                nav = self.odom.odom
-                logging.debug(f"Go2 Odom data: {nav}")
+        nav = self.odom.odom
+        if not nav:
+            logging.info("Waiting for odom data")
+            return
 
-                if nav["body_attitude"] == "standing":
-                    self.dog_attitude = RobotState.STANDING
-                else:
-                    self.dog_attitude = RobotState.SITTING
+        logging.debug(f"Go2 Odom data: {nav}")
 
-                if nav["moving"]:
-                    # for conceptual clarity
-                    self.dog_moving = True
-                else:
-                    self.dog_moving = False
+        if nav["body_attitude"] == "standing":
+            self.dog_attitude = RobotState.STANDING
+        else:
+            self.dog_attitude = RobotState.SITTING
 
-                self.yaw_now = nav["yaw_odom_m180_p180"]
-                # CW yaw = positive
+        if nav["moving"]:
+            # for conceptual clarity
+            self.dog_moving = True
+        else:
+            self.dog_moving = False
 
-                # current position in world frame
-                self.x = nav["x"]
-                self.y = nav["y"]
+        self.yaw_now = nav["yaw_odom_m180_p180"]
+        # CW yaw = positive
 
-                logging.debug(
-                    f"Go2 x,y,yaw: {round(self.x,2)},{round(self.y,2)},{round(self.yaw_now,2)}"
-                )
+        # current position in world frame
+        self.x = nav["x"]
+        self.y = nav["y"]
 
-                if self.lidar:
-                    self.turn_left = []
-                    self.advance = []
-                    self.turn_right = []
-                    self.retreat = []
-                    # reconfirm possible paths
-                    # this is needed due to the 2s latency of the LLMs
-                    possible_paths = self.lidar.valid_paths
-                    logging.info(f"Action - Valid paths: {possible_paths}")
-                    if possible_paths is not None:
-                        for p in possible_paths:
-                            if p < 4:
-                                self.turn_left.append(p)
-                            elif p == 4:
-                                self.advance.append(p)
-                            elif p < 9:
-                                self.turn_right.append(p)
-                            elif p == 9:
-                                self.retreat.append(p)
+        logging.debug(
+            f"Go2 x,y,yaw: {round(self.x,2)},{round(self.y,2)},{round(self.yaw_now,2)}"
+        )
 
-            else:
-                logging.warn("Go2 x,y,yaw: NAVIGATION NOT PROVIDING DATA")
+        if self.lidar:
+            self.turn_left = []
+            self.advance = []
+            self.turn_right = []
+            self.retreat = []
+            # reconfirm possible paths
+            # this is needed due to the 2s latency of the LLMs
+            possible_paths = self.lidar.valid_paths
+            logging.info(f"Action - Valid paths: {possible_paths}")
+            if possible_paths is not None:
+                for p in possible_paths:
+                    if p < 4:
+                        self.turn_left.append(p)
+                    elif p == 4:
+                        self.advance.append(p)
+                    elif p < 9:
+                        self.turn_right.append(p)
+                    elif p == 9:
+                        self.retreat.append(p)
 
     def _move_robot(self, vx, vy, vturn=0.0) -> None:
 
