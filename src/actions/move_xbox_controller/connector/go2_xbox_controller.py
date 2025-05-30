@@ -48,8 +48,6 @@ class Go2XboxControllerConnector(ActionConnector[IDLEInput]):
             self.sport_client.StopMove()
             self.sport_client.Move(0.05, 0, 0)
             time.sleep(1)
-            # self.sport_client.StandDown()
-            # time.sleep(1)
             logging.info("XBox Unitree sport client initialized")
         except Exception as e:
             self.sport_client = None
@@ -241,7 +239,6 @@ class Go2XboxControllerConnector(ActionConnector[IDLEInput]):
                 logging.debug("Triggers released - Stopping rotation")
                 if self.sport_client:
                     self.sport_client.StopMove()
-                # self._move_robot(0.0, 0.0)
 
             # Update previous Trigger values
             self.rt_previous = rt
@@ -255,12 +252,8 @@ class Go2XboxControllerConnector(ActionConnector[IDLEInput]):
                 # and return, since we just issued a move command in this tick
                 return
 
-            # logging.info(f"D-pad: {d_pad_value} {self.d_pad_previous}")
-            # if d_pad_value != self.d_pad_previous:
-            # there has been a change
-
             # Control robot movement based on D-pad
-            logging.info(f"Gamepad DPAD: {d_pad_value}")
+            logging.debug(f"Gamepad DPAD: {d_pad_value}")
 
             if d_pad_value == 1:  # Up
                 logging.info("D-pad UP - Moving forward")
@@ -279,20 +272,17 @@ class Go2XboxControllerConnector(ActionConnector[IDLEInput]):
                 move_triggered_dpad = True
                 self._move_robot(0.0, -self.turn_speed)
             elif self.d_pad_previous > 0 and d_pad_value == 0:
-                # RELEASE
+                # Usewr just released DPAD
                 logging.debug("D-pad released - Stopping movement")
-                # self._move_robot(0.0, 0.0)
+                move_triggered_dpad = True
                 if self.sport_client:
                     self.sport_client.StopMove()
-                move_triggered_dpad = True
 
             # update the value of d_pad_previous
             self.d_pad_previous = d_pad_value
 
             if move_triggered_dpad:
-                # logging.info(f"Gamepad DPAD: {d_pad_value}")
-                # update the previous value of the button
-                # self.button_previous = button_value
+                self.button_previous = button_value
                 # return, since we just issued a DPAD move command in this tick
                 return
 
