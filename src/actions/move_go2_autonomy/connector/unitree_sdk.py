@@ -37,6 +37,7 @@ class MoveUnitreeSDKConnector(ActionConnector[MoveInput]):
         self.z = 0.0
         self.yaw_now = 0.0
         self.movement_attempts = 0
+        self.gap_previous = 0
 
         self.lidar_on = False
         self.lidar = None
@@ -67,59 +68,59 @@ class MoveUnitreeSDKConnector(ActionConnector[MoveInput]):
 
         self.thread_lock = threading.Lock()
 
-    def _execute_command_thread(self, command: str) -> None:
+    # def _execute_command_thread(self, command: str) -> None:
 
-        try:
-            if command == "StandUp" and self.dog_attitude == RobotState.STANDING:
-                logging.info("Already standing, skipping command")
-                return
-            elif command == "StandDown" and self.dog_attitude == RobotState.SITTING:
-                logging.info("Already sitting, skipping command")
-                return
+    #     try:
+    #         if command == "StandUp" and self.dog_attitude == RobotState.STANDING:
+    #             logging.info("Already standing, skipping command")
+    #             return
+    #         elif command == "StandDown" and self.dog_attitude == RobotState.SITTING:
+    #             logging.info("Already sitting, skipping command")
+    #             return
 
-            code = getattr(self.sport_client, command)()
-            logging.info(f"Unitree command {command} executed with code {code}")
+    #         code = getattr(self.sport_client, command)()
+    #         logging.info(f"Unitree command {command} executed with code {code}")
 
-        except Exception as e:
-            logging.error(f"Error in command thread {command}: {e}")
-        finally:
-            self.thread_lock.release()
+    #     except Exception as e:
+    #         logging.error(f"Error in command thread {command}: {e}")
+    #     finally:
+    #         self.thread_lock.release()
 
-    def _execute_sport_command_sync(self, command: str) -> None:
+    # def _execute_sport_command_sync(self, command: str) -> None:
 
-        if not self.sport_client:
-            return
+    #     if not self.sport_client:
+    #         return
 
-        if not self.thread_lock.acquire(blocking=False):
-            logging.info("Action already in progress, skipping")
-            return
+    #     if not self.thread_lock.acquire(blocking=False):
+    #         logging.info("Action already in progress, skipping")
+    #         return
 
-        try:
-            thread = threading.Thread(
-                target=self._execute_command_thread, args=(command,), daemon=True
-            )
-            thread.start()
-        except Exception as e:
-            logging.error(f"Error executing Unitree command {command}: {e}")
-            self.thread_lock.release()
+    #     try:
+    #         thread = threading.Thread(
+    #             target=self._execute_command_thread, args=(command,), daemon=True
+    #         )
+    #         thread.start()
+    #     except Exception as e:
+    #         logging.error(f"Error executing Unitree command {command}: {e}")
+    #         self.thread_lock.release()
 
-    async def _execute_sport_command(self, command: str) -> None:
+    # async def _execute_sport_command(self, command: str) -> None:
 
-        if not self.sport_client:
-            return
+    #     if not self.sport_client:
+    #         return
 
-        if not self.thread_lock.acquire(blocking=False):
-            logging.info("Action already in progress, skipping")
-            return
+    #     if not self.thread_lock.acquire(blocking=False):
+    #         logging.info("Action already in progress, skipping")
+    #         return
 
-        try:
-            thread = threading.Thread(
-                target=self._execute_command_thread, args=(command,), daemon=True
-            )
-            thread.start()
-        except Exception as e:
-            logging.error(f"Error executing Unitree command {command}: {e}")
-            self.thread_lock.release()
+    #     try:
+    #         thread = threading.Thread(
+    #             target=self._execute_command_thread, args=(command,), daemon=True
+    #         )
+    #         thread.start()
+    #     except Exception as e:
+    #         logging.error(f"Error executing Unitree command {command}: {e}")
+    #         self.thread_lock.release()
 
     async def connect(self, output_interface: MoveInput) -> None:
 
@@ -269,7 +270,6 @@ class MoveUnitreeSDKConnector(ActionConnector[MoveInput]):
 
         try:
             logging.info(f"self.sport_client.Move: vx={vx}, vy={vy}, vturn={vturn}")
-            # do not actually move during testing
             self.sport_client.Move(vx, vy, vturn)
         except Exception as e:
             logging.error(f"Error moving robot: {e}")
@@ -304,14 +304,18 @@ class MoveUnitreeSDKConnector(ActionConnector[MoveInput]):
 
             if self.movement_attempts > 10:
                 # abort - we are not converging
+                if self.sport_client:
+                    self.sport_client.StopMove()
                 self.movement_attempts = 0
                 self.pending_movements.get()
-                logging.info("TIMEOUT - AI movement command timeout - not converging")
+                logging.info("TIMEOUT - AI movement command timeout - not converging - issued StopMove()")
                 return
 
             goal_dx = current_target[0]
             goal_yaw = current_target[1]
             direction = current_target[2]
+
+            turn_rate = 0.8
 
             if "turn" in direction:
                 gap = self.yaw_now - goal_yaw
@@ -320,32 +324,36 @@ class MoveUnitreeSDKConnector(ActionConnector[MoveInput]):
                 elif gap < -180.0:
                     gap += 360.0
                 logging.info(f"remaining turn GAP: {round(gap,2)}")
+                progress = self.gap_previous - round(gap,2)
+                self.gap_previous = round(gap,2)
+                if self.movement_attempts > 0:
+                    logging.info(f"Turn GAP change: {progress}")
+                # check for responsivity of movement platform
+                # is the robot frozen/stuck?
                 if abs(gap) > 10.0:
                     logging.debug("gap is big, using large displacements")
+                    self.movement_attempts += 1
                     if gap > 0:
-                        self.movement_attempts += 1
                         if len(self.turn_left) < 4:
                             logging.warning("Cannot turn left due to barrier")
                             return
                         # turn combines forward motion with rotation
-                        self._move_robot(0.5, 0, 0.5)
+                        self._move_robot(0.5, 0, turn_rate)
                     elif gap < 0:
-                        self.movement_attempts += 1
                         if len(self.turn_right) < 4:
                             logging.warning("Cannot turn right due to barrier")
                             return
                         # turn combines forward motion with rotation
-                        self._move_robot(0.5, 0, -0.5)
+                        self._move_robot(0.5, 0, -1*turn_rate)
                 elif abs(gap) > self.angle_tolerance and abs(gap) <= 10.0:
                     logging.debug("gap is getting smaller, using smaller steps")
+                    self.movement_attempts += 1
                     if gap > 0:
-                        self.movement_attempts += 1
                         if len(self.turn_left) < 4:
                             logging.warning("Cannot turn left due to barrier")
                             return
                         self._move_robot(0.2, 0, 0.2)
                     elif gap < 0:
-                        self.movement_attempts += 1
                         if len(self.turn_right) < 4:
                             logging.warning("Cannot turn right due to barrier")
                             return
@@ -354,6 +362,8 @@ class MoveUnitreeSDKConnector(ActionConnector[MoveInput]):
                     logging.info(
                         "turn is completed, gap is small enough, done, pop 1 off queue"
                     )
+                    if self.sport_client:
+                        self.sport_client.StopMove()
                     self.movement_attempts = 0
                     self.pending_movements.get()
             else:
@@ -380,20 +390,21 @@ class MoveUnitreeSDKConnector(ActionConnector[MoveInput]):
                     return
 
                 if remaining > self.distance_tolerance:
+                    self.movement_attempts += 1
                     if distance_traveled < goal_dx:  # keep advancing
                         logging.info(f"keep moving. remaining:{remaining} ")
-                        self.movement_attempts += 1
                         self._move_robot(fb * 0.5, 0.0, 0.0)
                     elif distance_traveled > goal_dx:  # you moved too far
                         logging.debug(
                             f"OVERSHOOT: move other way. remaining:{remaining} "
                         )
-                        self.movement_attempts += 1
                         self._move_robot(-1 * fb * 0.2, 0.0, 0.0)
                 else:
                     logging.info(
                         "advance is completed, gap is small enough, done, pop 1 off queue"
                     )
+                    if self.sport_client:
+                        self.sport_client.StopMove()
                     self.movement_attempts = 0
                     self.pending_movements.get()
 
