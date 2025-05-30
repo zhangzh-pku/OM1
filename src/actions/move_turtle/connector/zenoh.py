@@ -171,6 +171,7 @@ class MoveZenohConnector(ActionConnector[MoveInput]):
             # this value is never precisely zero except while
             # booting and waiting for data to arrive
             logging.info("Waiting for odom data")
+            time.sleep(0.5)
             return
 
         # physical collision event ALWAYS takes precedence
