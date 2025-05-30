@@ -53,16 +53,15 @@ class MoveUnitreeSDKConnector(ActionConnector[MoveInput]):
 
     # def _execute_command_thread(self, command: str) -> None:
 
-
-#         try:
-#             if command == "StandUp" and self.odom.body_attitude == RobotState.STANDING:
-#                 logging.info("Already standing, skipping command")
-#                 return
-#             elif (
-#                 command == "StandDown" and self.odom.body_attitude == RobotState.SITTING
-#             ):
-#                 logging.info("Already sitting, skipping command")
-#                 return
+    #         try:
+    #             if command == "StandUp" and self.odom.body_attitude == RobotState.STANDING:
+    #                 logging.info("Already standing, skipping command")
+    #                 return
+    #             elif (
+    #                 command == "StandDown" and self.odom.body_attitude == RobotState.SITTING
+    #             ):
+    #                 logging.info("Already sitting, skipping command")
+    #                 return
 
     #         code = getattr(self.sport_client, command)()
     #         logging.info(f"Unitree command {command} executed with code {code}")
@@ -152,7 +151,9 @@ class MoveUnitreeSDKConnector(ActionConnector[MoveInput]):
             if not self.advance:
                 logging.warning("Cannot advance due to barrier")
                 return
-            self.pending_movements.put([0.5, 0.0, "advance", round(self.odom.x,2), round(self.odom.y,2)])
+            self.pending_movements.put(
+                [0.5, 0.0, "advance", round(self.odom.x, 2), round(self.odom.y, 2)]
+            )
         elif output_interface.action == "move back":
             if not self.retreat:
                 logging.warning("Cannot retreat due to barrier")
@@ -204,15 +205,14 @@ class MoveUnitreeSDKConnector(ActionConnector[MoveInput]):
                     elif p == 4:
                         self.advance = True
                     elif p < 9:
-                                                      # flip the right turn encoding to make it
-                                # a mirror of the left hand encoding
-                                self.turn_right.append(8 - p)
-                                # so now 8 -> 0, corresponding to a sharp right turn etc
-                                # so now 5 -> 3, corresponding to a gentle right turn etc
-                        self.turn_right.append(p)
+                        # flip the right turn encoding to make it
+                        # a mirror of the left hand encoding
+                        self.turn_right.append(8 - p)
+                        # so now 8 -> 0, corresponding to a sharp right turn etc
+                        # so now 5 -> 3, corresponding to a gentle right turn etc
                     elif p == 9:
                         self.retreat = True
-                        
+
     def _move_robot(self, vx, vy, vturn=0.0) -> None:
 
         logging.info(f"_move_robot: vx={vx}, vy={vy}, vturn={vturn}")
@@ -343,7 +343,9 @@ class MoveUnitreeSDKConnector(ActionConnector[MoveInput]):
             else:
                 s_x = target[0][3]
                 s_y = target[0][4]
-                distance_traveled = math.sqrt((self.odom.x - s_x) ** 2 + (self.odom.y - s_y) ** 2)
+                distance_traveled = math.sqrt(
+                    (self.odom.x - s_x) ** 2 + (self.odom.y - s_y) ** 2
+                )
                 gap = round(abs(goal_dx - distance_traveled), 2)
                 progress = round(abs(self.gap_previous - gap), 2)
                 self.gap_previous = gap
