@@ -333,7 +333,7 @@ class MoveUnitreeSDKConnector(ActionConnector[MoveInput]):
 
                 # check for responsivity of movement platform
                 # is the robot frozen/stuck?
-                progress = round(abs(self.gap_previous - gap, 2))
+                progress = round(abs(self.gap_previous - gap), 2)
                 self.gap_previous = gap
                 if self.movement_attempts > 0:
                     logging.info(f"Turn GAP delta: {progress}deg")
