@@ -46,6 +46,7 @@ class GpsProvider:
         self.lat = ""
         self.lon = ""
         self.alt = 0.0
+        self.sats = 0
         self.time_utc = ""
 
         self.yaw_mag_0_360 = 0.0
@@ -87,14 +88,15 @@ class GpsProvider:
                     sats = parts[5].split(":")[1]
                     self.lat = lat
                     self.lon = lon
-                    self.alt = alt
+                    self.alt = float(alt)
+                    self.sats = int(sats)
                     if len(parts) >= 6:
                         time = parts[6][5:]
                         self.time_utc = time
                     logging.debug(
                         (
-                            f"Current location is {lat}, {lon} at {alt}m altitude"
-                            f"GPS Heading {heading}° with {sats} satellites locked."
+                            f"Current location is {lat}, {lon} at {alt}m altitude. "
+                            f"GPS Heading {heading}° with {sats} satellites locked. "
                             f"The time, if available, is {self.time_utc}."
                         )
                     )
@@ -106,10 +108,11 @@ class GpsProvider:
         self._gps = {
             "yaw_mag_0_360": self.yaw_mag_0_360,
             "yaw_mag_cardinal": self.yaw_mag_cardinal,
-            "lat": self.lat,
-            "lon": self.lon,
-            "alt": self.alt,
-            "time_utc": self.time_utc,
+            "gps_lat": self.lat,
+            "gps_lon": self.lon,
+            "gps_alt": self.alt,
+            "gps_sats": self.sats,
+            "gps_time_utc": self.time_utc,
         }
 
     def start(self):
