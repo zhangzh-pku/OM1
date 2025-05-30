@@ -1,8 +1,7 @@
 import logging
 import math
-import threading
-import time
-from typing import Optional
+from enum import Enum
+from typing import Any, Optional, Union
 
 import zenoh
 
@@ -16,19 +15,17 @@ except ImportError:
     )
 
 from zenoh_idl import nav_msgs
+from zenoh_idl.geometry_msgs import PoseWithCovariance
+from zenoh_idl.nav_msgs import Odometry
 
 from .singleton import singleton
 
 rad_to_deg = 57.2958
 
-gOdom = None
 
-
-# Needed for Zenoh / TurtleBot4
-def listenerOdom(data):
-    global gOdom
-    gOdom = nav_msgs.Odometry.deserialize(data.payload.to_bytes())
-    logging.debug(f"Odom listener: {gOdom}")
+class RobotState(Enum):
+    STANDING = "standing"
+    SITTING = "sitting"
 
 
 @singleton
@@ -74,29 +71,31 @@ class OdomProvider:
                 logging.info(
                     f"TurtleBot4 navigation listeners starting with URID: {URID}"
                 )
-                self.session.declare_subscriber(f"{URID}/c3/odom", listenerOdom)
+                self.session.declare_subscriber(
+                    f"{URID}/c3/odom", self.zenoh_odom_handler
+                )
             except Exception as e:
                 logging.error(f"Error opening Zenoh client: {e}")
-        elif not self.use_zenoh:
+        else:
             # we are using CycloneDDS e.g. for the Unitree Go2
             try:
                 self.pose_subscriber = ChannelSubscriber(
                     "rt/utlidar/robot_pose", PoseStamped_
                 )
-                self.pose_subscriber.Init(self.poseMessageHandler, 10)
+                self.pose_subscriber.Init(self.pose_message_handler, 10)
             except Exception as e:
                 logging.error(f"Error opening CycloneDDS client: {e}")
 
         self.body_height_cm = 0
-        self.body_attitude = None
+        self.body_attitude: Optional[RobotState] = None
 
-        self.moving = None
+        self.moving: bool = False
         self.previous_x = 0
         self.previous_y = 0
         self.previous_z = 0
         self.move_history = 0
 
-        self._odom: Optional[dict] = None
+        self._odom: Optional[Union[Odometry, PoseStamped_]] = None
 
         self.x = 0.0
         self.y = 0.0
@@ -105,17 +104,67 @@ class OdomProvider:
         self.yaw_odom_0_360 = 0.0
         self.yaw_odom_m180_p180 = 0.0
 
-        self.running = False
-        self._thread: Optional[threading.Thread] = None
-        self.start()
+    def zenoh_odom_handler(self, data: Any):
+        """
+        Zenoh odom handler.
 
-    def euler_from_quaternion(self, x, y, z, w):
+        Parameters
+        ----------
+        data : Any
+            The data received from the Zenoh subscriber.
+        """
+        self._odom: Odometry = nav_msgs.Odometry.deserialize(data.payload.to_bytes())
+        logging.debug(f"Odom listener: {self._odom}")
+
+        p = self._odom.pose.pose
+        self.process_odom(p)
+
+    def pose_message_handler(self, msg: PoseStamped_):
+        """
+        Unitree pose message handler.
+
+        Parameters
+        ----------
+        msg : PoseStamped_
+            The message containing the pose data.
+        """
+        self._odom = msg
+        logging.debug(f"Pose listener: {self._odom}")
+
+        p = self._odom.pose
+        self.body_height_cm = round(p.position.z * 100.0)
+
+        # only relevant to dog
+        if self.body_height_cm > 24:
+            self.body_attitude = RobotState.STANDING
+        elif self.body_height_cm > 3:
+            self.body_attitude = RobotState.SITTING
+
+        self.process_odom(p)
+
+    def euler_from_quaternion(self, x: float, y: float, z: float, w: float) -> tuple:
         """
         https://automaticaddison.com/how-to-convert-a-quaternion-into-euler-angles-in-python/
         Convert a quaternion into euler angles (roll, pitch, yaw)
         roll is rotation around x in radians (counterclockwise)
         pitch is rotation around y in radians (counterclockwise)
         yaw is rotation around z in radians (counterclockwise)
+
+        Parameters
+        ----------
+        x : float
+            The x component of the quaternion.
+        y : float
+            The y component of the quaternion.
+        z : float
+            The z component of the quaternion.
+        w : float
+            The w component of the quaternion.
+
+        Returns
+        -------
+        tuple
+            A tuple containing the roll, pitch, and yaw angles in radians.
         """
         t0 = +2.0 * (w * x + y * z)
         t1 = +1.0 - 2.0 * (x * x + y * y)
@@ -132,8 +181,15 @@ class OdomProvider:
 
         return roll_x, pitch_y, yaw_z  # in radians
 
-    def processOdom(self, pose):
+    def process_odom(self, pose: PoseWithCovariance):
+        """
+        Process the odom data and update the internal state.
 
+        Parameters
+        ----------
+        pose : PoseWithCovariance
+            The pose data containing position and orientation.
+        """
         logging.debug(f"pose: {pose}")
 
         x = pose.orientation.x
@@ -158,109 +214,61 @@ class OdomProvider:
             # we want to detect movement quickly (and flip "moving" False->True), but
             # wait for the platform to stabilize before we flip "moving" True->False
             self.moving = True
-            logging.info(f"delta moving: {delta} {self.move_history}")
+            logging.info(
+                f"delta moving (m): {round(delta,3)} {round(self.move_history,3)}"
+            )
         else:
             self.moving = False
 
         angles = self.euler_from_quaternion(x, y, z, w)
 
-        self.m180_p180 = angles[2] * rad_to_deg * -1.0
+        self.yaw_odom_m180_p180 = angles[2] * rad_to_deg * -1.0
         # the * -1.0 changes the heading to sane convention
         # turn right (CW) to INCREASE your heading
         # runs from -180 to + 180, where 0 is the "nose" of the robot
 
         # runs from 0 to 360
-        self.yaw_odom_0_360 = self.m180_p180 + 180.0
+        self.yaw_odom_0_360 = self.yaw_odom_m180_p180 + 180.0
 
         # current position in world frame
         self.x = pose.position.x
         self.y = pose.position.y
 
-        self._odom = {
-            "x": self.x,
-            "y": self.y,
-            "yaw_odom_0_360": self.yaw_odom_0_360,
-            "yaw_odom_m180_p180": self.m180_p180,
-            "body_height_cm": self.body_height_cm,
-            "body_attitude": self.body_attitude,
-            "moving": self.moving,
-        }
-
-        logging.debug(
-            (
-                f"NAV x,y,yaw_odom,yaw_mag,moving:{round(self.x,2)},{round(self.y,2)},",
-                f"{round(self.yaw_odom_0_360,2)},{self.moving})",
-            )
-        )
-
-    def poseMessageHandler(self, msg):
-        # used by CycloneDDS / Unitree Go2
-
-        p = msg.pose
-        self.body_height_cm = round(p.position.z * 100.0)
-
-        # only relevant to dog
-        if self.body_height_cm > 24:
-            self.body_attitude = "standing"
-        elif self.body_height_cm > 3:
-            self.body_attitude = "sitting"
-
-        self.processOdom(p)
-
-    def zenohOdomProcessor(self):
-        # used by Zenoh / TurtleBot4
-
-        global gOdom
-        if gOdom is None:
-            return
-
-        p = gOdom.pose.pose
-        self.body_height_cm = 0.0
-        self.body_attitude = None
-        self.processOdom(p)
-
-    def start(self):
+    @property
+    def odom(self) -> Optional[Union[Odometry, PoseStamped_]]:
         """
-        Starts the Odom Provider and processing thread
-        if not already running.
-        """
-        if self._thread and self._thread.is_alive():
-            return
+        Get the current odometry data.
 
-        self.running = True
-        self._thread = threading.Thread(target=self._run, daemon=True)
-        self._thread.start()
-
-    def _run(self):
+        Returns
+        -------
+        Optional[Union[Odometry, PoseStamped_]]
+            The current odometry data if available, otherwise None.
         """
-        Main loop for the Odom provider.
-        """
-        while self.running:
-
-            if self.use_zenoh:
-                # TurtleBot4, use Zenoh
-                logging.debug("zenohOdomProcessor")
-                self.zenohOdomProcessor()
-            else:
-                # Unitree Go2, use CycloneDDS
-                logging.debug(
-                    f"Cyclone Nav Provider: {self.body_height_cm} position: {self.odom}"
-                )
-
-            time.sleep(0.1)
-
-    def stop(self):
-        """
-        Stop the Odom provider.
-        """
-        self.running = False
-        if self._thread:
-            logging.info("Stopping Odom provider")
-            self._thread.join(timeout=5)
+        return self._odom
 
     @property
-    def odom(self) -> Optional[dict]:
-        # """
-        # Get the current robot odom
-        # """
-        return self._odom
+    def position(self) -> dict:
+        """
+        Get the current robot position in world frame.
+        Returns a dictionary with x, y, and yaw_odom_0_360.
+
+        Returns
+        -------
+        dict
+            A dictionary containing the current position and orientation of the robot.
+            Keys include:
+            - x: The x coordinate of the robot in the world frame.
+            - y: The y coordinate of the robot in the world frame.
+            - moving: A boolean indicating if the robot is currently moving.
+            - yaw_odom_0_360: The yaw angle of the robot in degrees, ranging from 0 to 360.
+            - body_height_cm: The height of the robot's body in centimeters.
+            - body_attitude: The current attitude of the robot (e.g., sitting or standing).
+        """
+        return {
+            "x": self.x,
+            "y": self.y,
+            "moving": self.moving,
+            "yaw_odom_0_360": self.yaw_odom_0_360,
+            "body_height_cm": self.body_height_cm,
+            "body_attitude": self.body_attitude,
+        }
