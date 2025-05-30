@@ -73,7 +73,7 @@ class RFmapper(Background):
         sorted_devices = sorted(
             seen_devices.values(), key=lambda d: d["rssi"], reverse=True
         )[:10]
-        #logging.info(f"Scan...{sorted_devices}")
+        # logging.info(f"Scan...{sorted_devices}")
         return sorted_devices
 
     def _scan_task(self):
