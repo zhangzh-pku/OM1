@@ -178,6 +178,8 @@ class RPLidarProvider:
         self.scans = sensor_msgs.LaserScan.deserialize(data.payload.to_bytes())
         logging.debug(f"Zenoh Laserscan data: {self.scans}")
 
+        self._preprocess_zenoh(self.scans)
+
     def start(self):
         """
         Starts the RPLidar and processing thread
@@ -424,11 +426,7 @@ class RPLidarProvider:
         to the inputs and actions, as needed.
         """
         while self.running:
-            if self.use_zenoh:
-                logging.debug(f"Zenoh: {self.scans}")
-                self._preprocess_zenoh(self.scans)
-                time.sleep(0.1)
-            else:
+            if not self.use_zenoh:
                 # we are using serial
                 try:
                     for i, scan in enumerate(
