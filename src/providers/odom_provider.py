@@ -1,6 +1,7 @@
 import logging
 import math
-from typing import Any, Optional
+from enum import Enum
+from typing import Any, Optional, Union
 
 import zenoh
 
@@ -20,6 +21,11 @@ from zenoh_idl.nav_msgs import Odometry
 from .singleton import singleton
 
 rad_to_deg = 57.2958
+
+
+class RobotState(Enum):
+    STANDING = "standing"
+    SITTING = "sitting"
 
 
 @singleton
@@ -81,15 +87,15 @@ class OdomProvider:
                 logging.error(f"Error opening CycloneDDS client: {e}")
 
         self.body_height_cm = 0
-        self.body_attitude = None
+        self.body_attitude: Optional[RobotState] = None
 
-        self.moving = None
+        self.moving: bool = False
         self.previous_x = 0
         self.previous_y = 0
         self.previous_z = 0
         self.move_history = 0
 
-        self._odom: Optional[dict] = None
+        self._odom: Optional[Union[Odometry, PoseStamped_]] = None
 
         self.x = 0.0
         self.y = 0.0
@@ -123,14 +129,17 @@ class OdomProvider:
         msg : PoseStamped_
             The message containing the pose data.
         """
-        p = msg.pose
+        self._odom = msg
+        logging.debug(f"Pose listener: {self._odom}")
+
+        p = self._odom.pose
         self.body_height_cm = round(p.position.z * 100.0)
 
         # only relevant to dog
         if self.body_height_cm > 24:
-            self.body_attitude = "standing"
+            self.body_attitude = RobotState.STANDING
         elif self.body_height_cm > 3:
-            self.body_attitude = "sitting"
+            self.body_attitude = RobotState.SITTING
 
         self.process_odom(p)
 
@@ -225,13 +234,13 @@ class OdomProvider:
         self.y = pose.position.y
 
     @property
-    def odom(self) -> Optional[Odometry]:
+    def odom(self) -> Optional[Union[Odometry, PoseStamped_]]:
         """
         Get the current odometry data.
 
         Returns
         -------
-        Optional[Odometry]
+        Optional[Union[Odometry, PoseStamped_]]
             The current odometry data if available, otherwise None.
         """
         return self._odom

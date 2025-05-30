@@ -3,19 +3,13 @@ import math
 import random
 import threading
 import time
-from enum import Enum
 from queue import Queue
 
 from actions.base import ActionConfig, ActionConnector
 from actions.move_go2_autonomy.interface import MoveInput
-from providers.odom_provider import OdomProvider
+from providers.odom_provider import OdomProvider, RobotState
 from providers.rplidar_provider import RPLidarProvider
 from unitree.unitree_sdk2py.go2.sport.sport_client import SportClient
-
-
-class RobotState(Enum):
-    STANDING = "standing"
-    SITTING = "sitting"
 
 
 class MoveUnitreeSDKConnector(ActionConnector[MoveInput]):
@@ -24,7 +18,6 @@ class MoveUnitreeSDKConnector(ActionConnector[MoveInput]):
         super().__init__(config)
 
         self.dog_attitude = None
-        self.dog_moving = None
 
         self.move_speed = 0.7
         self.turn_speed = 0.6
@@ -32,14 +25,7 @@ class MoveUnitreeSDKConnector(ActionConnector[MoveInput]):
         self.angle_tolerance = 5.0
         self.distance_tolerance = 0.05  # m
         self.pending_movements = Queue()
-        self.x = 0.0
-        self.y = 0.0
-        self.z = 0.0
-        self.yaw_now = 0.0
         self.movement_attempts = 0
-
-        self.lidar_on = False
-        self.lidar = None
 
         self.turn_left = []
         self.advance = []
@@ -49,15 +35,12 @@ class MoveUnitreeSDKConnector(ActionConnector[MoveInput]):
         self.lidar = RPLidarProvider()
         self.lidar_on = self.lidar.running
 
-        self.motion_buffer = None
-
         # create sport client
         self.sport_client = None
         try:
             self.sport_client = SportClient()
             self.sport_client.SetTimeout(10.0)
             self.sport_client.Init()
-            # self.sport_client.Move(0.1, 0, 0)
             logging.info("Autonomy Unitree sport client initialized")
         except Exception as e:
             logging.error(f"Error initializing Unitree sport client: {e}")
@@ -70,10 +53,12 @@ class MoveUnitreeSDKConnector(ActionConnector[MoveInput]):
     def _execute_command_thread(self, command: str) -> None:
 
         try:
-            if command == "StandUp" and self.dog_attitude == RobotState.STANDING:
+            if command == "StandUp" and self.odom.body_attitude == RobotState.STANDING:
                 logging.info("Already standing, skipping command")
                 return
-            elif command == "StandDown" and self.dog_attitude == RobotState.SITTING:
+            elif (
+                command == "StandDown" and self.odom.body_attitude == RobotState.SITTING
+            ):
                 logging.info("Already sitting, skipping command")
                 return
 
@@ -126,9 +111,9 @@ class MoveUnitreeSDKConnector(ActionConnector[MoveInput]):
         # this is used only by the LLM
         logging.info(f"AI command.connect: {output_interface.action}")
 
-        self.odomDataRefresh()
+        self.possible_path_refresh()
 
-        if self.dog_moving:
+        if self.odom.moving:
             # for example due to a teleops or game controller command
             logging.info("Disregard new AI movement command - robot is already moving")
             return
@@ -137,7 +122,7 @@ class MoveUnitreeSDKConnector(ActionConnector[MoveInput]):
             logging.info("Movement in progress: disregarding new AI command")
             return
 
-        if self.x == 0.0:
+        if self.odom.x == 0.0:
             # this value is never precisely zero EXCEPT while
             # booting and waiting for data to arrive
             logging.info("Waiting for location data")
@@ -152,7 +137,7 @@ class MoveUnitreeSDKConnector(ActionConnector[MoveInput]):
             logging.info(f"Path choice: {path}")
             # ToDo - use specific path value for tight/soft turns
             # hardcode for now
-            target_yaw = self.yaw_now - 90.0
+            target_yaw = self.odom.yaw_odom_m180_p180 - 90.0
             if target_yaw <= -180:
                 target_yaw += 360.0
             self.pending_movements.put([0.0, target_yaw, "turn"])
@@ -165,7 +150,7 @@ class MoveUnitreeSDKConnector(ActionConnector[MoveInput]):
             logging.info(f"Path choice: {path}")
             # ToDo - use specific path value for tight/soft turns
             # hardcode for now
-            target_yaw = self.yaw_now + 90.0
+            target_yaw = self.odom.yaw_odom_m180_p180 + 90.0
             if target_yaw >= 180.0:
                 target_yaw -= 360.0
             self.pending_movements.put([0.0, target_yaw, "turn"])
@@ -173,12 +158,12 @@ class MoveUnitreeSDKConnector(ActionConnector[MoveInput]):
             if len(self.advance) == 0:
                 logging.warning("Cannot advance due to barrier")
                 return
-            self.pending_movements.put([0.5, 0.0, "advance", self.x, self.y])
+            self.pending_movements.put([0.5, 0.0, "advance", self.odom.x, self.odom.y])
         elif output_interface.action == "move back":
             if len(self.retreat) == 0:
                 logging.warning("Cannot retreat due to barrier")
                 return
-            self.pending_movements.put([0.5, 0.0, "retreat", self.x, self.y])
+            self.pending_movements.put([0.5, 0.0, "retreat", self.odom.x, self.odom.y])
         elif output_interface.action == "stand still":
             logging.info(f"AI movement command: {output_interface.action}")
             # do nothing
@@ -206,36 +191,7 @@ class MoveUnitreeSDKConnector(ActionConnector[MoveInput]):
         #     logging.info("Unitree AI command: dance")
         #     await self._execute_sport_command("Dance1")
 
-    def odomDataRefresh(self):
-        nav = self.odom.odom
-        if not nav:
-            logging.info("Waiting for odom data")
-            return
-
-        logging.debug(f"Go2 Odom data: {nav}")
-
-        if nav["body_attitude"] == "standing":
-            self.dog_attitude = RobotState.STANDING
-        else:
-            self.dog_attitude = RobotState.SITTING
-
-        if nav["moving"]:
-            # for conceptual clarity
-            self.dog_moving = True
-        else:
-            self.dog_moving = False
-
-        self.yaw_now = nav["yaw_odom_m180_p180"]
-        # CW yaw = positive
-
-        # current position in world frame
-        self.x = nav["x"]
-        self.y = nav["y"]
-
-        logging.debug(
-            f"Go2 x,y,yaw: {round(self.x,2)},{round(self.y,2)},{round(self.yaw_now,2)}"
-        )
-
+    def possible_path_refresh(self):
         if self.lidar:
             self.turn_left = []
             self.advance = []
@@ -263,7 +219,7 @@ class MoveUnitreeSDKConnector(ActionConnector[MoveInput]):
         if not self.sport_client:
             return
 
-        if self.dog_attitude != RobotState.STANDING:
+        if self.odom.body_attitude != RobotState.STANDING:
             return
 
         try:
@@ -277,18 +233,25 @@ class MoveUnitreeSDKConnector(ActionConnector[MoveInput]):
 
         logging.debug("AI Motion Tick")
 
-        self.odomDataRefresh()
+        self.possible_path_refresh()
 
-        if self.x == 0.0:
+        if self.odom.odom is None:
+            # this value is never precisely None except while
+            # booting and waiting for data to arrive
+            logging.info("Waiting for odom data")
+            time.sleep(0.5)
+            return
+
+        if self.odom.x == 0.0:
             # this value is never precisely zero except while
             # booting and waiting for data to arrive
             logging.info("Waiting for odom data")
-            time.sleep(0.1)
+            time.sleep(0.5)
             return
 
-        if self.dog_attitude != RobotState.STANDING:
+        if self.odom.body_attitude != RobotState.STANDING:
             logging.info("Cannot move - dog is sitting")
-            time.sleep(0.1)
+            time.sleep(0.5)
             return
 
         # if we got to this point, we have good data and we are able to
@@ -299,7 +262,9 @@ class MoveUnitreeSDKConnector(ActionConnector[MoveInput]):
 
             current_target = target[0]
 
-            logging.info(f"Target: {current_target} current yaw: {self.yaw_now}")
+            logging.info(
+                f"Target: {current_target} current yaw: {self.odom.yaw_odom_m180_p180}"
+            )
 
             if self.movement_attempts > 10:
                 # abort - we are not converging
@@ -313,7 +278,7 @@ class MoveUnitreeSDKConnector(ActionConnector[MoveInput]):
             direction = current_target[2]
 
             if "turn" in direction:
-                gap = self.yaw_now - goal_yaw
+                gap = self.odom.yaw_odom_m180_p180 - goal_yaw
                 if gap > 180.0:
                     gap -= 360.0
                 elif gap < -180.0:
@@ -363,7 +328,9 @@ class MoveUnitreeSDKConnector(ActionConnector[MoveInput]):
 
                 s_x = target[0][3]
                 s_y = target[0][4]
-                distance_traveled = math.sqrt((self.x - s_x) ** 2 + (self.y - s_y) ** 2)
+                distance_traveled = math.sqrt(
+                    (self.odom.x - s_x) ** 2 + (self.odom.y - s_y) ** 2
+                )
                 remaining = abs(goal_dx - distance_traveled)
                 logging.info(f"remaining advance GAP: {round(remaining,2)}")
 
