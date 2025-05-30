@@ -150,7 +150,7 @@ class MoveUnitreeSDKConnector(ActionConnector[MoveInput]):
             target_yaw = self.yaw_now - 90.0
             if target_yaw <= -180:
                 target_yaw += 360.0
-            self.pending_movements.put([0.0, target_yaw, "turn"])
+            self.pending_movements.put([0.0, round(target_yaw, 2), "turn"])
         elif output_interface.action == "turn right":
             # turn 90 Deg to the right (CW)
             if len(self.turn_right) == 0:
@@ -159,17 +159,21 @@ class MoveUnitreeSDKConnector(ActionConnector[MoveInput]):
             target_yaw = self.yaw_now + 90.0
             if target_yaw >= 180.0:
                 target_yaw -= 360.0
-            self.pending_movements.put([0.0, target_yaw, "turn"])
+            self.pending_movements.put([0.0, round(target_yaw, 2), "turn"])
         elif output_interface.action == "move forwards":
             if not self.advance:
                 logging.warning("Cannot advance due to barrier")
                 return
-            self.pending_movements.put([0.5, 0.0, "advance", self.x, self.y])
+            self.pending_movements.put(
+                [0.5, 0.0, "advance", round(self.x, 2), round(self.y, 2)]
+            )
         elif output_interface.action == "move back":
             if not self.retreat:
                 logging.warning("Cannot retreat due to barrier")
                 return
-            self.pending_movements.put([0.5, 0.0, "retreat", self.x, self.y])
+            self.pending_movements.put(
+                [0.5, 0.0, "retreat", round(self.x, 2), round(self.y, 2)]
+            )
         elif output_interface.action == "stand still":
             logging.info(f"AI movement command: {output_interface.action}")
             # do nothing
@@ -302,13 +306,15 @@ class MoveUnitreeSDKConnector(ActionConnector[MoveInput]):
 
             current_target = target[0]
 
-            logging.info(f"Target: {current_target} current yaw: {self.yaw_now}")
+            logging.info(
+                f"Target: {current_target} current yaw: {round(self.yaw_now,2)}"
+            )
 
             if self.movement_attempts > 10:
                 # abort - we are not converging
                 self.clean_abort()
                 logging.info(
-                    "TIMEOUT - AI movement command timeout - not converging - issued StopMove()"
+                    "TIMEOUT - AI movement timeout - not converging after 10 attempts- issued StopMove()"
                 )
                 return
 
@@ -322,13 +328,19 @@ class MoveUnitreeSDKConnector(ActionConnector[MoveInput]):
                     gap -= 360.0
                 elif gap < -180.0:
                     gap += 360.0
-                logging.info(f"remaining turn GAP: {round(gap,2)}")
-                progress = self.gap_previous - round(gap, 2)
-                self.gap_previous = round(gap, 2)
-                if self.movement_attempts > 0:
-                    logging.info(f"Turn GAP change: {progress}")
+                gap = round(gap, 2)
+                logging.info(f"remaining turn GAP: {gap}DEG")
+
                 # check for responsivity of movement platform
                 # is the robot frozen/stuck?
+                progress = round(abs(self.gap_previous - gap, 2))
+                self.gap_previous = gap
+                if self.movement_attempts > 0:
+                    logging.info(f"Turn GAP delta: {progress}deg")
+                    if progress < 1.0:  # deg
+                        # we might be stuck or something else is wrong
+                        self.clean_abort()
+                        return
                 if abs(gap) > 10.0:
                     logging.debug("gap is big, using large displacements")
                     self.movement_attempts += 1
@@ -368,9 +380,15 @@ class MoveUnitreeSDKConnector(ActionConnector[MoveInput]):
                 s_x = target[0][3]
                 s_y = target[0][4]
                 distance_traveled = math.sqrt((self.x - s_x) ** 2 + (self.y - s_y) ** 2)
-                remaining = abs(goal_dx - distance_traveled)
-                remaining = round(remaining, 2)
-                logging.info(f"remaining advance/retreat GAP: {remaining}")
+                gap = round(abs(goal_dx - distance_traveled), 2)
+                progress = round(abs(self.gap_previous - gap), 2)
+                self.gap_previous = gap
+                if self.movement_attempts > 0:
+                    logging.info(f"Forward/retreat GAP delta: {progress}m")
+                    if progress < 0.03:  # cm
+                        # we might be stuck or something else is wrong
+                        self.clean_abort()
+                        return
 
                 fb = 0
                 if "advance" in direction and self.advance:
@@ -382,15 +400,13 @@ class MoveUnitreeSDKConnector(ActionConnector[MoveInput]):
                     self.clean_abort()
                     return
 
-                if remaining > self.distance_tolerance:
+                if gap > self.distance_tolerance:
                     self.movement_attempts += 1
                     if distance_traveled < goal_dx:  # keep advancing
-                        logging.info(f"keep moving. remaining:{remaining} ")
+                        logging.info(f"keep moving. remaining:{gap}m ")
                         self._move_robot(fb * self.move_speed, 0.0, 0.0)
                     elif distance_traveled > goal_dx:  # you moved too far
-                        logging.debug(
-                            f"OVERSHOOT: move other way. remaining:{remaining} "
-                        )
+                        logging.debug(f"OVERSHOOT: move other way. remaining:{gap}m")
                         self._move_robot(-1 * fb * 0.2, 0.0, 0.0)
                 else:
                     logging.info(
