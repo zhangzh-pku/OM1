@@ -36,6 +36,7 @@ class MoveUnitreeSDKConnector(ActionConnector[MoveInput]):
         self.z = 0.0
         self.yaw_now = 0.0
         self.movement_attempts = 0
+        self.movement_attempt_limit = 15
         self.gap_previous = 0
 
         self.lidar_on = False
@@ -310,11 +311,11 @@ class MoveUnitreeSDKConnector(ActionConnector[MoveInput]):
                 f"Target: {current_target} current yaw: {round(self.yaw_now,2)}"
             )
 
-            if self.movement_attempts > 10:
+            if self.movement_attempts > self.movement_attempt_limit:
                 # abort - we are not converging
                 self.clean_abort()
                 logging.info(
-                    "TIMEOUT - AI movement timeout - not converging after 10 attempts- issued StopMove()"
+                    f"TIMEOUT - AI movement timeout - not converging after {self.movement_attempt_limit} attempts- issued StopMove()"
                 )
                 return
 
