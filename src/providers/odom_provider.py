@@ -110,7 +110,8 @@ class OdomProvider:
 
         Parameters
         ----------
-        data : zenoh.Data
+        data : Any
+            The data received from the Zenoh subscriber.
         """
         self._odom: Odometry = nav_msgs.Odometry.deserialize(data.payload.to_bytes())
         logging.debug(f"Odom listener: {self._odom}")
