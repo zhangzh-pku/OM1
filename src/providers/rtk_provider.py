@@ -72,7 +72,7 @@ class RtkProvider:
                     ms = msg.time.strftime("%f")[:3]
                     strtime = msg.time.strftime("%H:%M:%S") + "." + ms
                     self.time_utc = strtime
-                    logging.info(
+                    logging.debug(
                         (
                             f"Current precision location is {self.lat}, {self.lon} at {self.alt}m altitude. "
                             f"Quality {self.qua} with {self.sat} satellites locked. "

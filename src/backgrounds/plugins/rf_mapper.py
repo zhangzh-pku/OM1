@@ -123,66 +123,80 @@ class RFmapper(Background):
                         # self.scan_results.append(self.gps.data)
                         # self.json_payload = json.dumps(self.scan_results, indent=2)
                         # logging.info(f"Mapper data: {self.json_payload}")
-                        g = self.gps.data
-                        logging.debug(f"GPS data: {g}")
+                        try:
+                            g = self.gps.data
+                            logging.debug(f"GPS data: {g}")
+                            if g:
+                                self.gps_time_utc = g["gps_time_utc"]
 
-                        if g:
-                            self.gps_time_utc = g["gps_time_utc"]
+                                lat = g["gps_lat"]
+                                if lat[-1] == "N":
+                                    self.gps_lat = float(lat[:-1])
+                                else:
+                                    self.gps_lat = -1.0 * float(lat[:-1])
 
-                            lat = g["gps_lat"]
-                            if lat[-1] == "N":
-                                self.gps_lat = float(lat[:-1])
-                            else:
-                                self.gps_lat = -1.0 * float(lat[:-1])
+                                lon = g["gps_lon"]
+                                if lon[-1] == "E":
+                                    self.gps_lon = float(lon[:-1])
+                                else:
+                                    self.gps_lon = -1.0 * float(lon[:-1])
 
-                            lon = g["gps_lon"]
-                            if lon[-1] == "E":
-                                self.gps_lon = float(lon[:-1])
-                            else:
-                                self.gps_lon = -1.0 * float(lon[:-1])
+                                self.gps_alt = g["gps_alt"]
 
-                            self.gps_alt = g["gps_alt"]
-
-                            self.yaw_mag_0_360 = g["yaw_mag_0_360"]
+                                self.yaw_mag_0_360 = g["yaw_mag_0_360"]
+                        except Exception as e:
+                            logging.error(f"Error parsing GPS: {e}")
 
                         if hasattr(self.odom, "running"):
-                            o = self.odom.odom
-                            logging.debug(f"Odom data: {o}")
-                            self.x = o["x"]
-                            self.y = o["y"]
-                            self.yaw_odom_0_360 = o["yaw_odom_0_360"]
-                            self.yaw_odom_m180_p180 = o["yaw_odom_m180_p180"]
+                            try:
+                                o = self.odom.odom
+                                logging.debug(f"Odom data: {o}")
+                                if o:
+                                    self.x = o["x"]
+                                    self.y = o["y"]
+                                    self.yaw_odom_0_360 = o["yaw_odom_0_360"]
+                                    self.yaw_odom_m180_p180 = o["yaw_odom_m180_p180"]
+                            except Exception as e:
+                                logging.error(f"Error parsing Odom: {e}")
 
                         if hasattr(self.rtk, "running"):
-                            r = self.rtk.data
-                            logging.debug(f"RTK data: {r}")
-                            self.rtk_time_utc = r["rtk_time_utc"]
-                            self.rtk_lat = r["rtk_lat"]
-                            self.rtk_lon = r["rtk_lon"]
-                            self.rtk_alt = r["rtk_alt"]
-                            self.rtk_qua = r["rtk_qua"]
+                            try:
+                                r = self.rtk.data
+                                logging.debug(f"RTK data: {r}")
+                                if r:
+                                    self.rtk_time_utc = r["rtk_time_utc"]
+                                    self.rtk_lat = r["rtk_lat"]
+                                    self.rtk_lon = r["rtk_lon"]
+                                    self.rtk_alt = r["rtk_alt"]
+                                    self.rtk_qua = r["rtk_qua"]
+                            except Exception as e:
+                                logging.error(f"Error parsing RTK: {e}")
 
-                        self.fds.share_data(
-                            FabricData(
-                                machine_id=self.URID,
-                                gps_time_utc=self.gps_time_utc,
-                                gps_lat=self.gps_lat,
-                                gps_lon=self.gps_lon,
-                                gps_alt=self.gps_alt,
-                                rtk_time_utc=self.rtk_time_utc,
-                                rtk_lat=self.rtk_lat,
-                                rtk_lon=self.rtk_lon,
-                                rtk_alt=self.rtk_alt,
-                                rtk_qua=self.rtk_qua,
-                                mag=self.yaw_mag_0_360,
-                                update_time_local=time.time(),
-                                odom_x=self.x,
-                                odom_y=self.y,
-                                yaw_odom_0_360=self.yaw_odom_0_360,
-                                yaw_odom_m180_p180=self.yaw_odom_m180_p180,
-                                rf_data=self.scan_results,
+                        try:
+                            self.fds.share_data(
+                                FabricData(
+                                    machine_id=self.URID,
+                                    gps_time_utc=self.gps_time_utc,
+                                    gps_lat=self.gps_lat,
+                                    gps_lon=self.gps_lon,
+                                    gps_alt=self.gps_alt,
+                                    rtk_time_utc=self.rtk_time_utc,
+                                    rtk_lat=self.rtk_lat,
+                                    rtk_lon=self.rtk_lon,
+                                    rtk_alt=self.rtk_alt,
+                                    rtk_qua=self.rtk_qua,
+                                    mag=self.yaw_mag_0_360,
+                                    update_time_local=time.time(),
+                                    odom_x=self.x,
+                                    odom_y=self.y,
+                                    yaw_odom_0_360=self.yaw_odom_0_360,
+                                    yaw_odom_m180_p180=self.yaw_odom_m180_p180,
+                                    rf_data=self.scan_results,
+                                )
                             )
-                        )
+                        except Exception as e:
+                                logging.error(f"Error sharing to Fabric: {e}")
+
                         self.scan_results = None
 
                 time.sleep(1)

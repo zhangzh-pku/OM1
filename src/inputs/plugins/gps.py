@@ -111,8 +111,8 @@ class Gps(FuserInput[str]):
             lat = d["gps_lat"]
             lon = d["gps_lon"]
             alt = d["gps_alt"]
-            sats = d["gps_sats"]
-            if sats > 0:
+            sat = d["gps_sat"]
+            if sat > 0:
                 msg = f"Current location is {lat}, {lon} at {alt}m altitude."
                 return Message(timestamp=time.time(), message=msg)
             else:
