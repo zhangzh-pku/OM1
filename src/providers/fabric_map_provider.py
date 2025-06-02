@@ -97,7 +97,8 @@ class FabricDataSubmitter:
 
     def update_filename(self):
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        self.filename_current = f"{self.filename_base}_{timestamp}.jsonl"
+        filename = f"{self.filename_base}_{timestamp}.jsonl"
+        return filename
 
     def write_dict_to_file(self, data: dict):
         """
@@ -115,7 +116,7 @@ class FabricDataSubmitter:
             os.path.exists(self.filename_current)
             and os.path.getsize(self.filename_current) > self.max_file_size_bytes
         ):
-            self.update_filename()
+            self.filename_current = self.update_filename()
             logging.info(f"new file name: {self.filename_current}")
 
         with open(self.filename_current, "a", encoding="utf-8") as f:
@@ -141,7 +142,7 @@ class FabricDataSubmitter:
 
         if self.write_to_local_file:
             self.write_dict_to_file(json_dict)
-            logging.info(f"FDS wrote to this file: {self.base_filename}")
+            logging.info(f"FDS wrote to this file: {self.filename_current}")
 
         if self.api_key is None or self.api_key == "":
             logging.error("API key is missing. Cannot share data to FABRIC cloud.")
