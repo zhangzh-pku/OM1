@@ -41,7 +41,10 @@ class RtkProvider:
         except serial.SerialException as e:
             logging.error(f"Error: {e}")
 
-        self.nmr = NMEAReader(self.serial_connection)
+        if self.serial_connection:
+            self.nmr = NMEAReader(self.serial_connection)
+        else:
+            self.nmr = None
 
         self._rtk: Optional[dict] = None
 
