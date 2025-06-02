@@ -47,7 +47,6 @@ class Go2XboxControllerConnector(ActionConnector[IDLEInput]):
             self.sport_client.Init()
             self.sport_client.StopMove()
             self.sport_client.Move(0.05, 0, 0)
-            time.sleep(1)
             logging.info("XBox Unitree sport client initialized")
         except Exception as e:
             self.sport_client = None

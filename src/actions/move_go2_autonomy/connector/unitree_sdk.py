@@ -35,6 +35,8 @@ class MoveUnitreeSDKConnector(ActionConnector[MoveInput]):
             self.sport_client = SportClient()
             self.sport_client.SetTimeout(10.0)
             self.sport_client.Init()
+            self.sport_client.StopMove()
+            self.sport_client.Move(0.05, 0, 0)
             logging.info("Autonomy Unitree sport client initialized")
         except Exception as e:
             logging.error(f"Error initializing Unitree sport client: {e}")
