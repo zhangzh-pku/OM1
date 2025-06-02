@@ -17,23 +17,6 @@ class ASRProvider:
     This class implements a singleton pattern to manage audio input streaming and websocket
     communication for speech recognition services. It runs in a separate thread to handle
     continuous audio processing.
-
-    Parameters
-    ----------
-    ws_url : str
-        The websocket URL for the ASR service connection.
-    stream_url : str, optional
-        The URL for the audio stream. If not provided, defaults to None.
-    device_id : int
-        The device ID of the chosen microphone; used the system default if None
-    microphone_name : str
-        The name of the microphone to use for audio input
-    rate : int
-        The audio sample rate for the audio stream; used the system default if None
-    chunk : int
-        The audio chunk size for the audio stream; used the 200ms default if None
-    language_code : str
-        The language code for language in the audio stream; used the en-US default if None
     """
 
     def __init__(
@@ -45,6 +28,7 @@ class ASRProvider:
         rate: Optional[int] = None,
         chunk: Optional[int] = None,
         language_code: Optional[str] = None,
+        remote_input: bool = False,
     ):
         """
         Initialize the ASR Provider.
@@ -63,6 +47,8 @@ class ASRProvider:
             The audio chunk size for the audio stream; used the 200ms default if None
         language_code : str
             The language code for language in the audio stream; used the en-US default if None
+        remote_input : bool
+            If True, the audio input is processed remotely; defaults to False.
         """
         self.running: bool = False
         self.ws_client: ws.Client = ws.Client(url=ws_url)
@@ -76,6 +62,7 @@ class ASRProvider:
             device_name=microphone_name,
             audio_data_callback=self.ws_client.send_message,
             language_code=language_code,
+            remote_input=remote_input,
         )
         self._thread: Optional[threading.Thread] = None
 
@@ -111,6 +98,10 @@ class ASRProvider:
             self.video_stream.register_frame_callback(
                 self.stream_ws_client.send_message
             )
+            if self.audio_stream.remote_input:
+                self.stream_ws_client.register_message_callback(
+                    self.audio_stream.fill_buffer_remote
+                )
 
         logging.info("ASR provider started")
 

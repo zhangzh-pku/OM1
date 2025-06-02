@@ -72,6 +72,8 @@ class GoogleASRInput(FuserInput[str]):
         language_code = LANGUAGE_CODE_MAP.get(language, "en-US")
         logging.info(f"Using language code {language_code} for Google ASR")
 
+        remote_input = getattr(self.config, "remote_input", False)
+
         self.asr: ASRProvider = ASRProvider(
             rate=rate,
             chunk=chunk,
@@ -80,6 +82,7 @@ class GoogleASRInput(FuserInput[str]):
             device_id=microphone_device_id,
             microphone_name=microphone_name,
             language_code=language_code,
+            remote_input=remote_input,
         )
         self.asr.start()
         self.asr.register_message_callback(self._handle_asr_message)

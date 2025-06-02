@@ -48,6 +48,7 @@ class RivaASRInput(FuserInput[str]):
         )
         microphone_device_id = getattr(self.config, "microphone_device_id", None)
         microphone_name = getattr(self.config, "microphone_name", None)
+        remote_input = getattr(self.config, "remote_input", False)
 
         self.asr: ASRProvider = ASRProvider(
             rate=rate,
@@ -56,6 +57,7 @@ class RivaASRInput(FuserInput[str]):
             stream_url=stream_base_url,
             device_id=microphone_device_id,
             microphone_name=microphone_name,
+            remote_input=remote_input,
         )
         self.asr.start()
         self.asr.register_message_callback(self._handle_asr_message)
