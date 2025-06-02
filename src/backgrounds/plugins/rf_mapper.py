@@ -195,7 +195,7 @@ class RFmapper(Background):
                                 )
                             )
                         except Exception as e:
-                                logging.error(f"Error sharing to Fabric: {e}")
+                            logging.error(f"Error sharing to Fabric: {e}")
 
                         self.scan_results = None
 

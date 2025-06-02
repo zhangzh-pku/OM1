@@ -122,7 +122,7 @@ class VLM_COCO_Local(FuserInput[Image.Image]):
         await asyncio.sleep(0.5)
 
         # Capture a frame every 500 ms
-        #logging.info(f"VLM_COCO_Local poll")
+        # logging.info(f"VLM_COCO_Local poll")
 
         if self.have_cam:
             ret, frame = self.cap.read()
@@ -156,8 +156,8 @@ class VLM_COCO_Local(FuserInput[Image.Image]):
             mobilenet_detections = self.model(tensor_image)[
                 0
             ]  # pylint: disable=E1102 disable not callable warning
-            
-            #logging.info(f"VLM_COCO_Local detections: {mobilenet_detections}")
+
+            # logging.info(f"VLM_COCO_Local detections: {mobilenet_detections}")
             filtered_detections = [
                 Detection(label_id, box, score)
                 for label_id, box, score in zip(
