@@ -87,14 +87,14 @@ class Rtk(FuserInput[str]):
         """
         logging.debug(f"rtk: {raw_input}")
 
-        d = raw_input
-        if d:
-            logging.debug(f"RTK Provider: {d}")
-            lat = d["gps_lat"]
-            lon = d["gps_lon"]
-            alt = d["gps_alt"]
-            sats = d["gps_sats"]
-            if sats > 0:
+        r = raw_input
+        if r:
+            logging.debug(f"RTK Provider: {r}")
+            lat = r["rtk_lat"]
+            lon = r["rtk_lon"]
+            alt = r["rtk_alt"]
+            sat = r["rtk_sat"]
+            if sat > 0:
                 msg = f"Current location is {lat}, {lon} at {alt}m altitude."
                 return Message(timestamp=time.time(), message=msg)
             else:
