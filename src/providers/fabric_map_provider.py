@@ -21,6 +21,11 @@ class FabricData:
     gps_lat: str
     gps_lon: str
     gps_alt: float
+    rtk_time_utc: str
+    rtk_lat: float
+    rtk_lon: float
+    rtk_alt: float
+    rtk_qua: int
     mag: float
     update_time_local: float
     odom_x: float
@@ -44,6 +49,11 @@ class FabricData:
             "gps_lat": self.gps_lat,
             "gps_lon": self.gps_lon,
             "gps_alt": self.gps_alt,
+            "rtk_time_utc": self.rtk_time_utc,
+            "rtk_lat": self.rtk_lat,
+            "rtk_lon": self.rtk_lon,
+            "rtk_alt": self.rtk_alt,
+            "rtk_qua": self.rtk_qua,
             "mag": self.mag,
             "update_time_local": self.update_time_local,
             "odom_x": self.odom_x,
@@ -137,7 +147,7 @@ class FabricDataSubmitter:
 
         if self.write_to_local_file:
             name_used = self.write_dict_to_file(
-                json_dict, "fabric_log.jsonl", max_file_size_bytes=1024 * 512
+                json_dict, "fabric_log.jsonl", max_file_size_bytes=1024 * 1024
             )
             logging.info(f"FDS wrote to this file: {name_used}")
 
@@ -172,5 +182,5 @@ class FabricDataSubmitter:
         data : FabricData
             A mapping data payload to submit.
         """
-        # logging.info(f"data: {data}")
+        logging.debug(f"share data: {data}")
         self.executor.submit(self._share_data_worker, data)

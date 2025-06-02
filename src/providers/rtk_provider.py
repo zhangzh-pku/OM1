@@ -3,6 +3,9 @@ import threading
 import time
 from typing import Optional
 
+from pynmeagps import NMEAReader
+
+
 import serial
 
 from .singleton import singleton
@@ -40,76 +43,54 @@ class RtkProvider:
         except serial.SerialException as e:
             logging.error(f"Error: {e}")
 
+        self.nmr = NMEAReader(self.serial_connection)
+
         self._rtk: Optional[dict] = None
 
-        self.lat = ""
-        self.lon = ""
+        self.lat = 0.0
+        self.lon = 0.0
         self.alt = 0.0
-        self.sats = 0
+        self.sat = 0
+        self.qua = 0
         self.time_utc = ""
 
         self.running = False
         self._thread: Optional[threading.Thread] = None
         self.start()
 
-    def magGPSProcessor(self, data):
+    def magRTKProcessor(self, msg):
         # Used whenever there is a connected
         # nav Arduino on serial
-        # Parses lines like:
-        # - GPS:37.7749N,-122.4194W,KN:0.12,HEAD:84.1,ALT:30.5,SAT:7,TIME:3:14:24:546
-        # - YPR: 134.57, -3.20, 1.02
-        # - HDG (DEG): 225.0 SW NTC_HDG: 221.3
         try:
-            # if data.startswith("HDG (DEG):"):
-            #     parts = data.split()
-            #     if len(parts) >= 4:
-            #         # that's a HDG packet
-            #         self.yaw_mag_0_360 = float(parts[2])
-            #         self.yaw_mag_cardinal = parts[3]
-            #         logging.debug(f"MAG: {self.yaw_mag_0_360}")
-            #     else:
-            #         logging.warning(f"Unable to parse heading: {data}")
-            # elif data.startswith("YPR:"):
-            #     yaw, pitch, roll = map(str.strip, data[4:].split(","))
-            #     logging.debug(
-            #         f"Orientation is Yaw: {yaw}°, Pitch: {pitch}°, Roll: {roll}°."
-            #     )
-            # el
-            logging.info({data})
+            logging.debug(f"RTK:{msg}")
 
-            if data.startswith("GPS:"):
+            if msg.msgID == "GGA":
                 try:
-                    parts = data[4:].split(",")
-                    lat = parts[0]
-                    lon = parts[1]
-                    heading = parts[3].split(":")[1]
-                    alt = parts[4].split(":")[1]
-                    sats = parts[5].split(":")[1]
-                    self.lat = lat
-                    self.lon = lon
-                    self.alt = float(alt)
-                    self.sats = int(sats)
-                    if len(parts) >= 6:
-                        time = parts[6][5:]
-                        self.time_utc = time
-                    logging.debug(
+                    self.lat = float(msg.lat)
+                    self.lon = float(msg.lon)
+                    self.alt = float(msg.alt)
+                    self.sat = int(msg.numSV)
+                    self.qua = int(msg.quality)
+                    self.time_utc = msg.time.strftime('%H:%M:%S')
+                    logging.info(
                         (
-                            f"Current location is {lat}, {lon} at {alt}m altitude. "
-                            f"GPS Heading {heading}° with {sats} satellites locked. "
-                            f"The time, if available, is {self.time_utc}."
+                            f"Current precision location is {self.lat}, {self.lon} at {self.alt}m altitude. "
+                            f"Quality {self.qua} with {self.sat} satellites locked. "
+                            f"The time is {self.time_utc}."
                         )
                     )
                 except Exception as e:
-                    logging.warning(f"Failed to parse RTK: {data} ({e})")
+                    logging.warning(f"Failed to parse GGA message: {msg} ({e})")
         except Exception as e:
-            logging.warning(f"Error processing serial RTK input: {data} ({e})")
+            logging.warning(f"Error processing serial RTK input: {msg} ({e})")
 
         self._rtk = {
-            "gps_lat": self.lat,
-            "gps_lon": self.lon,
-            "gps_alt": self.alt,
-            "gps_sats": self.sats,
-            "gps_time_utc": self.time_utc,
+            "rtk_lat": self.lat,
+            "rtk_lon": self.lon,
+            "rtk_alt": self.alt,
+            "rtk_sat": self.sat,
+            "rtk_qua": self.qua,
+            "rtk_time_utc": self.time_utc,
         }
 
     def start(self):
@@ -130,11 +111,18 @@ class RtkProvider:
         """
         while self.running:
 
-            if self.serial_connection:
-                # Read a line, decode, and remove whitespace
-                data = self.serial_connection.readline().decode("utf-8").strip()
-                logging.debug(f"Serial RTK: {data}")
-                self.magRTKProcessor(data)
+            if self.serial_connection and self.nmr:
+                try:
+                    (raw_data, parsed_data) = self.nmr.read()
+                    if parsed_data:
+                        self.magRTKProcessor(parsed_data)
+                except Exception as e:
+                    pass
+
+                # # Read a line, decode, and remove whitespace
+                # data = self.serial_connection.readline().decode("utf-8").strip()
+                # logging.debug(f"Serial RTK: {data}")
+                # self.magRTKProcessor(data)
 
             time.sleep(0.05)
 

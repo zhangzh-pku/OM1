@@ -39,6 +39,8 @@ class Rtk(FuserInput[str]):
         port = getattr(config, "serial_port", None)
         self.silent = getattr(config, "silent", False)
 
+        logging.info(f"RTK Provider: {port}")
+
         self.rtk = RtkProvider(serial_port=port)
         self.io_provider = IOProvider()
         self.messages: list[Message] = []

@@ -17,14 +17,14 @@
     {
       "type": "Gps",
       config: {
-        "serial_port": "/dev/cu.usbmodem21201",
+        "serial_port": "/dev/cu.usbmodem101",
         "silent": false // set to true to just spin up the provider
       }
     },
     {
       "type": "Rtk",
       config: {
-        "serial_port": "/dev/cu.usbmodem101",
+        "serial_port": "/dev/cu.usbmodem21201",
         "silent": false // set to true to just spin up the provider
       }
     },
