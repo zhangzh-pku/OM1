@@ -8,8 +8,8 @@ from bleak import AdvertisementData, BleakScanner
 from backgrounds.base import Background, BackgroundConfig
 from providers.fabric_map_provider import FabricData, FabricDataSubmitter
 from providers.gps_provider import GpsProvider
-from providers.rtk_provider import RtkProvider
 from providers.odom_provider import OdomProvider
+from providers.rtk_provider import RtkProvider
 
 
 class RFmapper(Background):
@@ -42,11 +42,17 @@ class RFmapper(Background):
         self.yaw_odom_0_360 = 0.0
         self.yaw_odom_m180_p180 = 0.0
 
-        self.rtk_time_utc=""
-        self.rtk_lat=0
-        self.rtk_lon=0
-        self.rtk_alt=0
-        self.rtk_qua=0
+        self.gps_time_utc = ""
+        self.gps_lat = 0.0
+        self.gps_lon = 0.0
+        self.gps_alt = 0.0
+        self.yaw_mag_0_360 = 0.0
+
+        self.rtk_time_utc = ""
+        self.rtk_lat = 0.0
+        self.rtk_lon = 0.0
+        self.rtk_alt = 0.0
+        self.rtk_qua = 0
 
         self.gps = GpsProvider()
         self.gps_on = self.gps.running
@@ -119,6 +125,25 @@ class RFmapper(Background):
                         g = self.gps.data
                         logging.debug(f"GPS data: {g}")
 
+                        if g:
+                            self.gps_time_utc = g["gps_time_utc"]
+
+                            lat = g["gps_lat"]
+                            if lat[-1] == "N":
+                                self.gps_lat = float(lat[:-1])
+                            else:
+                                self.gps_lat = -1.0 * float(lat[:-1])
+
+                            lon = g["gps_lon"]
+                            if lon[-1] == "E":
+                                self.gps_lon = float(lon[:-1])
+                            else:
+                                self.gps_lon = -1.0 * float(lon[:-1])
+
+                            self.gps_alt = g["gps_alt"]
+
+                            self.yaw_mag_0_360 = g["yaw_mag_0_360"]
+
                         if hasattr(self.odom, "running"):
                             o = self.odom.odom
                             logging.debug(f"Odom data: {o}")
@@ -130,25 +155,25 @@ class RFmapper(Background):
                         if hasattr(self.rtk, "running"):
                             r = self.rtk.data
                             logging.debug(f"RTK data: {r}")
-                            self.rtk_time_utc=r["rtk_time_utc"]
-                            self.rtk_lat=r["rtk_lat"]
-                            self.rtk_lon=r["rtk_lon"]
-                            self.rtk_alt=r["rtk_alt"]
-                            self.rtk_qua=r["rtk_qua"]
+                            self.rtk_time_utc = r["rtk_time_utc"]
+                            self.rtk_lat = r["rtk_lat"]
+                            self.rtk_lon = r["rtk_lon"]
+                            self.rtk_alt = r["rtk_alt"]
+                            self.rtk_qua = r["rtk_qua"]
 
                         self.fds.share_data(
                             FabricData(
                                 machine_id=self.URID,
-                                gps_time_utc=g["gps_time_utc"],
-                                gps_lat=g["gps_lat"],
-                                gps_lon=g["gps_lon"],
-                                gps_alt=g["gps_alt"],
+                                gps_time_utc=self.gps_time_utc,
+                                gps_lat=self.gps_lat,
+                                gps_lon=self.gps_lon,
+                                gps_alt=self.gps_alt,
                                 rtk_time_utc=self.rtk_time_utc,
                                 rtk_lat=self.rtk_lat,
                                 rtk_lon=self.rtk_lon,
                                 rtk_alt=self.rtk_alt,
                                 rtk_qua=self.rtk_qua,
-                                mag=g["yaw_mag_0_360"],
+                                mag=self.yaw_mag_0_360,
                                 update_time_local=time.time(),
                                 odom_x=self.x,
                                 odom_y=self.y,

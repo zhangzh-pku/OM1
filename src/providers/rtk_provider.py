@@ -3,10 +3,8 @@ import threading
 import time
 from typing import Optional
 
-from pynmeagps import NMEAReader
-
-
 import serial
+from pynmeagps import NMEAReader
 
 from .singleton import singleton
 
@@ -71,7 +69,9 @@ class RtkProvider:
                     self.alt = float(msg.alt)
                     self.sat = int(msg.numSV)
                     self.qua = int(msg.quality)
-                    self.time_utc = msg.time.strftime('%H:%M:%S')
+                    ms = msg.time.strftime("%f")[:3]
+                    strtime = msg.time.strftime("%H:%M:%S") + "." + ms
+                    self.time_utc = strtime
                     logging.info(
                         (
                             f"Current precision location is {self.lat}, {self.lon} at {self.alt}m altitude. "
@@ -116,7 +116,7 @@ class RtkProvider:
                     (raw_data, parsed_data) = self.nmr.read()
                     if parsed_data:
                         self.magRTKProcessor(parsed_data)
-                except Exception as e:
+                except Exception:
                     pass
 
                 # # Read a line, decode, and remove whitespace
