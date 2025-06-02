@@ -17,13 +17,17 @@ class FabricData:
     """
 
     machine_id: str
-    gps_time: str
-    lat: str
-    lon: str
-    alt: float
+    gps_time_utc: str
+    gps_lat: str
+    gps_lon: str
+    gps_alt: float
+    mag: float
+    update_time_local: float
     odom_x: float
     odom_y: float
-    odom_yaw: float
+    yaw_odom_0_360: float
+    yaw_odom_m180_p180: float
+    rf_data: list
 
     def to_dict(self) -> dict:
         """
@@ -36,13 +40,17 @@ class FabricData:
         """
         return {
             "machine_id": self.machine_id,
-            "gps_time": self.gps_time,
-            "lat": self.lat,
-            "lon": self.lon,
-            "alt": self.alt,
+            "gps_time_utc": self.gps_time_utc,
+            "gps_lat": self.gps_lat,
+            "gps_lon": self.gps_lon,
+            "gps_alt": self.gps_alt,
+            "mag": self.mag,
+            "update_time_local": self.update_time_local,
             "odom_x": self.odom_x,
             "odom_y": self.odom_y,
-            "odom_yaw": self.odom_yaw,
+            "yaw_odom_0_360": self.yaw_odom_0_360,
+            "yaw_odom_m180_p180": self.yaw_odom_m180_p180,
+            "rf_data": self.rf_data,
         }
 
 
@@ -75,7 +83,7 @@ class FabricDataSubmitter:
         self.executor = ThreadPoolExecutor(max_workers=1)
 
     def write_dict_to_file(
-        data: dict, base_filename: str, max_file_size_bytes: int = 1024 * 1024
+        self, data: dict, base_filename: str, max_file_size_bytes: int = 1024 * 1024
     ):
         """
         Writes a dictionary to a file in JSON lines format. If the file exceeds max_file_size_bytes,
@@ -86,6 +94,8 @@ class FabricDataSubmitter:
         - base_filename: Base name for the file (e.g., 'log.jsonl')
         - max_file_size_bytes: Maximum allowed size before rolling over to a new file
         """
+        # logging.info(f"write_dict_to_file: {data}")
+
         if not isinstance(data, dict):
             raise ValueError("Provided data must be a dictionary.")
 
@@ -100,12 +110,13 @@ class FabricDataSubmitter:
             and os.path.getsize(base_filename) > max_file_size_bytes
         ):
             base_filename = get_new_filename()
+            logging.info(f"new file name: {base_filename}")
 
         with open(base_filename, "a", encoding="utf-8") as f:
             json_line = json.dumps(data)
             f.write(json_line + "\n")
 
-        return base_filename  # optional: return the file used
+        return base_filename
 
     def _share_data_worker(self, data: FabricData):
         """
@@ -117,16 +128,22 @@ class FabricDataSubmitter:
         data : FabricData
             The data to be shared.
         """
-        if self.api_key is None or self.api_key == "":
-            logging.error("API key is missing. Cannot share data to FABRIC.")
-            return
 
-        json_dict = data.to_dict()
+        # logging.info(f"prepare data: {data}")
+        try:
+            json_dict = data.to_dict()
+        except Exception as e:
+            logging.error(f"Error converting to dict: {str(e)}")
 
         if self.write_to_local_file:
-            self.write_dict_to_file(
-                json_dict, "fabric_log.jsonl", max_file_size_bytes=1024 * 1024
+            name_used = self.write_dict_to_file(
+                json_dict, "fabric_log.jsonl", max_file_size_bytes=1024 * 512
             )
+            logging.info(f"FDS wrote to this file: {name_used}")
+
+        if self.api_key is None or self.api_key == "":
+            logging.error("API key is missing. Cannot share data to FABRIC cloud.")
+            return
 
         try:
             request = requests.post(
@@ -155,4 +172,5 @@ class FabricDataSubmitter:
         data : FabricData
             A mapping data payload to submit.
         """
+        # logging.info(f"data: {data}")
         self.executor.submit(self._share_data_worker, data)
