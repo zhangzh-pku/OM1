@@ -87,11 +87,15 @@ class Go2XboxControllerConnector(ActionConnector[IDLEInput]):
 
     def _execute_command_thread(self, command: str) -> None:
         try:
-            if command == "StandUp" and self.odom.body_attitude == RobotState.STANDING:
+            if (
+                command == "StandUp"
+                and self.odom.position.body_attitude == RobotState.STANDING
+            ):
                 logging.info("Already standing, skipping command")
                 return
             elif (
-                command == "StandDown" and self.odom.body_attitude == RobotState.SITTING
+                command == "StandDown"
+                and self.odom.position.body_attitude == RobotState.SITTING
             ):
                 logging.info("Already sitting, skipping command")
                 return
@@ -162,7 +166,7 @@ class Go2XboxControllerConnector(ActionConnector[IDLEInput]):
         if not self.sport_client:
             return
 
-        if self.odom.body_attitude != RobotState.STANDING:
+        if self.odom.position.body_attitude != RobotState.STANDING:
             logging.info("self.sport_client.Move blocked - dog is sitting")
             return
 
@@ -185,6 +189,8 @@ class Go2XboxControllerConnector(ActionConnector[IDLEInput]):
         logging.debug("Gamepad tick")
 
         data = None
+
+        logging.info(f"XBOX Odom Provider: {self.odom.position}")
 
         if self.gamepad:
             # try to read USB data, and if there is nothing, timeout
