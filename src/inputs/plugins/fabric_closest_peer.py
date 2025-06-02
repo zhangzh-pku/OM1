@@ -16,6 +16,7 @@ from inputs.base import SensorConfig
 from inputs.base.loop import FuserInput
 from providers.io_provider import IOProvider
 
+
 # ────────────────────────────────────────────────────────────────────────────────
 @dataclass
 class Message:
@@ -23,7 +24,7 @@ class Message:
     message: str
 
 
-class FabricGPSInput(FuserInput[str]):
+class FabricClosestPeer(FuserInput[str]):
     """Share our GPS position with the Fabric network and fetch the closest peer.
 
     **Mock‑friendly:** set `mock_mode=True` in the plugin config (or environment)
@@ -34,14 +35,18 @@ class FabricGPSInput(FuserInput[str]):
     def __init__(self, config: SensorConfig = SensorConfig()):
         super().__init__(config)
 
-        self.descriptor_for_LLM = "Fabric Network GPS Input"
+        self.descriptor_for_LLM = "Closest Peer from Fabric"
         self.io = IOProvider()
         self.messages: List[str] = []
         self.msg_q: Queue[str] = Queue()
 
         # endpoint / mock toggle -------------------------------------------------
-        self.fabric_endpoint = getattr(config, "fabric_endpoint", "http://localhost:8545")
-        self.mock_mode: bool = bool(getattr(config, "mock_mode", True))  # default ON for now
+        self.fabric_endpoint = getattr(
+            config, "fabric_endpoint", "http://localhost:8545"
+        )
+        self.mock_mode: bool = bool(
+            getattr(config, "mock_mode", True)
+        )  # default ON for now
 
     # ────────────────────────────────────────────────────────────────────────
     async def _poll(self) -> Optional[str]:
@@ -51,12 +56,24 @@ class FabricGPSInput(FuserInput[str]):
         if self.mock_mode:
             peer_lat = getattr(self.config, "mock_lat")
             peer_lon = getattr(self.config, "mock_lon")
-            logging.info(f"FabricGPS (mock): fabricated peer {peer_lat:.6f},{peer_lon:.6f}")
+            logging.info(
+                f"FabricClosestPeer (mock): fabricated peer {peer_lat:.6f},{peer_lon:.6f}"
+            )
         else:
             if requests is None:
-                logging.error("FabricGPS: requests not available and mock_mode=False")
+                logging.error(
+                    "FabricClosestPeer: requests not available and mock_mode=False"
+                )
                 return None
             try:
+                lat = self.io.get_dynamic_variable("latitude")
+                lon = self.io.get_dynamic_variable("longitude")
+                if lat is None or lon is None:
+                    logging.error("FabricClosestPeer: latitude or longitude not set.")
+                    return None
+                logging.info(
+                    f"FabricClosestPeer: fetching closest peer for {lat:.6f}, {lon:.6f}"
+                )
                 resp = requests.post(
                     self.fabric_endpoint,
                     json={
@@ -69,15 +86,17 @@ class FabricGPSInput(FuserInput[str]):
                     headers={"Content-Type": "application/json"},
                 )
                 data = resp.json()
-                logging.debug(f"FabricGPS response: {data}")
+                logging.debug(f"FabricClosestPeer response: {data}")
                 peer_info = (data.get("result") or [{}])[0].get("peer")
                 if not peer_info:
-                    logging.info("FabricGPS: no peer found.")
+                    logging.info("FabricClosestPeer: no peer found.")
                     return None
                 peer_lat = peer_info["latitude"]
                 peer_lon = peer_info["longitude"]
             except Exception as exc:  # pylint: disable=broad-except
-                logging.error(f"FabricGPS: error calling Fabric endpoint – {exc}")
+                logging.error(
+                    f"FabricClosestPeer: error calling Fabric endpoint – {exc}"
+                )
                 return None
 
         # store & enqueue ------------------------------------------------------

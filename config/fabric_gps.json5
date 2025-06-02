@@ -17,7 +17,7 @@
       },
     },
     {
-      type: "FabricGPSInput",
+      type: "FabricClosestPeer",
       config: {
         // "mock_mode": true,
         // "mock_lat": 37.782486,
