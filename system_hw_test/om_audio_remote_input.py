@@ -32,7 +32,7 @@ class AudioInput:
     """
 
     audio: str
-    rare: int
+    rate: int
     language_code: str = "en-US"
 
     def to_dict(self) -> dict:
@@ -46,7 +46,7 @@ class AudioInput:
         """
         return {
             "audio": self.audio,
-            "rare": self.rare,
+            "rate": self.rate,
             "language_code": self.language_code,
         }
 
@@ -62,7 +62,7 @@ class AudioInput:
         """
         return cls(
             audio=data.get("audio", ""),
-            rare=data.get("rare", 16000),
+            rate=data.get("rate", 16000),
             language_code=data.get("language_code", "en-US"),
         )
 
@@ -223,7 +223,7 @@ class RemoteAudioInput:
         if self.ws_client.is_connected():
             encode_audio = base64.b64encode(in_data).decode("utf-8")
             audio_input = AudioInput(
-                audio=encode_audio, rare=self._rate, language_code="en-US"
+                audio=encode_audio, rate=self._rate, language_code="en-US"
             )
             self.ws_client.send_message(json.dumps(audio_input.to_dict()))
         return None, pyaudio.paContinue
