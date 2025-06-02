@@ -58,10 +58,12 @@ class GPSOdomReader(FuserInput[str]):
         # --- origin (deg) ------------------------------------------------
         self.lat0: float | None = getattr(config, "origin_lat", None)
         self.lon0: float | None = getattr(config, "origin_lon", None)
-        if self.lat0 is None or self.lon0 is None:
-            raise ValueError("origin_lat and origin_lon must be provided")
-
         yaw0_deg = getattr(config, "origin_yaw_deg", None)
+        if self.lat0 is None or self.lon0 is None or yaw0_deg is None:
+            logging.error(
+                "GPSOdomReader: origin_lat, origin_lon, and origin_yaw_deg must be set in the config."
+            )
+            raise ValueError("Missing origin coordinates or yaw in config.")
         self._yaw_offset = math.radians(yaw0_deg) if yaw0_deg is not None else 0.0
 
         # --- current pose -----------------------------------------------
@@ -77,7 +79,7 @@ class GPSOdomReader(FuserInput[str]):
         # --- I/O + buffer ------------------------------------------------
         self.io_provider = IOProvider()
         self.buf: list[Message] = []
-        self.descriptor_for_LLM = "Location and Velocity"
+        self.descriptor_for_LLM = "Latitude, Longitude, and Yaw"
 
     # ── helpers ──────────────────────────────────────────────────────────
     @staticmethod
