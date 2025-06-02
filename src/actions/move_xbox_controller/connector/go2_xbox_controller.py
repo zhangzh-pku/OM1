@@ -163,6 +163,7 @@ class Go2XboxControllerConnector(ActionConnector[IDLEInput]):
             return
 
         if self.dog_attitude != RobotState.STANDING:
+            logging.info("self.sport_client.Move blocked - dog is sitting")
             return
 
         try:
@@ -262,11 +263,11 @@ class Go2XboxControllerConnector(ActionConnector[IDLEInput]):
                 move_triggered_dpad = True
                 self._move_robot(-self.move_speed, 0.0)
             elif d_pad_value == 7:  # Left
-                logging.info("D-pad LEFT - Turning left")
+                logging.info("D-pad LEFT - Moving left")
                 move_triggered_dpad = True
                 self._move_robot(0.0, self.turn_speed)
             elif d_pad_value == 3:  # Right
-                logging.info("D-pad RIGHT - Turning right")
+                logging.info("D-pad RIGHT - Moving right")
                 move_triggered_dpad = True
                 self._move_robot(0.0, -self.turn_speed)
             elif self.d_pad_previous > 0 and d_pad_value == 0:
