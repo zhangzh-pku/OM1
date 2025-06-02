@@ -137,12 +137,12 @@ class RtkProvider:
 
     @property
     def data(self) -> Optional[dict]:
-    """
-    Get the current robot RTK data.
+        """
+        Get the current robot RTK data.
 
-    Returns
-    -------
-    Optional[dict]
-        Dictionary containing RTK position data or None if not available
-    """
-    return self._rtk
+        Returns
+        -------
+        Optional[dict]
+            Dictionary containing RTK position data or None if not available
+        """
+        return self._rtk
