@@ -106,6 +106,7 @@ class RFmapper(Background):
 
     def stop(self):
         self.running = False
+        time.sleep(1)
         self.thread.join()
 
     def run(self) -> None:
