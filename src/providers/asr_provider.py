@@ -98,6 +98,7 @@ class ASRProvider:
             self.video_stream.register_frame_callback(
                 self.stream_ws_client.send_message
             )
+            # Register the audio stream to fill the buffer for remote input
             if self.audio_stream.remote_input:
                 self.stream_ws_client.register_message_callback(
                     self.audio_stream.fill_buffer_remote
