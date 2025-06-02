@@ -1,11 +1,10 @@
 import logging
 import threading
 import time
-from enum import Enum
 
 from actions.base import ActionConfig, ActionConnector
 from actions.move_xbox_controller.interface import IDLEInput
-from providers.odom_provider import OdomProvider
+from providers.odom_provider import OdomProvider, RobotState
 from unitree.unitree_sdk2py.go2.sport.sport_client import SportClient
 
 try:
@@ -15,11 +14,6 @@ except ImportError:
         "HID library not found. Please install the HIDAPI library to use this plugin."
     )
     hid = None
-
-
-class RobotState(Enum):
-    STANDING = "standing"
-    SITTING = "sitting"
 
 
 class Go2XboxControllerConnector(ActionConnector[IDLEInput]):
@@ -190,7 +184,7 @@ class Go2XboxControllerConnector(ActionConnector[IDLEInput]):
 
         data = None
 
-        logging.info(f"XBOX Odom Provider: {self.odom.position["body_attitude"]}")
+        logging.info(f'XBOX Odom Provider: {self.odom.position["body_attitude"]}')
 
         if self.odom.position["body_attitude"] == "standing":
             logging.info("XBOX Odom Provider standing")
