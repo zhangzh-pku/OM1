@@ -1,13 +1,24 @@
 import logging
 import math
 import time
+from dataclasses import dataclass
 from queue import Queue
+from typing import List, Optional
 
 from actions.base import ActionConfig, ActionConnector
 from actions.move_go2_autonomy.interface import MoveInput
 from providers.odom_provider import OdomProvider, RobotState
 from providers.rplidar_provider import RPLidarProvider
 from unitree.unitree_sdk2py.go2.sport.sport_client import SportClient
+
+
+@dataclass
+class MoveCommand:
+    dx: float
+    yaw: float
+    direction: str
+    start_x: float = 0.0
+    start_y: float = 0.0
 
 
 class MoveUnitreeSDKConnector(ActionConnector[MoveInput]):
@@ -22,7 +33,7 @@ class MoveUnitreeSDKConnector(ActionConnector[MoveInput]):
 
         self.angle_tolerance = 5.0
         self.distance_tolerance = 0.05  # m
-        self.pending_movements = Queue()
+        self.pending_movements: Queue[Optional[MoveCommand]] = Queue()
         self.movement_attempts = 0
         self.movement_attempt_limit = 15
         self.gap_previous = 0
@@ -70,7 +81,9 @@ class MoveUnitreeSDKConnector(ActionConnector[MoveInput]):
             target_yaw = self.odom.yaw_odom_m180_p180 - 90.0
             if target_yaw <= -180:
                 target_yaw += 360.0
-            self.pending_movements.put([0.0, round(target_yaw, 2), "turn"])
+            self.pending_movements.put(
+                MoveCommand(dx=0.0, yaw=round(target_yaw, 2), direction="turn")
+            )
         elif output_interface.action == "turn right":
             # turn 90 Deg to the right (CW)
             if len(self.lidar.turn_right) == 0:
@@ -79,20 +92,34 @@ class MoveUnitreeSDKConnector(ActionConnector[MoveInput]):
             target_yaw = self.odom.yaw_odom_m180_p180 + 90.0
             if target_yaw >= 180.0:
                 target_yaw -= 360.0
-            self.pending_movements.put([0.0, round(target_yaw, 2), "turn"])
+            self.pending_movements.put(
+                MoveCommand(dx=0.0, yaw=round(target_yaw, 2), direction="turn")
+            )
         elif output_interface.action == "move forwards":
             if not self.lidar.advance:
                 logging.warning("Cannot advance due to barrier")
                 return
             self.pending_movements.put(
-                [0.5, 0.0, "advance", round(self.odom.x, 2), round(self.odom.y, 2)]
+                MoveCommand(
+                    dx=0.5,
+                    yaw=0.0,
+                    direction="advance",
+                    start_x=round(self.odom.x, 2),
+                    start_y=round(self.odom.y, 2),
+                )
             )
         elif output_interface.action == "move back":
             if not self.lidar.retreat:
                 logging.warning("Cannot retreat due to barrier")
                 return
             self.pending_movements.put(
-                [0.5, 0.0, "retreat", round(self.odom.x, 2), round(self.odom.y, 2)]
+                MoveCommand(
+                    dx=0.5,
+                    yaw=0.0,
+                    direction="retreat",
+                    start_x=round(self.odom.x, 2),
+                    start_y=round(self.odom.y, 2),
+                )
             )
         elif output_interface.action == "stand still":
             logging.info(f"AI movement command: {output_interface.action}")
@@ -170,7 +197,7 @@ class MoveUnitreeSDKConnector(ActionConnector[MoveInput]):
 
         # if we got to this point, we have good data and we are able to
         # safely proceed
-        target = list(self.pending_movements.queue)
+        target: List[MoveCommand] = list(self.pending_movements.queue)
 
         if len(target) > 0:
 
@@ -188,9 +215,9 @@ class MoveUnitreeSDKConnector(ActionConnector[MoveInput]):
                 )
                 return
 
-            goal_dx = current_target[0]
-            goal_yaw = current_target[1]
-            direction = current_target[2]
+            goal_dx = current_target.dx
+            goal_yaw = current_target.yaw
+            direction = current_target.direction
 
             if "turn" in direction:
                 gap = self.odom.yaw_odom_m180_p180 - goal_yaw
@@ -247,8 +274,8 @@ class MoveUnitreeSDKConnector(ActionConnector[MoveInput]):
                     )
                     self.clean_abort()
             else:
-                s_x = target[0][3]
-                s_y = target[0][4]
+                s_x = current_target.start_x
+                s_y = current_target.start_y
                 distance_traveled = math.sqrt(
                     (self.odom.x - s_x) ** 2 + (self.odom.y - s_y) ** 2
                 )

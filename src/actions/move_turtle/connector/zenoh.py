@@ -2,7 +2,9 @@ import logging
 import math
 import random
 import time
+from dataclasses import dataclass
 from queue import Queue
+from typing import List, Optional
 
 import zenoh
 
@@ -11,6 +13,15 @@ from actions.move_turtle.interface import MoveInput
 from providers.odom_provider import OdomProvider
 from providers.rplidar_provider import RPLidarProvider
 from zenoh_idl import geometry_msgs, sensor_msgs
+
+
+@dataclass
+class MoveCommand:
+    dx: float
+    yaw: float
+    direction: str
+    start_x: float = 0.0
+    start_y: float = 0.0
 
 
 class MoveZenohConnector(ActionConnector[MoveInput]):
@@ -22,7 +33,7 @@ class MoveZenohConnector(ActionConnector[MoveInput]):
         self.angle_tolerance = 5.0
         self.distance_tolerance = 0.05  # m
 
-        self.pending_movements = Queue()
+        self.pending_movements: Queue[Optional[MoveCommand]] = Queue()
 
         self.hazard = None
         self.emergency = None
@@ -140,21 +151,41 @@ class MoveZenohConnector(ActionConnector[MoveInput]):
             target_yaw = self.odom.yaw_odom_m180_p180 - 30.0
             if target_yaw <= -180:
                 target_yaw += 360.0
-            self.pending_movements.put([0.0, target_yaw, "turn"])
+            self.pending_movements.put(
+                MoveCommand(dx=0.0, yaw=target_yaw, direction="turn")
+            )
         elif output_interface.action == "turn right":
             # turn 90 Deg to the right (CW)
             target_yaw = self.odom.yaw_odom_m180_p180 + 30.0
             if target_yaw >= 180.0:
                 target_yaw -= 360.0
-            self.pending_movements.put([0.0, target_yaw, "turn"])
+            self.pending_movements.put(
+                MoveCommand(dx=0.0, yaw=target_yaw, direction="turn")
+            )
         elif output_interface.action == "move forwards":
             if advance_danger:
                 return
-            self.pending_movements.put([0.5, 0.0, "advance", self.odom.x, self.odom.y])
+            self.pending_movements.put(
+                MoveCommand(
+                    dx=0.5,
+                    yaw=0.0,
+                    direction="advance",
+                    start_x=self.odom.x,
+                    start_y=self.odom.y,
+                )
+            )
         elif output_interface.action == "move back":
             if retreat_danger:
                 return
-            self.pending_movements.put([0.5, 0.0, "retreat", self.odom.x, self.odom.y])
+            self.pending_movements.put(
+                MoveCommand(
+                    dx=0.5,
+                    yaw=0.0,
+                    direction="retreat",
+                    start_x=self.odom.x,
+                    start_y=self.odom.y,
+                )
+            )
         elif output_interface.action == "stand still":
             logging.info(f"AI movement command: {output_interface.action}")
             # do nothing
@@ -238,7 +269,7 @@ class MoveZenohConnector(ActionConnector[MoveInput]):
         # if we got to this point, we have good data and there is hard wall
         # touch emergency
 
-        target = list(self.pending_movements.queue)
+        target: List[MoveCommand] = list(self.pending_movements.queue)
 
         if len(target) > 0:
 
@@ -248,9 +279,9 @@ class MoveZenohConnector(ActionConnector[MoveInput]):
                 f"Target: {current_target} current yaw: {self.odom.yaw_odom_m180_p180}"
             )
 
-            goal_dx = current_target[0]
-            goal_yaw = current_target[1]
-            direction = current_target[2]
+            goal_dx = current_target.dx
+            goal_yaw = current_target.yaw
+            direction = current_target.direction
 
             if "turn" in direction:
                 gap = self.odom.yaw_odom_m180_p180 - goal_yaw
@@ -282,8 +313,8 @@ class MoveZenohConnector(ActionConnector[MoveInput]):
 
                 logging.debug(f"Action - Valid paths: {pp}")
 
-                s_x = target[0][3]
-                s_y = target[0][4]
+                s_x = current_target.start_x
+                s_y = current_target.start_y
                 distance_traveled = math.sqrt(
                     (self.odom.x - s_x) ** 2 + (self.odom.y - s_y) ** 2
                 )
