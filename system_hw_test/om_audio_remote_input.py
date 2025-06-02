@@ -191,9 +191,6 @@ class RemoteAudioInput:
                 stream_callback=self._fill_buffer,
             )
 
-            # Start the audio processing thread
-            # self._start_audio_thread()
-
             logging.info(f"Started audio stream with device {self._device}")
 
         except Exception as e:
