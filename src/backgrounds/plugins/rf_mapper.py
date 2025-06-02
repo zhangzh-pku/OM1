@@ -114,7 +114,7 @@ class RFmapper(Background):
         This method will run indefinitely, simulating a long-running task.
         """
         try:
-            while True:
+            while self.running:
                 # logging.info(f"RF mapper: {self.scan_results}")
 
                 if hasattr(self.gps, "running"):
