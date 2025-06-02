@@ -80,8 +80,6 @@ class Go2XboxControllerConnector(ActionConnector[IDLEInput]):
         self.move_speed = 0.5
         self.turn_speed = 0.8
 
-        self.dog_attitude = None
-
         self.odom = OdomProvider()
         logging.info(f"XBOX Odom Provider: {self.odom}")
 
@@ -89,10 +87,12 @@ class Go2XboxControllerConnector(ActionConnector[IDLEInput]):
 
     def _execute_command_thread(self, command: str) -> None:
         try:
-            if command == "StandUp" and self.dog_attitude == RobotState.STANDING:
+            if command == "StandUp" and self.odom.body_attitude == RobotState.STANDING:
                 logging.info("Already standing, skipping command")
                 return
-            elif command == "StandDown" and self.dog_attitude == RobotState.SITTING:
+            elif (
+                command == "StandDown" and self.odom.body_attitude == RobotState.SITTING
+            ):
                 logging.info("Already sitting, skipping command")
                 return
 
@@ -162,7 +162,7 @@ class Go2XboxControllerConnector(ActionConnector[IDLEInput]):
         if not self.sport_client:
             return
 
-        if self.dog_attitude != RobotState.STANDING:
+        if self.odom.body_attitude != RobotState.STANDING:
             logging.info("self.sport_client.Move blocked - dog is sitting")
             return
 
@@ -183,14 +183,6 @@ class Go2XboxControllerConnector(ActionConnector[IDLEInput]):
         """
         time.sleep(0.1)
         logging.debug("Gamepad tick")
-
-        if hasattr(self.odom, "running"):
-            nav = self.odom.odom
-            logging.debug(f"XBOX odom data: {nav}")
-            if nav and nav["body_attitude"] == "standing":
-                self.dog_attitude = RobotState.STANDING
-            else:
-                self.dog_attitude = RobotState.SITTING
 
         data = None
 
