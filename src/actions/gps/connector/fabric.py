@@ -37,10 +37,13 @@ class GPSFabricConnector(ActionConnector[GPSInput]):
         logging.info("GPSFabricConnector: Sending coordinates to Fabric network.")
         latitude = self.io_provider.get_dynamic_variable("latitude")
         longitude = self.io_provider.get_dynamic_variable("longitude")
+        yaw = self.io_provider.get_dynamic_variable("yaw_deg")
         logging.info(f"GPSFabricConnector: Latitude: {latitude}")
         logging.info(f"GPSFabricConnector: Longitude: {longitude}")
+        logging.info(f"GPSFabricConnector: Yaw: {yaw}")
 
-        if latitude is None or longitude is None:
+        if latitude is None and longitude is None and yaw is None:
+            # If no coordinates are available, log an error and return
             logging.error("GPSFabricConnector: Coordinates not available.")
             return None
 
@@ -49,7 +52,9 @@ class GPSFabricConnector(ActionConnector[GPSInput]):
                 f"{self.fabric_endpoint}",
                 json={
                     "method": "omp2p_shareStatus",
-                    "params": [{"latitude": latitude, "longitude": longitude}],
+                    "params": [
+                        {"latitude": latitude, "longitude": longitude, "yaw": yaw}
+                    ],
                     "id": 1,
                     "jsonrpc": "2.0",
                 },
