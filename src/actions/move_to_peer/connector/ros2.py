@@ -17,7 +17,7 @@ class MoveToPeerRos2Connector(ActionConnector[MoveToPeerInput]):
     2. Retrieve current yaw (° clockwise from geographic North) if available.
     3. Compute bearing from current position to peer (° clockwise from North).
     4. Compute heading error = (bearing − yaw) ∈ (‑180°, +180°].
-    5. If the error is above a configurable tolerance (default ≈ 10 deg),
+    5. If the error is above a configurable tolerance (default ≈ 5 deg),
        rotate in place until within tolerance.
     6. Drive straight toward the peer until the separation < `STOP_DIST` m.
 
@@ -25,10 +25,10 @@ class MoveToPeerRos2Connector(ActionConnector[MoveToPeerInput]):
     """
 
     # ─────────────────────────── CONFIG CONSTANTS ────────────────────────────
-    MAX_ROT_SPEED = 0.2      # rad/s (≈ 34 deg/s)
-    FWD_SPEED = 0.4          # m/s forward once aligned
-    ANG_TOL_DEG = 5.0       # degrees, acceptable pointing error
-    STOP_DIST = 4.0          # metres to stop in front of peer
+    MAX_ROT_SPEED = 0.2  # rad/s (≈ 11.4 deg/s)
+    FWD_SPEED = 0.4  # m/s forward once aligned
+    ANG_TOL_DEG = 5.0  # degrees, acceptable pointing error
+    STOP_DIST = 4.0  # metres to stop in front of peer
 
     def __init__(self, config: ActionConfig):
         super().__init__(config)
@@ -70,12 +70,13 @@ class MoveToPeerRos2Connector(ActionConnector[MoveToPeerInput]):
         dlat = math.radians(lat1 - lat0)
         dlon = math.radians(lon1 - lon0)
         x_east = dlon * math.cos(math.radians((lat0 + lat1) / 2)) * R  # +E
-        y_north = dlat * R                                             # +N
+        y_north = dlat * R  # +N
         distance = math.hypot(x_east, y_north)
 
         if distance < self.STOP_DIST:
             logging.info(
-                f"MoveToPeer: already near peer (d={distance:.1f} m < {self.STOP_DIST} m).")
+                f"MoveToPeer: already near peer (d={distance:.1f} m < {self.STOP_DIST} m)."
+            )
             return
 
         # desired bearing (deg clockwise from North) ————————
@@ -95,7 +96,8 @@ class MoveToPeerRos2Connector(ActionConnector[MoveToPeerInput]):
         # heading error – positive → need CW rotation
         heading_err = ((bearing_deg - yaw_deg + 180.0) % 360.0) - 180.0  # -> (‑180,180]
         logging.info(
-            f"MoveToPeer: bearing={bearing_deg:.1f}°, yaw={yaw_deg:.1f}°, error={heading_err:.1f}°")
+            f"MoveToPeer: bearing={bearing_deg:.1f}°, yaw={yaw_deg:.1f}°, error={heading_err:.1f}°"
+        )
 
         # phase 1 — rotate toward peer --------------------------------------
         if abs(heading_err) > self.ANG_TOL_DEG:
