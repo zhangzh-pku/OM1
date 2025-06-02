@@ -89,13 +89,13 @@ class Go2XboxControllerConnector(ActionConnector[IDLEInput]):
         try:
             if (
                 command == "StandUp"
-                and self.odom.position["body_attitude"] == RobotState.STANDING
+                and self.odom.position["body_attitude"] is RobotState.STANDING
             ):
                 logging.info("Already standing, skipping command")
                 return
             elif (
                 command == "StandDown"
-                and self.odom.position["body_attitude"] == RobotState.SITTING
+                and self.odom.position["body_attitude"] is RobotState.SITTING
             ):
                 logging.info("Already sitting, skipping command")
                 return
@@ -166,7 +166,7 @@ class Go2XboxControllerConnector(ActionConnector[IDLEInput]):
         if not self.sport_client:
             return
 
-        if self.odom.position["body_attitude"] != RobotState.STANDING:
+        if self.odom.position["body_attitude"] is not RobotState.STANDING:
             logging.info("self.sport_client.Move blocked - dog is sitting")
             return
 
