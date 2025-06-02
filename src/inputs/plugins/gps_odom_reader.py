@@ -19,12 +19,12 @@ from providers.io_provider import IOProvider
 # ── Cyclone DDS ────────────────────────────────────────────────────────────
 from unitree.unitree_sdk2py.core.channel import (
     ChannelSubscriber,
-    ChannelFactoryInitialize,          # noqa: F401 – created elsewhere
+    ChannelFactoryInitialize,  # noqa: F401 – created elsewhere
 )
 from unitree.unitree_sdk2py.idl.unitree_go.msg.dds_ import SportModeState_
 
 # ─── constants ─────────────────────────────────────────────────────────────
-R_EARTH = 6_371_000.0        # mean Earth radius (m)
+R_EARTH = 6_371_000.0  # mean Earth radius (m)
 
 
 # ── buffer helper ─────────────────────────────────────────────────────────
@@ -65,9 +65,9 @@ class GPSOdomReader(FuserInput[str]):
         self._yaw_offset = math.radians(yaw0_deg) if yaw0_deg is not None else 0.0
 
         # --- current pose -----------------------------------------------
-        self.pose_x = 0.0   # metres East  of origin
-        self.pose_y = 0.0   # metres North of origin
-        self.pose_yaw = 0.0 # rad
+        self.pose_x = 0.0  # metres East  of origin
+        self.pose_y = 0.0  # metres North of origin
+        self.pose_yaw = 0.0  # rad
 
         # --- DDS subscription -------------------------------------------
         self.last_odom: SportModeState_ | None = None
@@ -108,9 +108,9 @@ class GPSOdomReader(FuserInput[str]):
 
         # publish through IOProvider
         lat, lon = self._xy_to_latlon(self.pose_x, self.pose_y)
-        self.io_provider.add_dynamic_variable("latitude",  lat)
+        self.io_provider.add_dynamic_variable("latitude", lat)
         self.io_provider.add_dynamic_variable("longitude", lon)
-        self.io_provider.add_dynamic_variable("yaw_deg",       math.degrees(self.pose_yaw))
+        self.io_provider.add_dynamic_variable("yaw_deg", math.degrees(self.pose_yaw))
 
     # ── polling loop (FuserInput interface) ─────────────────────────────
     async def _poll(self) -> Optional[str]:
@@ -128,7 +128,7 @@ class GPSOdomReader(FuserInput[str]):
         """
         if not raw:
             return
-        now  = time.time()
+        now = time.time()
         text = raw.strip()
         self.buf.append(Message(now, text))
         self.io_provider.add_input(self.__class__.__name__, text, now)
