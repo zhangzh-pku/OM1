@@ -3,7 +3,7 @@ import logging
 import requests
 
 from actions.base import ActionConfig, ActionConnector
-from actions.gps.interface import GPSInput
+from actions.gps.interface import GPSAction, GPSInput
 from providers.io_provider import IOProvider
 
 
@@ -26,7 +26,7 @@ class GPSFabricConnector(ActionConnector[GPSInput]):
         """
         logging.info(f"GPSFabricConnector: {output_interface.action}")
 
-        if output_interface.action == "share location":
+        if output_interface.action == GPSAction.SHARE_LOCATION:
             # Send GPS coordinates to the Fabric network
             self.send_coordinates()
 
