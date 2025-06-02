@@ -190,7 +190,10 @@ class Go2XboxControllerConnector(ActionConnector[IDLEInput]):
 
         data = None
 
-        logging.info(f"XBOX Odom Provider: {self.odom.position}")
+        logging.info(f"XBOX Odom Provider: {self.odom.position["body_attitude"]}")
+
+        if self.odom.position["body_attitude"] == "standing":
+            logging.info("XBOX Odom Provider standing")
 
         if self.gamepad:
             # try to read USB data, and if there is nothing, timeout
