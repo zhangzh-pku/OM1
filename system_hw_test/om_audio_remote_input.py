@@ -1,6 +1,6 @@
-######
-# This script is used to test the remote audio input functionality of a system.
-#####
+"""
+This script is used to test the remote audio input functionality of a system.
+"""
 
 import base64
 import json
