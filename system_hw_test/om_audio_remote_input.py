@@ -8,6 +8,7 @@ import logging
 import os
 import sys
 import threading
+import time
 from dataclasses import dataclass
 from typing import Optional
 
@@ -71,6 +72,8 @@ class RemoteAudioInput:
         self,
         rate: Optional[int] = None,
         chunk: Optional[int] = None,
+        device: Optional[int] = None,
+        device_name: str = None,
     ):
         self.ws_client: ws.Client = ws.Client(
             url=f"wss://api.openmind.org/api/core/teleops/audio?api_key={OM_API_KEY}"
@@ -79,11 +82,15 @@ class RemoteAudioInput:
 
         self._rate = rate
         self._chunk = chunk
+        self._device = device
+        self._device_name = device_name
 
         self._audio_interface: pyaudio.PyAudio = pyaudio.PyAudio()
         self._audio_stream: Optional[pyaudio.Stream] = None
 
         self._audio_thread: Optional[threading.Thread] = None
+
+        self.running: bool = True
 
         try:
             input_device = None
@@ -185,7 +192,7 @@ class RemoteAudioInput:
             )
 
             # Start the audio processing thread
-            self._start_audio_thread()
+            # self._start_audio_thread()
 
             logging.info(f"Started audio stream with device {self._device}")
 
@@ -217,9 +224,37 @@ class RemoteAudioInput:
             A tuple containing the processed audio data and a flag indicating whether to continue the stream
         """
         if self.ws_client.is_connected():
-            encode_audio = base64.b64decode(in_data).decode("utf-8")
+            encode_audio = base64.b64encode(in_data).decode("utf-8")
             audio_input = AudioInput(
                 audio=encode_audio, rare=self._rate, language_code="en-US"
             )
             self.ws_client.send_message(json.dumps(audio_input.to_dict()))
         return None, pyaudio.paContinue
+
+    def _start_audio_thread(self):
+        """
+        Starts the audio processing thread if it's not already running.
+
+        The thread runs as a daemon to ensure it terminates when the main program exits.
+        """
+        if self._audio_thread is None or not self._audio_thread.is_alive():
+            self._audio_thread = threading.Thread(target=self.on_audio, daemon=True)
+            self._audio_thread.start()
+            logging.info("Started audio processing thread")
+
+
+if __name__ == "__main__":
+    try:
+        remote_audio_input = RemoteAudioInput(rate=48000, chunk=12144)
+        remote_audio_input.start()
+        logging.info("Remote audio input started successfully.")
+
+        while remote_audio_input.running:
+            try:
+                time.sleep(0.1)
+            except Exception as e:
+                logging.error(f"Error in main loop: {e}")
+                remote_audio_input.running = False
+
+    except Exception as e:
+        logging.error(f"Failed to start remote audio input: {e}")
