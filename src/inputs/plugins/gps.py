@@ -108,11 +108,15 @@ class Gps(FuserInput[str]):
         d = raw_input
         if d:
             logging.debug(f"GPS Provider: {d}")
-            lat = d["lat"]
-            lon = d["lon"]
-            alt = d["alt"]
-            msg = f"Current location is {lat}, {lon} at {alt}m altitude."
-            return Message(timestamp=time.time(), message=msg)
+            lat = d["gps_lat"]
+            lon = d["gps_lon"]
+            alt = d["gps_alt"]
+            sats = d["gps_sats"]
+            if sats > 0:
+                msg = f"Current location is {lat}, {lon} at {alt}m altitude."
+                return Message(timestamp=time.time(), message=msg)
+            else:
+                return None
         else:
             return None
 

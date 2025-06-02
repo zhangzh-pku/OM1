@@ -84,19 +84,20 @@ void setup()
   Serial.println(DeviceID);
 
   if (strcmp(DeviceID, "38e4bfd6") == 0) {
-    float mh[] = {24.420, -16.87, -3.880}; // in uTesla
-    float ms[] = { 0.959,  0.050, -0.038,  \
-                   0.050,  1.078,  0.002,  \
-                  -0.038,  0.002,  0.970}; 
+    float mh[]  = { 22.84, -11.84, 3.96 }; // in uTesla
+    float ms[]  = { +0.951, +0.059, -0.031, \
+                    +0.059, +1.091, +0.001, \
+                    -0.031, +0.001, +0.968 }; 
     float gc[] = { 0.000,  0.020,  0.010}; // in Radians/s
     memcpy(mag_hardiron,  mh, sizeof(mag_hardiron));
     memcpy(mag_softiron,  ms, sizeof(mag_softiron));
     memcpy(gyro_zerorate, gc, sizeof(gyro_zerorate));
   } else if (strcmp(DeviceID, "cfcdd0fb") == 0) {
-    float mh[]  = { -9.0, -5.0, 10.0 }; // in uTesla
-    float ms[]  = { 1.0, 0.0, 0.0, \
-                    0.0, 1.0, 0.0, \
-                    0.0, 0.0, 1.0 }; 
+    // not sure which Arduino this is
+    float mh[]  = { -15.53, 5.38, 19.17 }; // in uTesla
+    float ms[]  = { 0.934, 0.048, -0.021, \
+                              0.048, 1.090, 0.003, \
+                              -0.021, 0.003, 0.985 }; 
     float gc[] = { 0.0, 0.0, 0.0 };
     memcpy(mag_hardiron,  mh, sizeof(mag_hardiron));
     memcpy(mag_softiron,  ms, sizeof(mag_softiron));
@@ -106,7 +107,7 @@ void setup()
     float ms[]  = { +0.948, +0.046, -0.038, \
                     +0.047, +1.087, -0.033, \
                     -0.036, -0.033, +0.974 }; 
-    float gc[] = { 0.0, 0.0, 0.0 };
+    float gc[] = { -0.0055, 0.0111, 0.0017 };
     memcpy(mag_hardiron,  mh, sizeof(mag_hardiron));
     memcpy(mag_softiron,  ms, sizeof(mag_softiron));
     memcpy(gyro_zerorate, gc, sizeof(gyro_zerorate));
@@ -115,7 +116,7 @@ void setup()
     float ms[]  = { +0.954, +0.061, -0.033, \
                     +0.061, +1.085, +0.002, \
                     -0.033, +0.002, +0.969 }; 
-    float gc[] = { 0.0, 0.0, 0.0 };
+    float gc[] = { -0.0328, +0.0521, 0.0156 };
     memcpy(mag_hardiron,  mh, sizeof(mag_hardiron));
     memcpy(mag_softiron,  ms, sizeof(mag_softiron));
     memcpy(gyro_zerorate, gc, sizeof(gyro_zerorate));
@@ -233,6 +234,9 @@ void loop()
       Serial.print(GPS.seconds);
       Serial.print(":"); 
       Serial.println(GPS.milliseconds);
+    } else {
+      Serial.print("STAT: Waiting for GPS fix. SAT:");
+      Serial.println((int)GPS.satellites);
     }
   }
 

@@ -2,7 +2,7 @@ import logging
 import math
 import threading
 import time
-from typing import Optional
+from typing import Dict, List, Optional
 
 import bezier
 import numpy as np
@@ -10,23 +10,10 @@ import zenoh
 from numpy.typing import NDArray
 
 from zenoh_idl import sensor_msgs
+from zenoh_idl.sensor_msgs import LaserScan
 
 from .rplidar_driver import RPDriver
 from .singleton import singleton
-
-gScan = None
-
-
-def listenerScan(sample):
-    global gScan
-    gScan = sensor_msgs.LaserScan.deserialize(sample.payload.to_bytes())
-    # logging.debug(f"Zenoh Laserscan data: {gScan}")
-
-
-def get_dimensions(list_):
-    if not isinstance(list_, list):
-        return []
-    return [len(list_)] + get_dimensions(list_[0]) if list_ else [0]
 
 
 @singleton
@@ -134,8 +121,10 @@ class RPLidarProvider:
             pairs = list(zip(cp[0], cp[1]))
             self.pp.append(pairs)
 
-        # logging.info(self.paths)
-        # logging.info(self.pp)
+        self.turn_left: List[int] = []
+        self.turn_right: List[int] = []
+        self.advance: bool = False
+        self.retreat: bool = False
 
         self._thread: Optional[threading.Thread] = None
 
@@ -173,9 +162,23 @@ class RPLidarProvider:
                 logging.info(
                     f"TurtleBot4 RPLIDAR listener starting with URID: {self.URID}"
                 )
-                self.zen.declare_subscriber(f"{self.URID}/pi/scan", listenerScan)
+                self.zen.declare_subscriber(f"{self.URID}/pi/scan", self.listen_scan)
             except Exception as e:
                 logging.error(f"Error opening Zenoh client: {e}")
+
+    def listen_scan(self, data: zenoh.Sample):
+        """
+        Zenoh scan handler.
+
+        Parameters
+        ----------
+        data : zenoh.Sample
+            The Zenoh sample containing the scan data.
+        """
+        self.scans = sensor_msgs.LaserScan.deserialize(data.payload.to_bytes())
+        logging.debug(f"Zenoh Laserscan data: {self.scans}")
+
+        self._preprocess_zenoh(self.scans)
 
     def start(self):
         """
@@ -189,8 +192,16 @@ class RPLidarProvider:
         self._thread = threading.Thread(target=self._run, daemon=True)
         self._thread.start()
 
-    def _preprocess_zenoh(self, scan):
+    def _preprocess_zenoh(self, scan: Optional[LaserScan]):
+        """
+        Preprocess Zenoh LaserScan data.
 
+        Parameters
+        ----------
+        scan : Optional[LaserScan]
+            The Zenoh LaserScan data to preprocess.
+            If None, it indicates no data is available.
+        """
         if scan is None:
             logging.info("Waiting for Zenoh Laserscan data...")
             self._raw_scan = []
@@ -212,10 +223,18 @@ class RPLidarProvider:
             # angles now run from 360.0 to 0 degress
             data = list(zip(self.angles_final, scan.ranges))
             array_ready = np.array(data)
-            # print(f"Array {array_ready}")
             self._process(array_ready)
 
-    def _preprocess_serial(self, scan):
+    def _preprocess_serial(self, scan: LaserScan):
+        """
+        Preprocess serial LaserScan data.
+
+        Parameters
+        ----------
+        scan : LaserScan
+            The serial LaserScan data to preprocess.
+            This is expected to be a 2D array with angles and distances.
+        """
         logging.debug(f"_preprocess_serial: {scan}")
         array = np.array(scan)
 
@@ -229,8 +248,7 @@ class RPLidarProvider:
         # logging.info(f"_preprocess_serial: {angles}")
 
         # distances are in millimeters
-        distances_mm = array[:, 1]
-        distances_m = [i / 1000 for i in distances_mm]
+        distances_m = array[:, 1] / 1000
 
         data = list(zip(angles, distances_m))
 
@@ -239,10 +257,19 @@ class RPLidarProvider:
         # print(f"Array {array_ready}")
         self._process(array_ready)
 
-    def _process(self, data):
+    def _process(self, data: NDArray):
+        """
+        Process the RPLidar data.
+        This method processes the raw data from the RPLidar,
+        filtering out irrelevant distances and angles,
+        and converting the data into a format suitable for path planning.
 
-        # logging.info(f"_process RP Lidar: {data}")
-
+        Parameters
+        ----------
+        data : NDArray
+            The raw data from the RPLidar, expected to be a 2D array
+            with angles and distances.
+        """
         complexes = []
 
         for angle, distance in data:
@@ -339,43 +366,47 @@ class RPLidarProvider:
                             logging.debug(f"remaining paths: {possible_paths}")
                             break  # no need to keep checking this path - we know this path is bad
 
-        turn_left = []
-        advance = []
-        turn_right = []
-        retreat = []
-
         logging.debug(f"possible_paths RP Lidar: {possible_paths}")
+
+        self.turn_left = []
+        self.turn_right = []
+        self.advance = False
+        self.retreat = False
 
         # convert to simple list
         ppl = possible_paths.tolist()
 
         for p in ppl:
             if p < 4:
-                turn_left.append(p)
+                self.turn_left.append(p)
             elif p == 4:
-                advance.append(p)
+                self.advance = True
             elif p < 9:
-                turn_right.append(p)
+                # flip the right turn encoding to make it
+                # a mirror of the left hand encoding
+                self.turn_right.append(8 - p)
+                # so now 8 -> 0, corresponding to a sharp right turn etc
+                # so now 5 -> 3, corresponding to a gentle right turn etc
             elif p == 9:
-                retreat.append(p)
+                self.retreat = True
 
         return_string = "You are surrounded by objects and cannot safely move in any direction. DO NOT MOVE."
 
         if len(ppl) > 0:
             return_string = "The safe movement directions are: {"
             if self.use_zenoh:  # i.e. you are controlling a TurtleBot4
-                if len(advance) > 0:
+                if self.advance:
                     return_string += "'turn left', 'turn right', 'move forwards', "
                 else:
                     return_string += "'turn left', 'turn right', "
             else:
-                if len(turn_left) > 0:
+                if len(self.turn_left) > 0:
                     return_string += "'turn left', "
-                if len(advance) > 0:
+                if self.advance:
                     return_string += "'move forwards', "
-                if len(turn_right) > 0:
+                if len(self.turn_right) > 0:
                     return_string += "'turn right', "
-                if len(retreat) > 0:
+                if self.retreat:
                     return_string += "'move back', "
             return_string += "'stand still'}. "
 
@@ -395,25 +426,19 @@ class RPLidarProvider:
         to the inputs and actions, as needed.
         """
         while self.running:
-            if self.use_zenoh:
-                global gScan
-                logging.debug(f"Zenoh: {gScan}")
-                self._preprocess_zenoh(gScan)
-                time.sleep(0.1)
-            else:
+            if not self.use_zenoh:
                 # we are using serial
                 try:
                     for i, scan in enumerate(
                         self.lidar.iter_scans_local(
                             scan_type="express",
-                            max_buf_meas=2000,
-                            min_len=50,
-                            max_distance_mm=2000,
+                            max_buf_meas=0,
+                            min_len=25,
+                            max_distance_mm=1500,
                         )
                     ):
                         self._preprocess_serial(scan)
-                        # BUG BUG BUG
-                        time.sleep(0.1)
+                        time.sleep(0.05)
                 except Exception as e:
                     logging.error(f"Error in Serial RPLidar provider: {e}")
 
@@ -468,3 +493,24 @@ class RPLidarProvider:
             A natural language summary of possible motion paths
         """
         return self._lidar_string
+
+    @property
+    def movement_options(self) -> Dict[str, List[int]]:
+        """
+        Get the movement options based on the current valid paths.
+
+        Returns
+        -------
+        Dict[str, List[int]]
+            A dictionary containing lists of valid movement options:
+            - 'turn_left': Indices for turning left
+            - 'advance': Indices for moving forward
+            - 'turn_right': Indices for turning right
+            - 'retreat': Indices for moving backward
+        """
+        return {
+            "turn_left": self.turn_left,
+            "advance": self.advance,
+            "turn_right": self.turn_right,
+            "retreat": self.retreat,
+        }

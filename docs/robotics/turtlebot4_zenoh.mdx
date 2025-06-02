@@ -63,7 +63,7 @@ Once the TurtleBot4 is set up, configure it as follows:
 - Configure the Create3 through its web server
 - Install docker and configure the `docker-compose.yaml` file 
 
-### Configure the TurtleBot4's Internal RPi4
+### Configure the TurtleBot4 Internal RPi4
 
 Make the following `ROS_DOMAIN_ID` changes to the TurtleBot4. Use the `turtlebot4-setup` tool to access `ROS Setup:Bash Setup` and set it to the following:
 
@@ -76,7 +76,7 @@ CYCLONEDDS_URI=[] # Empty
 
 Click "Save", "Esc", and then "Apply Settings". The TurtleBot4 will reboot. 
 
-### Configure the TurtleBot4's Internal Create3
+### Configure the TurtleBot4 Internal Create3
 
 Once the reboot is complete (wait for chime, 1 min), access the Create3's App config page at its web server (e.g. `192.168.1.XXX:8080/ros-config`). Change the ROS_DOMAIN_ID to 1 and enter your robot's URID. The correct settings are:
 

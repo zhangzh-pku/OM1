@@ -50,36 +50,13 @@ class Odom(FuserInput[str]):
 
         logging.info(f"Config: {self.config}")
 
-        # Initialize Odom Provider based on .json5 config file
-        self.odom_on = False
-        self.odom = None
-
         use_zenoh = getattr(self.config, "use_zenoh", False)
-        self.silent = getattr(config, "silent", False)
         self.URID = getattr(config, "URID", "")
         if use_zenoh:
             # probably a turtlebot
             logging.info(f"RPLidar using Zenoh and URID: {self.URID}")
 
-        timeout = 10
-        attempts = 0
-
-        while not self.odom_on:
-            logging.info(f"Waiting for Odom Provider. Attempt: {attempts}")
-            self.odom = OdomProvider(self.URID, use_zenoh)
-            if hasattr(self.odom, "running"):
-                self.odom_on = self.odom.running
-                logging.info(f"Odom running?: {self.odom_on}")
-            else:
-                logging.info("Waiting for Odom Provider")
-            attempts += 1
-            if attempts > timeout:
-                logging.warning(
-                    f"Odom Provider timeout after {attempts} attempts - no Odometry - DANGEROUS"
-                )
-                break
-            time.sleep(0.5)
-
+        self.odom = OdomProvider(self.URID, use_zenoh)
         self.descriptor_for_LLM = "Information about your location and body pose, to help plan your movements."
 
     async def _poll(self) -> Optional[dict]:
@@ -95,11 +72,9 @@ class Odom(FuserInput[str]):
             The next message from the buffer if available, None otherwise
         """
         await asyncio.sleep(0.1)
-        if self.silent:
-            return None
 
         try:
-            return self.odom.odom
+            return self.odom.position
         except Empty:
             return None
 
@@ -122,12 +97,13 @@ class Odom(FuserInput[str]):
         """
         logging.debug(f"odom: {raw_input}")
 
-        # self._position = {
+        # {
         #     "x": self.x,
         #     "y": self.y,
+        #     "moving": self.moving,
         #     "yaw_odom_0_360": self.yaw_odom_0_360,
         #     "body_height_cm": self.body_height_cm,
-        #     "body_attitude": self.body_attitude
+        #     "body_attitude": self.body_attitude,
         # }
 
         res = ""

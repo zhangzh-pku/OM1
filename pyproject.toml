@@ -5,6 +5,7 @@ description = "OM1 - a modern agent and robotics runtime system"
 readme = "README.md"
 requires-python = ">=3.10"
 dependencies = [
+    "bleak",
     "bezier",
     "scipy",
     "matplotlib",
@@ -32,7 +33,7 @@ dependencies = [
     "fastapi>=0.110.0",
     "uvicorn>=0.27.1",
     "websockets>=12.0",
-    "om1-modules @ git+https://github.com/OpenmindAGI/om1-modules.git@da74bfa3827c21985c7070de88403aa01ad0530c",
+    "om1-modules @ git+https://github.com/OpenmindAGI/om1-modules.git@a05f42558f7a408d1d70d21b76400a38cc266a4a",
     "aiohttp>=3.9.3",
     "python-multipart>=0.0.9",
     "jinja2>=3.1.3",
