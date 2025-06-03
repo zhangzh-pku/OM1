@@ -37,18 +37,27 @@ class RivaASRInput(FuserInput[str]):
         self.message_buffer: Queue[str] = Queue()
 
         # Initialize ASR provider
+        api_key = getattr(self.config, "api_key", None)
         rate = getattr(self.config, "rate", 48000)
         chunk = getattr(self.config, "chunk", 12144)
         base_url = getattr(self.config, "base_url", "wss://api-asr.openmind.org")
+        stream_base_url = getattr(
+            self.config,
+            "stream_base_url",
+            f"wss://api.openmind.org/api/core/teleops/stream/audio?api_key={api_key}",
+        )
         microphone_device_id = getattr(self.config, "microphone_device_id", None)
         microphone_name = getattr(self.config, "microphone_name", None)
+        remote_input = getattr(self.config, "remote_input", False)
 
         self.asr: ASRProvider = ASRProvider(
             rate=rate,
             chunk=chunk,
             ws_url=base_url,
+            stream_url=stream_base_url,
             device_id=microphone_device_id,
             microphone_name=microphone_name,
+            remote_input=remote_input,
         )
         self.asr.start()
         self.asr.register_message_callback(self._handle_asr_message)
@@ -141,7 +150,7 @@ class RivaASRInput(FuserInput[str]):
             return None
 
         result = f"""
-INPUT: {self.descriptor_for_LLM} 
+INPUT: {self.descriptor_for_LLM}
 // START
 {self.messages[-1]}
 // END

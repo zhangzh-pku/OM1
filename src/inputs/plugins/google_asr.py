@@ -53,6 +53,11 @@ class GoogleASRInput(FuserInput[str]):
             "base_url",
             f"wss://api.openmind.org/api/core/google/asr?api_key={api_key}",
         )
+        stream_base_url = getattr(
+            self.config,
+            "stream_base_url",
+            f"wss://api.openmind.org/api/core/teleops/stream/audio?api_key={api_key}",
+        )
         microphone_device_id = getattr(self.config, "microphone_device_id", None)
         microphone_name = getattr(self.config, "microphone_name", None)
 
@@ -67,13 +72,17 @@ class GoogleASRInput(FuserInput[str]):
         language_code = LANGUAGE_CODE_MAP.get(language, "en-US")
         logging.info(f"Using language code {language_code} for Google ASR")
 
+        remote_input = getattr(self.config, "remote_input", False)
+
         self.asr: ASRProvider = ASRProvider(
             rate=rate,
             chunk=chunk,
             ws_url=base_url,
+            stream_url=stream_base_url,
             device_id=microphone_device_id,
             microphone_name=microphone_name,
             language_code=language_code,
+            remote_input=remote_input,
         )
         self.asr.start()
         self.asr.register_message_callback(self._handle_asr_message)
@@ -166,7 +175,7 @@ class GoogleASRInput(FuserInput[str]):
             return None
 
         result = f"""
-INPUT: {self.descriptor_for_LLM} 
+INPUT: {self.descriptor_for_LLM}
 // START
 {self.messages[-1]}
 // END
