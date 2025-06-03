@@ -83,7 +83,7 @@ screen /dev/ttyACM0 115200
 
 Note: on a typical TurtleBot4, the RPLIDAR uses `/dev/ttyUSB0`. The TurtleBot4 **assumes** that the RPLIDAR is accessible at `/dev/ttyUSB0`. If you change which USB port the LIDAR is plugged into, the LIDAR will fail.    
 
-### Finding the Arduino on Mac
+### Finding the Arduino GPS Feather on Mac
 
 Determine the serial port the sensor is using:
 
@@ -93,3 +93,38 @@ ls /dev/tty.*
 ls /dev/cu.*  
 ```
 It should be something similar to `/dev/cu.usbmodem8401`.
+
+### RTCM / RTK Precision GPS 
+
+An RTK GPS system can provide centimeter accuracy localization. In a typical setup, an RTK-compatible GPS receiver (such as the [u-blox ZED-F9P/simpleRTK2B](https://www.ardusimple.com/product/simplertk2b/) accepts `RTCM` messages over XBee or the internet, and uses those data to correct (and greatly improve) its location estimate. The `simpleRTK2B` has two usb ports, one labeled `power + GPS` and the other `power + XBee`. The first port provides a full set of NEMA and UBX messages, including GPGGA, GNRMC, GNGLL, and UBX(NAV-PVT). The `power + XBee` port provides direct access to received RTK correction messages, such as `1005` and `1074`. In standard usage, a rover would use the NEMA messages to track its location whilst monitoring the status, mode, and quality fields. 
+
+```bash
+<NMEA(GNGGA, time=23:56:12, lat=12.4003072367, NS=N, lon=-2.1187726617, EW=W, quality=5, numSV=12, HDOP=0.74, alt=26.189, altUnit=M, sep=-30.024, sepUnit=M, diffAge=3.0, diffStation=0)>
+```
+This GNGGA message shows a high quality RTK fix (quality=5):
+
+* 1 autonomous (standard accuracy) solution
+* 2 code-differential (DGNSS, SBAS) solution
+* 4 fixed RTK
+* 5 float RTK
+
+This GNRC message shows a valid status(`A`) using RTK mode with fixed integers (`posMode=R`)
+
+```bash
+<NMEA(GNRMC, time=23:35:31.400000, status=A, lat=12.40030754, NS=N, lon=-2.1187695133, EW=W, spd=0.036, cog=, date=2025-06-01, mv=, mvEW=, posMode=R)>
+```
+
+Status indicator:
+A: Data valid
+V: Data not valid
+
+Mode indicator:
+A: Autonomous mode
+D: Differential mode
+P: Precise
+E: Estimated (dead reckoning) mode
+M: Manual input mode
+S: Simulator mode
+R: Fixed RTK. RTK mode with fixed integers
+F: Float RTK. RTK mode with floating integers.
+N: Data not valid
