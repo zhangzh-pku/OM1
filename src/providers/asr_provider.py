@@ -17,31 +17,18 @@ class ASRProvider:
     This class implements a singleton pattern to manage audio input streaming and websocket
     communication for speech recognition services. It runs in a separate thread to handle
     continuous audio processing.
-
-    Parameters
-    ----------
-    ws_url : str
-        The websocket URL for the ASR service connection.
-    device_id : int
-        The device ID of the chosen microphone; used the system default if None
-    microphone_name : str
-        The name of the microphone to use for audio input
-    rate : int
-        The audio sample rate for the audio stream; used the system default if None
-    chunk : int
-        The audio chunk size for the audio stream; used the 200ms default if None
-    language_code : str
-        The language code for language in the audio stream; used the en-US default if None
     """
 
     def __init__(
         self,
         ws_url: str,
+        stream_url: Optional[str] = None,
         device_id: Optional[int] = None,
         microphone_name: Optional[str] = None,
         rate: Optional[int] = None,
         chunk: Optional[int] = None,
         language_code: Optional[str] = None,
+        remote_input: bool = False,
     ):
         """
         Initialize the ASR Provider.
@@ -60,9 +47,14 @@ class ASRProvider:
             The audio chunk size for the audio stream; used the 200ms default if None
         language_code : str
             The language code for language in the audio stream; used the en-US default if None
+        remote_input : bool
+            If True, the audio input is processed remotely; defaults to False.
         """
         self.running: bool = False
         self.ws_client: ws.Client = ws.Client(url=ws_url)
+        self.stream_ws_client: Optional[ws.Client] = (
+            ws.Client(url=stream_url) if stream_url else None
+        )
         self.audio_stream: AudioInputStream = AudioInputStream(
             rate=rate,
             chunk=chunk,
@@ -70,6 +62,7 @@ class ASRProvider:
             device_name=microphone_name,
             audio_data_callback=self.ws_client.send_message,
             language_code=language_code,
+            remote_input=remote_input,
         )
         self._thread: Optional[threading.Thread] = None
 
@@ -100,6 +93,19 @@ class ASRProvider:
         self._thread = threading.Thread(target=self._run, daemon=True)
         self._thread.start()
 
+        if self.stream_ws_client:
+            self.stream_ws_client.start()
+            self.audio_stream.register_audio_data_callback(
+                self.stream_ws_client.send_message
+            )
+            # Register the audio stream to fill the buffer for remote input
+            if self.audio_stream.remote_input:
+                self.stream_ws_client.register_message_callback(
+                    self.audio_stream.fill_buffer_remote
+                )
+
+        logging.info("ASR provider started")
+
     def _run(self):
         """
         Internal method to run the provider's main processing loop.
@@ -129,3 +135,6 @@ class ASRProvider:
             self.audio_stream.stop()
             self.ws_client.stop()
             self._thread.join(timeout=5)
+
+        if self.stream_ws_client:
+            self.stream_ws_client.stop()
