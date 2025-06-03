@@ -77,7 +77,7 @@ class RFmapper(Background):
             seen_devices[device.address] = {
                 "timestamp": time.time(),
                 "address": device.address,
-                "name": device.name,
+                "name": device.name if device.name else "Unknown",
                 "rssi": advertisement_data.rssi,
             }
 

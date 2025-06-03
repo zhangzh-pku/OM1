@@ -155,7 +155,7 @@ class FabricDataSubmitter:
                 json=json_dict,
             )
 
-            if request.status_code == 200:
+            if request.status_code == 201:
                 logging.debug(f"Data shared successfully: {request.json()}")
             else:
                 logging.error(
