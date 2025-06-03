@@ -1,12 +1,12 @@
-#######
-# This script is designed to control a robot remotely using keyboard inputs.
-# It uses the OpenMind API to send movement commands based on key presses.
-# The script listens for key events and updates the robot's movement accordingly.
-# w - Move forward
-# s - Move backward
-# a - Turn left
-# d - Turn right
-#######
+"""
+This script is designed to control a robot remotely using keyboard inputs.
+It uses the OpenMind API to send movement commands based on key presses.
+The script listens for key events and updates the robot's movement accordingly.
+w - Move forward
+s - Move backward
+a - Turn left
+d - Turn right
+"""
 
 import json
 import logging
