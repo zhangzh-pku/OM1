@@ -425,7 +425,7 @@ class RPLidarProvider:
         Continuously processes RPLidar data and send them
         to the inputs and actions, as needed.
         """
-        while self.running:
+        while self.running and self.lidar:
             if not self.use_zenoh:
                 # we are using serial
                 try:
