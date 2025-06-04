@@ -1,6 +1,4 @@
 import logging
-import threading
-import time
 from typing import Callable, Optional
 
 from om1_speech import AudioOutputStream
@@ -53,7 +51,6 @@ class ElevenLabsTTSProvider:
 
         # Initialize TTS provider
         self.running: bool = False
-        self._thread: Optional[threading.Thread] = None
         self._audio_stream: AudioOutputStream = AudioOutputStream(
             url=url,
             device=device_id,
@@ -111,24 +108,10 @@ class ElevenLabsTTSProvider:
 
         self.running = True
         self._audio_stream.start()
-        self._thread = threading.Thread(target=self._run, daemon=True)
-        self._thread.start()
-
-    def _run(self):
-        """
-        Internal method to run the TTS processing loop.
-        """
-        while self.running:
-            try:
-                time.sleep(0.1)
-            except Exception as e:
-                logging.error(f"TTSProvider error: {e}")
 
     def stop(self):
         """
         Stop the TTS provider and cleanup resources.
         """
         self.running = False
-        if self._thread:
-            self._audio_stream.stop()
-            self._thread.join(timeout=5)
+        self._audio_stream.stop()
