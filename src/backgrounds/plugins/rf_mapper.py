@@ -2,11 +2,12 @@ import asyncio
 import logging
 import threading
 import time
+from typing import Dict, List
 
 from bleak import AdvertisementData, BleakScanner
 
 from backgrounds.base import Background, BackgroundConfig
-from providers.fabric_map_provider import FabricData, FabricDataSubmitter
+from providers.fabric_map_provider import FabricData, FabricDataSubmitter, RFData
 from providers.gps_provider import GpsProvider
 from providers.odom_provider import OdomProvider
 from providers.rtk_provider import RtkProvider
@@ -33,9 +34,7 @@ class RFmapper(Background):
         self.loop = asyncio.new_event_loop()
         self.thread = threading.Thread(target=self._scan_task)
         self.running = False
-        self.json_payload = None
-        self.scan_results = None
-        self.gps_data = None
+        self.scan_results: List[RFData] = []
 
         self.x = 0.0
         self.y = 0.0
@@ -71,15 +70,15 @@ class RFmapper(Background):
 
     async def scan_once(self):
 
-        seen_devices = {}
+        seen_devices: Dict[str, RFData] = {}
 
         def detection_callback(device, advertisement_data: AdvertisementData):
-            seen_devices[device.address] = {
-                "timestamp": time.time(),
-                "address": device.address,
-                "name": device.name if device.name else "Unknown",
-                "rssi": advertisement_data.rssi,
-            }
+            seen_devices[device.address] = RFData(
+                timestamp=time.time(),
+                address=device.address,
+                name=device.name if device.name else "Unknown",
+                rssi=advertisement_data.rssi,
+            )
 
         scanner = BleakScanner(detection_callback)
         await scanner.start()
@@ -120,9 +119,9 @@ class RFmapper(Background):
 
                 if hasattr(self.gps, "running"):
                     if self.scan_results and self.gps.data:
-                        # self.scan_results.append(self.gps.data)
-                        # self.json_payload = json.dumps(self.scan_results, indent=2)
-                        # logging.info(f"Mapper data: {self.json_payload}")
+                        logging.debug(
+                            f"RF scan results available, processing... {self.scan_results}"
+                        )
                         try:
                             g = self.gps.data
                             logging.debug(f"GPS data: {g}")
@@ -197,7 +196,7 @@ class RFmapper(Background):
                         except Exception as e:
                             logging.error(f"Error sharing to Fabric: {e}")
 
-                        self.scan_results = None
+                        self.scan_results = []
 
                 time.sleep(1)
         except KeyboardInterrupt:
