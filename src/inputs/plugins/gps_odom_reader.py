@@ -100,6 +100,9 @@ class GPSOdomReader(FuserInput[str]):
             except Exception as e:
                 logging.error(f"Error parsing Odom: {e}")
                 return
+        else:
+            logging.warning("OdomProvider is not running, skipping pose update.")
+            return
 
         # publish through IOProvider
         lat, lon = self._xy_to_latlon(self.pose_x, self.pose_y)
