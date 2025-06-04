@@ -87,7 +87,7 @@ class RFmapper(Background):
 
         # Get the top 10 devices with the strongest RSSI
         sorted_devices = sorted(
-            seen_devices.values(), key=lambda d: d["rssi"], reverse=True
+            seen_devices.values(), key=lambda d: d.rssi, reverse=True
         )[:10]
         # logging.info(f"Scan...{sorted_devices}")
         return sorted_devices

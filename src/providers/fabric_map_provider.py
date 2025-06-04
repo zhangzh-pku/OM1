@@ -100,7 +100,7 @@ class FabricData:
             "odom_y": self.odom_y,
             "yaw_odom_0_360": self.yaw_odom_0_360,
             "yaw_odom_m180_p180": self.yaw_odom_m180_p180,
-            "rf_data": self.rf_data.to_dict() if self.rf_data else [],
+            "rf_data": [rf.to_dict() for rf in self.rf_data] if self.rf_data else [],
         }
 
 
