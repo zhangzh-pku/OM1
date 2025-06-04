@@ -4,10 +4,50 @@ import os
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
 from datetime import datetime
+from typing import List
 
 import requests
 
 from .singleton import singleton
+
+
+@dataclass
+class RFData:
+    """
+    Data class to represent RF scan results.
+
+    Parameters
+    ----------
+    timestamp : float
+        Unix timestamp of the scan.
+    address : str
+        Bluetooth address of the device.
+    name : str
+        Name of the device.
+    rssi : int
+        Received Signal Strength Indicator of the device.
+    """
+
+    timestamp: float
+    address: str
+    name: str
+    rssi: int
+
+    def to_dict(self) -> dict:
+        """
+        Convert the RFData object to a dictionary.
+
+        Returns
+        -------
+        dict
+            Dictionary representation of the RFData object.
+        """
+        return {
+            "timestamp": self.timestamp,
+            "address": self.address,
+            "name": self.name,
+            "rssi": self.rssi,
+        }
 
 
 @dataclass
@@ -32,7 +72,7 @@ class FabricData:
     odom_y: float
     yaw_odom_0_360: float
     yaw_odom_m180_p180: float
-    rf_data: list
+    rf_data: List[RFData]
 
     def to_dict(self) -> dict:
         """
@@ -60,7 +100,7 @@ class FabricData:
             "odom_y": self.odom_y,
             "yaw_odom_0_360": self.yaw_odom_0_360,
             "yaw_odom_m180_p180": self.yaw_odom_m180_p180,
-            "rf_data": self.rf_data,
+            "rf_data": [rf.to_dict() for rf in self.rf_data] if self.rf_data else [],
         }
 
 
