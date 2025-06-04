@@ -17,11 +17,7 @@ from inputs.base.loop import FuserInput
 from providers.io_provider import IOProvider
 
 # ── Cyclone DDS ────────────────────────────────────────────────────────────
-from unitree.unitree_sdk2py.core.channel import (
-    ChannelSubscriber,
-    ChannelFactoryInitialize,  # noqa: F401 – created elsewhere
-)
-from unitree.unitree_sdk2py.idl.unitree_go.msg.dds_ import SportModeState_
+from providers.odom_provider import OdomProvider
 
 # ─── constants ─────────────────────────────────────────────────────────────
 R_EARTH = 6_371_000.0  # mean Earth radius (m)
@@ -71,15 +67,13 @@ class GPSOdomReader(FuserInput[str]):
         self.pose_y = 0.0  # metres North of origin
         self.pose_yaw = 0.0  # rad
 
-        # --- DDS subscription -------------------------------------------
-        self.last_odom: SportModeState_ | None = None
-        self.odom_sub = ChannelSubscriber("rt/sportmodestate", SportModeState_)
-        self.odom_sub.Init(self._odom_cb, 10)
-
         # --- I/O + buffer ------------------------------------------------
         self.io_provider = IOProvider()
         self.buf: list[Message] = []
         self.descriptor_for_LLM = "Latitude, Longitude, and Yaw"
+
+        self.odom = OdomProvider()
+        logging.info(f"Mapper Odom Provider: {self.odom}")
 
     # ── helpers ──────────────────────────────────────────────────────────
     @staticmethod
@@ -92,21 +86,20 @@ class GPSOdomReader(FuserInput[str]):
         λ = λ0 + x / (R_EARTH * math.cos(φ0))
         return map(math.degrees, (φ, λ))
 
-    # ── DDS callback ─────────────────────────────────────────────────────
-    def _odom_cb(self, msg: SportModeState_):
-        self.last_odom = msg
-
     # ── pose update step ────────────────────────────────────────────────
     async def _update_pose(self):
-        if not self.last_odom:
-            return
-
-        # translation
-        self.pose_x, self.pose_y = self.last_odom.position[0:2]
-
-        # orientation
-        yaw_world = self.last_odom.imu_state.rpy[2]
-        self.pose_yaw = self._wrap_angle(yaw_world - self._yaw_offset)
+        if hasattr(self.odom, "running"):
+            try:
+                o = self.odom.odom
+                logging.debug(f"Odom data: {o}")
+                if o:
+                    self.pose_x = o["x"]
+                    self.pose_y = o["y"]
+                    yaw_world = o["yaw_odom_m180_p180"]
+                    self.pose_yaw = self._wrap_angle(yaw_world - self._yaw_offset)
+            except Exception as e:
+                logging.error(f"Error parsing Odom: {e}")
+                return
 
         # publish through IOProvider
         lat, lon = self._xy_to_latlon(self.pose_x, self.pose_y)
