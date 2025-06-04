@@ -119,15 +119,15 @@ class GPSOdomReader(FuserInput[str]):
     # ---------------------------------------------------------------------
     # ChatGPT-bridge helpers — minimal but functional
     # ---------------------------------------------------------------------
-    async def raw_to_text(self, raw: str):
+    async def raw_to_text(self, raw_input: str):
         """
         Allow external callers (e.g. GUI, CLI) to push arbitrary text into
         the same IO/logging path that serial parsing used to feed.
         """
-        if not raw:
+        if not raw_input:
             return
         now = time.time()
-        text = raw.strip()
+        text = raw_input.strip()
         self.buf.append(Message(now, text))
         self.io_provider.add_input(self.__class__.__name__, text, now)
 
