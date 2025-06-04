@@ -1,4 +1,5 @@
 
+
 ![OM_Banner_X2 (1)](https://github.com/user-attachments/assets/853153b7-351a-433d-9e1a-d257b781f93c)
 
 <p align="center">  <a href="https://arxiv.org/abs/2412.18588">Technical Paper</a> |  <a href="https://docs.openmind.org/">Documentation</a> |  <a href="https://x.com/openmind_agi">X</a> | <a href="https://discord.gg/VUjpg4ef5n">Discord</a> </p>
@@ -20,7 +21,46 @@
 
 Let's run the first AI agent named Spot on OM1. The Spot agent uses your webcam to capture and label objects. These text captions are then sent to `OpenAI 4o`, a large language model (LLM) which then returns `movement`, `speech` and `face` action commands. These commands are displayed on WebSim along with basic timing and other debugging information.
 
-Detailed instruction please refer to [Installation](https://docs.openmind.org/getting-started/get-started).
+### Package management
+
+[Installing uv](https://docs.astral.sh/uv/getting-started/installation/)
+
+### Clone GitHub repo
+
+```bash
+git clone https://github.com/OpenmindAGI/OM1.git
+cd OM1
+git submodule update --init
+uv venv
+```
+
+### Install the dependencies
+
+For macOS  
+```bash
+brew install portaudio
+brew install ffmpeg
+```
+
+For Linux  
+```bash
+sudo apt-get update
+sudo apt-get install portaudio19-dev python-all-dev
+sudo apt-get install ffmpeg
+```
+
+### Fetch Openmind API Key
+
+You need to get [Openmind API Key](https://portal.openmind.org/) to launch OM1.
+Once you got API key, copy it to `config/spot.json5`, and replace  `openmind_free` in `"api_key": "openmind_free",`.
+
+### Launch OM1
+
+`uv run src/run.py spot`
+
+After launching OM1, you could have a fun conversation with OM1 now.
+
+For more detailed instruction please refer to [Installation](https://docs.openmind.org/getting-started/get-started).
 
 ## What's Next?
 
