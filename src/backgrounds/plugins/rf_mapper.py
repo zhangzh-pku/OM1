@@ -76,11 +76,11 @@ class RFmapper(Background):
             logging.debug(f"adv...{advdata}")
 
             # AdvertisementData(
-            # local_name: Optional[str], 
-            # manufacturer_data: Dict[int, bytes], 
-            # service_data: Dict[str, bytes], 
-            # service_uuids: List[str], 
-            # tx_power: Optional[int], 
+            # local_name: Optional[str],
+            # manufacturer_data: Dict[int, bytes],
+            # service_data: Dict[str, bytes],
+            # service_uuids: List[str],
+            # tx_power: Optional[int],
             # rssi: int, platform_data: Tuple)
 
             service_uuid = ""
@@ -93,7 +93,7 @@ class RFmapper(Background):
                     break
             if advdata.service_uuids:
                 service_uuid = advdata.service_uuids[0]
-            
+
             seen_devices[device.address] = RFData(
                 timestamp=time.time(),
                 address=device.address,
@@ -101,7 +101,7 @@ class RFmapper(Background):
                 rssi=advdata.rssi,
                 service_uuid=service_uuid,
                 mfgkey=mfgkey,
-                mfgval=mfgval
+                mfgval=mfgval,
             )
 
         scanner = BleakScanner(detection_callback)
