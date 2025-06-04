@@ -13,7 +13,7 @@ from actions.base import (
 
 
 def describe_action(action_name: str, llm_label: str, silent: bool) -> Optional[str]:
-    
+
     if silent:
         return None
 
@@ -92,7 +92,7 @@ def load_action(
     config = ActionConfig(**action_config.get("config", {}))
 
     silent = False
-    if "silent" in action_config:        
+    if "silent" in action_config:
         silent = action_config["silent"]
 
     return AgentAction(
@@ -101,5 +101,5 @@ def load_action(
         interface=interface,
         implementation=implementation_class(config),
         connector=connector_class(config),
-        silent=silent
+        silent=silent,
     )

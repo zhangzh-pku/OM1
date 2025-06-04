@@ -88,7 +88,7 @@ class ActionOrchestrator:
             logging.debug(f"Sending command: {action}")
 
             # fix corrupted commands when there is only one output
-            # typically only happens during testing 
+            # typically only happens during testing
             at = action.type.lower()
             av = action.value
             if at == "stand still" and av == "":
