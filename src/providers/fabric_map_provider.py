@@ -32,6 +32,9 @@ class RFData:
     address: str
     name: str
     rssi: int
+    service_uuid: str
+    mfgkey: str
+    mfgval: str
 
     def to_dict(self) -> dict:
         """
@@ -47,6 +50,9 @@ class RFData:
             "address": self.address,
             "name": self.name,
             "rssi": self.rssi,
+            "service_uuid": self.service_uuid,
+            "mfgkey": self.mfgkey,
+            "mfgval": self.mfgval,
         }
 
 

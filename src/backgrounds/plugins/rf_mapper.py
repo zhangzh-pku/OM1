@@ -72,12 +72,36 @@ class RFmapper(Background):
 
         seen_devices: Dict[str, RFData] = {}
 
-        def detection_callback(device, advertisement_data: AdvertisementData):
+        def detection_callback(device, advdata: AdvertisementData):
+            logging.debug(f"adv...{advdata}")
+
+            # AdvertisementData(
+            # local_name: Optional[str], 
+            # manufacturer_data: Dict[int, bytes], 
+            # service_data: Dict[str, bytes], 
+            # service_uuids: List[str], 
+            # tx_power: Optional[int], 
+            # rssi: int, platform_data: Tuple)
+
+            service_uuid = ""
+            mfgkey = ""
+            mfgval = ""
+            if advdata.manufacturer_data:
+                for key, value in advdata.manufacturer_data.items():
+                    mfgkey = hex(key).upper()
+                    mfgval = value.hex().upper()
+                    break
+            if advdata.service_uuids:
+                service_uuid = advdata.service_uuids[0]
+            
             seen_devices[device.address] = RFData(
                 timestamp=time.time(),
                 address=device.address,
                 name=device.name if device.name else "Unknown",
-                rssi=advertisement_data.rssi,
+                rssi=advdata.rssi,
+                service_uuid=service_uuid,
+                mfgkey=mfgkey,
+                mfgval=mfgval
             )
 
         scanner = BleakScanner(detection_callback)
