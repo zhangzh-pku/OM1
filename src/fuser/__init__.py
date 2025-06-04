@@ -80,12 +80,12 @@ class Fuser:
             system_prompt += "\n\nEXAMPLES:\n" + self.config.system_prompt_examples
 
         # descriptions of possible actions
-        actions_fused = "\n\n".join(
-            [
-                describe_action(action.name, action.llm_label, action.silent)
-                for action in self.config.agent_actions
-            ]
-        )
+        actions_fused = ""
+
+        for action in self.config.agent_actions:
+            desc = describe_action(action.name, action.llm_label, action.silent)
+            if desc:
+                actions_fused += desc + "\n\n"
 
         question_prompt = "What will you do? Actions:"
 
