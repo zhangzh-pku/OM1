@@ -32,33 +32,38 @@ from collections import namedtuple
 
 import serial
 
+# Protocol constants
 SYNC_BYTE = b"\xa5"
 SYNC_BYTE2 = b"\x5a"
 
+# Command bytes
 GET_INFO_BYTE = b"\x50"
 GET_HEALTH_BYTE = b"\x52"
-
 STOP_BYTE = b"\x25"
 RESET_BYTE = b"\x40"
+SET_PWM_BYTE = b"\xf0"
 
+# Scan configuration
 _SCAN_TYPE = {
     "normal": {"byte": b"\x20", "response": 129, "size": 5},
     "force": {"byte": b"\x21", "response": 129, "size": 5},
     "express": {"byte": b"\x82", "response": 130, "size": 84},
 }
 
+# Response lengths
 DESCRIPTOR_LEN = 7
 INFO_LEN = 20
 HEALTH_LEN = 3
 
+# Response types
 INFO_TYPE = 4
 HEALTH_TYPE = 6
 
-# Constants & Command to start A2 motor
+# Motor control
 MAX_MOTOR_PWM = 1023
 DEFAULT_MOTOR_PWM = 400
-SET_PWM_BYTE = b"\xf0"
 
+# Health status mapping
 _HEALTH_STATUSES = {
     0: "Good",
     1: "Warning",
@@ -320,32 +325,33 @@ class RPDriver(object):
 
         Parameters
         ----------
-        scan : normal, force, or express.
+        scan_type : str
+            Scan mode: normal, force, or express.
         """
         if self.scanning[0]:
             return "Scan already running!"
-        """Start the scanning process, enable laser diode and the
-        measurement system"""
+
+        # Check sensor health before starting
         status, error_code = self.get_health()
         self.logger.debug("Health status: %s [%d]", status, error_code)
+
         if status == _HEALTH_STATUSES[2]:
             self.logger.warning(
-                "Trying to reset sensor due to error. " "Error code: %d", error_code
+                "Trying to reset sensor due to error. Error code: %d", error_code
             )
             self.reset()
             status, error_code = self.get_health()
             if status == _HEALTH_STATUSES[2]:
                 raise RPLidarException(
-                    "RPLidar hardware failure. " "Error code: %d" % error_code
+                    "RPLidar hardware failure. Error code: %d" % error_code
                 )
         elif status == _HEALTH_STATUSES[1]:
             self.logger.warning(
-                "Warning sensor status detected! " "Error code: %d", error_code
+                "Warning sensor status detected! Error code: %d", error_code
             )
 
         cmd = _SCAN_TYPE[scan_type]["byte"]
-        print("Starting scan in %s mode" % scan_type)
-        self.logger.info("starting scan process in %s mode" % scan_type)
+        self.logger.info("Starting scan process in %s mode", scan_type)
 
         if scan_type == "express":
             self._send_payload_cmd(cmd, b"\x00\x00\x00\x00\x00")
@@ -397,7 +403,7 @@ class RPDriver(object):
             self.start(scan_type)
         while True:
             dsize = self.scanning[1]
-            # print(f"M: Dsize:{dsize}")
+
             if max_buf_meas:
                 data_in_buf = self._serial.inWaiting()
                 if data_in_buf > max_buf_meas:
@@ -411,9 +417,9 @@ class RPDriver(object):
                     self.start(self.scanning[2])
 
             if self.scanning[2] == "normal":
-                print("M: Normal scanning")
+                self.logger.debug("Normal scanning mode")
                 raw = self._read_response(dsize)
-                print(f"M: Raw:{raw}")
+                self.logger.debug(f"Raw data: {raw}")
                 yield _process_scan(raw)
             if self.scanning[2] == "express":
                 try:
