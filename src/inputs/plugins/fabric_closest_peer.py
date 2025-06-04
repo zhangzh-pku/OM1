@@ -1,6 +1,5 @@
 import asyncio
 import logging
-import random
 import time
 from dataclasses import dataclass
 from queue import Queue

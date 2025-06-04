@@ -1,6 +1,6 @@
+import asyncio
 import logging
 import math
-import asyncio
 
 from actions.base import ActionConfig, ActionConnector
 from providers.io_provider import IOProvider
