@@ -82,7 +82,7 @@ class Fuser:
         # descriptions of possible actions
         actions_fused = "\n\n".join(
             [
-                describe_action(action.name, action.llm_label)
+                describe_action(action.name, action.llm_label, action.silent)
                 for action in self.config.agent_actions
             ]
         )

@@ -59,9 +59,10 @@
   "agent_actions": [
     {
       "name": "move_game_controller",
-      "llm_label": "game controller",
+      "llm_label": "external movement controller",
       "implementation": "passthrough",
-      "connector": "go2_game_controller"
+      "connector": "go2_game_controller",
+      "silent": true
     },
     {
       "name": "move_go2_autonomy",

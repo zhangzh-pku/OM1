@@ -1,6 +1,7 @@
 import importlib
 import typing as T
 from enum import Enum
+from typing import Optional
 
 from actions.base import (
     ActionConfig,
@@ -11,7 +12,11 @@ from actions.base import (
 )
 
 
-def describe_action(action_name: str, llm_label: str) -> str:
+def describe_action(action_name: str, llm_label: str, silent: bool) -> Optional[str]:
+    
+    if silent:
+        return None
+
     interface = None
     action = importlib.import_module(f"actions.{action_name}.interface")
     for _, obj in action.__dict__.items():
@@ -85,10 +90,16 @@ def load_action(
             f"No connector found for action {action_config['name']} connector {action_config['connector']}"
         )
     config = ActionConfig(**action_config.get("config", {}))
+
+    silent = False
+    if "silent" in action_config:        
+        silent = action_config["silent"]
+
     return AgentAction(
         name=action_config["name"],
         llm_label=action_config["llm_label"],
         interface=interface,
         implementation=implementation_class(config),
         connector=connector_class(config),
+        silent=silent
     )
