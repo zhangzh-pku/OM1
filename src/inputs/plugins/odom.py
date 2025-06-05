@@ -8,7 +8,7 @@ from typing import List, Optional
 from inputs.base import SensorConfig
 from inputs.base.loop import FuserInput
 from providers.io_provider import IOProvider
-from providers.odom_provider import OdomProvider
+from providers.odom_provider import OdomProvider, RobotState
 
 
 @dataclass
@@ -111,7 +111,7 @@ class Odom(FuserInput[str]):
         moving = raw_input["moving"]
         attitude = raw_input["body_attitude"]
 
-        if attitude == "sitting":
+        if attitude is RobotState.SITTING:
             res = "You are sitting down - do not generate new movement commands. "
         elif moving:
             # already moving

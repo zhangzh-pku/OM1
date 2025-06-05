@@ -72,3 +72,4 @@ class AgentAction:
     interface: T.Type[Interface]
     implementation: ActionImplementation
     connector: ActionConnector
+    silent: bool

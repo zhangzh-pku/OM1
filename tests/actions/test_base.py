@@ -69,6 +69,7 @@ def agent_action(test_implementation, test_connector):
         interface=SampleInterface,
         implementation=test_implementation,
         connector=test_connector,
+        silent=True,
     )
 
 

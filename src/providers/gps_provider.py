@@ -46,7 +46,7 @@ class GpsProvider:
         self.lat = ""
         self.lon = ""
         self.alt = 0.0
-        self.sats = 0
+        self.sat = 0
         self.time_utc = ""
 
         self.yaw_mag_0_360 = 0.0
@@ -59,10 +59,6 @@ class GpsProvider:
     def magGPSProcessor(self, data):
         # Used whenever there is a connected
         # nav Arduino on serial
-        # Parses lines like:
-        # - GPS:37.7749N,-122.4194W,KN:0.12,HEAD:84.1,ALT:30.5,SAT:7,TIME:3:14:24:546
-        # - YPR: 134.57, -3.20, 1.02
-        # - HDG (DEG): 225.0 SW NTC_HDG: 221.3
         try:
             if data.startswith("HDG (DEG):"):
                 parts = data.split()
@@ -85,25 +81,25 @@ class GpsProvider:
                     lon = parts[1]
                     heading = parts[3].split(":")[1]
                     alt = parts[4].split(":")[1]
-                    sats = parts[5].split(":")[1]
+                    sat = parts[5].split(":")[1]
                     self.lat = lat
                     self.lon = lon
                     self.alt = float(alt)
-                    self.sats = int(sats)
+                    self.sat = int(sat)
                     if len(parts) >= 6:
                         time = parts[6][5:]
                         self.time_utc = time
                     logging.debug(
                         (
                             f"Current location is {lat}, {lon} at {alt}m altitude. "
-                            f"GPS Heading {heading}° with {sats} satellites locked. "
+                            f"GPS Heading {heading}° with {sat} satellites locked. "
                             f"The time, if available, is {self.time_utc}."
                         )
                     )
                 except Exception as e:
                     logging.warning(f"Failed to parse GPS: {data} ({e})")
         except Exception as e:
-            logging.warning(f"Error processing serial MAG/GPSinput: {data} ({e})")
+            logging.warning(f"Error processing serial MAG/GPS input: {data} ({e})")
 
         self._gps = {
             "yaw_mag_0_360": self.yaw_mag_0_360,
@@ -111,7 +107,7 @@ class GpsProvider:
             "gps_lat": self.lat,
             "gps_lon": self.lon,
             "gps_alt": self.alt,
-            "gps_sats": self.sats,
+            "gps_sat": self.sat,
             "gps_time_utc": self.time_utc,
         }
 

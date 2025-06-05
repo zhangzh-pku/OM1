@@ -86,6 +86,27 @@ class ActionOrchestrator:
         # command to the correct action
         for action in actions:
             logging.debug(f"Sending command: {action}")
+
+            # fix corrupted commands when there is only one output
+            # typically only happens during testing
+            at = action.type.lower()
+            av = action.value
+            if at == "stand still" and av == "":
+                action.type = "move"
+                action.value = "stand still"
+            elif at == "turn left" and av == "":
+                action.type = "move"
+                action.value = "turn left"
+            elif at == "turn right" and av == "":
+                action.type = "move"
+                action.value = "turn right"
+            elif at == "move forwards" and av == "":
+                action.type = "move"
+                action.value = "move forwards"
+            elif at == "move back" and av == "":
+                action.type = "move"
+                action.value = "move back"
+
             agent_action = next(
                 (
                     m
@@ -96,7 +117,7 @@ class ActionOrchestrator:
             )
             if agent_action is None:
                 logging.warning(
-                    f"Attempted to call non-existant action: {action.type.lower()}"
+                    f"Attempted to call non-existant action: {action.type.lower()}."
                 )
                 continue
             action_response = asyncio.create_task(
