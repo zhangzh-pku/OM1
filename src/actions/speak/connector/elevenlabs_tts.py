@@ -34,8 +34,6 @@ class SpeakElevenLabsTTSConnector(ActionConnector[SpeakInput]):
             url="https://api.openmind.org/api/core/elevenlabs/tts",
             api_key=api_key,
             elevenlabs_api_key=elevenlabs_api_key,
-            device_id=speaker_device_id,
-            speaker_name=speaker_name,
             voice_id=voice_id,
             model_id=model_id,
             output_format=output_format,

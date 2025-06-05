@@ -26,8 +26,6 @@ class SpeakRivaTTSConnector(ActionConnector[SpeakInput]):
         )
         self.tts = RivaTTSProvider(
             url="https://api.openmind.org/api/core/riva/tts",
-            device_id=speaker_device_id,
-            speaker_name=speaker_name,
             api_key=api_key,
         )
         self.tts.start()

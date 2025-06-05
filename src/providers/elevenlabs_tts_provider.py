@@ -20,10 +20,6 @@ class ElevenLabsTTSProvider:
         The URL endpoint for the TTS service
     api_key : str
         The API key for the TTS service
-    device : int, optional
-        The audio device index for audio output (default is None)
-    speaker_name : str, optional
-        The name of the speaker for audio output (default is None)
     voice_id : str, optional
         The name of the voice for Eleven Labs TTS service (default is JBFqnCBsd6RMkjVDRZzb)
     model_id : str, optional
@@ -37,8 +33,6 @@ class ElevenLabsTTSProvider:
         url: str,
         api_key: Optional[str] = None,
         elevenlabs_api_key: Optional[str] = None,
-        device_id: Optional[int] = None,
-        speaker_name: Optional[str] = None,
         voice_id: Optional[str] = "JBFqnCBsd6RMkjVDRZzb",
         model_id: Optional[str] = "eleven_flash_v2_5",
         output_format: Optional[str] = "mp3_44100_128",
@@ -53,8 +47,6 @@ class ElevenLabsTTSProvider:
         self.running: bool = False
         self._audio_stream: AudioOutputStream = AudioOutputStream(
             url=url,
-            device=device_id,
-            device_name=speaker_name,
             headers={"x-api-key": api_key} if api_key else None,
         )
 
