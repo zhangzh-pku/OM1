@@ -415,7 +415,7 @@ class RPLidarProvider:
                             logging.debug(f"remaining paths: {possible_paths}")
                             break  # no need to keep checking this path - we know this path is bad
 
-        logging.info(f"possible_paths RP Lidar: {possible_paths}")
+        logging.debug(f"possible_paths RP Lidar: {possible_paths}")
 
         self.turn_left = []
         self.turn_right = []

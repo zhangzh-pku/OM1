@@ -433,24 +433,24 @@ class RPDriver(object):
                         self.express_trame = 0
                         # print("self.express_data: ",  self.express_data)
                         if not self.express_data:
-                            self.logger.info("reading first time bytes")
+                            self.logger.debug("reading first time bytes")
                             raw_data = self._read_response(dsize)
                             self.express_data = ExpressPacket.from_string(raw_data)
 
                         self.express_old_data = self.express_data
-                        self.logger.info(
+                        self.logger.debug(
                             "set old_data with start_angle %f",
                             self.express_old_data.start_angle,
                         )
                         raw_data = self._read_response(dsize)
                         self.express_data = ExpressPacket.from_string(raw_data)
-                        self.logger.info(
+                        self.logger.debug(
                             "set new_data with start_angle %f",
                             self.express_data.start_angle,
                         )
 
                     self.express_trame += 1
-                    self.logger.info(
+                    self.logger.debug(
                         "process scan of frame %d with angle : %f and angle new : %f",
                         self.express_trame,
                         self.express_old_data.start_angle,
@@ -469,7 +469,7 @@ class RPDriver(object):
                     )
 
                 except ValueError as e:
-                    self.logger.error("Error while processing express scan: %s", e)
+                    self.logger.warning("Error while processing express scan: %s", e)
                     self.express_trame = 32
                     self.express_data = False
 
