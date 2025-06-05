@@ -2,26 +2,16 @@ import logging
 import math
 import random
 import time
-from dataclasses import dataclass
 from queue import Queue
 from typing import List, Optional
 
 import zenoh
 
-from actions.base import ActionConfig, ActionConnector
+from actions.base import ActionConfig, ActionConnector, MoveCommand
 from actions.move_turtle.interface import MoveInput
 from providers.odom_provider import OdomProvider
 from providers.rplidar_provider import RPLidarProvider
 from zenoh_idl import geometry_msgs, sensor_msgs
-
-
-@dataclass
-class MoveCommand:
-    dx: float
-    yaw: float
-    direction: str
-    start_x: float = 0.0
-    start_y: float = 0.0
 
 
 class MoveZenohConnector(ActionConnector[MoveInput]):

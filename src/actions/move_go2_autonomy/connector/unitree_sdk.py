@@ -1,24 +1,14 @@
 import logging
 import math
 import time
-from dataclasses import dataclass
 from queue import Queue
 from typing import List, Optional
 
-from actions.base import ActionConfig, ActionConnector
+from actions.base import ActionConfig, ActionConnector, MoveCommand
 from actions.move_go2_autonomy.interface import MoveInput
 from providers.odom_provider import OdomProvider, RobotState
 from providers.rplidar_provider import RPLidarProvider
 from unitree.unitree_sdk2py.go2.sport.sport_client import SportClient
-
-
-@dataclass
-class MoveCommand:
-    dx: float
-    yaw: float
-    direction: str
-    start_x: float = 0.0
-    start_y: float = 0.0
 
 
 class MoveUnitreeSDKConnector(ActionConnector[MoveInput]):
