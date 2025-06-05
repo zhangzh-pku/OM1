@@ -278,9 +278,9 @@ class MoveUnitreeSDKConnector(ActionConnector[MoveInput]):
 
     def _normalize_angle(self, angle: float) -> float:
         """Normalize angle to [-180, 180] range."""
-        if angle <= -180:
+        if angle < -180:
             angle += 360.0
-        elif angle >= 180.0:
+        elif angle > 180:
             angle -= 360.0
         return angle
 
