@@ -8,6 +8,15 @@ OT = T.TypeVar("OT")
 
 
 @dataclass
+class MoveCommand:
+    dx: float
+    yaw: float
+    direction: str
+    start_x: float = 0.0
+    start_y: float = 0.0
+
+
+@dataclass
 class ActionConfig:
     """
     Configuration class for Action implementations.

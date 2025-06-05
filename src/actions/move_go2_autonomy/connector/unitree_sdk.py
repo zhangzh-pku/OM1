@@ -2,8 +2,9 @@ import logging
 import math
 import time
 from queue import Queue
+from typing import List, Optional
 
-from actions.base import ActionConfig, ActionConnector
+from actions.base import ActionConfig, ActionConnector, MoveCommand
 from actions.move_go2_autonomy.interface import MoveInput
 from providers.odom_provider import OdomProvider, RobotState
 from providers.rplidar_provider import RPLidarProvider
@@ -22,9 +23,7 @@ class MoveUnitreeSDKConnector(ActionConnector[MoveInput]):
         self.turn_speed = 0.8
         self.angle_tolerance = 5.0  # degrees
         self.distance_tolerance = 0.05  # meters
-
-        # Movement tracking
-        self.pending_movements = Queue()
+        self.pending_movements: Queue[Optional[MoveCommand]] = Queue()
         self.movement_attempts = 0
         self.movement_attempt_limit = 15
         self.gap_previous = 0
@@ -151,7 +150,7 @@ class MoveUnitreeSDKConnector(ActionConnector[MoveInput]):
 
         # if we got to this point, we have good data and we are able to
         # safely proceed
-        target = list(self.pending_movements.queue)
+        target: List[MoveCommand] = list(self.pending_movements.queue)
 
         if len(target) > 0:
 
@@ -169,7 +168,9 @@ class MoveUnitreeSDKConnector(ActionConnector[MoveInput]):
                 )
                 return
 
-            goal_dx, goal_yaw, direction = current_target[:3]
+            goal_dx = current_target.dx
+            goal_yaw = current_target.yaw
+            direction = current_target.direction
 
             if "turn" in direction:
                 gap = self._calculate_angle_gap(self.odom.yaw_odom_m180_p180, goal_yaw)
@@ -201,8 +202,8 @@ class MoveUnitreeSDKConnector(ActionConnector[MoveInput]):
                     )
                     self.clean_abort()
             else:
-                s_x = target[0][3]
-                s_y = target[0][4]
+                s_x = current_target.start_x
+                s_y = current_target.start_y
                 distance_traveled = math.sqrt(
                     (self.odom.x - s_x) ** 2 + (self.odom.y - s_y) ** 2
                 )
