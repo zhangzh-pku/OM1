@@ -1,11 +1,11 @@
 import logging
 import math
+import multiprocessing as mp
 import threading
 import time
-from typing import Dict, List, Optional
-from queue import Queue, Empty, Full
-import multiprocessing as mp
 from dataclasses import dataclass
+from queue import Empty, Full
+from typing import Dict, List, Optional
 
 import bezier
 import numpy as np
@@ -33,11 +33,18 @@ class RPLidarConfig:
     max_distance_mm: int
         Maximum distance in millimeters for valid measurements.
     """
+
     max_buf_meas: int = 0
     min_len: int = 5
     max_distance_mm: int = 1500
 
-def RPLidar_processor(data_queue: mp.Queue, control_queue: mp.Queue, serial_port: str, config: RPLidarConfig):
+
+def RPLidar_processor(
+    data_queue: mp.Queue,
+    control_queue: mp.Queue,
+    serial_port: str,
+    config: RPLidarConfig,
+):
     """
     Dedicated RPLidar processor function for multiprocessing.
     This function runs in a separate process to handle RPLidar data processing.
@@ -101,7 +108,7 @@ def RPLidar_processor(data_queue: mp.Queue, control_queue: mp.Queue, serial_port
                             break
                     except Empty:
                         pass
-            except Exception as e:
+            except Exception:
                 time.sleep(0.5)
     except Exception as e:
         logging.error(f"Error in RPLidar processor: {e}")
@@ -112,6 +119,7 @@ def RPLidar_processor(data_queue: mp.Queue, control_queue: mp.Queue, serial_port
             lidar.disconnect()
         except Exception as e:
             logging.error(f"Error stopping RPLidar: {e}")
+
 
 @singleton
 class RPLidarProvider:
@@ -153,7 +161,9 @@ class RPLidarProvider:
         URID: str = "",
         use_zenoh: bool = False,
         simple_paths: bool = False,
-        rplidar_config: RPLidarConfig = RPLidarConfig(max_buf_meas=0, min_len=5, max_distance_mm=1500)
+        rplidar_config: RPLidarConfig = RPLidarConfig(
+            max_buf_meas=0, min_len=5, max_distance_mm=1500
+        ),
     ):
         """
         Robot and sensor configuration
@@ -238,19 +248,28 @@ class RPLidarProvider:
         Start the RPLidar provider.
         This method initializes the RPLidar processing thread and the serial data processing thread.
         """
-        if not self._rplidar_processor_thread or not self._rplidar_processor_thread.is_alive():
+        if (
+            not self._rplidar_processor_thread
+            or not self._rplidar_processor_thread.is_alive()
+        ):
             self._rplidar_processor_thread = mp.Process(
                 target=RPLidar_processor,
-                args=(self.data_queue, self.control_queue, self.serial_port, self.rplidar_config),
-                daemon=True
+                args=(
+                    self.data_queue,
+                    self.control_queue,
+                    self.serial_port,
+                    self.rplidar_config,
+                ),
+                daemon=True,
             )
             self._rplidar_processor_thread.start()
 
-
-        if not self._serial_processor_thread or not self._serial_processor_thread.is_alive():
+        if (
+            not self._serial_processor_thread
+            or not self._serial_processor_thread.is_alive()
+        ):
             self._serial_processor_thread = threading.Thread(
-                target=self._serial_processor,
-                daemon=True
+                target=self._serial_processor, daemon=True
             )
             self._serial_processor_thread.start()
             logging.info("RPLidar processing thread started")

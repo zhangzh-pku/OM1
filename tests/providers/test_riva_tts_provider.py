@@ -67,4 +67,3 @@ def test_add_pending_message(mock_audio_stream):
     mock_audio_stream.return_value.add_request.assert_called_once_with(
         {"text": "test message"}
     )
-

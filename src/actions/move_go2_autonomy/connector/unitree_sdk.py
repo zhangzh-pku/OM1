@@ -284,7 +284,9 @@ class MoveUnitreeSDKConnector(ActionConnector[MoveInput]):
             logging.warning("Cannot advance due to barrier")
             return
         self.pending_movements.put(
-            MoveCommand(0.5, 0.0, "advance", round(self.odom.x, 2), round(self.odom.y, 2))
+            MoveCommand(
+                0.5, 0.0, "advance", round(self.odom.x, 2), round(self.odom.y, 2)
+            )
         )
 
     def _process_move_back(self):
@@ -295,7 +297,9 @@ class MoveUnitreeSDKConnector(ActionConnector[MoveInput]):
             logging.warning("Cannot retreat due to barrier")
             return
         self.pending_movements.put(
-            MoveCommand(-0.5, 0.0, "retreat", round(self.odom.x, 2), round(self.odom.y, 2))
+            MoveCommand(
+                -0.5, 0.0, "retreat", round(self.odom.x, 2), round(self.odom.y, 2)
+            )
         )
 
     def _normalize_angle(self, angle: float) -> float:

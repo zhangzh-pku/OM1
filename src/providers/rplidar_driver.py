@@ -469,9 +469,7 @@ class RPDriver(object):
                     )
 
                 except ValueError as e:
-                    self.logger.error(
-                        "Error while processing express scan: %s", e
-                    )
+                    self.logger.error("Error while processing express scan: %s", e)
                     self.express_trame = 32
                     self.express_data = False
 

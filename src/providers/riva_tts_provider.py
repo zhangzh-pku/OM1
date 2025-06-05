@@ -1,6 +1,4 @@
 import logging
-import threading
-import time
 from typing import Callable, Optional
 
 from om1_speech import AudioOutputStream
