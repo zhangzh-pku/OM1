@@ -248,6 +248,8 @@ class RPLidarProvider:
         Start the RPLidar provider.
         This method initializes the RPLidar processing thread and the serial data processing thread.
         """
+        self.running = True
+
         if (
             not self._rplidar_processor_thread
             or not self._rplidar_processor_thread.is_alive()
@@ -455,7 +457,7 @@ class RPLidarProvider:
 
         This method works for the serial RPLidar driver without Zenoh.
         """
-        while True:
+        while self.running:
             try:
                 scan = self.data_queue.get_nowait()
                 scan_array = np.array(scan)
