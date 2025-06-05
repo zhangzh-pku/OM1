@@ -124,7 +124,7 @@ class MoveUnitreeSDKConnector(ActionConnector[MoveInput]):
 
         try:
             logging.info(f"self.sport_client.Move: vx={vx}, vy={vy}, vturn={vturn}")
-            # self.sport_client.Move(vx, vy, vturn)
+            self.sport_client.Move(vx, vy, vturn)
         except Exception as e:
             logging.error(f"Error moving robot: {e}")
 
