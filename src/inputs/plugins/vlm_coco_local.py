@@ -65,7 +65,7 @@ class VLM_COCO_Local(FuserInput[Image.Image]):
         super().__init__(config)
 
         self.device = "cpu"
-        self.detection_threshold = 0.7
+        self.detection_threshold = 0.2
 
         self.camera_index = 0  # default to default webcam unless specified otherwsie
         if self.config.camera_index:
@@ -122,8 +122,11 @@ class VLM_COCO_Local(FuserInput[Image.Image]):
         await asyncio.sleep(0.5)
 
         # Capture a frame every 500 ms
+        # logging.info(f"VLM_COCO_Local poll")
+
         if self.have_cam:
             ret, frame = self.cap.read()
+            # logging.info(f"VLM_COCO_Local frame: {frame}")
             return frame
 
     async def _raw_to_text(self, raw_input: Optional[np.ndarray]) -> Optional[Message]:
@@ -145,6 +148,7 @@ class VLM_COCO_Local(FuserInput[Image.Image]):
 
         if raw_input is not None:
             image = raw_input.copy().transpose((2, 0, 1))
+
             batch_image = np.expand_dims(image, axis=0)
             tensor_image = torch.tensor(
                 batch_image / 255.0, dtype=torch.float, device=self.device
@@ -152,6 +156,8 @@ class VLM_COCO_Local(FuserInput[Image.Image]):
             mobilenet_detections = self.model(tensor_image)[
                 0
             ]  # pylint: disable=E1102 disable not callable warning
+
+            # logging.info(f"VLM_COCO_Local detections: {mobilenet_detections}")
             filtered_detections = [
                 Detection(label_id, box, score)
                 for label_id, box, score in zip(

@@ -29,10 +29,10 @@
   },
   "agent_actions": [
     {
-      "name": "move_xbox_controller",
-      "llm_label": "xbox",
+      "name": "move_game_controller",
+      "llm_label": "external movement controller",
       "implementation": "passthrough",
-      "connector": "go2_xbox_controller"
+      "connector": "go2_game_controller"
     },
     {
       "name": "speak",

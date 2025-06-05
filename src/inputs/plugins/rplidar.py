@@ -50,29 +50,14 @@ class RPLidar(FuserInput[str]):
 
         logging.info(f"Config: {self.config}")
 
-        # Initialize RPLidar Provider based on .json5 config file
+        # Extract configuration parameters
         self.silent = getattr(config, "silent", False)
-        serial_port = getattr(self.config, "serial_port", None)
-        use_zenoh = getattr(self.config, "use_zenoh", False)
-        URID = ""
-        if use_zenoh:
-            # probably a turtlebot
-            URID = getattr(self.config, "URID")
-            logging.info(f"RPLidar using Zenoh and URID: {URID}")
-        half_width_robot = getattr(self.config, "half_width_robot", 0.20)
-        angles_blanked = getattr(self.config, "angles_blanked", [])
-        max_relevant_distance = getattr(self.config, "max_relevant_distance", 1.1)
-        sensor_mounting_angle = getattr(self.config, "sensor_mounting_angle", 180.0)
 
-        self.lidar: RPLidarProvider = RPLidarProvider(
-            serial_port,
-            half_width_robot,
-            angles_blanked,
-            max_relevant_distance,
-            sensor_mounting_angle,
-            URID,
-            use_zenoh,
-        )
+        # Build lidar configuration from config
+        lidar_config = self._extract_lidar_config(config)
+
+        # Initialize RPLidar Provider
+        self.lidar: RPLidarProvider = RPLidarProvider(**lidar_config)
 
         self.lidar.start()
 
@@ -170,3 +155,21 @@ class RPLidar(FuserInput[str]):
         self.messages = []
 
         return result
+
+    def _extract_lidar_config(self, config: SensorConfig) -> dict:
+        """Extract lidar configuration parameters from sensor config."""
+        lidar_config = {
+            "serial_port": getattr(config, "serial_port", None),
+            "use_zenoh": getattr(config, "use_zenoh", False),
+            "half_width_robot": getattr(config, "half_width_robot", 0.20),
+            "angles_blanked": getattr(config, "angles_blanked", []),
+            "max_relevant_distance": getattr(config, "max_relevant_distance", 1.1),
+            "sensor_mounting_angle": getattr(config, "sensor_mounting_angle", 180.0),
+        }
+
+        # Handle Zenoh-specific configuration
+        if lidar_config["use_zenoh"]:
+            lidar_config["URID"] = getattr(config, "URID")
+            logging.info(f"RPLidar using Zenoh with URID: {lidar_config['URID']}")
+
+        return lidar_config
