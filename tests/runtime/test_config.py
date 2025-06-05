@@ -30,6 +30,7 @@ def mock_config_data():
                 "name": "test_action",
                 "implementation": "test_implementation",
                 "connector": "test_connector",
+                "silent": False,
                 "config": {
                     "arg1": "val1",
                 },
@@ -52,6 +53,7 @@ def mock_dependencies():
                 implementation="mock_implementation",
                 interface="mock_interface",
                 connector="mock_connector",
+                silent="mock_silent",
             )
 
     class MockSimulator(Simulator):
@@ -104,12 +106,14 @@ def mock_multiple_components_config():
                 "llm_label": "emotion",
                 "implementation": "test_implementation_1",
                 "connector": "test_connector_1",
+                "silent": False,
             },
             {
                 "name": "test_action_2",
                 "llm_label": "emotion",
                 "implementation": "test_implementation_2",
                 "connector": "test_connector_2",
+                "silent": True,
             },
         ],
     }

@@ -9,13 +9,20 @@
   "system_prompt_examples": "",
   "agent_inputs": [
     {
-      "type": "VLM_COCO_Local",
-      "config": {
-        "camera_index": 0
+      "type": "VLMVila"
+    },
+    //{
+    //  "type": "GoogleASRInput"
+    //},
+    {
+      "type": "Gps",
+      config: {
+        "serial_port": "/dev/cu.usbmodem101",
+        "silent": false // set to true to just spin up the provider
       }
     },
     {
-      "type": "Gps",
+      "type": "Rtk",
       config: {
         "serial_port": "/dev/cu.usbmodem21201",
         "silent": false // set to true to just spin up the provider
@@ -36,7 +43,8 @@
         "half_width_robot": 0.21,
         "max_relevant_distance": 1.1,
         "sensor_mounting_angle": 172.0,
-        "angles_blanked": [[-180.0, -170.0], [160, 180]],
+        //"angles_blanked": [[-180.0, -170.0], [160, 180]],
+        "angles_blanked": [[-180.0, -140.0], [140, 180]],
         "silent": false
       }
     }
@@ -50,10 +58,11 @@
   },
   "agent_actions": [
     {
-      "name": "move_xbox_controller",
-      "llm_label": "xbox",
+      "name": "move_game_controller",
+      "llm_label": "external movement controller",
       "implementation": "passthrough",
-      "connector": "go2_xbox_controller"
+      "connector": "go2_game_controller",
+      "silent": true
     },
     {
       "name": "move_go2_autonomy",
@@ -61,6 +70,15 @@
       "implementation": "passthrough",
       "connector": "unitree_sdk"
     },
+    //{
+    // "name": "speak",
+    //  "llm_label": "speak",
+    //  "implementation": "passthrough",
+    //  "connector": "elevenlabs_tts",
+    //  "config": {
+    //    "voice_id": "TbMNBJ27fH2U0VgpSNko"
+    //  }
+    //}
   ],
   "backgrounds": [
     {

@@ -1,4 +1,3 @@
-
 ![OM_Banner_X2 (1)](https://github.com/user-attachments/assets/853153b7-351a-433d-9e1a-d257b781f93c)
 
 <p align="center">  <a href="https://arxiv.org/abs/2412.18588">Technical Paper</a> |  <a href="https://docs.openmind.org/">Documentation</a> |  <a href="https://x.com/openmind_agi">X</a> | <a href="https://discord.gg/VUjpg4ef5n">Discord</a> </p>
@@ -16,11 +15,51 @@
 ## Architecture Overview
   ![Artboard 1@4x 1 (1)](https://github.com/user-attachments/assets/14e9b916-4df7-4700-9336-2983c85be311)
 
-## Installation
+## Getting Started - Hello World
 
-Let's run the first AI agent named Spot on OM1. The Spot agent uses your webcam to capture and label objects. These text captions are then sent to `OpenAI 4o`, a large language model (LLM) which then returns `movement`, `speech` and `face` action commands. These commands are displayed on WebSim along with basic timing and other debugging information.
+To get started with OM1, let's run the Spot agent. Spot uses your webcam to capture and label objects. These text captions are then sent to `OpenAI 4o`, which returns `movement`, `speech` and `face` action commands. These commands are displayed on WebSim along with basic timing and other debugging information.
 
-Detailed instruction please refer to [Installation](https://docs.openmind.org/getting-started/get-started).
+### Package Management and VENV
+
+You will need the [`uv` package manager](https://docs.astral.sh/uv/getting-started/installation/)
+
+### Clone the Repo
+
+```bash
+git clone https://github.com/OpenmindAGI/OM1.git
+cd OM1
+git submodule update --init
+uv venv
+```
+
+### Install Dependencies
+
+For macOS  
+```bash
+brew install portaudio
+brew install ffmpeg
+```
+
+For Linux  
+```bash
+sudo apt-get update
+sudo apt-get install portaudio19-dev python-all-dev
+sudo apt-get install ffmpeg
+```
+
+### Obtain an OpenMind API Key
+
+Obtain your OpenMind API Key [here]](https://portal.openmind.org/). Copy it to `config/spot.json5`, replacing the `openmind_free` placeholder with your API key.
+
+### Launching OM1
+
+Simple run
+
+```bash
+uv run src/run.py spot
+```
+
+After launching OM1, you have a fun conversation with Spot, and then learn about connecting it you your robot hardware. For detailed instructions please refer to [Installation](https://docs.openmind.org/getting-started/get-started).
 
 ## What's Next?
 
