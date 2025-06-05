@@ -17,6 +17,7 @@ class MockSensor(Sensor):
 class MockAction:
     name: str
     llm_label: str = None
+    silent: bool = False
 
 
 @dataclass
@@ -74,12 +75,12 @@ def test_fuser_with_inputs_and_actions(mock_describe):
             + config.system_prompt_examples
         )
 
-        expected = f"{system_prompt}\n\nAVAILABLE INPUTS:\ntest input\nAVAILABLE ACTIONS:\n\naction description\n\naction description\n\nWhat will you do? Actions:"
+        expected = f"{system_prompt}\n\nAVAILABLE INPUTS:\ntest input\nAVAILABLE ACTIONS:\n\naction description\n\naction description\n\n\n\nWhat will you do? Actions:"
         assert result == expected
         assert mock_describe.call_count == 2
         assert io_provider.fuser_system_prompt == system_prompt
         assert io_provider.fuser_inputs == "test input"
         assert (
             io_provider.fuser_available_actions
-            == "AVAILABLE ACTIONS:\naction description\n\naction description\n\nWhat will you do? Actions:"
+            == "AVAILABLE ACTIONS:\naction description\n\naction description\n\n\n\nWhat will you do? Actions:"
         )

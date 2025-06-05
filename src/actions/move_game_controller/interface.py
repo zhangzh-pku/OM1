@@ -9,9 +9,9 @@ class IDLEInput:
 
 
 @dataclass
-class XboxController(Interface[IDLEInput, IDLEInput]):
+class GameController(Interface[IDLEInput, IDLEInput]):
     """
-    Xbox controller interface
+    Game controller interface
     """
 
     input: IDLEInput
