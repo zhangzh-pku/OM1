@@ -88,21 +88,12 @@ class GPSOdomReader(FuserInput[str]):
 
     # ── pose update step ────────────────────────────────────────────────
     async def _update_pose(self):
-        if hasattr(self.odom, "running"):
-            try:
-                o = self.odom.odom
-                logging.debug(f"Odom data: {o}")
-                if o:
-                    self.pose_x = o["x"]
-                    self.pose_y = o["y"]
-                    yaw_world = o["yaw_odom_m180_p180"]
-                    self.pose_yaw = self._wrap_angle(yaw_world - self._yaw_offset)
-            except Exception as e:
-                logging.error(f"Error parsing Odom: {e}")
-                return
-        else:
-            logging.warning("OdomProvider is not running, skipping pose update.")
-            return
+        o = self.odom
+        logging.debug(f"Odom data: {o}")
+        self.pose_x = self.odom.x
+        self.pose_y = self.odom.y
+        yaw_world = math.radians(self.odom.yaw_odom_m180_p180)
+        self.pose_yaw = self._wrap_angle(yaw_world + self._yaw_offset)
 
         # publish through IOProvider
         lat, lon = self._xy_to_latlon(self.pose_x, self.pose_y)
