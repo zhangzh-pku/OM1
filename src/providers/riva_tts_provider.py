@@ -69,6 +69,7 @@ class RivaTTSProvider:
         Start the TTS provider and its audio stream.
         """
         if self.running:
+            logging.warning("Riva TTS provider is already running")
             return
 
         self.running = True
