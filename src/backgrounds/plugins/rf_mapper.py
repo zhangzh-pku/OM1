@@ -168,7 +168,7 @@ class RFmapper(Background):
                                 self.gps_alt = g["gps_alt"]
                                 self.yaw_mag_0_360 = g["yaw_mag_0_360"]
                                 self.ble_scan = g["ble_scan"]
-                                logging.info(
+                                logging.debug(
                                     f"RF scan results {self.ble_scan}"
                                 )
                         except Exception as e:
