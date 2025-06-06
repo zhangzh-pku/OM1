@@ -7,7 +7,12 @@ from typing import Dict, List
 from bleak import AdvertisementData, BleakScanner
 
 from backgrounds.base import Background, BackgroundConfig
-from providers.fabric_map_provider import FabricData, FabricDataSubmitter, RFData, RFDataRaw
+from providers.fabric_map_provider import (
+    FabricData,
+    FabricDataSubmitter,
+    RFData,
+    RFDataRaw,
+)
 from providers.gps_provider import GpsProvider
 from providers.odom_provider import OdomProvider
 from providers.rtk_provider import RtkProvider
@@ -168,23 +173,20 @@ class RFmapper(Background):
                                 self.gps_alt = g["gps_alt"]
                                 self.yaw_mag_0_360 = g["yaw_mag_0_360"]
                                 self.ble_scan = g["ble_scan"]
-                                logging.debug(
-                                    f"RF scan results {self.ble_scan}"
-                                )
+                                logging.debug(f"RF scan results {self.ble_scan}")
                         except Exception as e:
                             logging.error(f"Error parsing GPS: {e}")
 
-                        if hasattr(self.odom, "running"):
-                            try:
-                                o = self.odom.odom
-                                logging.debug(f"Odom data: {o}")
-                                if o:
-                                    self.x = o["x"]
-                                    self.y = o["y"]
-                                    self.yaw_odom_0_360 = o["yaw_odom_0_360"]
-                                    self.yaw_odom_m180_p180 = o["yaw_odom_m180_p180"]
-                            except Exception as e:
-                                logging.error(f"Error parsing Odom: {e}")
+                        try:
+                            o = self.odom
+                            logging.debug(f"Odom data: {o}")
+                            if o:
+                                self.x = o.x
+                                self.y = o.y
+                                self.yaw_odom_0_360 = o.yaw_odom_0_360
+                                self.yaw_odom_m180_p180 = o.yaw_odom_m180_p180
+                        except Exception as e:
+                            logging.error(f"Error parsing Odom: {e}")
 
                         if hasattr(self.rtk, "running"):
                             try:
@@ -219,7 +221,7 @@ class RFmapper(Background):
                                     yaw_odom_0_360=self.yaw_odom_0_360,
                                     yaw_odom_m180_p180=self.yaw_odom_m180_p180,
                                     rf_data=self.scan_results,
-                                    rf_data_raw=self.ble_scan
+                                    rf_data_raw=self.ble_scan,
                                 )
                             )
                         except Exception as e:
