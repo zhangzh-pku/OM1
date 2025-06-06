@@ -228,11 +228,11 @@ class OdomProvider:
         # runs from -180 to + 180, where 0 is the "nose" of the robot
 
         # runs from 0 to 360
-        self.yaw_odom_0_360 = round(self.yaw_odom_m180_p180 + 180.0,2)
+        self.yaw_odom_0_360 = round(self.yaw_odom_m180_p180 + 180.0, 2)
 
         # current position in world frame
-        self.x = round(pose.position.x,2)
-        self.y = round(pose.position.y,2)
+        self.x = round(pose.position.x, 2)
+        self.y = round(pose.position.y, 2)
 
     @property
     def odom(self) -> Optional[Union[Odometry, PoseStamped_]]:

@@ -55,6 +55,7 @@ class RFData:
             "mfgval": self.mfgval,
         }
 
+
 @dataclass
 class RFDataRaw:
     """
@@ -90,7 +91,7 @@ class RFDataRaw:
             "timestamp": self.timestamp,
             "address": self.address,
             "rssi": self.rssi,
-            "packet": self.packet
+            "packet": self.packet,
         }
 
 
@@ -146,7 +147,9 @@ class FabricData:
             "yaw_odom_0_360": self.yaw_odom_0_360,
             "yaw_odom_m180_p180": self.yaw_odom_m180_p180,
             "rf_data": [rf.to_dict() for rf in self.rf_data] if self.rf_data else [],
-            "rf_data_raw": [rf.to_dict() for rf in self.rf_data_raw] if self.rf_data_raw else [],
+            "rf_data_raw": (
+                [rf.to_dict() for rf in self.rf_data_raw] if self.rf_data_raw else []
+            ),
         }
 
 

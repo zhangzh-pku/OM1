@@ -174,7 +174,9 @@ class MoveUnitreeSDKConnector(ActionConnector[MoveInput]):
 
             if "turn" in direction:
 
-                gap = self._calculate_angle_gap(self.odom.yaw_odom_m180_p180, current_target.yaw)
+                gap = self._calculate_angle_gap(
+                    self.odom.yaw_odom_m180_p180, current_target.yaw
+                )
                 logging.info(f"remaining turn GAP: {gap}DEG")
 
                 # Track movement progress
@@ -257,9 +259,10 @@ class MoveUnitreeSDKConnector(ActionConnector[MoveInput]):
                 yaw=round(target_yaw, 2),
                 direction="turn",
                 start_x=round(self.odom.x, 2),
-                start_y=round(self.odom.y, 2)
-            ))
-        #[0.0, round(target_yaw, 2), "turn"])
+                start_y=round(self.odom.y, 2),
+            )
+        )
+        # [0.0, round(target_yaw, 2), "turn"])
 
     def _process_turn_right(self):
         """Process turn right command with safety check."""
@@ -273,8 +276,9 @@ class MoveUnitreeSDKConnector(ActionConnector[MoveInput]):
                 yaw=round(target_yaw, 2),
                 direction="turn",
                 start_x=round(self.odom.x, 2),
-                start_y=round(self.odom.y, 2)
-            ))
+                start_y=round(self.odom.y, 2),
+            )
+        )
 
     def _process_move_forward(self):
         """Process move forward command with safety check."""
@@ -287,9 +291,10 @@ class MoveUnitreeSDKConnector(ActionConnector[MoveInput]):
                 yaw=0,
                 direction="advance",
                 start_x=round(self.odom.x, 2),
-                start_y=round(self.odom.y, 2)
-            ))
-            #[0.5, 0.0, "advance", round(self.odom.x, 2), round(self.odom.y, 2)]
+                start_y=round(self.odom.y, 2),
+            )
+        )
+        # [0.5, 0.0, "advance", round(self.odom.x, 2), round(self.odom.y, 2)]
 
     def _process_move_back(self):
         """Process move back command with safety check."""
@@ -302,7 +307,7 @@ class MoveUnitreeSDKConnector(ActionConnector[MoveInput]):
                 yaw=0,
                 direction="retreat",
                 start_x=round(self.odom.x, 2),
-                start_y=round(self.odom.y, 2)
+                start_y=round(self.odom.y, 2),
             )
             # [0.5, 0.0, "retreat", round(self.odom.x, 2), round(self.odom.y, 2)]
         )

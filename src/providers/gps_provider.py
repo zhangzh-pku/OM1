@@ -1,13 +1,15 @@
 import logging
+import re
 import threading
 import time
-import re
-from typing import Optional
+from typing import Dict, List, Optional
 
-from providers.fabric_map_provider import RFDataRaw
 import serial
 
+from providers.fabric_map_provider import RFDataRaw
+
 from .singleton import singleton
+
 
 @singleton
 class GpsProvider:
@@ -68,7 +70,9 @@ class GpsProvider:
                 if len(parts) >= 3:
                     # that's a HDG packet
                     self.yaw_mag_0_360 = float(parts[2])
-                    self.yaw_mag_cardinal = self.compass_heading_to_direction(self.yaw_mag_0_360)
+                    self.yaw_mag_cardinal = self.compass_heading_to_direction(
+                        self.yaw_mag_0_360
+                    )
                     logging.debug(f"MAG: {self.yaw_mag_0_360}")
                 else:
                     logging.warning(f"Unable to parse heading: {data}")
@@ -118,13 +122,19 @@ class GpsProvider:
             "gps_alt": self.alt,
             "gps_sat": self.sat,
             "gps_time_utc": self.time_utc,
-            "ble_scan": self.ble_scan
+            "ble_scan": self.ble_scan,
         }
 
     def compass_heading_to_direction(self, degrees):
         directions = [
-            "North", "North East", "East", "South East",
-            "South", "South West", "West", "North West"
+            "North",
+            "North East",
+            "East",
+            "South East",
+            "South",
+            "South West",
+            "West",
+            "North West",
         ]
         index = int((degrees + 22.5) % 360 / 45)
         return directions[index]
@@ -133,11 +143,11 @@ class GpsProvider:
         if not input_string.startswith("BLE_TRIANG"):
             return {}
 
-        pattern = r'\[(\d+)\]\s+([0-9A-Fa-f:]{17})\s+(-?\d+)\s+((?:[0-9A-Fa-f]{2}:?)+)'
+        pattern = r"\[(\d+)\]\s+([0-9A-Fa-f:]{17})\s+(-?\d+)\s+((?:[0-9A-Fa-f]{2}:?)+)"
         matches = re.findall(pattern, input_string)
 
         devices: Dict[str, RFDataRaw] = {}
-        
+
         timestamp = str(int(time.time()))
 
         for match in matches:
@@ -147,15 +157,12 @@ class GpsProvider:
             packet = match[3].replace(":", "").lower()
 
             devices[index] = RFDataRaw(
-                timestamp=timestamp,
-                address=address,
-                rssi=rssi,
-                packet=packet
+                timestamp=timestamp, address=address, rssi=rssi, packet=packet
             )
 
-        sorted_devices = sorted(
-            devices.values(), key=lambda d: d.rssi, reverse=True
-        )[:10]
+        sorted_devices = sorted(devices.values(), key=lambda d: d.rssi, reverse=True)[
+            :10
+        ]
 
         return sorted_devices
 
