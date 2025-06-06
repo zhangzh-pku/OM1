@@ -276,15 +276,15 @@ void scan_callback(ble_gap_evt_adv_report_t* report)
 /* Prints the current record list to the Serial Monitor */
 void printRecordList(void)
 {
-  Serial.println("BLE_TRIANG");
+  Serial.print("BLE_TRIANG");
   for (uint8_t i = 0; i<ARRAY_SIZE; i++)
   {
-    Serial.printf("[%i] ", i);
+    Serial.printf(" [%i] ", i);
     Serial.printBuffer(records[i].addr, 6, ':');
     Serial.printf(" %i ", records[i].rssi);
     Serial.printBuffer(records[i].payload, records[i].payload_length, ':');
-    Serial.print("\n");
   }
+  Serial.print("\n");
 }
 
 /* Perform a simple bubble sort on the records array */
