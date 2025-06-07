@@ -37,13 +37,22 @@ class RPLidarProvider:
         The angle of the sensor zero relative to the way in which it's mounted
     """
 
+    # Constants
+    DEFAULT_SERIAL_PORT = "/dev/cu.usbserial-0001"
+    DEFAULT_HALF_WIDTH_ROBOT = 0.20
+    DEFAULT_MAX_RELEVANT_DISTANCE = 1.1
+    DEFAULT_SENSOR_MOUNTING_ANGLE = 180.0
+    NUM_BEZIER_POINTS = 10
+    DEGREES_TO_RADIANS = math.pi / 180.0
+    RADIANS_TO_DEGREES = 180.0 / math.pi
+
     def __init__(
         self,
-        serial_port: str = "/dev/cu.usbserial-0001",
-        half_width_robot: float = 0.20,
-        angles_blanked: list = [],
-        max_relevant_distance: float = 1.1,
-        sensor_mounting_angle: float = 180.0,
+        serial_port: str = DEFAULT_SERIAL_PORT,
+        half_width_robot: float = DEFAULT_HALF_WIDTH_ROBOT,
+        angles_blanked: list = None,
+        max_relevant_distance: float = DEFAULT_MAX_RELEVANT_DISTANCE,
+        sensor_mounting_angle: float = DEFAULT_SENSOR_MOUNTING_ANGLE,
         URID: str = "",
         use_zenoh: bool = False,
         simple_paths: bool = False,
@@ -56,7 +65,7 @@ class RPLidarProvider:
 
         self.serial_port = serial_port
         self.half_width_robot = half_width_robot
-        self.angles_blanked = angles_blanked
+        self.angles_blanked = angles_blanked if angles_blanked is not None else []
         self.max_relevant_distance = max_relevant_distance
         self.sensor_mounting_angle = sensor_mounting_angle
         self.URID = URID
@@ -75,45 +84,12 @@ class RPLidarProvider:
         self.angles = None
         self.angles_final = None
 
-        """
-        precompute Bezier trajectories
-        """
-        self.curves = [
-            bezier.Curve(
-                np.asfortranarray([[0.0, -0.3, -0.75], [0.0, 0.5, 0.40]]), degree=2
-            ),
-            bezier.Curve(
-                np.asfortranarray([[0.0, -0.3, -0.70], [0.0, 0.6, 0.70]]), degree=2
-            ),
-            bezier.Curve(
-                np.asfortranarray([[0.0, -0.2, -0.60], [0.0, 0.7, 0.90]]), degree=2
-            ),
-            bezier.Curve(
-                np.asfortranarray([[0.0, -0.1, -0.35], [0.0, 0.7, 1.03]]), degree=2
-            ),
-            bezier.Curve(
-                np.asfortranarray([[0.0, 0.0, 0.00], [0.0, 0.5, 1.05]]), degree=2
-            ),
-            bezier.Curve(
-                np.asfortranarray([[0.0, +0.1, +0.35], [0.0, 0.7, 1.03]]), degree=2
-            ),
-            bezier.Curve(
-                np.asfortranarray([[0.0, +0.2, +0.60], [0.0, 0.7, 0.90]]), degree=2
-            ),
-            bezier.Curve(
-                np.asfortranarray([[0.0, +0.3, +0.70], [0.0, 0.6, 0.70]]), degree=2
-            ),
-            bezier.Curve(
-                np.asfortranarray([[0.0, +0.3, +0.75], [0.0, 0.5, 0.40]]), degree=2
-            ),
-            bezier.Curve(
-                np.asfortranarray([[0.0, 0.0, 0.00], [0.0, -0.5, -1.05]]), degree=2
-            ),
-        ]
+        # Precompute Bezier trajectories for path planning
+        self.curves = self._initialize_bezier_curves()
 
         self.paths = []
         self.pp = []
-        self.s_vals = np.linspace(0.0, 1.0, 10)
+        self.s_vals = np.linspace(0.0, 1.0, self.NUM_BEZIER_POINTS)
 
         for curve in self.curves:
             cp = curve.evaluate_multi(self.s_vals)
@@ -301,10 +277,9 @@ class RPLidarProvider:
             if reflection:
                 continue
 
-            # bugfix - this calc is based on the [0 to 360]
-            # the goal is to save compute, hence want to do the
-            # slow math as late as possible
-            a_rad = (angle + 180.0) * math.pi / 180.0
+            # Convert angle to radians for trigonometric calculations
+            # Note: angle is adjusted to [0, 360] range
+            a_rad = (angle + 180.0) * self.DEGREES_TO_RADIANS
 
             v1 = d_m * math.cos(a_rad)
             v2 = d_m * math.sin(a_rad)
@@ -390,25 +365,7 @@ class RPLidarProvider:
             elif p == 9:
                 self.retreat = True
 
-        return_string = "You are surrounded by objects and cannot safely move in any direction. DO NOT MOVE."
-
-        if len(ppl) > 0:
-            return_string = "The safe movement directions are: {"
-            if self.use_zenoh:  # i.e. you are controlling a TurtleBot4
-                if self.advance:
-                    return_string += "'turn left', 'turn right', 'move forwards', "
-                else:
-                    return_string += "'turn left', 'turn right', "
-            else:
-                if len(self.turn_left) > 0:
-                    return_string += "'turn left', "
-                if self.advance:
-                    return_string += "'move forwards', "
-                if len(self.turn_right) > 0:
-                    return_string += "'turn right', "
-                if self.retreat:
-                    return_string += "'move back', "
-            return_string += "'stand still'}. "
+        return_string = self._generate_movement_string(ppl)
 
         self._raw_scan = array
         self._lidar_string = return_string
@@ -425,7 +382,7 @@ class RPLidarProvider:
         Continuously processes RPLidar data and send them
         to the inputs and actions, as needed.
         """
-        while self.running:
+        while self.running and self.lidar:
             if not self.use_zenoh:
                 # we are using serial
                 try:
@@ -514,3 +471,62 @@ class RPLidarProvider:
             "turn_right": self.turn_right,
             "retreat": self.retreat,
         }
+
+    def _initialize_bezier_curves(self):
+        """Initialize Bezier curves for path planning."""
+        return [
+            bezier.Curve(
+                np.asfortranarray([[0.0, -0.3, -0.75], [0.0, 0.5, 0.40]]), degree=2
+            ),
+            bezier.Curve(
+                np.asfortranarray([[0.0, -0.3, -0.70], [0.0, 0.6, 0.70]]), degree=2
+            ),
+            bezier.Curve(
+                np.asfortranarray([[0.0, -0.2, -0.60], [0.0, 0.7, 0.90]]), degree=2
+            ),
+            bezier.Curve(
+                np.asfortranarray([[0.0, -0.1, -0.35], [0.0, 0.7, 1.03]]), degree=2
+            ),
+            bezier.Curve(
+                np.asfortranarray([[0.0, 0.0, 0.00], [0.0, 0.5, 1.05]]), degree=2
+            ),
+            bezier.Curve(
+                np.asfortranarray([[0.0, +0.1, +0.35], [0.0, 0.7, 1.03]]), degree=2
+            ),
+            bezier.Curve(
+                np.asfortranarray([[0.0, +0.2, +0.60], [0.0, 0.7, 0.90]]), degree=2
+            ),
+            bezier.Curve(
+                np.asfortranarray([[0.0, +0.3, +0.70], [0.0, 0.6, 0.70]]), degree=2
+            ),
+            bezier.Curve(
+                np.asfortranarray([[0.0, +0.3, +0.75], [0.0, 0.5, 0.40]]), degree=2
+            ),
+            bezier.Curve(
+                np.asfortranarray([[0.0, 0.0, 0.00], [0.0, -0.5, -1.05]]), degree=2
+            ),
+        ]
+
+    def _generate_movement_string(self, valid_paths: list) -> str:
+        """Generate movement direction string based on valid paths."""
+        if not valid_paths:
+            return "You are surrounded by objects and cannot safely move in any direction. DO NOT MOVE."
+
+        parts = ["The safe movement directions are: {"]
+
+        if self.use_zenoh:  # TurtleBot4 control
+            parts.append("'turn left', 'turn right', ")
+            if self.advance:
+                parts.append("'move forwards', ")
+        else:
+            if self.turn_left:
+                parts.append("'turn left', ")
+            if self.advance:
+                parts.append("'move forwards', ")
+            if self.turn_right:
+                parts.append("'turn right', ")
+            if self.retreat:
+                parts.append("'move back', ")
+
+        parts.append("'stand still'}. ")
+        return "".join(parts)

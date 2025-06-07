@@ -2,13 +2,15 @@ import asyncio
 import logging
 import threading
 import time
+from typing import Dict, List
 
 from bleak import AdvertisementData, BleakScanner
 
 from backgrounds.base import Background, BackgroundConfig
-from providers.fabric_map_provider import FabricData, FabricDataSubmitter
+from providers.fabric_map_provider import FabricData, FabricDataSubmitter, RFData
 from providers.gps_provider import GpsProvider
 from providers.odom_provider import OdomProvider
+from providers.rtk_provider import RtkProvider
 
 
 class RFmapper(Background):
@@ -32,18 +34,32 @@ class RFmapper(Background):
         self.loop = asyncio.new_event_loop()
         self.thread = threading.Thread(target=self._scan_task)
         self.running = False
-        self.json_payload = None
-        self.scan_results = None
-        self.gps_data = None
+        self.scan_results: List[RFData] = []
 
         self.x = 0.0
         self.y = 0.0
         self.yaw_odom_0_360 = 0.0
         self.yaw_odom_m180_p180 = 0.0
 
+        self.gps_time_utc = ""
+        self.gps_lat = 0.0
+        self.gps_lon = 0.0
+        self.gps_alt = 0.0
+        self.yaw_mag_0_360 = 0.0
+
+        self.rtk_time_utc = ""
+        self.rtk_lat = 0.0
+        self.rtk_lon = 0.0
+        self.rtk_alt = 0.0
+        self.rtk_qua = 0
+
         self.gps = GpsProvider()
         self.gps_on = self.gps.running
         logging.info(f"Mapper Gps Provider: {self.gps}")
+
+        self.rtk = RtkProvider()
+        self.rtk_on = self.rtk.running
+        logging.info(f"Mapper Rtk Provider: {self.rtk}")
 
         self.odom = OdomProvider()
         logging.info(f"Mapper Odom Provider: {self.odom}")
@@ -54,15 +70,39 @@ class RFmapper(Background):
 
     async def scan_once(self):
 
-        seen_devices = {}
+        seen_devices: Dict[str, RFData] = {}
 
-        def detection_callback(device, advertisement_data: AdvertisementData):
-            seen_devices[device.address] = {
-                "timestamp": time.time(),
-                "address": device.address,
-                "name": device.name,
-                "rssi": advertisement_data.rssi,
-            }
+        def detection_callback(device, advdata: AdvertisementData):
+            logging.debug(f"adv...{advdata}")
+
+            # AdvertisementData(
+            # local_name: Optional[str],
+            # manufacturer_data: Dict[int, bytes],
+            # service_data: Dict[str, bytes],
+            # service_uuids: List[str],
+            # tx_power: Optional[int],
+            # rssi: int, platform_data: Tuple)
+
+            service_uuid = ""
+            mfgkey = ""
+            mfgval = ""
+            if advdata.manufacturer_data:
+                for key, value in advdata.manufacturer_data.items():
+                    mfgkey = hex(key).upper()
+                    mfgval = value.hex().upper()
+                    break
+            if advdata.service_uuids:
+                service_uuid = advdata.service_uuids[0]
+
+            seen_devices[device.address] = RFData(
+                timestamp=time.time(),
+                address=device.address,
+                name=device.name if device.name else "Unknown",
+                rssi=advdata.rssi,
+                service_uuid=service_uuid,
+                mfgkey=mfgkey,
+                mfgval=mfgval,
+            )
 
         scanner = BleakScanner(detection_callback)
         await scanner.start()
@@ -71,7 +111,7 @@ class RFmapper(Background):
 
         # Get the top 10 devices with the strongest RSSI
         sorted_devices = sorted(
-            seen_devices.values(), key=lambda d: d["rssi"], reverse=True
+            seen_devices.values(), key=lambda d: d.rssi, reverse=True
         )[:10]
         # logging.info(f"Scan...{sorted_devices}")
         return sorted_devices
@@ -89,6 +129,7 @@ class RFmapper(Background):
 
     def stop(self):
         self.running = False
+        time.sleep(1)
         self.thread.join()
 
     def run(self) -> None:
@@ -97,42 +138,89 @@ class RFmapper(Background):
         This method will run indefinitely, simulating a long-running task.
         """
         try:
-            while True:
+            while self.running:
                 # logging.info(f"RF mapper: {self.scan_results}")
 
                 if hasattr(self.gps, "running"):
                     if self.scan_results and self.gps.data:
-                        # self.scan_results.append(self.gps.data)
-                        # self.json_payload = json.dumps(self.scan_results, indent=2)
-                        # logging.info(f"Mapper data: {self.json_payload}")
-                        g = self.gps.data
-                        logging.debug(f"GPS data: {g}")
+                        logging.debug(
+                            f"RF scan results available, processing... {self.scan_results}"
+                        )
+                        try:
+                            g = self.gps.data
+                            logging.debug(f"GPS data: {g}")
+                            if g:
+                                self.gps_time_utc = g["gps_time_utc"]
+
+                                lat = g["gps_lat"]
+                                if lat[-1] == "N":
+                                    self.gps_lat = float(lat[:-1])
+                                else:
+                                    self.gps_lat = -1.0 * float(lat[:-1])
+
+                                lon = g["gps_lon"]
+                                if lon[-1] == "E":
+                                    self.gps_lon = float(lon[:-1])
+                                else:
+                                    self.gps_lon = -1.0 * float(lon[:-1])
+
+                                self.gps_alt = g["gps_alt"]
+
+                                self.yaw_mag_0_360 = g["yaw_mag_0_360"]
+                        except Exception as e:
+                            logging.error(f"Error parsing GPS: {e}")
 
                         if hasattr(self.odom, "running"):
-                            o = self.odom.odom
-                            logging.debug(f"Odom data: {o}")
-                            self.x = o["x"]
-                            self.y = o["y"]
-                            self.yaw_odom_0_360 = o["yaw_odom_0_360"]
-                            self.yaw_odom_m180_p180 = o["yaw_odom_m180_p180"]
+                            try:
+                                o = self.odom.odom
+                                logging.debug(f"Odom data: {o}")
+                                if o:
+                                    self.x = o["x"]
+                                    self.y = o["y"]
+                                    self.yaw_odom_0_360 = o["yaw_odom_0_360"]
+                                    self.yaw_odom_m180_p180 = o["yaw_odom_m180_p180"]
+                            except Exception as e:
+                                logging.error(f"Error parsing Odom: {e}")
 
-                        self.fds.share_data(
-                            FabricData(
-                                machine_id=self.URID,
-                                gps_time_utc=g["gps_time_utc"],
-                                gps_lat=g["gps_lat"],
-                                gps_lon=g["gps_lon"],
-                                gps_alt=g["gps_alt"],
-                                mag=g["yaw_mag_0_360"],
-                                update_time_local=time.time(),
-                                odom_x=self.x,
-                                odom_y=self.y,
-                                yaw_odom_0_360=self.yaw_odom_0_360,
-                                yaw_odom_m180_p180=self.yaw_odom_m180_p180,
-                                rf_data=self.scan_results,
+                        if hasattr(self.rtk, "running"):
+                            try:
+                                r = self.rtk.data
+                                logging.debug(f"RTK data: {r}")
+                                if r:
+                                    self.rtk_time_utc = r["rtk_time_utc"]
+                                    self.rtk_lat = r["rtk_lat"]
+                                    self.rtk_lon = r["rtk_lon"]
+                                    self.rtk_alt = r["rtk_alt"]
+                                    self.rtk_qua = r["rtk_qua"]
+                            except Exception as e:
+                                logging.error(f"Error parsing RTK: {e}")
+
+                        try:
+                            self.fds.share_data(
+                                FabricData(
+                                    machine_id=self.URID,
+                                    gps_time_utc=self.gps_time_utc,
+                                    gps_lat=self.gps_lat,
+                                    gps_lon=self.gps_lon,
+                                    gps_alt=self.gps_alt,
+                                    rtk_time_utc=self.rtk_time_utc,
+                                    rtk_lat=self.rtk_lat,
+                                    rtk_lon=self.rtk_lon,
+                                    rtk_alt=self.rtk_alt,
+                                    rtk_qua=self.rtk_qua,
+                                    mag=self.yaw_mag_0_360,
+                                    update_time_local=time.time(),
+                                    odom_x=self.x,
+                                    odom_y=self.y,
+                                    yaw_odom_0_360=self.yaw_odom_0_360,
+                                    yaw_odom_m180_p180=self.yaw_odom_m180_p180,
+                                    rf_data=self.scan_results,
+                                )
                             )
-                        )
-                        self.scan_results = None
+                        except Exception as e:
+                            logging.error(f"Error sharing to Fabric: {e}")
+
+                        self.scan_results = []
 
                 time.sleep(1)
         except KeyboardInterrupt:

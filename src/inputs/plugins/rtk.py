@@ -7,28 +7,8 @@ from typing import Optional
 
 from inputs.base import SensorConfig
 from inputs.base.loop import FuserInput
-from providers.gps_provider import GpsProvider
 from providers.io_provider import IOProvider
-
-# Map of abbreviated compass directions to full words
-CARDINAL_MAP = {
-    "N": "North",
-    "NNE": "North-Northeast",
-    "NE": "Northeast",
-    "ENE": "East-Northeast",
-    "E": "East",
-    "ESE": "East-Southeast",
-    "SE": "Southeast",
-    "SSE": "South-Southeast",
-    "S": "South",
-    "SSW": "South-Southwest",
-    "SW": "Southwest",
-    "WSW": "West-Southwest",
-    "W": "West",
-    "WNW": "West-Northwest",
-    "NW": "Northwest",
-    "NNW": "North-Northwest",
-}
+from providers.rtk_provider import RtkProvider
 
 
 @dataclass
@@ -48,9 +28,9 @@ class Message:
     message: str
 
 
-class Gps(FuserInput[str]):
+class Rtk(FuserInput[str]):
     """
-    Reads GPS and Magnetometer data from GPS provider.
+    Reads RTK data from RTK provider.
     """
 
     def __init__(self, config: SensorConfig = SensorConfig()):
@@ -59,14 +39,16 @@ class Gps(FuserInput[str]):
         port = getattr(config, "serial_port", None)
         self.silent = getattr(config, "silent", False)
 
-        self.gps = GpsProvider(serial_port=port)
+        logging.info(f"RTK Provider: {port}")
+
+        self.rtk = RtkProvider(serial_port=port)
         self.io_provider = IOProvider()
         self.messages: list[Message] = []
-        self.descriptor_for_LLM = "Location and Orientation"
+        self.descriptor_for_LLM = "Precision Location and Orientation"
 
     async def _poll(self) -> Optional[dict]:
         """
-        Poll for new messages from the GPS Provider.
+        Poll for new messages from the RTK Provider.
 
         Checks the message buffer for new messages with a brief delay
         to prevent excessive CPU usage.
@@ -82,7 +64,7 @@ class Gps(FuserInput[str]):
             return None
 
         try:
-            return self.gps.data
+            return self.rtk.data
         except Empty:
             return None
 
@@ -103,15 +85,15 @@ class Gps(FuserInput[str]):
         Message
             A timestamped message containing the processed input
         """
-        logging.debug(f"gps: {raw_input}")
+        logging.debug(f"rtk: {raw_input}")
 
-        d = raw_input
-        if d:
-            logging.debug(f"GPS Provider: {d}")
-            lat = d["gps_lat"]
-            lon = d["gps_lon"]
-            alt = d["gps_alt"]
-            sat = d["gps_sat"]
+        r = raw_input
+        if r:
+            logging.debug(f"RTK Provider: {r}")
+            lat = r["rtk_lat"]
+            lon = r["rtk_lon"]
+            alt = r["rtk_alt"]
+            sat = r["rtk_sat"]
             if sat > 0:
                 msg = f"Current location is {lat}, {lon} at {alt}m altitude."
                 return Message(timestamp=time.time(), message=msg)
