@@ -9,8 +9,8 @@ import logging
 import sys
 
 from tests.integration.mock_inputs.mock_vlm_coco import MockVLM_COCO
-from tests.integration.mock_inputs.mock_vlm_openai import MockVLM_OpenAI
 from tests.integration.mock_inputs.mock_vlm_gemini import MockVLM_Gemini
+from tests.integration.mock_inputs.mock_vlm_openai import MockVLM_OpenAI
 
 # Store original classes to restore them later
 _original_classes = {}
@@ -24,8 +24,8 @@ def register_mock_inputs():
     """
     # Import all the modules we need to modify
     import inputs.plugins.vlm_coco_local
-    import inputs.plugins.vlm_openai
     import inputs.plugins.vlm_gemini
+    import inputs.plugins.vlm_openai
 
     # Save original classes for later restoration
     global _original_classes
@@ -43,8 +43,8 @@ def register_mock_inputs():
     # Add mock modules to namespace for discoverability
     mock_modules = {
         "inputs.plugins.mock_vlm_coco": {"MockVLM_COCO": MockVLM_COCO},
-        "inputs.plugins.mock_vlm_openai": {"MockVLM_OpenAI": MockVLM_OpenAI}, 
-        "inputs.plugins.mock_vlm_gemini": {"MockVLM_Gemini": MockVLM_Gemini}
+        "inputs.plugins.mock_vlm_openai": {"MockVLM_OpenAI": MockVLM_OpenAI},
+        "inputs.plugins.mock_vlm_gemini": {"MockVLM_Gemini": MockVLM_Gemini},
     }
 
     for module_name, mock_classes in mock_modules.items():
@@ -62,8 +62,8 @@ def unregister_mock_inputs():
     if _original_classes:
         # Restore original classes
         import inputs.plugins.vlm_coco_local
-        import inputs.plugins.vlm_openai
         import inputs.plugins.vlm_gemini
+        import inputs.plugins.vlm_openai
 
         # Restore original classes
         for plugin_name, original_class in _original_classes.items():
@@ -77,7 +77,7 @@ def unregister_mock_inputs():
         # Remove mock modules
         mock_modules = [
             "inputs.plugins.mock_vlm_coco",
-            "inputs.plugins.mock_vlm_openai", 
+            "inputs.plugins.mock_vlm_openai",
             "inputs.plugins.mock_vlm_gemini",
         ]
         for module in mock_modules:

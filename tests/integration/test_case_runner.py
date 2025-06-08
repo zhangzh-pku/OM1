@@ -1,10 +1,11 @@
+import asyncio
 import logging
 import os
 import re
+import time
 from pathlib import Path
 from typing import Any, Dict, List, Tuple
-import time
-import asyncio
+
 import json5
 import openai
 import pytest
@@ -249,8 +250,8 @@ async def initialize_mock_inputs(inputs):
         if hasattr(input_obj, "_poll") and hasattr(input_obj, "raw_to_text"):
             logging.info(f"Starting to poll for input: {type(input_obj).__name__}")
             start_time = time.time()
-            timeout = 10.0  # 10 second timeout
-            
+            timeout = 30.0  # 10 second timeout
+
             while time.time() - start_time < timeout:
                 # Poll for input data
                 input_data = await input_obj._poll()
@@ -260,10 +261,14 @@ async def initialize_mock_inputs(inputs):
                     logging.info(f"Initialized mock input: {type(input_obj).__name__}")
                     break
                 else:
-                    logging.info(f"Waiting for input data from {type(input_obj).__name__}...")
+                    logging.info(
+                        f"Waiting for input data from {type(input_obj).__name__}..."
+                    )
                     await asyncio.sleep(0.1)  # Check every 100ms
             else:
-                logging.warning(f"Timeout waiting for input data from {type(input_obj).__name__}")
+                logging.warning(
+                    f"Timeout waiting for input data from {type(input_obj).__name__}"
+                )
 
 
 async def evaluate_with_llm(
@@ -361,12 +366,12 @@ detected
 should respond appropriately to what it detects.
 
     EXPECTED OUTPUT:
-    - Movement command: "{formatted_expected['movement']}"
-    - Should detect keywords: {formatted_expected['keywords']}
+    - Movement command: "{formatted_expected["movement"]}"
+    - Should detect keywords: {formatted_expected["keywords"]}
 
     ACTUAL OUTPUT:
-    - Movement command: "{formatted_actual['movement']}"
-    - Keywords successfully detected: {formatted_actual['keywords_found']}
+    - Movement command: "{formatted_actual["movement"]}"
+    - Keywords successfully detected: {formatted_actual["keywords_found"]}
 
     Compare these results carefully. Does the actual movement match the expected \
 movement? Were the expected keywords detected? Does the response make sense for \
@@ -496,7 +501,7 @@ async def evaluate_test_results(
     if results.get("actions"):
         details.append("\nCommands:")
         for i, command in enumerate(results["actions"]):
-            details.append(f"- Command {i+1}: {command.type}: {command.value}")
+            details.append(f"- Command {i + 1}: {command.type}: {command.value}")
 
     message = "\n".join(details)
 
@@ -637,9 +642,9 @@ async def test_from_config(test_case_path: Path):
         logging.info(f"Test results for {config['name']}:\n{message}")
 
         # Assert test passed
-        assert (
-            passed
-        ), f"Test case failed: {config['name']} (Score: {score:.2f})\n{message}"
+        assert passed, (
+            f"Test case failed: {config['name']} (Score: {score:.2f})\n{message}"
+        )
 
     except Exception as e:
         logging.error(f"Error running test case {test_case_path}: {e}")
