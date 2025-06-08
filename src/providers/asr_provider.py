@@ -106,12 +106,7 @@ class ASRProvider:
         """
         Stop the ASR provider.
 
-        Stops the audio stream, websocket client, and processing thread. Waits for
-        the thread to terminate with a timeout.
-
-        Notes
-        -----
-        The thread join operation has a 5-second timeout to prevent hanging.
+        Stops the audio stream and websocket clients, and sets the running state to False.
         """
         self.running = False
         self.audio_stream.stop()
