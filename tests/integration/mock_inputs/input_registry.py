@@ -10,6 +10,7 @@ import sys
 
 from tests.integration.mock_inputs.mock_vlm_coco import MockVLM_COCO
 from tests.integration.mock_inputs.mock_vlm_openai import MockVLM_OpenAI
+from tests.integration.mock_inputs.mock_vlm_gemini import MockVLM_Gemini
 
 # Store original classes to restore them later
 _original_classes = {}
@@ -24,25 +25,30 @@ def register_mock_inputs():
     # Import all the modules we need to modify
     import inputs.plugins.vlm_coco_local
     import inputs.plugins.vlm_openai
+    import inputs.plugins.vlm_gemini
 
     # Save original classes for later restoration
     global _original_classes
     _original_classes = {
         "VLM_COCO_Local": inputs.plugins.vlm_coco_local.VLM_COCO_Local,
         "VLMOpenAI": inputs.plugins.vlm_openai.VLMOpenAI,
+        "VLMGemini": inputs.plugins.vlm_gemini.VLMGemini,
     }
 
     # Replace with mock classes
     inputs.plugins.vlm_coco_local.VLM_COCO_Local = MockVLM_COCO
     inputs.plugins.vlm_openai.VLMOpenAI = MockVLM_OpenAI
+    inputs.plugins.vlm_gemini.VLMGemini = MockVLM_Gemini
 
-    # Also add our mocks to the module namespace so they're discoverable
-    sys.modules["inputs.plugins.mock_vlm_coco"] = type(
-        "MockModule", (), {"MockVLM_COCO": MockVLM_COCO}
-    )
-    sys.modules["inputs.plugins.mock_vlm_openai"] = type(
-        "MockModule", (), {"MockVLM_OpenAI": MockVLM_OpenAI}
-    )
+    # Add mock modules to namespace for discoverability
+    mock_modules = {
+        "inputs.plugins.mock_vlm_coco": {"MockVLM_COCO": MockVLM_COCO},
+        "inputs.plugins.mock_vlm_openai": {"MockVLM_OpenAI": MockVLM_OpenAI}, 
+        "inputs.plugins.mock_vlm_gemini": {"MockVLM_Gemini": MockVLM_Gemini}
+    }
+
+    for module_name, mock_classes in mock_modules.items():
+        sys.modules[module_name] = type("MockModule", (), mock_classes)
 
     logging.info("Registered mock inputs by directly replacing classes")
 
@@ -57,16 +63,25 @@ def unregister_mock_inputs():
         # Restore original classes
         import inputs.plugins.vlm_coco_local
         import inputs.plugins.vlm_openai
+        import inputs.plugins.vlm_gemini
 
-        inputs.plugins.vlm_coco_local.VLM_COCO_Local = _original_classes.get(
-            "VLM_COCO_Local"
-        )
-        inputs.plugins.vlm_openai.VLMOpenAI = _original_classes.get("VLMOpenAI")
+        # Restore original classes
+        for plugin_name, original_class in _original_classes.items():
+            if plugin_name == "VLM_COCO_Local":
+                inputs.plugins.vlm_coco_local.VLM_COCO_Local = original_class
+            elif plugin_name == "VLMOpenAI":
+                inputs.plugins.vlm_openai.VLMOpenAI = original_class
+            elif plugin_name == "VLMGemini":
+                inputs.plugins.vlm_gemini.VLMGemini = original_class
+
         # Remove mock modules
-        if "inputs.plugins.mock_vlm_coco" in sys.modules:
-            del sys.modules["inputs.plugins.mock_vlm_coco"]
-        if "inputs.plugins.mock_vlm_openai" in sys.modules:
-            del sys.modules["inputs.plugins.mock_vlm_openai"]
+        mock_modules = [
+            "inputs.plugins.mock_vlm_coco",
+            "inputs.plugins.mock_vlm_openai", 
+            "inputs.plugins.mock_vlm_gemini",
+        ]
+        for module in mock_modules:
+            sys.modules.pop(module, None)
 
         _original_classes = {}
         logging.info("Unregistered mock inputs and restored original classes")
