@@ -7,7 +7,6 @@ from dataclasses import dataclass
 from queue import Empty, Full
 from typing import Dict, List, Optional
 
-import bezier
 import numpy as np
 import zenoh
 from numpy.typing import NDArray
@@ -193,22 +192,20 @@ class RPLidarProvider:
         self.angles = None
         self.angles_final = None
 
-        # Precompute Bezier trajectories for path planning
-        self.curves = self._initialize_bezier_curves()
+        # Initialize paths for path planning
+        # Define 9 straight line paths separated by 15 degrees
+        # Center path is 0° (straight forward), then ±15°, ±30°, ±45°, ±60°, 180° (backwards)
+        self.path_angles = [-60, -45, -30, -15, 0, 15, 30, 45, 60, 180]
+        self.paths = self._initialize_paths()
 
-        self.paths = []
         self.pp = []
-        self.s_vals = np.linspace(0.0, 1.0, self.NUM_BEZIER_POINTS)
-
-        for curve in self.curves:
-            cp = curve.evaluate_multi(self.s_vals)
-            self.paths.append(cp)
-            pairs = list(zip(cp[0], cp[1]))
+        for path in self.paths:
+            pairs = list(zip(path[0], path[1]))
             self.pp.append(pairs)
 
         self.turn_left: List[int] = []
         self.turn_right: List[int] = []
-        self.advance: bool = False
+        self.advance: List[int] = []
         self.retreat: bool = False
 
         self.data_queue = mp.Queue(maxsize=5)
@@ -400,44 +397,44 @@ class RPLidarProvider:
             D = array[:, 3]
 
             # all the possible conflicting points
-            for x, y, _ in list(zip(X, Y, D)):
+            for x, y, d in list(zip(X, Y, D)):
                 for apath in possible_paths:
-                    for point in self.pp[apath]:
-                        p1 = x - point[0]
-                        p2 = y - point[1]
-                        dist = math.sqrt(p1 * p1 + p2 * p2)
-                        # logging.info(f"_process dist: {dist}")
-                        if dist < self.half_width_robot:
-                            # too close - this path will not work
-                            # logging.info(f"removing path: {apath}")
-                            path_to_remove = np.array([apath])
-                            possible_paths = np.setdiff1d(
-                                possible_paths, path_to_remove
-                            )
-                            logging.debug(f"remaining paths: {possible_paths}")
-                            break  # no need to keep checking this path - we know this path is bad
+                    path_points = self.paths[apath]
+                    start_x, start_y = (
+                        path_points[0][0],
+                        path_points[1][0],
+                    )
+                    end_x, end_y = path_points[0][-1], path_points[1][-1]
 
-        logging.debug(f"possible_paths RP Lidar: {possible_paths}")
+                    dist_to_line = self.distance_point_to_line_segment(
+                        x, y, start_x, start_y, end_x, end_y
+                    )
+
+                    if dist_to_line < self.half_width_robot:
+                        # too close - this path will not work
+                        # logging.info(f"removing path: {apath}")
+                        path_to_remove = np.array([apath])
+                        possible_paths = np.setdiff1d(possible_paths, path_to_remove)
+                        logging.debug(f"remaining paths: {possible_paths}")
+                        break  # no need to check other paths
+
+        logging.info(f"possible_paths RP Lidar: {possible_paths}")
 
         self.turn_left = []
         self.turn_right = []
-        self.advance = False
+        self.advance = []
         self.retreat = False
 
         # convert to simple list
         ppl = possible_paths.tolist()
 
         for p in ppl:
-            if p < 4:
+            if p < 3:
                 self.turn_left.append(p)
-            elif p == 4:
-                self.advance = True
+            elif p >= 3 and p <= 5:
+                self.advance.append(p)
             elif p < 9:
-                # flip the right turn encoding to make it
-                # a mirror of the left hand encoding
-                self.turn_right.append(8 - p)
-                # so now 8 -> 0, corresponding to a sharp right turn etc
-                # so now 5 -> 3, corresponding to a gentle right turn etc
+                self.turn_right.append(p)
             elif p == 9:
                 self.retreat = True
 
@@ -559,43 +556,111 @@ class RPLidarProvider:
             "retreat": self.retreat,
         }
 
-    def _initialize_bezier_curves(self):
-        """Initialize Bezier curves for path planning."""
+    def _create_straight_path_from_angle(
+        self, angle_degrees: float, length: float = 1.0, num_points: int = 30
+    ) -> np.ndarray:
+        """
+        Create a straight path from a given angle.
+
+        Parameters
+        ----------
+        angle_degrees : float
+            The angle in degrees from which to create the path.
+        length : float, optional
+            The length of the path, by default 1.0.
+        num_points : int, optional
+            The number of points in the path, by default 30.
+
+        Returns
+        -------
+        np.ndarray
+            A NumPy array containing the x and y coordinates of the path points.
+        """
+        angle_rad = math.radians(angle_degrees)
+        end_x = length * math.sin(angle_rad)
+        end_y = length * math.cos(angle_rad)
+
+        x_vals = np.linspace(0.0, end_x, num_points)
+        y_vals = np.linspace(0.0, end_y, num_points)
+        return np.array([x_vals, y_vals])
+
+    def _initialize_paths(self) -> List[np.ndarray]:
+        """
+        Initialize paths for path planning.
+
+        Returns
+        -------
+        List[np.ndarray]
+            A list of NumPy arrays representing the paths.
+        """
         return [
-            bezier.Curve(
-                np.asfortranarray([[0.0, -0.3, -0.75], [0.0, 0.5, 0.40]]), degree=2
-            ),
-            bezier.Curve(
-                np.asfortranarray([[0.0, -0.3, -0.70], [0.0, 0.6, 0.70]]), degree=2
-            ),
-            bezier.Curve(
-                np.asfortranarray([[0.0, -0.2, -0.60], [0.0, 0.7, 0.90]]), degree=2
-            ),
-            bezier.Curve(
-                np.asfortranarray([[0.0, -0.1, -0.35], [0.0, 0.7, 1.03]]), degree=2
-            ),
-            bezier.Curve(
-                np.asfortranarray([[0.0, 0.0, 0.00], [0.0, 0.5, 1.05]]), degree=2
-            ),
-            bezier.Curve(
-                np.asfortranarray([[0.0, +0.1, +0.35], [0.0, 0.7, 1.03]]), degree=2
-            ),
-            bezier.Curve(
-                np.asfortranarray([[0.0, +0.2, +0.60], [0.0, 0.7, 0.90]]), degree=2
-            ),
-            bezier.Curve(
-                np.asfortranarray([[0.0, +0.3, +0.70], [0.0, 0.6, 0.70]]), degree=2
-            ),
-            bezier.Curve(
-                np.asfortranarray([[0.0, +0.3, +0.75], [0.0, 0.5, 0.40]]), degree=2
-            ),
-            bezier.Curve(
-                np.asfortranarray([[0.0, 0.0, 0.00], [0.0, -0.5, -1.05]]), degree=2
-            ),
+            self._create_straight_path_from_angle(angle, length=1.0)
+            for angle in self.path_angles
         ]
 
+    def distance_point_to_line_segment(
+        self, px: float, py: float, x1: float, y1: float, x2: float, y2: float
+    ) -> float:
+        """
+        Calculate the distance from a point to a line segment.
+        This method computes the shortest distance from a point (px, py) to a line segment defined by two endpoints (x1, y1) and (x2, y2).
+        If the line segment has zero length, it returns the distance from the point to one of the endpoints.
+
+        Parameters
+        ----------
+        px : float
+            The x-coordinate of the point.
+        py : float
+            The y-coordinate of the point.
+        x1 : float
+            The x-coordinate of the first endpoint of the line segment.
+        y1 : float
+            The y-coordinate of the first endpoint of the line segment.
+        x2 : float
+            The x-coordinate of the second endpoint of the line segment.
+        y2 : float
+            The y-coordinate of the second endpoint of the line segment.
+
+        Returns
+        -------
+        float
+            The shortest distance from the point to the line segment.
+            If the line segment has zero length, it returns the distance to the closest endpoint.
+        """
+        dx = x2 - x1
+        dy = y2 - y1
+
+        # If the line segment has zero length, return distance to point
+        if dx == 0 and dy == 0:
+            return math.sqrt((px - x1) ** 2 + (py - y1) ** 2)
+
+        # Calculate the parameter t that represents the projection of the point onto the line
+        t = ((px - x1) * dx + (py - y1) * dy) / (dx * dx + dy * dy)
+
+        # Clamp t to [0, 1] to stay within the line segment
+        t = max(0, min(1, t))
+
+        # Find the closest point on the line segment
+        closest_x = x1 + t * dx
+        closest_y = y1 + t * dy
+
+        return math.sqrt((px - closest_x) ** 2 + (py - closest_y) ** 2)
+
     def _generate_movement_string(self, valid_paths: list) -> str:
-        """Generate movement direction string based on valid paths."""
+        """
+        Generate movement direction string based on valid paths.
+
+        Parameters
+        ----------
+        valid_paths : list
+            A list of valid paths represented as integers.
+            Each integer corresponds to a specific movement direction.
+
+        Returns
+        -------
+        str
+            A string describing the safe movement directions based on the valid paths.
+        """
         if not valid_paths:
             return "You are surrounded by objects and cannot safely move in any direction. DO NOT MOVE."
 

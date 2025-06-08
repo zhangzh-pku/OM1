@@ -1,5 +1,4 @@
 import logging
-import threading
 from typing import Callable, Optional
 
 from om1_speech import AudioInputStream
@@ -63,7 +62,6 @@ class ASRProvider:
             language_code=language_code,
             remote_input=remote_input,
         )
-        self._thread: Optional[threading.Thread] = None
 
     def register_message_callback(self, message_callback: Optional[Callable]):
         """
