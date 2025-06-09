@@ -269,6 +269,7 @@ class OdomProvider:
             "y": self.y,
             "moving": self.moving,
             "yaw_odom_0_360": self.yaw_odom_0_360,
+            "yaw_odom_m180_p180": self.yaw_odom_m180_p180,
             "body_height_cm": self.body_height_cm,
             "body_attitude": self.body_attitude,
         }
