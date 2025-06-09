@@ -14,9 +14,9 @@
     {
       "type": "UnitreeGo2Battery"
     },
-    {
-      "type": "GoogleASRInput"
-    },
+    //{
+    //  "type": "GoogleASRInput"
+    //},
     {
       "type": "Gps",
       config: {
@@ -73,15 +73,15 @@
       "implementation": "passthrough",
       "connector": "unitree_sdk"
     },
-    {
-     "name": "speak",
-      "llm_label": "speak",
-      "implementation": "passthrough",
-      "connector": "elevenlabs_tts",
-      "config": {
-        "voice_id": "TbMNBJ27fH2U0VgpSNko"
-      }
-    }
+    //{
+    // "name": "speak",
+    //  "llm_label": "speak",
+    //  "implementation": "passthrough",
+    //  "connector": "elevenlabs_tts",
+    //  "config": {
+    //    "voice_id": "TbMNBJ27fH2U0VgpSNko"
+    //  }
+    //}
   ],
   "backgrounds": [
     {

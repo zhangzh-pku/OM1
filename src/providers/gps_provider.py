@@ -111,7 +111,7 @@ class GpsProvider:
             elif data.startswith("BLE:"):
                 try:
                     self.ble_scan = self.parse_ble_triang_string(data)
-                    logging.debug(f"BLE data {self.ble_scan}")
+                    logging.debug(f"nRF BLE data {self.ble_scan}")
                 except Exception as e:
                     logging.warning(f"Failed to parse BLE: {data} ({e})")
         except Exception as e:
