@@ -2,7 +2,7 @@ import logging
 import re
 import threading
 import time
-from typing import Dict, List, Optional
+from typing import List, Optional
 
 import serial
 
@@ -65,11 +65,11 @@ class GpsProvider:
         # Used whenever there is a connected
         # nav Arduino on serial
         try:
-            if data.startswith("HDG (DEG):"):
-                parts = data.split()
-                if len(parts) >= 3:
+            if data.startswith("HDG:"):
+                parts = data.split(":")
+                if len(parts) >= 2:
                     # that's a HDG packet
-                    self.yaw_mag_0_360 = float(parts[2])
+                    self.yaw_mag_0_360 = float(parts[1])
                     self.yaw_mag_cardinal = self.compass_heading_to_direction(
                         self.yaw_mag_0_360
                     )
@@ -81,8 +81,11 @@ class GpsProvider:
                 logging.debug(
                     f"Orientation is Yaw: {yaw}°, Pitch: {pitch}°, Roll: {roll}°."
                 )
+            elif data.startswith("SAT:"):
+                logging.info(f"{data}")
             elif data.startswith("GPS:"):
                 try:
+                    logging.info(f"{data}")
                     parts = data[4:].split(",")
                     lat = parts[0]
                     lon = parts[1]
@@ -105,7 +108,7 @@ class GpsProvider:
                     )
                 except Exception as e:
                     logging.warning(f"Failed to parse GPS: {data} ({e})")
-            elif data.startswith("BLE_TRIANG"):
+            elif data.startswith("BLE:"):
                 try:
                     self.ble_scan = self.parse_ble_triang_string(data)
                     logging.debug(f"BLE data {self.ble_scan}")
@@ -140,31 +143,27 @@ class GpsProvider:
         return directions[index]
 
     def parse_ble_triang_string(self, input_string):
-        if not input_string.startswith("BLE_TRIANG"):
+
+        if not input_string.startswith("BLE:"):
             return {}
 
-        pattern = r"\[(\d+)\]\s+([0-9A-Fa-f:]{17})\s+(-?\d+)\s+((?:[0-9A-Fa-f]{2}:?)+)"
-        matches = re.findall(pattern, input_string)
-
-        devices: Dict[str, RFDataRaw] = {}
-
+        data = input_string[4:].strip()
+        pattern = r"([0-9A-Fa-f]{12}):([+-]?\d+):([0-9A-Fa-f]{2,})"
+        matches = re.findall(pattern, data)
+        devices: List[RFDataRaw] = []
         timestamp = str(int(time.time()))
 
         for match in matches:
-            index = int(match[0])
-            address = match[1].replace(":", "").upper()
-            rssi = int(match[2])
-            packet = match[3].replace(":", "").lower()
-
-            devices[index] = RFDataRaw(
-                timestamp=timestamp, address=address, rssi=rssi, packet=packet
+            address = match[0].upper()
+            rssi = int(match[1])
+            packet = match[2].lower()
+            devices.append(
+                RFDataRaw(
+                    timestamp=timestamp, address=address, rssi=rssi, packet=packet
+                )
             )
 
-        sorted_devices = sorted(devices.values(), key=lambda d: d.rssi, reverse=True)[
-            :10
-        ]
-
-        return sorted_devices
+        return devices
 
     def start(self):
         """

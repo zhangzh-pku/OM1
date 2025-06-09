@@ -3,8 +3,8 @@
 #include <bluefruit.h>
 #include <SPI.h>
 
-#define ARRAY_SIZE     (10)   // The number of RSSI values to store and compare
-#define TIMEOUT_MS     (2500) // Number of milliseconds before a record is invalidated in the list
+#define ARRAY_SIZE     (15)   // The number of RSSI values to store and compare
+#define TIMEOUT_MS     (1500) // Number of milliseconds before a record is invalidated in the list
 
 /* This struct is used to track detected nodes */
 typedef struct node_record_s
@@ -161,9 +161,9 @@ void setup()
   } else if (strcmp(DeviceID, "cfcdd0fb") == 0) {
     // not sure which Arduino this is
     float mh[]  = { -15.53, 5.38, 19.17 }; // in uTesla
-    float ms[]  = { 0.934, 0.048, -0.021, \
-                              0.048, 1.090, 0.003, \
-                              -0.021, 0.003, 0.985 }; 
+    float ms[]  = { +0.934, 0.048, -0.021, \
+                    +0.048, 1.090, +0.003, \
+                    -0.021, 0.003, +0.985 }; 
     float gc[] = { 0.0, 0.0, 0.0 };
     memcpy(mag_hardiron,  mh, sizeof(mag_hardiron));
     memcpy(mag_softiron,  ms, sizeof(mag_softiron));
@@ -255,18 +255,25 @@ void scan_callback(ble_gap_evt_adv_report_t* report)
 {
   node_record_t record;
   
-  /* Prepare the record to try to insert it into the existing record list */
+  /* Prepare the record and try to insert it into the existing record list */
   memcpy(record.addr, report->peer_addr.addr, 6); /* Copy the 6-byte device ADDR */    
   memcpy(record.payload, report->data.p_data, report->data.len); /* Copy the Adv Data */
   record.payload_length = report->data.len;       /* for nice printing */
+  // if (record.payload_length == 0)
+  //   Serial.printf("WARNING EMPTY PAYLOAD IN CALLBACK");
   record.rssi = report->rssi;                     /* Copy the RSSI value */
   record.timestamp = millis();                    /* Set the timestamp (approximate) */
 
   /* Attempt to insert the record into the list */
-  if (insertRecord(&record) == 1)                 /* Returns 1 if the list was updated */
-  {
-    printRecordList();                            /* The list was updated, print the new values */
+  if (record.payload_length > 0) {
+    // disregard non-adv packets
+    insertRecord(&record);
   }
+  // if (insertRecord(&record) == 1)                 /* Returns 1 if the list was updated */
+  // {
+  //   //printRecordList();                            /* The list was updated, print the new values */
+  //   // commented this to reduce traffic over the USB bus
+  // }
 
   // For Softdevice v6: after received a report, scanner will be paused
   // We need to call Scanner resume() to continue scanning
@@ -276,13 +283,25 @@ void scan_callback(ble_gap_evt_adv_report_t* report)
 /* Prints the current record list to the Serial Monitor */
 void printRecordList(void)
 {
-  Serial.print("BLE_TRIANG");
+  Serial.print("BLE: ");
   for (uint8_t i = 0; i<ARRAY_SIZE; i++)
   {
-    Serial.printf(" [%i] ", i);
-    Serial.printBuffer(records[i].addr, 6, ':');
-    Serial.printf(" %i ", records[i].rssi);
-    Serial.printBuffer(records[i].payload, records[i].payload_length, ':');
+    if (records[i].rssi > -128) {
+      // do not print empty fields
+      for(int j=0; j<6; j++)
+      {
+        Serial.printf("%02X", records[i].addr[j]);
+      }
+      Serial.printf(":%i", records[i].rssi);
+      if (records[i].payload_length > 0){
+        Serial.printf(":"); 
+        for(int j=0; j<records[i].payload_length; j++)
+        {
+          Serial.printf("%02X", records[i].payload[j]);
+        }
+      }
+      Serial.printf(" ");
+    }
   }
   Serial.print("\n");
 }
@@ -463,13 +482,14 @@ void loop()
       Serial.print(":"); 
       Serial.println(GPS.milliseconds);
     } else {
-      Serial.print("STAT: Waiting for GPS fix. SAT:");
+      Serial.print("SAT: Waiting for GPS fix. SAT_IN_VIEW:");
       Serial.println((int)GPS.satellites);
     }
   }
 
-  // Update the direction every 500ms 
+  // Update the direction every 50ms 
   if (millis() - timerMAG > 50) {
+    // do not change this value otherwise the filter will not converge
     timerMAG = millis();
     float imu_dt_s = float(timerMAG - IMU_LAST_READ) / 1000;
     IMU_LAST_READ = timerMAG;
@@ -602,39 +622,40 @@ void loop()
                   * *(getQ()+3)), *getQ() * *getQ() + *(getQ()+1)
                   * *(getQ()+1) - *(getQ()+2) * *(getQ()+2) - *(getQ()+3)
                   * *(getQ()+3));
-    float myIMUpitch = -asin(2.0f * (*(getQ()+1) * *(getQ()+3) - *getQ()
-                  * *(getQ()+2)));
-    float myIMUroll = atan2(2.0f * (*getQ() * *(getQ()+1) + *(getQ()+2)
-                  * *(getQ()+3)), *getQ() * *getQ() - *(getQ()+1)
-                  * *(getQ()+1) - *(getQ()+2) * *(getQ()+2) + *(getQ()+3)
-                  * *(getQ()+3));
+    // float myIMUpitch = -asin(2.0f * (*(getQ()+1) * *(getQ()+3) - *getQ()
+    //               * *(getQ()+2)));
+    // float myIMUroll = atan2(2.0f * (*getQ() * *(getQ()+1) + *(getQ()+2)
+    //               * *(getQ()+3)), *getQ() * *getQ() - *(getQ()+1)
+    //               * *(getQ()+1) - *(getQ()+2) * *(getQ()+2) + *(getQ()+3)
+    //               * *(getQ()+3));
   
-    Serial.print("YPR: ");
-    Serial.print(myIMUyaw *= RAD_TO_DEG, 2);
-    Serial.print(", ");
-    Serial.print(myIMUpitch *= RAD_TO_DEG, 2);
-    Serial.print(", ");
-    Serial.println(myIMUroll *= RAD_TO_DEG, 2);
+    // Serial.print("YPR: ");
+    // Serial.print(myIMUyaw *= RAD_TO_DEG, 2);
+    // Serial.print(", ");
+    // Serial.print(myIMUpitch *= RAD_TO_DEG, 2);
+    // Serial.print(", ");
+    // Serial.println(myIMUroll *= RAD_TO_DEG, 2);
 
-  float headingDegrees = 0.0;
-  if (myIMUyaw < 0) {
-    headingDegrees = -1.0 * myIMUyaw;
-  } else {
-    headingDegrees = -1.0 * myIMUyaw + 360.0;
-  }
+    float headingDegrees = 0.0;
+    myIMUyaw *= RAD_TO_DEG;
+    if (myIMUyaw < 0) {
+      headingDegrees = -1.0 * myIMUyaw;
+    } else {
+      headingDegrees = -1.0 * myIMUyaw + 360.0;
+    }
 
-  Serial.print("HDG (DEG): ");
-  Serial.println(headingDegrees);
+    Serial.print("HDG:");
+    Serial.println(headingDegrees);
   }
 
   // approximately every 1 seconds or so, print out the current stats
   if (millis() - timerBLE > 1000) {
     timerBLE = millis(); // reset the timer
-    if (invalidateRecords())
-    {
+    // if (invalidateRecords())
+    // {
       /* The list was updated, print the new values */
       printRecordList();
-    }
+    //}
   }
 
 }
