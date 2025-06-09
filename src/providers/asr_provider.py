@@ -1,5 +1,4 @@
 import logging
-import threading
 from typing import Callable, Optional
 
 from om1_speech import AudioInputStream
@@ -63,7 +62,6 @@ class ASRProvider:
             language_code=language_code,
             remote_input=remote_input,
         )
-        self._thread: Optional[threading.Thread] = None
 
     def register_message_callback(self, message_callback: Optional[Callable]):
         """
@@ -108,12 +106,7 @@ class ASRProvider:
         """
         Stop the ASR provider.
 
-        Stops the audio stream, websocket client, and processing thread. Waits for
-        the thread to terminate with a timeout.
-
-        Notes
-        -----
-        The thread join operation has a 5-second timeout to prevent hanging.
+        Stops the audio stream and websocket clients, and sets the running state to False.
         """
         self.running = False
         self.audio_stream.stop()
