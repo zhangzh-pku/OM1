@@ -15,6 +15,7 @@ from providers.io_provider import IOProvider
 from providers.vlm_vila_provider import VLMVilaProvider
 from tests.integration.mock_inputs.mock_image_provider import get_next_opencv_image
 
+
 class MockVideoStream:
     """
     Mock video stream that sends mock images to frame callbacks instead of camera frames.
@@ -42,7 +43,9 @@ class MockVideoStream:
         self.loop_thread = threading.Thread(target=self._start_loop, daemon=True)
         self.loop_thread.start()
 
-        logging.info("MockVideoStream initialized with %d callbacks", len(self.frame_callbacks))
+        logging.info(
+            "MockVideoStream initialized with %d callbacks", len(self.frame_callbacks)
+        )
 
     def register_frame_callback(self, frame_callback):
         """Register a new frame callback - exactly like the original."""
@@ -66,9 +69,11 @@ class MockVideoStream:
             Maximum time to wait for connections in seconds
         """
         if not self.vlm_provider:
-            logging.warning("MockVideoStream: No VLM provider reference, skipping connection wait")
+            logging.warning(
+                "MockVideoStream: No VLM provider reference, skipping connection wait"
+            )
             return True
-            
+
         start_time = time.time()
         while time.time() - start_time < timeout:
             # Check if both WebSocket clients are connected
@@ -88,10 +93,14 @@ class MockVideoStream:
                 logging.info("MockVideoStream: WebSocket connections established")
                 return True
 
-            logging.debug(f"MockVideoStream: Waiting for connections... main: {main_connected}, stream: {stream_connected}")
+            logging.debug(
+                f"MockVideoStream: Waiting for connections... main: {main_connected}, stream: {stream_connected}"
+            )
             time.sleep(0.5)
 
-        logging.warning(f"MockVideoStream: Connection timeout after {timeout}s, proceeding anyway")
+        logging.warning(
+            f"MockVideoStream: Connection timeout after {timeout}s, proceeding anyway"
+        )
         return False
 
     def on_video(self):
@@ -101,7 +110,9 @@ class MockVideoStream:
         logging.info("MockVideoStream: Starting video processing")
 
         if not self._wait_for_connections():
-            logging.warning("MockVideoStream: Proceeding without all connections established")
+            logging.warning(
+                "MockVideoStream: Proceeding without all connections established"
+            )
 
         frame_time = 1.0 / self.fps
         last_frame_time = time.perf_counter()
@@ -116,13 +127,20 @@ class MockVideoStream:
                 mock_image = get_next_opencv_image()
                 if mock_image is None:
                     # Reset the image provider and try again instead of stopping
-                    logging.debug("MockVideoStream: Resetting image provider to loop images")
-                    from tests.integration.mock_inputs.mock_image_provider import get_image_provider
+                    logging.debug(
+                        "MockVideoStream: Resetting image provider to loop images"
+                    )
+                    from tests.integration.mock_inputs.mock_image_provider import (
+                        get_image_provider,
+                    )
+
                     get_image_provider().reset()
                     mock_image = get_next_opencv_image()
-                    
+
                     if mock_image is None:
-                        logging.error("MockVideoStream: No images available even after reset")
+                        logging.error(
+                            "MockVideoStream: No images available even after reset"
+                        )
                         self.running = False
                         break
 
@@ -141,7 +159,9 @@ class MockVideoStream:
                             else:
                                 frame_callback(frame_data)
                         except Exception as e:
-                            logging.error(f"MockVideoStream: Error calling frame callback: {e}")
+                            logging.error(
+                                f"MockVideoStream: Error calling frame callback: {e}"
+                            )
 
                     images_sent += 1
 
@@ -150,7 +170,7 @@ class MockVideoStream:
                 if elapsed_time < frame_time:
                     time.sleep(frame_time - elapsed_time)
                 last_frame_time = time.perf_counter()
-                
+
                 # Log progress every 10 images to reduce spam
                 if images_sent > 0 and images_sent % 10 == 0:
                     logging.debug(f"MockVideoStream: Sent {images_sent} images to VLM")
@@ -234,16 +254,23 @@ class MockVLM_Vila(VLMVila):
         """
         Process incoming VLM messages - EXACTLY like the real VLMVila.
         """
-        logging.debug("MockVLM_Vila: Received message: %s", raw_message[:100] + "..." if len(raw_message) > 100 else raw_message)
-        
+        logging.debug(
+            "MockVLM_Vila: Received message: %s",
+            raw_message[:100] + "..." if len(raw_message) > 100 else raw_message,
+        )
+
         # Add the missing JSON parsing logic from the real VLMVila
         try:
             import json
+
             json_message = json.loads(raw_message)
             if "vlm_reply" in json_message:
                 vlm_reply = json_message["vlm_reply"]
                 self.message_buffer.put(vlm_reply)
-                logging.info("MockVLM_Vila: Detected VLM message: %s", vlm_reply[:50] + "..." if len(vlm_reply) > 50 else vlm_reply)
+                logging.info(
+                    "MockVLM_Vila: Detected VLM message: %s",
+                    vlm_reply[:50] + "..." if len(vlm_reply) > 50 else vlm_reply,
+                )
         except json.JSONDecodeError:
             pass  # Handle non-JSON messages gracefully
 
@@ -282,23 +309,24 @@ class MockVLM_Vila(VLMVila):
     # Add this method to MockVLM_Vila for testing
     async def test_minimal_connection(self):
         """Test minimal connection to VLM WebSocket."""
-        import websockets
         import asyncio
-        
+
+        import websockets
+
         try:
             async with websockets.connect("wss://api-vila.openmind.org") as ws:
                 logging.info("Direct WebSocket connection established")
-                
+
                 # Send a simple test message
                 await ws.send("test")
                 logging.info("Sent test message")
-                
+
                 # Wait for any response
                 try:
                     response = await asyncio.wait_for(ws.recv(), timeout=10.0)
                     logging.info(f"Received response: {response}")
                 except asyncio.TimeoutError:
                     logging.warning("No response to test message")
-                    
+
         except Exception as e:
             logging.error(f"Direct connection test failed: {e}")
