@@ -234,17 +234,17 @@ class OdomProvider:
         self.x = round(pose.position.x, 2)
         self.y = round(pose.position.y, 2)
 
-    @property
-    def odom(self) -> Optional[Union[Odometry, PoseStamped_]]:
-        """
-        Get the current odometry data.
-
-        Returns
-        -------
-        Optional[Union[Odometry, PoseStamped_]]
-            The current odometry data if available, otherwise None.
-        """
-        return self._odom
+    # this should all be handled via the "position" property
+    # @property
+    # def odom(self) -> Optional[Union[Odometry, PoseStamped_]]:
+    #     """
+    #     Get the current odometry data.
+    #     Returns
+    #     -------
+    #     Optional[Union[Odometry, PoseStamped_]]
+    #         The current odometry data if available, otherwise None.
+    #     """
+    #     return self._odom
 
     @property
     def position(self) -> dict:

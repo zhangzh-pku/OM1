@@ -145,13 +145,14 @@ class GpsProvider:
     def parse_ble_triang_string(self, input_string):
 
         if not input_string.startswith("BLE:"):
-            return {}
+            return []
 
         data = input_string[4:].strip()
         pattern = r"([0-9A-Fa-f]{12}):([+-]?\d+):([0-9A-Fa-f]{2,})"
         matches = re.findall(pattern, data)
-        devices: List[RFDataRaw] = []
         timestamp = str(int(time.time()))
+
+        devices: List[RFDataRaw] = []
 
         for match in matches:
             address = match[0].upper()
