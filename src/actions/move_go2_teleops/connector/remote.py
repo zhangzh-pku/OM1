@@ -4,11 +4,11 @@ import time
 from enum import Enum
 
 from om1_utils import ws
+from unitree.unitree_sdk2py.go2.sport.sport_client import SportClient
 
 from actions.base import ActionConfig, ActionConnector
 from actions.move_go2_teleops.interface import MoveInput
 from providers import CommandStatus
-from unitree.unitree_sdk2py.go2.sport.sport_client import SportClient
 
 
 class RobotState(Enum):

@@ -2,10 +2,11 @@ import logging
 import threading
 import time
 
+from unitree.unitree_sdk2py.go2.sport.sport_client import SportClient
+
 from actions.base import ActionConfig, ActionConnector
 from actions.move_game_controller.interface import IDLEInput
 from providers.odom_provider import OdomProvider, RobotState
-from unitree.unitree_sdk2py.go2.sport.sport_client import SportClient
 
 try:
     import hid
@@ -37,50 +38,7 @@ class Go2GameControllerConnector(ActionConnector[IDLEInput]):
         self.gamepad = None
         self.sony_dualsense = False
         self.xbox = False
-        if hid is not None:
-            for device in hid.enumerate():
-                logging.info(f"device {device['product_string']}")
-                if "Xbox Wireless Controller" in device["product_string"]:
-                    vendor_id = device["vendor_id"]
-                    product_id = device["product_id"]
-                    self.gamepad = hid.Device(vendor_id, product_id)
-                    logging.info(
-                        f"Connected {device['product_string']} {vendor_id} {product_id}"
-                    )
-                    self.xbox = True
-                    break
-                if "DualSense Wireless Controller" in device["product_string"]:
-                    vendor_id = device["vendor_id"]
-                    product_id = device["product_id"]
-                    self.gamepad = hid.Device(vendor_id, product_id)
-                    logging.info(
-                        f"Connected {device['product_string']} {vendor_id} {product_id}"
-                    )
-                    self.sony_dualsense = True
-                    break
-                if "DualSense Edge Wireless Controller" in device["product_string"]:
-                    vendor_id = device["vendor_id"]
-                    product_id = device["product_id"]
-                    self.gamepad = hid.Device(vendor_id, product_id)
-                    logging.info(
-                        f"Connected {device['product_string']} {vendor_id} {product_id}"
-                    )
-                    self.sony_dualsense = True
-                    break
-                # does not work b/c the Nimbus+ reports a PID of 0,
-                # crashing the python HID library
-                # this is a known bug
-                # if "Nimbus+" in device["product_string"]:
-                #     vendor_id = device["vendor_id"]
-                #     product_id = device["product_id"]
-                #     logging.info(
-                #         f"Connecting {device['product_string']} {vendor_id} {product_id}"
-                #     )
-                #     self.gamepad = hid.Device(vendor_id, product_id)
-                #     logging.info(
-                #         f"Connected {device['product_string']} {vendor_id} {product_id}"
-                #     )
-                #     break
+        self._init_controller()
 
         if self.gamepad is None:
             logging.warn("Game controller not found")
@@ -120,6 +78,49 @@ class Go2GameControllerConnector(ActionConnector[IDLEInput]):
         logging.info(f"Game controller Odom Provider: {self.odom}")
 
         self.thread_lock = threading.Lock()
+
+    def _init_controller(self) -> None:
+        """Initialize or reinitialize the game controller."""
+        if self.gamepad:
+            try:
+                self.gamepad.close()
+            except Exception:
+                pass
+            self.gamepad = None
+
+        self.sony_dualsense = False
+        self.xbox = False
+
+        if hid is not None:
+            for device in hid.enumerate():
+                logging.info(f"device {device['product_string']}")
+                if "Xbox Wireless Controller" in device["product_string"]:
+                    vendor_id = device["vendor_id"]
+                    product_id = device["product_id"]
+                    self.gamepad = hid.Device(vendor_id, product_id)
+                    logging.info(
+                        f"Connected {device['product_string']} {vendor_id} {product_id}"
+                    )
+                    self.xbox = True
+                    break
+                if "DualSense Wireless Controller" in device["product_string"]:
+                    vendor_id = device["vendor_id"]
+                    product_id = device["product_id"]
+                    self.gamepad = hid.Device(vendor_id, product_id)
+                    logging.info(
+                        f"Connected {device['product_string']} {vendor_id} {product_id}"
+                    )
+                    self.sony_dualsense = True
+                    break
+                if "DualSense Edge Wireless Controller" in device["product_string"]:
+                    vendor_id = device["vendor_id"]
+                    product_id = device["product_id"]
+                    self.gamepad = hid.Device(vendor_id, product_id)
+                    logging.info(
+                        f"Connected {device['product_string']} {vendor_id} {product_id}"
+                    )
+                    self.sony_dualsense = True
+                    break
 
     def _execute_command_thread(self, command: str) -> None:
         try:
@@ -227,9 +228,17 @@ class Go2GameControllerConnector(ActionConnector[IDLEInput]):
         data = None
 
         if self.gamepad:
-            # try to read USB data, and if there is nothing, timeout
-            # data = list(self.gamepad.read(64, timeout=50))
-            data = list(self.gamepad.read(64, timeout=50))
+            try:
+                # try to read USB data, and if there is nothing, timeout
+                # data = list(self.gamepad.read(64, timeout=50))
+                data = list(self.gamepad.read(64, timeout=50))
+            except OSError as e:
+                logging.warning(f"Controller disconnected: {e}")
+                self.gamepad = None
+                self._init_controller()
+                if self.gamepad:
+                    logging.info("Controller reconnected successfully")
+                return
 
         if data and len(data) > 0:
 
