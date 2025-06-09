@@ -11,6 +11,7 @@ import sys
 from tests.integration.mock_inputs.mock_vlm_coco import MockVLM_COCO
 from tests.integration.mock_inputs.mock_vlm_gemini import MockVLM_Gemini
 from tests.integration.mock_inputs.mock_vlm_openai import MockVLM_OpenAI
+from tests.integration.mock_inputs.mock_vlm_vila import MockVLM_Vila
 
 # Store original classes to restore them later
 _original_classes = {}
@@ -26,6 +27,7 @@ def register_mock_inputs():
     import inputs.plugins.vlm_coco_local
     import inputs.plugins.vlm_gemini
     import inputs.plugins.vlm_openai
+    import inputs.plugins.vlm_vila
 
     # Save original classes for later restoration
     global _original_classes
@@ -33,18 +35,21 @@ def register_mock_inputs():
         "VLM_COCO_Local": inputs.plugins.vlm_coco_local.VLM_COCO_Local,
         "VLMOpenAI": inputs.plugins.vlm_openai.VLMOpenAI,
         "VLMGemini": inputs.plugins.vlm_gemini.VLMGemini,
+        "VLMVila": inputs.plugins.vlm_vila.VLMVila,
     }
 
     # Replace with mock classes
     inputs.plugins.vlm_coco_local.VLM_COCO_Local = MockVLM_COCO
     inputs.plugins.vlm_openai.VLMOpenAI = MockVLM_OpenAI
     inputs.plugins.vlm_gemini.VLMGemini = MockVLM_Gemini
+    inputs.plugins.vlm_vila.VLMVila = MockVLM_Vila
 
     # Add mock modules to namespace for discoverability
     mock_modules = {
         "inputs.plugins.mock_vlm_coco": {"MockVLM_COCO": MockVLM_COCO},
         "inputs.plugins.mock_vlm_openai": {"MockVLM_OpenAI": MockVLM_OpenAI},
         "inputs.plugins.mock_vlm_gemini": {"MockVLM_Gemini": MockVLM_Gemini},
+        "inputs.plugins.mock_vlm_vila": {"MockVLM_Vila": MockVLM_Vila},
     }
 
     for module_name, mock_classes in mock_modules.items():
@@ -73,12 +78,15 @@ def unregister_mock_inputs():
                 inputs.plugins.vlm_openai.VLMOpenAI = original_class
             elif plugin_name == "VLMGemini":
                 inputs.plugins.vlm_gemini.VLMGemini = original_class
+            elif plugin_name == "VLMVila":
+                inputs.plugins.vlm_vila.VLMVila = original_class
 
         # Remove mock modules
         mock_modules = [
             "inputs.plugins.mock_vlm_coco",
             "inputs.plugins.mock_vlm_openai",
             "inputs.plugins.mock_vlm_gemini",
+            "inputs.plugins.mock_vlm_vila",
         ]
         for module in mock_modules:
             sys.modules.pop(module, None)

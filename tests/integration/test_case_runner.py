@@ -512,7 +512,6 @@ async def evaluate_test_results(
     return passed, final_score, message
 
 
-@pytest.mark.no_collect
 class TestCategory:
     """Represents a category of test cases."""
 
