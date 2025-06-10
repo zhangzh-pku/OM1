@@ -162,8 +162,9 @@ class CortexRuntime:
         elif "spot" in self.config.name:
             # spot, the speaking dog
             await self.action_orchestrator.promise(output.actions)
-        elif self.config.name == "turtle_speak":
-            # flash, the smart vaccuum cleaner
+        elif "speak_always" in self.config.name:
+            await self.action_orchestrator.promise(output.actions)
+        elif "speak_sometimes" in self.config.name:
             # reduce continuous narration
             self.speech_duty_cycle += 1
             if self.speech_duty_cycle > 12:
