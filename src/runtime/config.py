@@ -27,6 +27,7 @@ class RuntimeConfig:
     system_prompt_base: str
     system_governance: str
     system_prompt_examples: str
+    
     agent_inputs: List[Sensor]
     cortex_llm: LLM
     simulators: List[Simulator]
@@ -124,7 +125,14 @@ def load_config(config_name: str) -> RuntimeConfig:
         load_unitree(g_ut_eth)
 
     conf = raw_config["cortex_llm"].get("config", {})
-    logging.debug(f"config {conf}")
+    logging.debug(f"config.py: {conf}")
+
+    for action in raw_config.get("agent_actions", []):
+        value = get_nested_value(action, ["config", "silence_rate"])
+        if value is not None:
+            logging.info(f"Speech SR set to: {value}")
+            raw_config["silence_rate"] = value
+            break
 
     parsed_config = {
         **raw_config,
@@ -181,6 +189,12 @@ def load_config(config_name: str) -> RuntimeConfig:
 
     return RuntimeConfig(**parsed_config)
 
+def get_nested_value(data, keys):
+  if not keys:
+    return data
+  if isinstance(data, dict) and keys[0] in data:
+    return get_nested_value(data[keys[0]], keys[1:])
+  return None
 
 def add_meta(
     config: Dict,

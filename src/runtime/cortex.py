@@ -43,13 +43,17 @@ class CortexRuntime:
             Configuration object for the runtime.
         """
         self.config = config
+
+        logging.info(f"Cortex runtime config: {config}")
         self.fuser = Fuser(config)
         self.action_orchestrator = ActionOrchestrator(config)
         self.simulator_orchestrator = SimulatorOrchestrator(config)
         self.background_orchestrator = BackgroundOrchestrator(config)
         self.sleep_ticker_provider = SleepTickerProvider()
         self.io_provider = IOProvider()
-        self.speech_duty_cycle = 0
+
+        self.silence_counter = 0
+        self.silence_rate = config.get("silence_rate", 0)
 
     async def run(self) -> None:
         """
@@ -156,24 +160,11 @@ class CortexRuntime:
                 logging.debug(f"appended: {action_type}")
 
         # Trigger actions
-        if ("INPUT: Voice" in prompt) or ("WalletCoinbase" in prompt):
-            # always respond to voice input
-            await self.action_orchestrator.promise(output.actions)
-        elif "spot" in self.config.name:
-            # spot, the speaking dog
-            await self.action_orchestrator.promise(output.actions)
-        elif "speak_always" in self.config.name:
-            await self.action_orchestrator.promise(output.actions)
-        elif "speak_sometimes" in self.config.name:
-            # reduce continuous narration
-            self.speech_duty_cycle += 1
-            if self.speech_duty_cycle > 12:
-                # speak
-                await self.action_orchestrator.promise(output.actions)
-                self.speech_duty_cycle = 0
-            else:
-                # do not speak
-                await self.action_orchestrator.promise(actions_silent)
+        if ("INPUT: Voice" in prompt) or self.silence_counter >= self.silence_rate:
+            # respond to voice input, or speak at desired duty rate
+            self.silence_counter = 0
+            await self.action_orchestrator.promise(output.actions)  
         else:
-            # do not send speech to speaker but only to simulator
+            # do not speak
+            self.silence_counter += 1
             await self.action_orchestrator.promise(actions_silent)
