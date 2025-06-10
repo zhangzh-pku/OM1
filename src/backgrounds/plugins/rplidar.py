@@ -15,6 +15,7 @@ class RPLidar(Background):
         lidar_config = self._extract_lidar_config(config)
 
         self.lidar_provider = RPLidarProvider(**lidar_config)
+        self.lidar_provider.start()
         logging.info("Initiated RPLidar Provider in background")
 
     def _extract_lidar_config(self, config: BackgroundConfig) -> dict:
