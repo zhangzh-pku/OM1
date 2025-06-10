@@ -37,7 +37,7 @@ class Go2GameControllerConnector(ActionConnector[IDLEInput]):
         self.gamepad = None
         self.sony_dualsense = False
         self.xbox = False
-        self._init_controller()
+        self._init_controller(reset_state=False)
 
         if self.gamepad is None:
             logging.warn("Game controller not found")
@@ -78,8 +78,17 @@ class Go2GameControllerConnector(ActionConnector[IDLEInput]):
 
         self.thread_lock = threading.Lock()
 
-    def _init_controller(self) -> None:
-        """Initialize or reinitialize the game controller."""
+    def _init_controller(self, reset_state: bool = True) -> None:
+        """Initialize or reinitialize the game controller.
+        
+        Parameters
+        ----------
+        reset_state : bool
+            Whether to reset controller state variables. Should be True for reconnections
+            to prevent stale state, but False for initial setup.
+        """
+        is_reconnection = self.gamepad is not None
+        
         if self.gamepad:
             try:
                 self.gamepad.close()
@@ -89,18 +98,20 @@ class Go2GameControllerConnector(ActionConnector[IDLEInput]):
 
         self.sony_dualsense = False
         self.xbox = False
-        # reset the state
-        self.rt_previous = 0
-        self.lt_previous = 0
-        self.d_pad_previous = 0
-        self.button_previous = 0
         
-        self.lt_value = None
-        self.rt_value = None
-        self.d_pad_value = None
-        self.button_value = None
-        
-        self.RTLT_moving = False
+        # Only reset state if explicitly requested (for reconnections)
+        if reset_state and is_reconnection:
+            self.rt_previous = 0
+            self.lt_previous = 0
+            self.d_pad_previous = 0
+            self.button_previous = 0
+            
+            self.lt_value = None
+            self.rt_value = None
+            self.d_pad_value = None
+            self.button_value = None
+            
+            self.RTLT_moving = False
 
         if hid is not None:
             for device in hid.enumerate():
