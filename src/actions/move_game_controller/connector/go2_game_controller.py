@@ -108,30 +108,42 @@ class Go2GameControllerConnector(ActionConnector[IDLEInput]):
                 if "Xbox Wireless Controller" in device["product_string"]:
                     vendor_id = device["vendor_id"]
                     product_id = device["product_id"]
-                    self.gamepad = hid.Device(vendor_id, product_id)
-                    logging.info(
-                        f"Connected {device['product_string']} {vendor_id} {product_id}"
-                    )
-                    self.xbox = True
-                    break
+                    try:
+                        self.gamepad = hid.Device(vendor_id, product_id)
+                        logging.info(
+                            f"Connected {device['product_string']} {vendor_id} {product_id}"
+                        )
+                        self.xbox = True
+                        break
+                    except Exception as e:
+                        logging.error(f"Failed to connect to Xbox controller: {e}")
+                        continue
                 if "DualSense Wireless Controller" in device["product_string"]:
                     vendor_id = device["vendor_id"]
                     product_id = device["product_id"]
-                    self.gamepad = hid.Device(vendor_id, product_id)
-                    logging.info(
-                        f"Connected {device['product_string']} {vendor_id} {product_id}"
-                    )
-                    self.sony_dualsense = True
-                    break
+                    try:
+                        self.gamepad = hid.Device(vendor_id, product_id)
+                        logging.info(
+                            f"Connected {device['product_string']} {vendor_id} {product_id}"
+                        )
+                        self.sony_dualsense = True
+                        break
+                    except Exception as e:
+                        logging.error(f"Failed to connect to DualSense controller: {e}")
+                        continue
                 if "DualSense Edge Wireless Controller" in device["product_string"]:
                     vendor_id = device["vendor_id"]
                     product_id = device["product_id"]
-                    self.gamepad = hid.Device(vendor_id, product_id)
-                    logging.info(
-                        f"Connected {device['product_string']} {vendor_id} {product_id}"
-                    )
-                    self.sony_dualsense = True
-                    break
+                    try:
+                        self.gamepad = hid.Device(vendor_id, product_id)
+                        logging.info(
+                            f"Connected {device['product_string']} {vendor_id} {product_id}"
+                        )
+                        self.sony_dualsense = True
+                        break
+                    except Exception as e:
+                        logging.error(f"Failed to connect to DualSense Edge controller: {e}")
+                        continue
 
     def _execute_command_thread(self, command: str) -> None:
         try:
@@ -237,6 +249,10 @@ class Go2GameControllerConnector(ActionConnector[IDLEInput]):
         logging.debug("Gamepad tick")
 
         data = None
+
+        # Attempt reconnection if no gamepad is currently attached
+        if self.gamepad is None and hid is not None:
+            self._init_controller()
 
         if self.gamepad:
             try:
