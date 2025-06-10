@@ -34,6 +34,8 @@ class RuntimeConfig:
     agent_actions: List[AgentAction]
     backgrounds: List[Background]
 
+    silence_rate: Optional[int] = 0
+
     # Optional API key for the runtime configuration
     api_key: Optional[str] = None
 
