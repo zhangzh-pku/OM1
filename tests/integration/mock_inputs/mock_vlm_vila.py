@@ -298,7 +298,7 @@ class MockVLM_Vila(VLMVila):
         Synchronous cleanup method for proper resource cleanup.
         """
         try:
-            if hasattr(self, 'vlm') and self.vlm:
+            if hasattr(self, "vlm") and self.vlm:
                 if hasattr(self.vlm, "video_stream"):
                     self.vlm.video_stream.stop()
                 self.vlm.stop()

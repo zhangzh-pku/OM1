@@ -94,10 +94,10 @@ class MockVLM_OpenAI(VLMOpenAI):
             self.running = False
             if hasattr(self, "_mock_thread") and self._mock_thread:
                 self._mock_thread.cancel()
-            
-            if hasattr(self, 'vlm') and self.vlm and hasattr(self.vlm, "video_stream"):
+
+            if hasattr(self, "vlm") and self.vlm and hasattr(self.vlm, "video_stream"):
                 self.vlm.video_stream.stop()
-            
+
             logging.info("MockVLM_OpenAI: Cleanup completed")
         except Exception as e:
             logging.error(f"MockVLM_OpenAI: Error during cleanup: {e}")

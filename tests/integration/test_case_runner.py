@@ -312,17 +312,25 @@ async def cleanup_mock_inputs(inputs):
     for input_obj in inputs:
         try:
             # Try async stop method first
-            if hasattr(input_obj, "stop") and asyncio.iscoroutinefunction(input_obj.stop):
+            if hasattr(input_obj, "stop") and asyncio.iscoroutinefunction(
+                input_obj.stop
+            ):
                 await input_obj.stop()
-                logging.info(f"Cleaned up mock input (async): {type(input_obj).__name__}")
+                logging.info(
+                    f"Cleaned up mock input (async): {type(input_obj).__name__}"
+                )
             # Try synchronous cleanup method
             elif hasattr(input_obj, "cleanup"):
                 input_obj.cleanup()
-                logging.info(f"Cleaned up mock input (sync): {type(input_obj).__name__}")
+                logging.info(
+                    f"Cleaned up mock input (sync): {type(input_obj).__name__}"
+                )
             # Try synchronous stop method
             elif hasattr(input_obj, "stop"):
                 input_obj.stop()
-                logging.info(f"Cleaned up mock input (stop): {type(input_obj).__name__}")
+                logging.info(
+                    f"Cleaned up mock input (stop): {type(input_obj).__name__}"
+                )
         except Exception as e:
             logging.error(f"Error cleaning up {type(input_obj).__name__}: {e}")
 
@@ -719,7 +727,7 @@ async def test_from_config(test_case_path: Path):
 # Run a specific test case by name
 @pytest.mark.skipif(
     not os.environ.get("TEST_CASE"),
-    reason="Skipping specific test case (TEST_CASE is not set)"
+    reason="Skipping specific test case (TEST_CASE is not set)",
 )
 @pytest.mark.asyncio
 @pytest.mark.integration
