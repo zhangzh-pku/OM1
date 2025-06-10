@@ -17,7 +17,7 @@ from tests.integration.mock_inputs.input_registry import (
     register_mock_inputs,
     unregister_mock_inputs,
 )
-from tests.integration.mock_inputs.mock_image_provider import load_test_images
+from tests.integration.mock_inputs.mock_image_provider import load_test_images, get_image_provider
 
 # Register mock inputs with the input loading system
 register_mock_inputs()
@@ -183,6 +183,8 @@ async def run_test_case(config: Dict[str, Any]) -> Dict[str, Any]:
     images = load_test_images_from_config(config)
     if not images:
         raise ValueError("No valid test images found in configuration")
+    
+    logging.info(f"Loaded {len(images)} test images for test case")
 
     # Prepare image metadata
     image_metadata = {
@@ -193,6 +195,7 @@ async def run_test_case(config: Dict[str, Any]) -> Dict[str, Any]:
 
     # Load test images into the central mock provider
     load_test_images(images, image_metadata)
+    logging.info(f"Images loaded into mock provider, provider now has {len(get_image_provider().test_images)} images")
 
     # No need to modify config - the input_registry will handle mapping
     # the real input types to their mock equivalents
@@ -265,7 +268,7 @@ async def initialize_mock_inputs(inputs):
         if hasattr(input_obj, "_poll") and hasattr(input_obj, "raw_to_text"):
             logging.info(f"Starting to poll for input: {type(input_obj).__name__}")
             start_time = time.time()
-            timeout = 30.0  # 10 second timeout
+            timeout = 10.0  # 10 second timeout
 
             while time.time() - start_time < timeout:
                 # Poll for input data
@@ -459,6 +462,9 @@ async def evaluate_test_results(
             if command.type in MOVEMENT_ACTION_TYPES:
                 movement = command.type
                 break
+            elif command.type == "move":
+                movement = command.value
+                break
 
     # Assign a default if still not found
     if not movement:
@@ -626,6 +632,17 @@ async def test_from_config(test_case_path: Path):
     test_case_path : Path
         Path to the test case configuration file
     """
+    # Reset mock image provider to ensure test isolation
+    provider = get_image_provider()
+    provider.reset()
+    # Clear any existing images to ensure clean state
+    provider.test_images = []
+    provider.image_cache = {}
+    provider.image_metadata = {}
+    
+    # Add a small delay to reduce race conditions between parallel tests
+    await asyncio.sleep(0.1)
+    
     # Load and process the test case configuration
     try:
         logging.info(f"Loading test case: {test_case_path}")
@@ -636,6 +653,7 @@ async def test_from_config(test_case_path: Path):
             f"Running test case: {config['name']} ({config.get('category', 'uncategorized')})"
         )
         logging.info(f"Description: {config['description']}")
+        logging.info(f"Expected images for test: {len(config.get('input', {}).get('images', []))}")
 
         # Run the test case
         results = await run_test_case(config)

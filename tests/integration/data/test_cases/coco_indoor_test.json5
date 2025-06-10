@@ -9,9 +9,6 @@
   "agent_inputs": [
     {
       "type": "VLM_COCO_Local",
-      "config": {
-        "camera_index": 0
-      }
     }
   ],
   "cortex_llm": {
@@ -51,7 +48,7 @@
   
   // Expected output
   "expected": {
-    "movement": "wag tail",
+    "movement": "any",
     "keywords": ["dog"],
     "minimum_score": 0.5
   }

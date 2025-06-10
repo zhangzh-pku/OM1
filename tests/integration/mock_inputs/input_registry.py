@@ -69,6 +69,7 @@ def unregister_mock_inputs():
         import inputs.plugins.vlm_coco_local
         import inputs.plugins.vlm_gemini
         import inputs.plugins.vlm_openai
+        import inputs.plugins.vlm_vila
 
         # Restore original classes
         for plugin_name, original_class in _original_classes.items():
