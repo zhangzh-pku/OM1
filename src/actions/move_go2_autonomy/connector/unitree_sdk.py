@@ -187,7 +187,9 @@ class MoveUnitreeSDKConnector(ActionConnector[MoveInput]):
 
             # Phase 1: Turn to face the target direction
             if not current_target.turn_complete:
-                gap = self._calculate_angle_gap(self.odom.position["yaw_odom_m180_p180"], goal_yaw)
+                gap = self._calculate_angle_gap(
+                    self.odom.position["yaw_odom_m180_p180"], goal_yaw
+                )
                 logging.info(f"Phase 1 - Turning remaining GAP: {gap}DEG")
 
                 progress = round(abs(self.gap_previous - gap), 2)
@@ -224,7 +226,8 @@ class MoveUnitreeSDKConnector(ActionConnector[MoveInput]):
                 s_x = current_target.start_x
                 s_y = current_target.start_y
                 distance_traveled = math.sqrt(
-                    (self.odom.position["x"] - s_x) ** 2 + (self.odom.position["y"] - s_y) ** 2
+                    (self.odom.position["x"] - s_x) ** 2
+                    + (self.odom.position["y"] - s_y) ** 2
                 )
                 gap = round(abs(goal_dx - distance_traveled), 2)
                 progress = round(abs(self.gap_previous - gap), 2)
@@ -280,7 +283,9 @@ class MoveUnitreeSDKConnector(ActionConnector[MoveInput]):
         path = random.choice(self.lidar.turn_left)
         path_angle = self.lidar.path_angles[path]
 
-        target_yaw = self._normalize_angle(self.odom.position["yaw_odom_m180_p180"] + path_angle)
+        target_yaw = self._normalize_angle(
+            self.odom.position["yaw_odom_m180_p180"] + path_angle
+        )
         self.pending_movements.put(
             MoveCommand(
                 dx=0.5,
@@ -302,7 +307,9 @@ class MoveUnitreeSDKConnector(ActionConnector[MoveInput]):
         path = random.choice(self.lidar.turn_right)
         path_angle = self.lidar.path_angles[path]
 
-        target_yaw = self._normalize_angle(self.odom.position["yaw_odom_m180_p180"] + path_angle)
+        target_yaw = self._normalize_angle(
+            self.odom.position["yaw_odom_m180_p180"] + path_angle
+        )
         self.pending_movements.put(
             MoveCommand(
                 dx=0.5,
@@ -324,7 +331,9 @@ class MoveUnitreeSDKConnector(ActionConnector[MoveInput]):
         path = random.choice(self.lidar.advance)
         path_angle = self.lidar.path_angles[path]
 
-        target_yaw = self._normalize_angle(self.odom.position["yaw_odom_m180_p180"] + path_angle)
+        target_yaw = self._normalize_angle(
+            self.odom.position["yaw_odom_m180_p180"] + path_angle
+        )
         self.pending_movements.put(
             MoveCommand(
                 dx=0.5,
