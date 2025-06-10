@@ -32,12 +32,18 @@ _llm_client = None
 
 # Movement types that should be considered movement commands
 MOVEMENT_ACTION_TYPES = {
-    'stand still', 'sit', 'dance', 'shake paw', 'walk', 'walk back', 'run', 'jump', 'wag tail'
+    "stand still",
+    "sit",
+    "dance",
+    "shake paw",
+    "walk",
+    "walk back",
+    "run",
+    "jump",
+    "wag tail",
 }
 
-EMOTION_TYPES = {
-    'cry', 'smile', 'frown', 'think', 'joy'
-}
+EMOTION_TYPES = {"cry", "smile", "frown", "think", "joy"}
 
 
 def process_env_vars(config_dict):
@@ -382,7 +388,7 @@ should respond appropriately to what it detects.
     - Movement command: "{formatted_actual["movement"]}"
     - Keywords successfully detected: {formatted_actual["keywords_found"]}
 
-    {f'''SPECIAL INSTRUCTION: The expected movement is "any", which means any movement action (sit, dance, walk, etc.) should be considered a perfect match as long as it's not "unknown".''' if formatted_expected["movement"].lower() == "any" else ""}
+    {'''SPECIAL INSTRUCTION: The expected movement is "any", which means any movement action (sit, dance, walk, etc.) should be considered a perfect match as long as it's not "unknown".''' if formatted_expected["movement"].lower() == "any" else ""}
 
     Compare these results carefully. Does the actual movement match the expected \
 movement? Were the expected keywords detected? Does the response make sense for \
