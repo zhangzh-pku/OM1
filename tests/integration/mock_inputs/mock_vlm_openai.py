@@ -86,8 +86,22 @@ class MockVLM_OpenAI(VLMOpenAI):
 
             await asyncio.sleep(0.1)
 
+    def cleanup(self):
+        """
+        Synchronous cleanup method for proper resource cleanup.
+        """
+        try:
+            self.running = False
+            if hasattr(self, "_mock_thread") and self._mock_thread:
+                self._mock_thread.cancel()
+            
+            if hasattr(self, 'vlm') and self.vlm and hasattr(self.vlm, "video_stream"):
+                self.vlm.video_stream.stop()
+            
+            logging.info("MockVLM_OpenAI: Cleanup completed")
+        except Exception as e:
+            logging.error(f"MockVLM_OpenAI: Error during cleanup: {e}")
+
     def __del__(self):
         """Clean up resources when the object is destroyed."""
-        self.running = False
-        if hasattr(self, "_mock_thread") and self._mock_thread:
-            self._mock_thread.cancel()
+        self.cleanup()

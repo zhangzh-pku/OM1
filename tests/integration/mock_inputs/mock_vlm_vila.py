@@ -293,40 +293,21 @@ class MockVLM_Vila(VLMVila):
             # Don't log this as it's expected when buffer is empty
             return None
 
-    async def cleanup(self):
+    def cleanup(self):
         """
-        Properly clean up resources when testing is done.
+        Synchronous cleanup method for proper resource cleanup.
         """
-        if hasattr(self.vlm, "video_stream"):
-            self.vlm.video_stream.stop()
-
-        # Use the provider's built-in stop method
-        if hasattr(self, "vlm"):
-            self.vlm.stop()
-
-        logging.info("MockVLM_Vila: Cleanup completed")
-
-    # Add this method to MockVLM_Vila for testing
-    async def test_minimal_connection(self):
-        """Test minimal connection to VLM WebSocket."""
-        import asyncio
-
-        import websockets
-
         try:
-            async with websockets.connect("wss://api-vila.openmind.org") as ws:
-                logging.info("Direct WebSocket connection established")
-
-                # Send a simple test message
-                await ws.send("test")
-                logging.info("Sent test message")
-
-                # Wait for any response
-                try:
-                    response = await asyncio.wait_for(ws.recv(), timeout=10.0)
-                    logging.info(f"Received response: {response}")
-                except asyncio.TimeoutError:
-                    logging.warning("No response to test message")
-
+            if hasattr(self, 'vlm') and self.vlm:
+                if hasattr(self.vlm, "video_stream"):
+                    self.vlm.video_stream.stop()
+                self.vlm.stop()
+            logging.info("MockVLM_Vila: Cleanup completed")
         except Exception as e:
-            logging.error(f"Direct connection test failed: {e}")
+            logging.error(f"MockVLM_Vila: Error during cleanup: {e}")
+
+    def __del__(self):
+        """
+        Properly clean up resources when the object is destroyed.
+        """
+        self.cleanup()

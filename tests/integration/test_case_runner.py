@@ -253,6 +253,9 @@ async def run_test_case(config: Dict[str, Any]) -> Dict[str, Any]:
     # Run a single tick of the cortex loop
     await cortex._tick()
 
+    # Clean up inputs after test completion
+    await cleanup_mock_inputs(cortex.config.agent_inputs)
+
     # The output includes detection results and commands
     return output_results
 
@@ -292,6 +295,36 @@ async def initialize_mock_inputs(inputs):
                 logging.warning(
                     f"Timeout waiting for input data from {type(input_obj).__name__}"
                 )
+
+
+async def cleanup_mock_inputs(inputs):
+    """
+    Clean up mock inputs after testing.
+
+    This function properly stops all inputs to prevent background processes
+    from continuing after the test completes.
+
+    Parameters
+    ----------
+    inputs : List
+        List of input objects from the runtime config
+    """
+    for input_obj in inputs:
+        try:
+            # Try async stop method first
+            if hasattr(input_obj, "stop") and asyncio.iscoroutinefunction(input_obj.stop):
+                await input_obj.stop()
+                logging.info(f"Cleaned up mock input (async): {type(input_obj).__name__}")
+            # Try synchronous cleanup method
+            elif hasattr(input_obj, "cleanup"):
+                input_obj.cleanup()
+                logging.info(f"Cleaned up mock input (sync): {type(input_obj).__name__}")
+            # Try synchronous stop method
+            elif hasattr(input_obj, "stop"):
+                input_obj.stop()
+                logging.info(f"Cleaned up mock input (stop): {type(input_obj).__name__}")
+        except Exception as e:
+            logging.error(f"Error cleaning up {type(input_obj).__name__}: {e}")
 
 
 async def evaluate_with_llm(
@@ -684,6 +717,10 @@ async def test_from_config(test_case_path: Path):
 
 
 # Run a specific test case by name
+@pytest.mark.skipif(
+    not os.environ.get("TEST_CASE"),
+    reason="Skipping specific test case (TEST_CASE is not set)"
+)
 @pytest.mark.asyncio
 @pytest.mark.integration
 async def test_specific_case():
