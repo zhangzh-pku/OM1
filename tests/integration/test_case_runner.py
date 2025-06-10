@@ -462,7 +462,7 @@ what was detected in the scene?
 
         # Parse the rating and reasoning
         try:
-            rating_match = re.search(r"Rating:\s*(\d+)", content)
+            rating_match = re.search(r"Rating:\s*(\d*\.?\d+)", content)
             rating = float(rating_match.group(1)) if rating_match else 0.5
 
             # Extract reasoning
