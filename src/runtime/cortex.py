@@ -163,7 +163,7 @@ class CortexRuntime:
         if ("INPUT: Voice" in prompt) or self.silence_counter >= self.silence_rate:
             # respond to voice input, or speak at desired duty rate
             self.silence_counter = 0
-            await self.action_orchestrator.promise(output.actions)  
+            await self.action_orchestrator.promise(output.actions)
         else:
             # do not speak
             self.silence_counter += 1
