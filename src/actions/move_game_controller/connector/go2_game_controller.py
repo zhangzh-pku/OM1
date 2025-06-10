@@ -87,8 +87,6 @@ class Go2GameControllerConnector(ActionConnector[IDLEInput]):
             Whether to reset controller state variables. Should be True for reconnections
             to prevent stale state, but False for initial setup.
         """
-        is_reconnection = self.gamepad is not None
-        
         if self.gamepad:
             try:
                 self.gamepad.close()
@@ -99,8 +97,8 @@ class Go2GameControllerConnector(ActionConnector[IDLEInput]):
         self.sony_dualsense = False
         self.xbox = False
         
-        # Only reset state if explicitly requested (for reconnections)
-        if reset_state and is_reconnection:
+        # Reset state if explicitly requested
+        if reset_state:
             self.rt_previous = 0
             self.lt_previous = 0
             self.d_pad_previous = 0
