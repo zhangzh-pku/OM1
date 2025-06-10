@@ -89,6 +89,17 @@ class Go2GameControllerConnector(ActionConnector[IDLEInput]):
 
         self.sony_dualsense = False
         self.xbox = False
+        self.rt_previous = 0
+        self.lt_previous = 0
+        self.d_pad_previous = 0
+        self.button_previous = 0
+        
+        self.lt_value = None
+        self.rt_value = None
+        self.d_pad_value = None
+        self.button_value = None
+        
+        self.RTLT_moving = False
 
         if hid is not None:
             for device in hid.enumerate():
