@@ -17,7 +17,10 @@ from tests.integration.mock_inputs.input_registry import (
     register_mock_inputs,
     unregister_mock_inputs,
 )
-from tests.integration.mock_inputs.mock_image_provider import load_test_images, get_image_provider
+from tests.integration.mock_inputs.mock_image_provider import (
+    get_image_provider,
+    load_test_images,
+)
 
 # Register mock inputs with the input loading system
 register_mock_inputs()
@@ -183,7 +186,7 @@ async def run_test_case(config: Dict[str, Any]) -> Dict[str, Any]:
     images = load_test_images_from_config(config)
     if not images:
         raise ValueError("No valid test images found in configuration")
-    
+
     logging.info(f"Loaded {len(images)} test images for test case")
 
     # Prepare image metadata
@@ -195,7 +198,9 @@ async def run_test_case(config: Dict[str, Any]) -> Dict[str, Any]:
 
     # Load test images into the central mock provider
     load_test_images(images, image_metadata)
-    logging.info(f"Images loaded into mock provider, provider now has {len(get_image_provider().test_images)} images")
+    logging.info(
+        f"Images loaded into mock provider, provider now has {len(get_image_provider().test_images)} images"
+    )
 
     # No need to modify config - the input_registry will handle mapping
     # the real input types to their mock equivalents
@@ -639,10 +644,10 @@ async def test_from_config(test_case_path: Path):
     provider.test_images = []
     provider.image_cache = {}
     provider.image_metadata = {}
-    
+
     # Add a small delay to reduce race conditions between parallel tests
     await asyncio.sleep(0.1)
-    
+
     # Load and process the test case configuration
     try:
         logging.info(f"Loading test case: {test_case_path}")
@@ -653,7 +658,9 @@ async def test_from_config(test_case_path: Path):
             f"Running test case: {config['name']} ({config.get('category', 'uncategorized')})"
         )
         logging.info(f"Description: {config['description']}")
-        logging.info(f"Expected images for test: {len(config.get('input', {}).get('images', []))}")
+        logging.info(
+            f"Expected images for test: {len(config.get('input', {}).get('images', []))}"
+        )
 
         # Run the test case
         results = await run_test_case(config)
