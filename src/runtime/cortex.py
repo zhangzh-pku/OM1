@@ -53,7 +53,9 @@ class CortexRuntime:
         self.io_provider = IOProvider()
 
         self.silence_counter = 0
-        self.silence_rate = config.get("silence_rate", 0)
+        self.silence_rate = 0
+        if hasattr(self.config, "silence_rate"):
+            self.silence_rate = self.config.silence_rate
 
     async def run(self) -> None:
         """
