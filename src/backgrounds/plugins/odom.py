@@ -12,7 +12,7 @@ class Odom(Background):
     def __init__(self, config: BackgroundConfig = BackgroundConfig()):
         super().__init__(config)
 
-        use_zenoh = getattr(self.config, "use_zenoh", False)
+        use_zenoh = getattr(config, "use_zenoh", False)
         self.URID = getattr(config, "URID", "")
         if use_zenoh:
             logging.info(
