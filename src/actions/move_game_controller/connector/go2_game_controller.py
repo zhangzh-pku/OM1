@@ -89,6 +89,7 @@ class Go2GameControllerConnector(ActionConnector[IDLEInput]):
 
         self.sony_dualsense = False
         self.xbox = False
+        # reset the state
         self.rt_previous = 0
         self.lt_previous = 0
         self.d_pad_previous = 0
