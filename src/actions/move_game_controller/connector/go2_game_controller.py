@@ -70,8 +70,8 @@ class Go2GameControllerConnector(ActionConnector[IDLEInput]):
         self.RTLT_moving = False
 
         # Movement speed m/s and rad/s (?)
-        self.move_speed = 0.5
-        self.turn_speed = 0.8
+        self.move_speed = 0.3
+        self.turn_speed = 0.4
 
         self.odom = OdomProvider()
         logging.info(f"Game controller Odom Provider: {self.odom}")
@@ -275,7 +275,7 @@ class Go2GameControllerConnector(ActionConnector[IDLEInput]):
                 if self.gamepad:
                     logging.info("Controller reconnected successfully")
                 return
-
+              
         if data and len(data) > 0:
 
             logging.debug(f"Gamepad data: {data}")
@@ -343,8 +343,6 @@ class Go2GameControllerConnector(ActionConnector[IDLEInput]):
                 # we WERE moving, but we just let go of one or both triggers
                 move_triggered_RTLT = True
                 logging.debug("Triggers released - Stopping rotation")
-                if self.sport_client:
-                    self.sport_client.StopMove()
 
             # Update previous Trigger values
             self.rt_previous = rt
@@ -372,17 +370,15 @@ class Go2GameControllerConnector(ActionConnector[IDLEInput]):
             elif self.d_pad_value == 7:  # Left
                 logging.info("D-pad LEFT - Moving left")
                 move_triggered_dpad = True
-                self._move_robot(0.0, self.turn_speed)
+                self._move_robot(0.0, self.move_speed)
             elif self.d_pad_value == 3:  # Right
                 logging.info("D-pad RIGHT - Moving right")
                 move_triggered_dpad = True
-                self._move_robot(0.0, -self.turn_speed)
+                self._move_robot(0.0, -self.move_speed)
             elif self.d_pad_previous > 0 and self.d_pad_value == 0:
                 # Usewr just released DPAD
                 logging.debug("D-pad released - Stopping movement")
                 move_triggered_dpad = True
-                if self.sport_client:
-                    self.sport_client.StopMove()
 
             # update the value of d_pad_previous
             self.d_pad_previous = self.d_pad_value
