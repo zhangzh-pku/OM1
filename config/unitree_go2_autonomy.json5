@@ -18,7 +18,6 @@
         "config": {
           "use_zenoh": false,
           "URID": "",     // only needed for Zenoh
-          "silent": false // set to true to just spin up the provider
         }
     },
     {
@@ -29,7 +28,6 @@
         "max_relevant_distance": 1.1,
         "sensor_mounting_angle": 172.0,
         "angles_blanked": [[-180.0, -170.0], [160, 180]],
-        "silent": false
       }
     },
     {
