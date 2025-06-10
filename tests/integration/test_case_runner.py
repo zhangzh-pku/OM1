@@ -30,6 +30,15 @@ TEST_CASES_DIR = DATA_DIR / "test_cases"
 # Global client to be created once for all test cases
 _llm_client = None
 
+# Movement types that should be considered movement commands
+MOVEMENT_ACTION_TYPES = {
+    'stand still', 'sit', 'dance', 'shake paw', 'walk', 'walk back', 'run', 'jump', 'wag tail'
+}
+
+EMOTION_TYPES = {
+    'cry', 'smile', 'frown', 'think', 'joy'
+}
+
 
 def process_env_vars(config_dict):
     """
@@ -312,9 +321,9 @@ async def evaluate_with_llm(
     formatted_actual = {
         "movement": next(
             (
-                cmd.value
+                cmd.type
                 for cmd in actual_output.get("actions", [])
-                if hasattr(cmd, "type") and cmd.type == "move"
+                if hasattr(cmd, "type") and cmd.type in MOVEMENT_ACTION_TYPES
             ),
             "unknown",
         ),
@@ -356,7 +365,7 @@ detected
 detected
 
     Your response must follow this format exactly:
-    Rating: [number 1-5]
+    Rating: [from 0 to 1]
     Reasoning: [clear explanation of your rating, referencing specific evidence]"""
 
     user_prompt = f"""
@@ -373,12 +382,14 @@ should respond appropriately to what it detects.
     - Movement command: "{formatted_actual["movement"]}"
     - Keywords successfully detected: {formatted_actual["keywords_found"]}
 
+    {f'''SPECIAL INSTRUCTION: The expected movement is "any", which means any movement action (sit, dance, walk, etc.) should be considered a perfect match as long as it's not "unknown".''' if formatted_expected["movement"].lower() == "any" else ""}
+
     Compare these results carefully. Does the actual movement match the expected \
 movement? Were the expected keywords detected? Does the response make sense for \
 what was detected in the scene?
 
     Provide your evaluation in exactly this format:
-    Rating: [1-5]
+    Rating: [from 0 to 1]
     Reasoning: [Your detailed explanation]
     """
 
@@ -397,16 +408,13 @@ what was detected in the scene?
         # Parse the rating and reasoning
         try:
             rating_match = re.search(r"Rating:\s*(\d+)", content)
-            rating = int(rating_match.group(1)) if rating_match else 3
-
-            # Normalize score to 0-1 range
-            normalized_score = (rating - 1) / 4.0
+            rating = float(rating_match.group(1)) if rating_match else 0.5
 
             # Extract reasoning
             reasoning_match = re.search(r"Reasoning:\s*(.*)", content, re.DOTALL)
             reasoning = reasoning_match.group(1).strip() if reasoning_match else content
 
-            return normalized_score, reasoning
+            return rating, reasoning
 
         except Exception as e:
             logging.error(f"Error parsing LLM evaluation response: {e}")
@@ -439,29 +447,23 @@ async def evaluate_test_results(
     """
     # Extract movement from commands if available
     movement = None
+    logging.info(f"Actions: {results['actions']}")
     if "actions" in results and results["actions"]:
         for command in results["actions"]:
-            if command.type == "move":
-                movement = command.value
+            if command.type in MOVEMENT_ACTION_TYPES:
+                movement = command.type
                 break
-
-    # If no movement found in commands, try to extract from raw response
-    if not movement and "raw_response" in results:
-        raw_response = results["raw_response"]
-        if isinstance(raw_response, str):
-            if "turn_left" in raw_response.lower():
-                movement = "turn_left"
-            elif "turn_right" in raw_response.lower():
-                movement = "turn_right"
-            elif "move_forward" in raw_response.lower():
-                movement = "move_forward"
 
     # Assign a default if still not found
     if not movement:
         movement = "unknown"
 
     # Perform heuristic evaluation
-    movement_match = movement == expected["movement"]
+    # Special case: if expected movement is "any", then any actual movement is a match
+    if expected["movement"].lower() == "any":
+        movement_match = movement != "unknown"
+    else:
+        movement_match = movement == expected["movement"]
 
     expected_keywords = expected.get("keywords", [])
     keyword_matches = []
