@@ -79,8 +79,7 @@ class Go2GameControllerConnector(ActionConnector[IDLEInput]):
         self.thread_lock = threading.Lock()
 
     def _init_controller(self) -> None:
-        """Initialize or reinitialize the game controller.
-        """
+        """Initialize or reinitialize the game controller."""
         if self.gamepad:
             try:
                 self.gamepad.close()
@@ -90,19 +89,19 @@ class Go2GameControllerConnector(ActionConnector[IDLEInput]):
 
         self.sony_dualsense = False
         self.xbox = False
-        
+
         # # Reset state if explicitly requested
         # if reset_state:
         #     self.rt_previous = 0
         #     self.lt_previous = 0
         #     self.d_pad_previous = 0
         #     self.button_previous = 0
-            
+
         #     self.lt_value = None
         #     self.rt_value = None
         #     self.d_pad_value = None
         #     self.button_value = None
-            
+
         #     self.RTLT_moving = False
 
         if hid is not None:
@@ -145,7 +144,9 @@ class Go2GameControllerConnector(ActionConnector[IDLEInput]):
                         self.sony_dualsense = True
                         break
                     except Exception as e:
-                        logging.error(f"Failed to connect to DualSense Edge controller: {e}")
+                        logging.error(
+                            f"Failed to connect to DualSense Edge controller: {e}"
+                        )
                         continue
 
     def _execute_command_thread(self, command: str) -> None:
@@ -268,7 +269,7 @@ class Go2GameControllerConnector(ActionConnector[IDLEInput]):
                 if self.gamepad:
                     logging.info("Controller reconnected successfully")
                 return
-              
+
         if data and len(data) > 0:
 
             logging.debug(f"Gamepad data: {data}")
