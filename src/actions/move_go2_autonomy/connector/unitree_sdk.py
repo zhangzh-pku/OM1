@@ -204,9 +204,7 @@ class MoveUnitreeSDKConnector(ActionConnector[MoveInput]):
                         self.clean_abort()
                         return
                 elif abs(gap) > self.angle_tolerance and abs(gap) <= 10.0:
-                    logging.debug(
-                        "Phase 1 - Gap is decreasing, using smaller steps"
-                    )
+                    logging.debug("Phase 1 - Gap is decreasing, using smaller steps")
                     self.movement_attempts += 1
                     # rotate only because we are so close
                     # no need to check barriers because we are just performing small rotations
@@ -215,9 +213,7 @@ class MoveUnitreeSDKConnector(ActionConnector[MoveInput]):
                     elif gap < 0:
                         self._move_robot(0, 0, -0.2)
                 elif abs(gap) <= self.angle_tolerance:
-                    logging.info(
-                        "Phase 1 - Turn completed, starting movement"
-                    )
+                    logging.info("Phase 1 - Turn completed, starting movement")
                     current_target.turn_complete = True
                     self.gap_previous = 0
 
@@ -237,7 +233,7 @@ class MoveUnitreeSDKConnector(ActionConnector[MoveInput]):
                 gap = round(abs(goal_dx - distance_traveled), 2)
                 progress = round(abs(self.gap_previous - gap), 2)
                 self.gap_previous = gap
-                
+
                 if self.movement_attempts > 0:
                     logging.info(f"Phase 2 - Forward/retreat GAP delta: {progress}m")
 
