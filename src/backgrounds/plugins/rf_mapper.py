@@ -80,20 +80,18 @@ class RFmapper(Background):
     async def scan(self):
 
         def detection_callback(device, advdata: AdvertisementData):
-            
+
             addr = device.address
             rssi = advdata.rssi
 
             # Try to extract local name
-            local_name = (
-                advdata.local_name
-            )
+            local_name = advdata.local_name
 
             if local_name:
                 logging.debug(f"just added local name: {local_name}")
                 self.seen_names.append(local_name)
                 self.seen_names = list(set(self.seen_names))
-            
+
             logging.info(f"{self.seen_names}")
 
             # AdvertisementData(
@@ -122,7 +120,9 @@ class RFmapper(Background):
             if addr in self.seen_devices:
                 self.seen_devices[addr].rssi = rssi
                 self.seen_devices[addr].timestamp = time.time()
-                self.seen_devices[addr].tx_power = advdata.tx_power if advdata.tx_power else None
+                self.seen_devices[addr].tx_power = (
+                    advdata.tx_power if advdata.tx_power else None
+                )
                 if local_name and self.seen_devices[addr].name is None:
                     self.seen_devices[addr].name = local_name
                     logging.debug(f"updated device log: {self.seen_devices[addr]}")
