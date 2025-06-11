@@ -29,3 +29,4 @@ config/iris_ai.json
 launch.sh
 
 *.jsonl
+*.log
