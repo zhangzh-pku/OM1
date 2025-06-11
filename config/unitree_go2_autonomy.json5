@@ -67,7 +67,7 @@
       "connector": "elevenlabs_tts",
       "config": {
         "voice_id": "TbMNBJ27fH2U0VgpSNko",
-        "silence_rate": 0, // vocalize every 6th speech output
+        "silence_rate": 6, // vocalize every 6th speech output
       }
     }
   ]

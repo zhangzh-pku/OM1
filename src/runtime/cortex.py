@@ -162,8 +162,11 @@ class CortexRuntime:
                 logging.debug(f"appended: {action_type}")
 
         # Trigger actions
-        if ("INPUT: Voice" in prompt) or self.silence_counter >= self.silence_rate:
-            # respond to voice input, or speak at desired duty rate
+        if ("INPUT: Voice" in prompt):
+            logging.info("responding due to prior voice input")
+            await self.action_orchestrator.promise(output.actions)
+        elif self.silence_counter >= self.silence_rate:
+            # speak at desired duty rate
             self.silence_counter = 0
             await self.action_orchestrator.promise(output.actions)
         else:
