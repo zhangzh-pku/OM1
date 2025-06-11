@@ -1,5 +1,6 @@
 import asyncio
 import logging
+import time
 
 import dotenv
 import typer
@@ -11,8 +12,13 @@ app = typer.Typer()
 
 
 @app.command()
-def start(config_name: str, debug: bool = False) -> None:
-    logging.basicConfig(level=logging.DEBUG if debug else logging.INFO)
+def start(config_name: str, debug: bool = False, log_to_file: bool = False) -> None:
+    logging.basicConfig(
+        level=logging.DEBUG if debug else logging.INFO,
+        **(
+            dict(filename=f"om1-{time.time()}.log", filemode="a") if log_to_file else {}
+        ),
+    )
 
     # Load configuration
     config = load_config(config_name)
