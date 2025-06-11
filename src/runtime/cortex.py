@@ -44,7 +44,7 @@ class CortexRuntime:
         """
         self.config = config
 
-        logging.info(f"Cortex runtime config: {config}")
+        logging.debug(f"Cortex runtime config: {config}")
         self.fuser = Fuser(config)
         self.action_orchestrator = ActionOrchestrator(config)
         self.simulator_orchestrator = SimulatorOrchestrator(config)
