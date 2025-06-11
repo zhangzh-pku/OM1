@@ -7,7 +7,7 @@
   "system_prompt_examples": "Here are some examples of interactions you might encounter:\n\n1. If a person says 'Hello!', you might:\n    Move: 'bow'\n    Speak: {{'Nice Meeting you'}}\n    Emotion: 'joy'\n\n2. If a person says 'Stand still!' you might:\n    Move: 'reset'\n    Speak: {{'Ok, but I like running more'}}\n    Emotion: 'smile'\n\n Give at most one move and one speak command each time. Vary the values of these commands.",
   "agent_inputs": [
     {
-      "type": "GoogleASRInput",
+      "type": "UbtechASRInput",
       "config": {
         "robot_ip": "robot_ip"
       }
