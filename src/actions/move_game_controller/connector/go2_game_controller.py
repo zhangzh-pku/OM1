@@ -37,7 +37,7 @@ class Go2GameControllerConnector(ActionConnector[IDLEInput]):
         self.gamepad = None
         self.sony_dualsense = False
         self.xbox = False
-        self._init_controller(reset_state=False)
+        self._init_controller()
 
         if self.gamepad is None:
             logging.warn("Game controller not found")
@@ -78,14 +78,8 @@ class Go2GameControllerConnector(ActionConnector[IDLEInput]):
 
         self.thread_lock = threading.Lock()
 
-    def _init_controller(self, reset_state: bool = True) -> None:
+    def _init_controller(self) -> None:
         """Initialize or reinitialize the game controller.
-        
-        Parameters
-        ----------
-        reset_state : bool
-            Whether to reset controller state variables. Should be True for reconnections
-            to prevent stale state, but False for initial setup.
         """
         if self.gamepad:
             try:
@@ -97,19 +91,19 @@ class Go2GameControllerConnector(ActionConnector[IDLEInput]):
         self.sony_dualsense = False
         self.xbox = False
         
-        # Reset state if explicitly requested
-        if reset_state:
-            self.rt_previous = 0
-            self.lt_previous = 0
-            self.d_pad_previous = 0
-            self.button_previous = 0
+        # # Reset state if explicitly requested
+        # if reset_state:
+        #     self.rt_previous = 0
+        #     self.lt_previous = 0
+        #     self.d_pad_previous = 0
+        #     self.button_previous = 0
             
-            self.lt_value = None
-            self.rt_value = None
-            self.d_pad_value = None
-            self.button_value = None
+        #     self.lt_value = None
+        #     self.rt_value = None
+        #     self.d_pad_value = None
+        #     self.button_value = None
             
-            self.RTLT_moving = False
+        #     self.RTLT_moving = False
 
         if hid is not None:
             for device in hid.enumerate():
@@ -266,7 +260,6 @@ class Go2GameControllerConnector(ActionConnector[IDLEInput]):
         if self.gamepad:
             try:
                 # try to read USB data, and if there is nothing, timeout
-                # data = list(self.gamepad.read(64, timeout=50))
                 data = list(self.gamepad.read(64, timeout=50))
             except OSError as e:
                 logging.warning(f"Controller disconnected: {e}")
