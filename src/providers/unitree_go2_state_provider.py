@@ -79,7 +79,7 @@ class UnitreeGo2StateProvider:
         self._thread = threading.Thread(target=self.get_state_periodically, daemon=True)
         self._thread.start()
 
-    def get_state_periodically(self, interval: float = 2.0):
+    def get_state_periodically(self, interval: float = 1.0):
         """
         Periodically retrieve the state of the Unitree Go2 robot.
 
