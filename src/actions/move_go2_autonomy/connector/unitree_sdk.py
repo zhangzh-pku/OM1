@@ -9,6 +9,7 @@ from actions.base import ActionConfig, ActionConnector, MoveCommand
 from actions.move_go2_autonomy.interface import MoveInput
 from providers.odom_provider import OdomProvider, RobotState
 from providers.rplidar_provider import RPLidarProvider
+from providers.unitree_go2_state_provider import UnitreeGo2StateProvider
 from unitree.unitree_sdk2py.go2.sport.sport_client import SportClient
 
 
@@ -30,6 +31,8 @@ class MoveUnitreeSDKConnector(ActionConnector[MoveInput]):
         self.gap_previous = 0
 
         self.lidar = RPLidarProvider()
+
+        self.unitree_go2_state = UnitreeGo2StateProvider()
 
         # create sport client
         self.sport_client = None
@@ -122,6 +125,9 @@ class MoveUnitreeSDKConnector(ActionConnector[MoveInput]):
 
         if self.odom.position["body_attitude"] != RobotState.STANDING:
             return
+
+        if self.unitree_go2_state.state == "jointLock":
+            self.sport_client.BalanceStand()
 
         try:
             logging.info(f"self.sport_client.Move: vx={vx}, vy={vy}, vturn={vturn}")
