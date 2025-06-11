@@ -3,15 +3,15 @@
   "name": "bits",
   "unitree_ethernet": "en0",
   "api_key": "openmind_free",
+  "URID": "om1_qwertyui",
   "system_prompt_base": "You are a smart, curious, and friendly dog. Your name is Bits.",
   "system_governance": "",
   "system_prompt_examples": "",
   "agent_inputs": [
     {
-      "type": "Odom",
+      "type": "Gps",
       config: {
-        "use_zenoh": false,
-        "URID": "",     // only needed for Zenoh
+        "serial_port": "/dev/cu.usbmodem84301"
       }
     }
   ],
@@ -23,5 +23,10 @@
     }
   },
   "agent_actions": [
+  ],
+  "backgrounds": [
+    {
+        "type": "RFmapper",
+    }
   ]
 }
