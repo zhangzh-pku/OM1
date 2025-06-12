@@ -92,7 +92,7 @@ class RFmapper(Background):
                 self.seen_names.append(local_name)
                 self.seen_names = list(set(self.seen_names))
 
-            logging.info(f"{self.seen_names}")
+            logging.debug(f"{self.seen_names}")
 
             # AdvertisementData(
             # local_name: Optional[str],
