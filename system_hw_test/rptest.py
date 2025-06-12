@@ -79,7 +79,8 @@ UNITREE
 """
 
 half_width_robot = 0.20  # the width of the robot is 40 cm
-max_relevant_distance = 1.1  # meters
+relevant_distance_max = 1.1   # meters
+relevant_distance_min = 0.08  # meters
 sensor_mounting_angle = 172.0  # corrects for how sensor is mounted
 angles_blanked = [[-180.0, -140.0], [140.0, 180.0]]
 
@@ -132,7 +133,7 @@ for b in angles_blanked:
     end_angle = b[1] * deg_to_rad
 
     theta = np.linspace(start_angle, end_angle, 50)
-    r = max_relevant_distance
+    r = relevant_distance_max
 
     x = r * np.sin(theta)
     y = r * np.cos(theta)
@@ -225,7 +226,11 @@ def process(data):
         d_m = distance
 
         # don't worry about distant objects
-        if d_m > 5.0:
+        if d > relevant_distance_max:
+            continue
+
+        # don't worry about things that are very close
+        if d_m < relevant_distance_min:
             continue
 
         # first, correctly orient the sensor zero to the robot zero
@@ -292,9 +297,8 @@ def process(data):
 
     # all the possible conflicting points
     for x, y, d in list(zip(X, Y, D)):
-        if d > max_relevant_distance:  # too far away - we do not care
-            continue
         for apath in possible_paths:
+            
             # Get the start and end points of this straight line path
             path_points = paths[apath]
             start_x, start_y = (
