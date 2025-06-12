@@ -80,7 +80,7 @@ UNITREE
 
 half_width_robot = 0.20  # the width of the robot is 40 cm
 relevant_distance_max = 1.1  # meters
-relevant_distance_min = 0.25  # meters
+relevant_distance_min = 0.20  # meters
 sensor_mounting_angle = 172.0  # corrects for how sensor is mounted
 # angles_blanked = [[-180.0, -140.0], [140.0, 180.0]]
 angles_blanked = []
