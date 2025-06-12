@@ -28,6 +28,10 @@ class UbtechASRInput(FuserInput[str]):
         self.io_provider = IOProvider()
         self.message_buffer: Queue[str] = Queue()
         self.global_sleep_ticker_provider = SleepTickerProvider()
+        # MODIFIED: Tracks the last time ASR resume was triggered
+        self.last_asr_resume_trigger_time = 0 
+        # MODIFIED: Cooldown in seconds after triggering ASR resume before it can be triggered again
+        self.asr_resume_cooldown = 5.0  
 
         # Get config for the provider
         self.robot_ip = getattr(self.config, "robot_ip", None)
@@ -50,20 +54,30 @@ class UbtechASRInput(FuserInput[str]):
             logging.debug("Ignored empty or malformed ASR message: %s", message)
 
     async def _poll(self) -> Optional[str]:
-        """Poll for new messages, resuming ASR only when the system is ready."""
+        """Poll for new messages. Resume ASR only if its cooldown period has passed since last resume trigger."""
         try:
             # Attempt to get a message from the buffer that the provider has left.
-            return self.message_buffer.get_nowait()
+            message = self.message_buffer.get_nowait()
+            # If a message is successfully polled, we can allow the ASR resume cooldown to effectively reset
+            # by setting last_asr_resume_trigger_time to a value that would allow immediate resume if buffer becomes empty.
+            # This makes the system more responsive after successful speech.
+            if message:
+                 self.last_asr_resume_trigger_time = time.time() - self.asr_resume_cooldown - 1 
+            return message
         except Empty:
-            # The buffer is empty. This is our signal that the system has processed
-            # the previous command and is now ready for a new one. If the ASR is
-            # paused, it's time to resume it.
+            # The buffer is empty.
+            # Only resume ASR if it's paused AND the cooldown period has elapsed since the last resume trigger.
             if self.asr.paused:
-                logging.debug("Buffer empty, resuming ASR for next command.")
-                self.asr.resume()
+                current_time = time.time()
+                if (current_time - self.last_asr_resume_trigger_time) > self.asr_resume_cooldown:
+                    logging.info(f"UbtechASRInput: Cooldown ({self.asr_resume_cooldown}s) passed since last ASR resume trigger. Resuming ASR.")
+                    self.asr.resume()
+                    self.last_asr_resume_trigger_time = current_time # MODIFIED: Update time when resume is triggered
+                else:
+                    elapsed_since_last_resume_trigger = current_time - self.last_asr_resume_trigger_time
+                    logging.debug(f"UbtechASRInput: Cooldown active. Waiting to resume ASR. Time since last ASR resume trigger: {elapsed_since_last_resume_trigger:.2f}s / {self.asr_resume_cooldown}s")
             return None
 
-    # The rest of the methods are for formatting and can be copied directly
     async def _raw_to_text(self, raw_input: str) -> str:
         return raw_input
 
