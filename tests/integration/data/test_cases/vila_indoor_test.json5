@@ -50,6 +50,7 @@
   // Expected output
   "expected": {
     "keywords": ["dog"],
+    "emotion": "joy",
     "minimum_score": 0.5
   }
 } 

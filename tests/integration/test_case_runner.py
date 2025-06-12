@@ -338,6 +338,7 @@ async def cleanup_mock_inputs(inputs):
 def _build_llm_evaluation_prompts(
     has_movement: bool,
     has_keywords: bool,
+    has_emotion: bool,
     formatted_actual: Dict[str, Any],
     formatted_expected: Dict[str, Any]
 ) -> Tuple[str, str]:
@@ -350,6 +351,8 @@ def _build_llm_evaluation_prompts(
         Whether movement evaluation is required
     has_keywords : bool
         Whether keyword evaluation is required
+    has_emotion : bool
+        Whether emotion evaluation is required
     formatted_actual : Dict[str, Any]
         Formatted actual results
     formatted_expected : Dict[str, Any]
@@ -362,39 +365,77 @@ def _build_llm_evaluation_prompts(
     """
     # Build evaluation criteria description based on what's specified
     evaluation_criteria = []
+    criterion_num = 1
+    
     if has_movement:
-        evaluation_criteria.append("1. MOVEMENT ACCURACY: Does the robot's movement command match or fulfill the intended purpose of the expected movement?")
+        evaluation_criteria.append(f"{criterion_num}. MOVEMENT ACCURACY: Does the robot's movement command match or fulfill the intended purpose of the expected movement?")
+        criterion_num += 1
     if has_keywords:
-        evaluation_criteria.append(f"{'2' if has_movement else '1'}. KEYWORD DETECTION: Were the expected keywords correctly identified in the system's vision results?")
+        evaluation_criteria.append(f"{criterion_num}. KEYWORD DETECTION: Were the expected keywords correctly identified in the system's vision results?")
+        criterion_num += 1
+    if has_emotion:
+        evaluation_criteria.append(f"{criterion_num}. EMOTION ACCURACY: Does the robot's emotional expression match the expected emotion?")
+        criterion_num += 1
     
     # Always include overall behavior if we have any criteria
-    overall_criterion_num = len(evaluation_criteria) + 1
-    evaluation_criteria.append(f"{overall_criterion_num}. OVERALL BEHAVIOR: Does the combined response (movement, speech, emotion) appropriately respond to the detected objects?")
+    evaluation_criteria.append(f"{criterion_num}. OVERALL BEHAVIOR: Does the combined response (movement, speech, emotion) appropriately respond to the detected objects?")
 
     criteria_text = "\n    ".join(evaluation_criteria)
 
     # Adjust rating scale description based on what we're evaluating
-    if has_movement and has_keywords:
+    criteria_count = sum([has_movement, has_keywords, has_emotion])
+    
+    if criteria_count == 3:  # All three criteria
         rating_description = """Rate on a scale of 0.0 to 1.0:
+    • 0.0-0.2: Completely mismatched; wrong movement, few/no keywords detected, and incorrect emotion
+    • 0.2-0.4: Mostly incorrect; most criteria don't align with expectations
+    • 0.4-0.6: Partially correct; some criteria match but others are off
+    • 0.6-0.8: Mostly correct; most criteria match expectations well
+    • 0.8-1.0: Perfect match; all criteria are exactly as expected"""
+    elif criteria_count == 2:  # Two criteria
+        if has_movement and has_keywords:
+            rating_description = """Rate on a scale of 0.0 to 1.0:
     • 0.0-0.2: Completely mismatched; wrong movement and few/no keywords detected
     • 0.2-0.4: Mostly incorrect; movement intent doesn't align, or most keywords missed
     • 0.4-0.6: Partially correct; movement is acceptable but not ideal, or only some keywords detected
     • 0.6-0.8: Mostly correct; movement closely matches expected intent, most keywords detected
     • 0.8-1.0: Perfect match; movement is exactly as expected, all keywords properly detected"""
-    elif has_movement:
-        rating_description = """Rate on a scale of 0.0 to 1.0:
+        elif has_movement and has_emotion:
+            rating_description = """Rate on a scale of 0.0 to 1.0:
+    • 0.0-0.2: Completely mismatched; wrong movement and incorrect emotion
+    • 0.2-0.4: Mostly incorrect; movement intent doesn't align, or emotion is inappropriate
+    • 0.4-0.6: Partially correct; movement is acceptable but not ideal, or emotion is close but not exact
+    • 0.6-0.8: Mostly correct; movement closely matches expected intent, emotion is appropriate
+    • 0.8-1.0: Perfect match; movement is exactly as expected, emotion is perfect"""
+        else:  # keywords and emotion
+            rating_description = """Rate on a scale of 0.0 to 1.0:
+    • 0.0-0.2: Completely mismatched; few/no keywords detected and incorrect emotion
+    • 0.2-0.4: Mostly incorrect; most keywords missed or emotion is inappropriate
+    • 0.4-0.6: Partially correct; only some keywords detected or emotion is close but not exact
+    • 0.6-0.8: Mostly correct; most keywords detected and emotion is appropriate
+    • 0.8-1.0: Perfect match; all keywords properly detected and emotion is perfect"""
+    else:  # Single criterion
+        if has_movement:
+            rating_description = """Rate on a scale of 0.0 to 1.0:
     • 0.0-0.2: Completely mismatched; wrong movement
     • 0.2-0.4: Mostly incorrect; movement intent doesn't align
     • 0.4-0.6: Partially correct; movement is acceptable but not ideal
     • 0.6-0.8: Mostly correct; movement closely matches expected intent
     • 0.8-1.0: Perfect match; movement is exactly as expected"""
-    else:  # has_keywords only
-        rating_description = """Rate on a scale of 0.0 to 1.0:
+        elif has_keywords:
+            rating_description = """Rate on a scale of 0.0 to 1.0:
     • 0.0-0.2: Completely mismatched; few/no keywords detected
     • 0.2-0.4: Mostly incorrect; most keywords missed
     • 0.4-0.6: Partially correct; only some keywords detected
     • 0.6-0.8: Mostly correct; most keywords detected
     • 0.8-1.0: Perfect match; all keywords properly detected"""
+        else:  # has_emotion only
+            rating_description = """Rate on a scale of 0.0 to 1.0:
+    • 0.0-0.2: Completely mismatched; incorrect emotion
+    • 0.2-0.4: Mostly incorrect; emotion is inappropriate for the context
+    • 0.4-0.6: Partially correct; emotion is close but not exactly right
+    • 0.6-0.8: Mostly correct; emotion is appropriate for the context
+    • 0.8-1.0: Perfect match; emotion is exactly as expected"""
 
     system_prompt = f"""You are an AI evaluator specialized in analyzing robotic system test results. Your task is to assess how well the actual output matches the expected output based on specific criteria.
 
@@ -413,6 +454,8 @@ def _build_llm_evaluation_prompts(
         comparison_sections.append(f'- Movement command: "{formatted_expected["movement"]}"')
     if has_keywords:
         comparison_sections.append(f'- Should detect keywords: {formatted_expected["keywords"]}')
+    if has_emotion:
+        comparison_sections.append(f'- Expected emotion: "{formatted_expected["emotion"]}"')
 
     expected_text = "\n    ".join(comparison_sections)
 
@@ -421,8 +464,21 @@ def _build_llm_evaluation_prompts(
         actual_sections.append(f'- Movement command: "{formatted_actual["movement"]}"')
     if has_keywords:
         actual_sections.append(f'- Keywords successfully detected: {formatted_actual["keywords_found"]}')
+    if has_emotion:
+        actual_sections.append(f'- Actual emotion: "{formatted_actual["emotion"]}"')
 
     actual_text = "\n    ".join(actual_sections)
+
+    # Build comparison question based on criteria
+    comparison_questions = []
+    if has_movement:
+        comparison_questions.append("Does the actual movement match the expected movement?")
+    if has_keywords:
+        comparison_questions.append("Were the expected keywords detected?")
+    if has_emotion:
+        comparison_questions.append("Does the actual emotion match the expected emotion?")
+    
+    comparison_text = " ".join(comparison_questions) + " Does the response make sense for what was detected in the scene?"
 
     user_prompt = f"""
     TEST CASE: "Robotic system behavior evaluation"
@@ -435,7 +491,7 @@ def _build_llm_evaluation_prompts(
     ACTUAL OUTPUT:
     {actual_text}
 
-    {"Compare these results carefully. Does the actual movement match the expected movement? Were the expected keywords detected? Does the response make sense for what was detected in the scene?" if has_movement and has_keywords else "Compare these results carefully. Does the actual output match the expected criteria?" if has_movement or has_keywords else ""}
+    Compare these results carefully. {comparison_text if comparison_questions else ""}
 
     Provide your evaluation in exactly this format:
     Rating: [from 0 to 1]
@@ -485,9 +541,10 @@ async def evaluate_with_llm(
     # Check which evaluation criteria are specified
     has_movement = "movement" in expected_output and expected_output["movement"] is not None
     has_keywords = "keywords" in expected_output and expected_output["keywords"] and len(expected_output["keywords"]) > 0
+    has_emotion = "emotion" in expected_output and expected_output["emotion"] is not None
 
     # If neither movement nor keywords are specified, return perfect score
-    if not has_movement and not has_keywords:
+    if not has_movement and not has_keywords and not has_emotion:
         return 1.0, "No specific evaluation criteria specified - test passes by default"
 
     # Format actual and expected results for evaluation
@@ -508,16 +565,25 @@ async def evaluate_with_llm(
                 for result in actual_output.get("raw_response", [])
             )
         ],
+        "emotion": next(
+            (
+                cmd.type
+                for cmd in actual_output.get("actions", [])
+                if hasattr(cmd, "type") and cmd.type in EMOTION_TYPES
+            ),
+            "unknown",
+        ),
     }
 
     formatted_expected = {
         "movement": expected_output.get("movement", "unknown"),
         "keywords": expected_output.get("keywords", []),
+        "emotion": expected_output.get("emotion", "unknown"),
     }
 
     # Build prompts using helper method
     system_prompt, user_prompt = _build_llm_evaluation_prompts(
-        has_movement, has_keywords, formatted_actual, formatted_expected
+        has_movement, has_keywords, has_emotion, formatted_actual, formatted_expected
     )
 
     try:
@@ -575,9 +641,10 @@ async def evaluate_test_results(
     # Check which evaluation criteria are specified
     has_movement = "movement" in expected and expected["movement"] is not None
     has_keywords = "keywords" in expected and expected["keywords"] and len(expected["keywords"]) > 0
+    has_emotion = "emotion" in expected and expected["emotion"] is not None
 
     # If neither movement nor keywords are specified, return perfect score
-    if not has_movement and not has_keywords:
+    if not has_movement and not has_keywords and not has_emotion:
         return True, 1.0, "No specific evaluation criteria specified - test passes by default"
 
     # Extract movement from commands if available
@@ -602,6 +669,7 @@ async def evaluate_test_results(
     
     movement_match = False
     keyword_match_ratio = 0.0
+    emotion_match = False
     
     if has_movement:
         # Check if the actual movement matches the expected movement
@@ -622,6 +690,25 @@ async def evaluate_test_results(
         )
         evaluation_components.append("keywords")
 
+    if has_emotion:
+        # Extract emotion from commands if available
+        actual_emotion = None
+        if "actions" in results and results["actions"]:
+            for command in results["actions"]:
+                if hasattr(command, "type") and command.type in EMOTION_TYPES:
+                    actual_emotion = command.type
+                    break
+                elif hasattr(command, "type") and command.type == "face":
+                    actual_emotion = command.value
+                    break
+        
+        # Assign a default if still not found
+        if not actual_emotion:
+            actual_emotion = "unknown"
+            
+        emotion_match = actual_emotion == expected["emotion"]
+        evaluation_components.append("emotion")
+
     # Calculate weighted heuristic score based on available criteria
     num_components = len(evaluation_components)
     if num_components > 0:
@@ -630,6 +717,8 @@ async def evaluate_test_results(
             heuristic_score += component_weight if movement_match else 0.0
         if has_keywords:
             heuristic_score += component_weight * keyword_match_ratio
+        if has_emotion:
+            heuristic_score += component_weight if emotion_match else 0.0
 
     # Get LLM-based evaluation
     llm_score, llm_reasoning = await evaluate_with_llm(results, expected, api_key)
@@ -651,6 +740,19 @@ async def evaluate_test_results(
                 if keyword.lower() in results["raw_response"].lower():
                     keyword_matches.append(keyword)
         details.append(f"- Keyword matches: {len(set(keyword_matches))}/{len(expected_keywords)} - {set(keyword_matches)}")
+    
+    if has_emotion:
+        # Re-extract emotion for display (could be optimized by storing earlier)
+        actual_emotion = "unknown"
+        if "actions" in results and results["actions"]:
+            for command in results["actions"]:
+                if hasattr(command, "type") and command.type in EMOTION_TYPES:
+                    actual_emotion = command.type
+                    break
+                elif hasattr(command, "type") and command.type == "face":
+                    actual_emotion = command.value
+                    break
+        details.append(f"- Emotion: {actual_emotion}, Expected: {expected['emotion']}, Match: {emotion_match}")
     
     details.extend([
         f"- Heuristic score: {heuristic_score:.2f}",
