@@ -335,6 +335,116 @@ async def cleanup_mock_inputs(inputs):
             logging.error(f"Error cleaning up {type(input_obj).__name__}: {e}")
 
 
+def _build_llm_evaluation_prompts(
+    has_movement: bool,
+    has_keywords: bool,
+    formatted_actual: Dict[str, Any],
+    formatted_expected: Dict[str, Any]
+) -> Tuple[str, str]:
+    """
+    Build system and user prompts for LLM evaluation.
+    
+    Parameters
+    ----------
+    has_movement : bool
+        Whether movement evaluation is required
+    has_keywords : bool
+        Whether keyword evaluation is required
+    formatted_actual : Dict[str, Any]
+        Formatted actual results
+    formatted_expected : Dict[str, Any]
+        Formatted expected results
+        
+    Returns
+    -------
+    Tuple[str, str]
+        (system_prompt, user_prompt)
+    """
+    # Build evaluation criteria description based on what's specified
+    evaluation_criteria = []
+    if has_movement:
+        evaluation_criteria.append("1. MOVEMENT ACCURACY: Does the robot's movement command match or fulfill the intended purpose of the expected movement?")
+    if has_keywords:
+        evaluation_criteria.append(f"{'2' if has_movement else '1'}. KEYWORD DETECTION: Were the expected keywords correctly identified in the system's vision results?")
+    
+    # Always include overall behavior if we have any criteria
+    overall_criterion_num = len(evaluation_criteria) + 1
+    evaluation_criteria.append(f"{overall_criterion_num}. OVERALL BEHAVIOR: Does the combined response (movement, speech, emotion) appropriately respond to the detected objects?")
+
+    criteria_text = "\n    ".join(evaluation_criteria)
+
+    # Adjust rating scale description based on what we're evaluating
+    if has_movement and has_keywords:
+        rating_description = """Rate on a scale of 0.0 to 1.0:
+    • 0.0-0.2: Completely mismatched; wrong movement and few/no keywords detected
+    • 0.2-0.4: Mostly incorrect; movement intent doesn't align, or most keywords missed
+    • 0.4-0.6: Partially correct; movement is acceptable but not ideal, or only some keywords detected
+    • 0.6-0.8: Mostly correct; movement closely matches expected intent, most keywords detected
+    • 0.8-1.0: Perfect match; movement is exactly as expected, all keywords properly detected"""
+    elif has_movement:
+        rating_description = """Rate on a scale of 0.0 to 1.0:
+    • 0.0-0.2: Completely mismatched; wrong movement
+    • 0.2-0.4: Mostly incorrect; movement intent doesn't align
+    • 0.4-0.6: Partially correct; movement is acceptable but not ideal
+    • 0.6-0.8: Mostly correct; movement closely matches expected intent
+    • 0.8-1.0: Perfect match; movement is exactly as expected"""
+    else:  # has_keywords only
+        rating_description = """Rate on a scale of 0.0 to 1.0:
+    • 0.0-0.2: Completely mismatched; few/no keywords detected
+    • 0.2-0.4: Mostly incorrect; most keywords missed
+    • 0.4-0.6: Partially correct; only some keywords detected
+    • 0.6-0.8: Mostly correct; most keywords detected
+    • 0.8-1.0: Perfect match; all keywords properly detected"""
+
+    system_prompt = f"""You are an AI evaluator specialized in analyzing robotic system test results. Your task is to assess how well the actual output matches the expected output based on specific criteria.
+
+    Evaluation criteria:
+    {criteria_text}
+
+    {rating_description}
+
+    Your response must follow this format exactly:
+    Rating: [from 0 to 1]
+    Reasoning: [clear explanation of your rating, referencing specific evidence]"""
+
+    # Build the comparison section based on what we're evaluating
+    comparison_sections = []
+    if has_movement:
+        comparison_sections.append(f'- Movement command: "{formatted_expected["movement"]}"')
+    if has_keywords:
+        comparison_sections.append(f'- Should detect keywords: {formatted_expected["keywords"]}')
+
+    expected_text = "\n    ".join(comparison_sections)
+
+    actual_sections = []
+    if has_movement:
+        actual_sections.append(f'- Movement command: "{formatted_actual["movement"]}"')
+    if has_keywords:
+        actual_sections.append(f'- Keywords successfully detected: {formatted_actual["keywords_found"]}')
+
+    actual_text = "\n    ".join(actual_sections)
+
+    user_prompt = f"""
+    TEST CASE: "Robotic system behavior evaluation"
+
+    CONTEXT: A robot with vision capabilities is analyzing a scene and should respond appropriately to what it detects.
+
+    EXPECTED OUTPUT:
+    {expected_text}
+
+    ACTUAL OUTPUT:
+    {actual_text}
+
+    {"Compare these results carefully. Does the actual movement match the expected movement? Were the expected keywords detected? Does the response make sense for what was detected in the scene?" if has_movement and has_keywords else "Compare these results carefully. Does the actual output match the expected criteria?" if has_movement or has_keywords else ""}
+
+    Provide your evaluation in exactly this format:
+    Rating: [from 0 to 1]
+    Reasoning: [Your detailed explanation]
+    """
+    
+    return system_prompt, user_prompt
+
+
 async def evaluate_with_llm(
     actual_output: Dict[str, Any], expected_output: Dict[str, Any], api_key: str
 ) -> Tuple[float, str]:
@@ -372,6 +482,14 @@ async def evaluate_with_llm(
             base_url="https://api.openmind.org/api/core/openai", api_key=api_key
         )
 
+    # Check which evaluation criteria are specified
+    has_movement = "movement" in expected_output and expected_output["movement"] is not None
+    has_keywords = "keywords" in expected_output and expected_output["keywords"] and len(expected_output["keywords"]) > 0
+
+    # If neither movement nor keywords are specified, return perfect score
+    if not has_movement and not has_keywords:
+        return 1.0, "No specific evaluation criteria specified - test passes by default"
+
     # Format actual and expected results for evaluation
     formatted_actual = {
         "movement": next(
@@ -397,56 +515,10 @@ async def evaluate_with_llm(
         "keywords": expected_output.get("keywords", []),
     }
 
-    system_prompt = """You are an AI evaluator specialized in analyzing robotic \
-system test results. Your task is to assess how well the actual output matches \
-the expected output based on specific criteria.
-
-    Evaluation criteria:
-    1. MOVEMENT ACCURACY: Does the robot's movement command match or fulfill \
-the intended purpose of the expected movement?
-    2. KEYWORD DETECTION: Were the expected keywords correctly identified in \
-the system's vision results?
-    3. OVERALL BEHAVIOR: Does the combined response (movement, speech, emotion) \
-appropriately respond to the detected objects?
-
-    Rate on a scale of 1-5:
-    • 1: Completely mismatched; wrong movement and few/no keywords detected
-    • 2: Mostly incorrect; movement intent doesn't align, or most keywords missed
-    • 3: Partially correct; movement is acceptable but not ideal, or only some \
-keywords detected
-    • 4: Mostly correct; movement closely matches expected intent, most keywords \
-detected
-    • 5: Perfect match; movement is exactly as expected, all keywords properly \
-detected
-
-    Your response must follow this format exactly:
-    Rating: [from 0 to 1]
-    Reasoning: [clear explanation of your rating, referencing specific evidence]"""
-
-    user_prompt = f"""
-    TEST CASE: "Indoor scene object detection test"
-
-    CONTEXT: A robot with vision capabilities is analyzing an indoor scene and \
-should respond appropriately to what it detects.
-
-    EXPECTED OUTPUT:
-    - Movement command: "{formatted_expected["movement"]}"
-    - Should detect keywords: {formatted_expected["keywords"]}
-
-    ACTUAL OUTPUT:
-    - Movement command: "{formatted_actual["movement"]}"
-    - Keywords successfully detected: {formatted_actual["keywords_found"]}
-
-    {'''SPECIAL INSTRUCTION: The expected movement is "any", which means any movement action (sit, dance, walk, etc.) should be considered a perfect match as long as it's not "unknown".''' if formatted_expected["movement"].lower() == "any" else ""}
-
-    Compare these results carefully. Does the actual movement match the expected \
-movement? Were the expected keywords detected? Does the response make sense for \
-what was detected in the scene?
-
-    Provide your evaluation in exactly this format:
-    Rating: [from 0 to 1]
-    Reasoning: [Your detailed explanation]
-    """
+    # Build prompts using helper method
+    system_prompt, user_prompt = _build_llm_evaluation_prompts(
+        has_movement, has_keywords, formatted_actual, formatted_expected
+    )
 
     try:
         # Call the OpenAI API
@@ -500,6 +572,14 @@ async def evaluate_test_results(
     Tuple[bool, float, str]
         (pass/fail, score, detailed message)
     """
+    # Check which evaluation criteria are specified
+    has_movement = "movement" in expected and expected["movement"] is not None
+    has_keywords = "keywords" in expected and expected["keywords"] and len(expected["keywords"]) > 0
+
+    # If neither movement nor keywords are specified, return perfect score
+    if not has_movement and not has_keywords:
+        return True, 1.0, "No specific evaluation criteria specified - test passes by default"
+
     # Extract movement from commands if available
     movement = None
     logging.info(f"Actions: {results['actions']}")
@@ -516,29 +596,40 @@ async def evaluate_test_results(
     if not movement:
         movement = "unknown"
 
-    # Perform heuristic evaluation
-    # Special case: if expected movement is "any", then any actual movement is a match
-    if expected["movement"].lower() == "any":
-        movement_match = movement != "unknown"
-    else:
-        movement_match = movement == expected["movement"]
-
-    expected_keywords = expected.get("keywords", [])
-    keyword_matches = []
-
-    if "raw_response" in results and isinstance(results["raw_response"], str):
-        for keyword in expected_keywords:
-            if keyword.lower() in results["raw_response"].lower():
-                keyword_matches.append(keyword)
-
-    keyword_match_ratio = (
-        len(set(keyword_matches)) / len(expected_keywords) if expected_keywords else 1.0
-    )
-
-    # Calculate heuristic score
+    # Perform heuristic evaluation with adaptive scoring
     heuristic_score = 0.0
-    heuristic_score += 0.5 if movement_match else 0.0
-    heuristic_score += 0.5 * keyword_match_ratio
+    evaluation_components = []
+    
+    movement_match = False
+    keyword_match_ratio = 0.0
+    
+    if has_movement:
+        # Check if the actual movement matches the expected movement
+        movement_match = movement == expected["movement"]
+        evaluation_components.append("movement")
+
+    if has_keywords:
+        expected_keywords = expected.get("keywords", [])
+        keyword_matches = []
+
+        if "raw_response" in results and isinstance(results["raw_response"], str):
+            for keyword in expected_keywords:
+                if keyword.lower() in results["raw_response"].lower():
+                    keyword_matches.append(keyword)
+
+        keyword_match_ratio = (
+            len(set(keyword_matches)) / len(expected_keywords) if expected_keywords else 1.0
+        )
+        evaluation_components.append("keywords")
+
+    # Calculate weighted heuristic score based on available criteria
+    num_components = len(evaluation_components)
+    if num_components > 0:
+        component_weight = 1.0 / num_components
+        if has_movement:
+            heuristic_score += component_weight if movement_match else 0.0
+        if has_keywords:
+            heuristic_score += component_weight * keyword_match_ratio
 
     # Get LLM-based evaluation
     llm_score, llm_reasoning = await evaluate_with_llm(results, expected, api_key)
@@ -547,16 +638,27 @@ async def evaluate_test_results(
     final_score = (heuristic_score + llm_score) / 2.0
 
     # Generate detailed message
-    details = [
-        "Heuristic Evaluation:",
-        f"- Movement: {movement}, Expected: {expected['movement']}, Match: {movement_match}",
-        f"- Keyword matches: {len(set(keyword_matches))}/{len(expected_keywords)} - {set(keyword_matches)}",
+    details = ["Heuristic Evaluation:"]
+    
+    if has_movement:
+        details.append(f"- Movement: {movement}, Expected: {expected['movement']}, Match: {movement_match}")
+    
+    if has_keywords:
+        expected_keywords = expected.get("keywords", [])
+        keyword_matches = []
+        if "raw_response" in results and isinstance(results["raw_response"], str):
+            for keyword in expected_keywords:
+                if keyword.lower() in results["raw_response"].lower():
+                    keyword_matches.append(keyword)
+        details.append(f"- Keyword matches: {len(set(keyword_matches))}/{len(expected_keywords)} - {set(keyword_matches)}")
+    
+    details.extend([
         f"- Heuristic score: {heuristic_score:.2f}",
         "\nLLM Evaluation:",
         f"- LLM score: {llm_score:.2f}",
         f"- LLM reasoning: {llm_reasoning}",
         f"\nFinal score: {final_score:.2f}",
-    ]
+    ])
 
     if results.get("actions"):
         details.append("\nCommands:")

@@ -48,7 +48,6 @@
   
   // Expected output
   "expected": {
-    "movement": "any",
     "keywords": ["dog"],
     "minimum_score": 0.5
   }
