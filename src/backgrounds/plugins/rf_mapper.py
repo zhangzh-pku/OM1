@@ -82,17 +82,19 @@ class RFmapper(Background):
         def detection_callback(device, advdata: AdvertisementData):
 
             addr = device.address
-            rssi = advdata.rssi
 
-            # Try to extract local name
-            local_name = advdata.local_name
+            local_name = None
+            if device.name:
+                local_name = device.name
+            elif advdata.local_name:
+                local_name = advdata.local_name
 
-            if local_name:
-                logging.debug(f"just added local name: {local_name}")
-                self.seen_names.append(local_name)
-                self.seen_names = list(set(self.seen_names))
-
-            logging.debug(f"{self.seen_names}")
+            # if local_name:
+            #     logging.debug(f"Local name: {local_name}")
+            #     self.seen_names.append(local_name)
+            #     # keep the list unique
+            #     self.seen_names = list(set(self.seen_names))
+            # logging.info(f"{self.seen_names}")
 
             # AdvertisementData(
             # local_name: Optional[str],
@@ -109,13 +111,15 @@ class RFmapper(Background):
             if advdata.manufacturer_data:
                 for key, value in advdata.manufacturer_data.items():
                     mfgkey = hex(key).upper()
-                    mfgval = value.hex().upper()
+                    mfgval = hex(value).upper()
                     break
 
             if advdata.service_uuids:
                 service_uuid = advdata.service_uuids[0]
 
             # we want to update everything EXCEPT we do not want to overwrite a resolved name
+            # and we do not want to replace a long mfgval with a short one
+            rssi = advdata.rssi
 
             if addr in self.seen_devices:
                 self.seen_devices[addr].rssi = rssi
@@ -125,7 +129,12 @@ class RFmapper(Background):
                 )
                 if local_name and self.seen_devices[addr].name is None:
                     self.seen_devices[addr].name = local_name
-                    logging.debug(f"updated device log: {self.seen_devices[addr]}")
+                    logging.info(f"Updated BLE name: {self.seen_devices[addr].name}")
+                if len(mfgval) > len(self.seen_devices[addr].mfgval):
+                    self.seen_devices[addr].mfgval = mfgval
+                    logging.info(
+                        f"Updated BLE mfgval: {self.seen_devices[addr].mfgval}"
+                    )
             else:
                 # this is a new device
                 self.seen_devices[addr] = RFData(
@@ -154,7 +163,8 @@ class RFmapper(Background):
 
         final_list: List[RFData] = []
         for i, device in enumerate(sorted_devices):
-            # return all the strong one, or, the ones with a local name
+            # return all the strong ones, or, the ones with a local name
+            # some will be both, but that's good
             if i < 20 or device.name:
                 final_list.append(device)
         logging.debug(f"Scan...{final_list}")
