@@ -11,6 +11,7 @@ import numpy as np
 import zenoh
 from numpy.typing import NDArray
 
+from runtime.logging import setup_logging
 from zenoh_idl import sensor_msgs
 from zenoh_idl.sensor_msgs import LaserScan
 
@@ -59,6 +60,8 @@ def RPLidar_processor(
     config : Dict
         Configuration dictionary containing parameters for the RPLidar.
     """
+    setup_logging("rplidar_processor", debug=False, log_to_file=False)
+
     running = True
 
     while running:
