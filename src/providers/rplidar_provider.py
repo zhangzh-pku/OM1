@@ -333,7 +333,7 @@ class RPLidarProvider:
                 continue
 
             # don't worry about distant objects
-            if d_m <self.relevant_distance_min:
+            if d_m < self.relevant_distance_min:
                 continue
 
             # first, correctly orient the sensor zero to the robot zero

@@ -80,9 +80,10 @@ UNITREE
 
 half_width_robot = 0.20  # the width of the robot is 40 cm
 relevant_distance_max = 1.1   # meters
-relevant_distance_min = 0.08  # meters
+relevant_distance_min = 0.25  # meters
 sensor_mounting_angle = 172.0  # corrects for how sensor is mounted
-angles_blanked = [[-180.0, -140.0], [140.0, 180.0]]
+#angles_blanked = [[-180.0, -140.0], [140.0, 180.0]]
+angles_blanked = []
 
 # Figure 2 - the zoom and the possible paths
 centerZoom = ax2.plot([0], [0], "o", color="blue")[0]  # the robot
@@ -123,7 +124,6 @@ ax3.plot([48.0, 180.0], [1.18, 1.18], "-", color="green", linewidth=3.0)[0]
 ax3.annotate("Left", xytext=(-125, 1.1), xy=(0, 0.5))
 ax3.annotate("Front", xytext=(-20, 1.1), xy=(0, 0.5))
 ax3.annotate("Right", xytext=(85, 1.1), xy=(0, 0.5))
-
 
 # display the blanked regions of the scan
 for b in angles_blanked:
@@ -226,11 +226,7 @@ def process(data):
         d_m = distance
 
         # don't worry about distant objects
-        if d > relevant_distance_max:
-            continue
-
-        # don't worry about things that are very close
-        if d_m < relevant_distance_min:
+        if d_m > 5.0:
             continue
 
         # first, correctly orient the sensor zero to the robot zero
@@ -299,6 +295,14 @@ def process(data):
     for x, y, d in list(zip(X, Y, D)):
         for apath in possible_paths:
             
+            # too far away - we do not care
+            if d > relevant_distance_max:
+                continue
+
+            # also don't worry about things that are very close
+            if d < relevant_distance_min:
+                continue
+
             # Get the start and end points of this straight line path
             path_points = paths[apath]
             start_x, start_y = (
