@@ -60,7 +60,7 @@ def RPLidar_processor(
     config : Dict
         Configuration dictionary containing parameters for the RPLidar.
     """
-    setup_logging("rplidar_processor", debug=False, log_to_file=False)
+    setup_logging("rplidar_processor")
 
     running = True
 
