@@ -79,10 +79,10 @@ UNITREE
 """
 
 half_width_robot = 0.20  # the width of the robot is 40 cm
-relevant_distance_max = 1.1   # meters
+relevant_distance_max = 1.1  # meters
 relevant_distance_min = 0.25  # meters
 sensor_mounting_angle = 172.0  # corrects for how sensor is mounted
-#angles_blanked = [[-180.0, -140.0], [140.0, 180.0]]
+# angles_blanked = [[-180.0, -140.0], [140.0, 180.0]]
 angles_blanked = []
 
 # Figure 2 - the zoom and the possible paths
@@ -294,7 +294,7 @@ def process(data):
     # all the possible conflicting points
     for x, y, d in list(zip(X, Y, D)):
         for apath in possible_paths:
-            
+
             # too far away - we do not care
             if d > relevant_distance_max:
                 continue
