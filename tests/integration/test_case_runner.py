@@ -189,15 +189,8 @@ async def run_test_case(config: Dict[str, Any]) -> Dict[str, Any]:
 
     logging.info(f"Loaded {len(images)} test images for test case")
 
-    # Prepare image metadata
-    image_metadata = {
-        "scene_type": config["input"].get("scene_type", "unknown"),
-        "objects": config["input"].get("objects", []),
-        "expected_keywords": config["expected"].get("keywords", []),
-    }
-
     # Load test images into the central mock provider
-    load_test_images(images, image_metadata)
+    load_test_images(images)
     logging.info(
         f"Images loaded into mock provider, provider now has {len(get_image_provider().test_images)} images"
     )
@@ -990,8 +983,6 @@ async def test_from_config(test_case_path: Path):
     provider.reset()
     # Clear any existing images to ensure clean state
     provider.test_images = []
-    provider.image_cache = {}
-    provider.image_metadata = {}
 
     # Add a small delay to reduce race conditions between parallel tests
     await asyncio.sleep(0.1)
