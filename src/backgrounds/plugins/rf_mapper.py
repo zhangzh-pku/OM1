@@ -111,7 +111,7 @@ class RFmapper(Background):
             if advdata.manufacturer_data:
                 for key, value in advdata.manufacturer_data.items():
                     mfgkey = hex(key).upper()
-                    mfgval = hex(value).upper()
+                    mfgval = value.hex().upper()
                     break
 
             if advdata.service_uuids:
