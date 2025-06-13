@@ -1,3 +1,4 @@
+import asyncio
 import json
 import logging
 import time
@@ -29,9 +30,9 @@ class UbtechASRInput(FuserInput[str]):
         self.message_buffer: Queue[str] = Queue()
         self.global_sleep_ticker_provider = SleepTickerProvider()
         # MODIFIED: Tracks the last time ASR resume was triggered
-        self.last_asr_resume_trigger_time = 0 
+        self.last_asr_resume_trigger_time = time.time()
         # MODIFIED: Cooldown in seconds after triggering ASR resume before it can be triggered again
-        self.asr_resume_cooldown = 5.0  
+        self.asr_resume_cooldown = 10.0  
 
         # Get config for the provider
         self.robot_ip = getattr(self.config, "robot_ip", None)
@@ -55,6 +56,7 @@ class UbtechASRInput(FuserInput[str]):
 
     async def _poll(self) -> Optional[str]:
         """Poll for new messages. Resume ASR only if its cooldown period has passed since last resume trigger."""
+        await asyncio.sleep(0.1)
         try:
             # Attempt to get a message from the buffer that the provider has left.
             message = self.message_buffer.get_nowait()
