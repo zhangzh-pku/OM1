@@ -32,7 +32,7 @@ class MoveUnitreeSDKConnector(ActionConnector[MoveInput]):
 
         self.lidar = RPLidarProvider()
 
-        self.unitree_go2_state = UnitreeGo2StateProvider()
+        self.unitree_go2_state = UnitreeGo2StateProvider(self.config.unitree_ethernet)
 
         # create sport client
         self.sport_client = None
@@ -54,10 +54,20 @@ class MoveUnitreeSDKConnector(ActionConnector[MoveInput]):
         # this is used only by the LLM
         logging.info(f"AI command.connect: {output_interface.action}")
 
-        if self.odom.position["moving"]:
-            # for example due to a teleops or game controller command
-            logging.info("Disregard new AI movement command - robot is already moving")
+        if self.unitree_go2_state.state == "locomotion":
+            logging.info(
+                "Unitree Go2 is in locomotion state - cannot process AI command"
+            )
             return
+
+        # fallback to the odom provider
+        if not self.unitree_go2_state.state:
+            if self.odom.position["moving"]:
+                # for example due to a teleops or game controller command
+                logging.info(
+                    "Disregard new AI movement command - robot is already moving"
+                )
+                return
 
         if self.pending_movements.qsize() > 0:
             logging.info("Movement in progress: disregarding new AI command")

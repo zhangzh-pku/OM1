@@ -77,7 +77,9 @@ class Go2GameControllerConnector(ActionConnector[IDLEInput]):
         self.odom = OdomProvider()
         logging.info(f"Game controller Odom Provider: {self.odom}")
 
-        self.unitree_state_provider = UnitreeGo2StateProvider()
+        self.unitree_state_provider = UnitreeGo2StateProvider(
+            self.config.unitree_ethernet
+        )
         logging.info(
             f"Game controller Unitree State Provider: {self.unitree_state_provider}"
         )
@@ -112,7 +114,7 @@ class Go2GameControllerConnector(ActionConnector[IDLEInput]):
 
         if hid is not None:
             for device in hid.enumerate():
-                logging.info(f"device {device['product_string']}")
+                logging.debug(f"device {device['product_string']}")
                 if "Xbox Wireless Controller" in device["product_string"]:
                     vendor_id = device["vendor_id"]
                     product_id = device["product_id"]
