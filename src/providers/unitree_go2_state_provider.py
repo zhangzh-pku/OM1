@@ -1,3 +1,4 @@
+import json
 import logging
 import threading
 import time
@@ -115,6 +116,8 @@ class UnitreeGo2StateProvider:
             return None
 
         try:
+            start_time = time.time()
+            logging.info(f"Sending request to get Unitree Go2 state... {start_time}")
             state = self.sport_client.GetState(
                 [
                     "state",
@@ -131,16 +134,22 @@ class UnitreeGo2StateProvider:
                 logging.error(f"Failed to get state from Unitree Go2: {state[0]}")
                 return None
 
+            end_time = time.time()
+            logging.info(
+                f"Received Unitree Go2 state in {end_time - start_time:.2f} seconds"
+            )
+
+            logging.info(f"Unitree Go2 state data: {state[1]}")
             try:
                 return UnitreeGo2State(
-                    state=state[1]["state"]["data"],
-                    body_height=state[1]["bodyHeight"]["data"],
-                    foot_raise_height=state[1]["footRaiseHeight"]["data"],
-                    speed_level=state[1]["speedLevel"]["data"],
-                    gait=state[1]["gait"]["data"],
-                    dance=state[1]["dance"]["data"],
-                    economic_gait=state[1]["economicGait"]["data"],
-                    continuous_gait=state[1]["continuousGait"]["data"],
+                    state=json.loads(state[1]["state"])["data"],
+                    body_height=json.loads(state[1]["bodyHeight"])["data"],
+                    foot_raise_height=json.loads(state[1]["footRaiseHeight"])["data"],
+                    speed_level=json.loads(state[1]["speedLevel"])["data"],
+                    gait=json.loads(state[1]["gait"])["data"],
+                    dance=json.loads(state[1]["dance"])["data"],
+                    economic_gait=json.loads(state[1]["economicGait"])["data"],
+                    continuous_gait=json.loads(state[1]["continuousGait"])["data"],
                 )
             except Exception as e:
                 logging.error(f"Error parsing Unitree Go2 state: {e}")
