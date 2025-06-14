@@ -578,7 +578,6 @@ async def evaluate_with_llm(
     has_movement = (
         "movement" in expected_output
         and expected_output["movement"] is not None
-        and len(normalize_expected_value(expected_output["movement"])) > 0
     )
     has_keywords = (
         "keywords" in expected_output
@@ -588,7 +587,6 @@ async def evaluate_with_llm(
     has_emotion = (
         "emotion" in expected_output
         and expected_output["emotion"] is not None
-        and len(normalize_expected_value(expected_output["emotion"])) > 0
     )
 
     # If neither movement nor keywords nor emotion are specified, return perfect score
@@ -715,7 +713,6 @@ async def evaluate_test_results(
     has_movement = (
         "movement" in expected
         and expected["movement"] is not None
-        and len(normalize_expected_value(expected["movement"])) > 0
     )
     has_keywords = (
         "keywords" in expected
@@ -725,7 +722,6 @@ async def evaluate_test_results(
     has_emotion = (
         "emotion" in expected
         and expected["emotion"] is not None
-        and len(normalize_expected_value(expected["emotion"])) > 0
     )
 
     # If neither movement nor keywords nor emotion are specified, return perfect score
@@ -775,7 +771,11 @@ async def evaluate_test_results(
     if has_movement:
         # Check if the actual movement matches any of the expected movements
         expected_movements = normalize_expected_value(expected["movement"])
-        movement_match = movement in expected_movements
+        # If expected_movements is empty, we expect no movement
+        if not expected_movements:
+            movement_match = movement == "unknown"
+        else:
+            movement_match = movement in expected_movements
         evaluation_components.append("movement")
 
     if has_keywords:
@@ -813,7 +813,11 @@ async def evaluate_test_results(
             actual_emotion = "unknown"
 
         expected_emotions = normalize_expected_value(expected["emotion"])
-        emotion_match = actual_emotion in expected_emotions
+        # If expected_emotions is empty, we expect no emotion
+        if not expected_emotions:
+            emotion_match = actual_emotion == "unknown"
+        else:
+            emotion_match = actual_emotion in expected_emotions
         evaluation_components.append("emotion")
 
     # Calculate weighted heuristic score based on available criteria
