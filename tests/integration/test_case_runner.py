@@ -576,7 +576,9 @@ async def evaluate_with_llm(
 
     # Check which evaluation criteria are specified
     has_movement = (
-        "movement" in expected_output and expected_output["movement"] is not None
+        "movement" in expected_output
+        and expected_output["movement"] is not None
+        and len(normalize_expected_value(expected_output["movement"])) > 0
     )
     has_keywords = (
         "keywords" in expected_output
@@ -584,7 +586,9 @@ async def evaluate_with_llm(
         and len(expected_output["keywords"]) > 0
     )
     has_emotion = (
-        "emotion" in expected_output and expected_output["emotion"] is not None
+        "emotion" in expected_output
+        and expected_output["emotion"] is not None
+        and len(normalize_expected_value(expected_output["emotion"])) > 0
     )
 
     # If neither movement nor keywords nor emotion are specified, return perfect score
@@ -708,13 +712,21 @@ async def evaluate_test_results(
         (pass/fail, score, detailed message)
     """
     # Check which evaluation criteria are specified
-    has_movement = "movement" in expected and expected["movement"] is not None
+    has_movement = (
+        "movement" in expected
+        and expected["movement"] is not None
+        and len(normalize_expected_value(expected["movement"])) > 0
+    )
     has_keywords = (
         "keywords" in expected
         and expected["keywords"]
         and len(expected["keywords"]) > 0
     )
-    has_emotion = "emotion" in expected and expected["emotion"] is not None
+    has_emotion = (
+        "emotion" in expected
+        and expected["emotion"] is not None
+        and len(normalize_expected_value(expected["emotion"])) > 0
+    )
 
     # If neither movement nor keywords nor emotion are specified, return perfect score
     if not has_movement and not has_keywords and not has_emotion:
