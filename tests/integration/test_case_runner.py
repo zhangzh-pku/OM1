@@ -388,55 +388,55 @@ def _build_llm_evaluation_prompts(
 
     if criteria_count == 3:  # All three criteria
         rating_description = """Rate on a scale of 0.0 to 1.0:
-    • 0.0-0.2: Completely mismatched; wrong movement, few/no keywords detected, and incorrect emotion
-    • 0.2-0.4: Mostly incorrect; most criteria don't align with expectations
-    • 0.4-0.6: Partially correct; some criteria match but others are off
-    • 0.6-0.8: Mostly correct; most criteria match expectations well
-    • 0.8-1.0: Perfect match; all criteria are exactly as expected"""
+    • 0.0-0.2: Completely mismatched; all criteria are wrong
+    • 0.2-0.4: Mostly incorrect; two criteria are wrong
+    • 0.4-0.6: Partially correct; at least one criterion matches
+    • 0.6-0.8: Mostly correct; two criteria match
+    • 0.8-1.0: Perfect match; all criteria match"""
     elif criteria_count == 2:  # Two criteria
         if has_movement and has_keywords:
             rating_description = """Rate on a scale of 0.0 to 1.0:
-    • 0.0-0.2: Completely mismatched; wrong movement and few/no keywords detected
-    • 0.2-0.4: Mostly incorrect; movement intent doesn't align, or most keywords missed
-    • 0.4-0.6: Partially correct; movement is acceptable but not ideal, or only some keywords detected
-    • 0.6-0.8: Mostly correct; movement closely matches expected intent, most keywords detected
-    • 0.8-1.0: Perfect match; movement is exactly as expected, all keywords properly detected"""
+    • 0.0-0.2: Completely mismatched; both criteria are wrong
+    • 0.2-0.4: Mostly incorrect; one criterion is wrong
+    • 0.4-0.6: Partially correct; one criterion matches
+    • 0.6-0.8: Mostly correct; both criteria match
+    • 0.8-1.0: Perfect match; both criteria match exactly"""
         elif has_movement and has_emotion:
             rating_description = """Rate on a scale of 0.0 to 1.0:
-    • 0.0-0.2: Completely mismatched; wrong movement and incorrect emotion
-    • 0.2-0.4: Mostly incorrect; movement intent doesn't align, or emotion is inappropriate
-    • 0.4-0.6: Partially correct; movement is acceptable but not ideal, or emotion is close but not exact
-    • 0.6-0.8: Mostly correct; movement closely matches expected intent, emotion is appropriate
-    • 0.8-1.0: Perfect match; movement is exactly as expected, emotion is perfect"""
+    • 0.0-0.2: Completely mismatched; both criteria are wrong
+    • 0.2-0.4: Mostly incorrect; one criterion is wrong
+    • 0.4-0.6: Partially correct; one criterion matches
+    • 0.6-0.8: Mostly correct; both criteria match
+    • 0.8-1.0: Perfect match; both criteria match exactly"""
         else:  # keywords and emotion
             rating_description = """Rate on a scale of 0.0 to 1.0:
-    • 0.0-0.2: Completely mismatched; few/no keywords detected and incorrect emotion
-    • 0.2-0.4: Mostly incorrect; most keywords missed or emotion is inappropriate
-    • 0.4-0.6: Partially correct; only some keywords detected or emotion is close but not exact
-    • 0.6-0.8: Mostly correct; most keywords detected and emotion is appropriate
-    • 0.8-1.0: Perfect match; all keywords properly detected and emotion is perfect"""
+    • 0.0-0.2: Completely mismatched; both criteria are wrong
+    • 0.2-0.4: Mostly incorrect; one criterion is wrong
+    • 0.4-0.6: Partially correct; one criterion matches
+    • 0.6-0.8: Mostly correct; both criteria match
+    • 0.8-1.0: Perfect match; both criteria match exactly"""
     else:  # Single criterion
         if has_movement:
             rating_description = """Rate on a scale of 0.0 to 1.0:
     • 0.0-0.2: Completely mismatched; wrong movement
-    • 0.2-0.4: Mostly incorrect; movement intent doesn't align
-    • 0.4-0.6: Partially correct; movement is acceptable but not ideal
-    • 0.6-0.8: Mostly correct; movement closely matches expected intent
-    • 0.8-1.0: Perfect match; movement is exactly as expected"""
+    • 0.2-0.4: Mostly incorrect; movement is somewhat related
+    • 0.4-0.6: Partially correct; movement is close
+    • 0.6-0.8: Mostly correct; movement matches
+    • 0.8-1.0: Perfect match; movement matches exactly"""
         elif has_keywords:
             rating_description = """Rate on a scale of 0.0 to 1.0:
-    • 0.0-0.2: Completely mismatched; few/no keywords detected
-    • 0.2-0.4: Mostly incorrect; most keywords missed
-    • 0.4-0.6: Partially correct; only some keywords detected
+    • 0.0-0.2: Completely mismatched; no keywords detected
+    • 0.2-0.4: Mostly incorrect; few keywords detected
+    • 0.4-0.6: Partially correct; some keywords detected
     • 0.6-0.8: Mostly correct; most keywords detected
-    • 0.8-1.0: Perfect match; all keywords properly detected"""
+    • 0.8-1.0: Perfect match; all keywords detected"""
         else:  # has_emotion only
             rating_description = """Rate on a scale of 0.0 to 1.0:
-    • 0.0-0.2: Completely mismatched; incorrect emotion
-    • 0.2-0.4: Mostly incorrect; emotion is inappropriate for the context
-    • 0.4-0.6: Partially correct; emotion is close but not exactly right
-    • 0.6-0.8: Mostly correct; emotion is appropriate for the context
-    • 0.8-1.0: Perfect match; emotion is exactly as expected"""
+    • 0.0-0.2: Completely mismatched; wrong emotion
+    • 0.2-0.4: Mostly incorrect; emotion is somewhat related
+    • 0.4-0.6: Partially correct; emotion is close
+    • 0.6-0.8: Mostly correct; emotion matches
+    • 0.8-1.0: Perfect match; emotion matches exactly"""
 
     system_prompt = f"""You are an AI evaluator specialized in analyzing robotic system test results. Your task is to assess how well the actual output matches the expected output based on specific criteria.
 
@@ -595,9 +595,12 @@ async def evaluate_with_llm(
     formatted_actual = {
         "movement": next(
             (
-                cmd.type
+                cmd.type if cmd.type in MOVEMENT_ACTION_TYPES else cmd.value
                 for cmd in actual_output.get("actions", [])
-                if hasattr(cmd, "type") and cmd.type in MOVEMENT_ACTION_TYPES
+                if hasattr(cmd, "type") and (
+                    cmd.type in MOVEMENT_ACTION_TYPES or 
+                    (cmd.type == "move" and hasattr(cmd, "value") and cmd.value in MOVEMENT_ACTION_TYPES)
+                )
             ),
             "unknown",
         ),
@@ -611,9 +614,12 @@ async def evaluate_with_llm(
         ],
         "emotion": next(
             (
-                cmd.type
+                cmd.type if cmd.type in EMOTION_TYPES else cmd.value
                 for cmd in actual_output.get("actions", [])
-                if hasattr(cmd, "type") and cmd.type in EMOTION_TYPES
+                if hasattr(cmd, "type") and (
+                    cmd.type in EMOTION_TYPES or 
+                    (cmd.type == "emotion" and hasattr(cmd, "value") and cmd.value in EMOTION_TYPES)
+                )
             ),
             "unknown",
         ),
@@ -722,12 +728,15 @@ async def evaluate_test_results(
     logging.info(f"Actions: {results['actions']}")
     if "actions" in results and results["actions"]:
         for command in results["actions"]:
-            if command.type in MOVEMENT_ACTION_TYPES:
-                movement = command.type
-                break
-            elif command.type == "move":
-                movement = command.value
-                break
+            if hasattr(command, "type"):
+                if command.type in MOVEMENT_ACTION_TYPES:
+                    movement = command.type
+                    break
+                elif command.type == "move" and hasattr(command, "value"):
+                    # Check if the value is a valid movement action
+                    if command.value in MOVEMENT_ACTION_TYPES:
+                        movement = command.value
+                        break
 
     # Assign a default if still not found
     if not movement:
@@ -768,12 +777,14 @@ async def evaluate_test_results(
         actual_emotion = None
         if "actions" in results and results["actions"]:
             for command in results["actions"]:
-                if hasattr(command, "type") and command.type in EMOTION_TYPES:
-                    actual_emotion = command.type
-                    break
-                elif hasattr(command, "type") and command.type == "face":
-                    actual_emotion = command.value
-                    break
+                if hasattr(command, "type"):
+                    if command.type in EMOTION_TYPES:
+                        actual_emotion = command.type
+                        break
+                    elif command.type == "emotion" and hasattr(command, "value"):
+                        if command.value in EMOTION_TYPES:
+                            actual_emotion = command.value
+                            break
 
         # Assign a default if still not found
         if not actual_emotion:
@@ -831,12 +842,14 @@ async def evaluate_test_results(
         actual_emotion = "unknown"
         if "actions" in results and results["actions"]:
             for command in results["actions"]:
-                if hasattr(command, "type") and command.type in EMOTION_TYPES:
-                    actual_emotion = command.type
-                    break
-                elif hasattr(command, "type") and command.type == "face":
-                    actual_emotion = command.value
-                    break
+                if hasattr(command, "type"):
+                    if command.type in EMOTION_TYPES:
+                        actual_emotion = command.type
+                        break
+                    elif command.type == "emotion" and hasattr(command, "value"):
+                        if command.value in EMOTION_TYPES:
+                            actual_emotion = command.value
+                            break
         expected_emotions = normalize_expected_value(expected["emotion"])
         if len(expected_emotions) == 1:
             details.append(
