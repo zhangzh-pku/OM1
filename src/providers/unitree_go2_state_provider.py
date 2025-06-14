@@ -91,15 +91,18 @@ def unitree_go2_state_processor(
                 logging.error(f"Failed to get state from Unitree Go2: {state[0]}")
                 continue
 
+            parsed_state = {
+                key: json.loads(value)["data"] for key, value in state[1].items()
+            }
             data = UnitreeGo2State(
-                state=json.loads(state[1]["state"])["data"],
-                body_height=json.loads(state[1]["bodyHeight"])["data"],
-                foot_raise_height=json.loads(state[1]["footRaiseHeight"])["data"],
-                speed_level=json.loads(state[1]["speedLevel"])["data"],
-                gait=json.loads(state[1]["gait"])["data"],
-                dance=json.loads(state[1]["dance"])["data"],
-                economic_gait=json.loads(state[1]["economicGait"])["data"],
-                continuous_gait=json.loads(state[1]["continuousGait"])["data"],
+                state=parsed_state["state"],
+                body_height=parsed_state["bodyHeight"],
+                foot_raise_height=parsed_state["footRaiseHeight"],
+                speed_level=parsed_state["speedLevel"],
+                gait=parsed_state["gait"],
+                dance=parsed_state["dance"],
+                economic_gait=parsed_state["economicGait"],
+                continuous_gait=parsed_state["continuousGait"],
                 timestamp=time.time(),
             )
 
@@ -163,9 +166,12 @@ class UnitreeGo2StateProvider:
             )
             return
 
+        self.channel = channel
+        logging.info(f"Starting Unitree Go2 State Provider on channel: {channel}")
+
         self._state_processor_thread = mp.Process(
             target=unitree_go2_state_processor,
-            args=(channel, self.data_queue),
+            args=(self.channel, self.data_queue),
             daemon=True,
         )
         self._state_processor_thread.start()
