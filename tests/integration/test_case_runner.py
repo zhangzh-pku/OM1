@@ -597,9 +597,14 @@ async def evaluate_with_llm(
             (
                 cmd.type if cmd.type in MOVEMENT_ACTION_TYPES else cmd.value
                 for cmd in actual_output.get("actions", [])
-                if hasattr(cmd, "type") and (
-                    cmd.type in MOVEMENT_ACTION_TYPES or 
-                    (cmd.type == "move" and hasattr(cmd, "value") and cmd.value in MOVEMENT_ACTION_TYPES)
+                if hasattr(cmd, "type")
+                and (
+                    cmd.type in MOVEMENT_ACTION_TYPES
+                    or (
+                        cmd.type == "move"
+                        and hasattr(cmd, "value")
+                        and cmd.value in MOVEMENT_ACTION_TYPES
+                    )
                 )
             ),
             "unknown",
@@ -616,9 +621,14 @@ async def evaluate_with_llm(
             (
                 cmd.type if cmd.type in EMOTION_TYPES else cmd.value
                 for cmd in actual_output.get("actions", [])
-                if hasattr(cmd, "type") and (
-                    cmd.type in EMOTION_TYPES or 
-                    (cmd.type == "emotion" and hasattr(cmd, "value") and cmd.value in EMOTION_TYPES)
+                if hasattr(cmd, "type")
+                and (
+                    cmd.type in EMOTION_TYPES
+                    or (
+                        cmd.type == "emotion"
+                        and hasattr(cmd, "value")
+                        and cmd.value in EMOTION_TYPES
+                    )
                 )
             ),
             "unknown",
