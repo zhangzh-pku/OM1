@@ -105,9 +105,18 @@ def unitree_go2_state_processor(
 
             try:
                 data_queue.put(data, timeout=0.1)
-                logging.info("Unitree Go2 state data sent to queue")
             except Full:
-                pass
+                try:
+                    data_queue.get_nowait()
+                    data_queue.put_nowait(data)
+                except Empty:
+                    # This is used to fix the race condition where the queue is empty by another process
+                    try:
+                        data_queue.put(data, timeout=0.1)
+                    except Full:
+                        logging.warning(
+                            "Failed to update Unitree Go2 state queue - another process intervened"
+                        )
 
         except Exception as e:
             logging.error(f"Error retrieving Unitree Go2 state: {e}")
