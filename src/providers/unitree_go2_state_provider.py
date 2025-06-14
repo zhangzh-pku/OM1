@@ -103,12 +103,12 @@ def unitree_go2_state_processor(
                 timestamp=time.time(),
             )
 
-            data_queue.put_nowait(data)
-            logging.info("Unitree Go2 state data sent to queue")
+            try:
+                data_queue.put(data, timeout=0.1)
+                logging.info("Unitree Go2 state data sent to queue")
+            except Full:
+                pass
 
-        except Full:
-            data_queue.get_nowait()
-            data_queue.put_nowait(data)
         except Exception as e:
             logging.error(f"Error retrieving Unitree Go2 state: {e}")
 
