@@ -21,5 +21,6 @@ class UnitreeGo2State(Background):
                 "Unitree Go2 Ethernet channel must be specified in the configuration."
             )
 
-        self.unitree_go2_state_provider = UnitreeGo2StateProvider(unitree_ethernet)
+        self.unitree_go2_state_provider = UnitreeGo2StateProvider()
+        self.unitree_go2_state_provider.start(unitree_ethernet)
         logging.info("Unitree Go2 State Provider initialized in background")

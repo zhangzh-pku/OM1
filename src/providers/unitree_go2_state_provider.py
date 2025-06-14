@@ -133,22 +133,20 @@ class UnitreeGo2StateProvider:
         * Unitree Go2 state data using either Zenoh or CycloneDDS
     """
 
-    def __init__(self, channel: str):
+    def __init__(self):
         """
         Robot and sensor configuration
         """
         logging.info("Booting Unitree Go2 State Provider")
 
-        self.channel = channel
+        self.channel = None
 
         self.data_queue: mp.Queue[UnitreeGo2State] = mp.Queue(maxsize=1)
         self._state_processor_thread: Optional[mp.Process] = None
 
         self.go2_state: Optional[UnitreeGo2State] = None
 
-        self.start()
-
-    def start(self):
+    def start(self, channel: str) -> None:
         """
         Start the Unitree Go2 State Provider.
 
@@ -159,13 +157,15 @@ class UnitreeGo2StateProvider:
             logging.warning("Unitree Go2 State Provider is already running.")
             return
 
-        if not self.channel:
-            logging.error("Channel is not set for Unitree Go2 State Provider.")
+        if not channel:
+            logging.error(
+                "Channel must be specified to start the Unitree Go2 State Provider."
+            )
             return
 
         self._state_processor_thread = mp.Process(
             target=unitree_go2_state_processor,
-            args=(self.channel, self.data_queue),
+            args=(channel, self.data_queue),
             daemon=True,
         )
         self._state_processor_thread.start()

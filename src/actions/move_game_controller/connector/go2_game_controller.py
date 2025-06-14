@@ -75,14 +75,7 @@ class Go2GameControllerConnector(ActionConnector[IDLEInput]):
         self.turn_speed = 0.4
 
         self.odom = OdomProvider()
-        logging.info(f"Game controller Odom Provider: {self.odom}")
-
-        self.unitree_state_provider = UnitreeGo2StateProvider(
-            self.config.unitree_ethernet
-        )
-        logging.info(
-            f"Game controller Unitree State Provider: {self.unitree_state_provider}"
-        )
+        self.unitree_state_provider = UnitreeGo2StateProvider()
 
         self.thread_lock = threading.Lock()
 

@@ -31,8 +31,7 @@ class MoveUnitreeSDKConnector(ActionConnector[MoveInput]):
         self.gap_previous = 0
 
         self.lidar = RPLidarProvider()
-
-        self.unitree_go2_state = UnitreeGo2StateProvider(self.config.unitree_ethernet)
+        self.unitree_go2_state = UnitreeGo2StateProvider()
 
         # create sport client
         self.sport_client = None
