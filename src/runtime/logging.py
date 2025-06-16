@@ -92,7 +92,7 @@ def get_logging_config() -> LoggingConfig:
         The current logging configuration.
     """
     return LoggingConfig(
-        log_level=logging.getLogger().level,
+        log_level=logging.getLevelName(logging.getLogger().level),
         log_to_file=any(
             isinstance(handler, logging.FileHandler)
             for handler in logging.getLogger().handlers
