@@ -64,7 +64,7 @@ class RtkProvider:
         # Used whenever there is a connected
         # nav Arduino on serial
         try:
-            logging.info(f"RTK:{msg}")
+            logging.debug(f"RTK:{msg}")
 
             if msg.msgID == "GGA":
                 try:

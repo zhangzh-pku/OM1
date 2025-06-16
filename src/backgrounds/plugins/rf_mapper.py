@@ -54,7 +54,7 @@ class RFmapper(Background):
         self.ble_scan: List[RFDataRaw] = []
 
         self.rtk_time_utc = ""
-        self.rtk_date_utc = None
+        self.rtk_date_utc = ""
         self.rtk_lat = 0.0
         self.rtk_lon = 0.0
         self.rtk_alt = 0.0
