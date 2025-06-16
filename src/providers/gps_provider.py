@@ -50,6 +50,7 @@ class GpsProvider:
         self.lon = ""
         self.alt = 0.0
         self.sat = 0
+        self.qua = 0
         self.time_utc = ""
 
         self.yaw_mag_0_360 = 0.0
@@ -86,15 +87,15 @@ class GpsProvider:
             elif data.startswith("GPS:"):
                 try:
                     logging.info(f"{data}")
-                    parts   = data[4:].split(",")
-                    lat     = parts[0]
-                    lon     = parts[1]
+                    parts = data[4:].split(",")
+                    lat = parts[0]
+                    lon = parts[1]
                     heading = parts[3].split(":")[1]
-                    alt     = parts[4].split(":")[1]
-                    sat     = parts[5].split(":")[1]
-                    time    = parts[6][5:]
-                    qua     = 0
-                    if len(parts) > 6:
+                    alt = parts[4].split(":")[1]
+                    sat = parts[5].split(":")[1]
+                    time = parts[6][5:]
+                    qua = 0
+                    if len(parts) > 7:
                         qua = parts[7].split(":")[1]
                     self.lat = lat
                     self.lon = lon
@@ -102,12 +103,12 @@ class GpsProvider:
                     self.sat = int(sat)
                     self.time_utc = time
                     self.qua = qua
-                    logging.info(
+                    logging.debug(
                         (
                             f"Current location is {lat}, {lon} at {alt}m altitude. "
                             f"GPS Heading {heading}° with {sat} satellites locked. "
-                            f"The time, if available, is {self.time_utc}. "
-                            f"The fix quality is {self.qua}".
+                            f"The time is {self.time_utc}. "
+                            f"The fix quality is {self.qua}."
                         )
                     )
                 except Exception as e:

@@ -11,7 +11,7 @@
     {
       "type": "Gps",
       config: {
-        "serial_port": "/dev/cu.usbmodem84301"
+        "serial_port": "/dev/cu.usbmodem101"
       }
     }
   ],
