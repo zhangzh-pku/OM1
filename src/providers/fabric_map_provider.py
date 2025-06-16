@@ -108,6 +108,7 @@ class FabricData:
     gps_lat: str
     gps_lon: str
     gps_alt: float
+    gps_qua: int 
     rtk_time_utc: str
     rtk_lat: float
     rtk_lon: float
@@ -137,6 +138,7 @@ class FabricData:
             "gps_lat": self.gps_lat,
             "gps_lon": self.gps_lon,
             "gps_alt": self.gps_alt,
+            "gps_qua": self.gps_qua,
             "rtk_time_utc": self.rtk_time_utc,
             "rtk_lat": self.rtk_lat,
             "rtk_lon": self.rtk_lon,

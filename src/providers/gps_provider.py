@@ -95,8 +95,7 @@ class GpsProvider:
                     sat     = parts[5].split(":")[1]
                     time    = parts[6][5:]
                     qua     = 0
-                    logging.info(f"len({len(parts)})")
-                    if len(parts) > 6:
+                    if len(parts) > 7:
                         qua = parts[7].split(":")[1]
                     self.lat = lat
                     self.lon = lon
@@ -104,12 +103,12 @@ class GpsProvider:
                     self.sat = int(sat)
                     self.time_utc = time
                     self.qua = qua
-                    logging.info(
+                    logging.debug(
                         (
                             f"Current location is {lat}, {lon} at {alt}m altitude. "
                             f"GPS Heading {heading}° with {sat} satellites locked. "
-                            f"The time, if available, is {self.time_utc}. "
-                            f"The fix quality is {self.qua}".
+                            f"The time is {self.time_utc}. "
+                            f"The fix quality is {self.qua}."
                         )
                     )
                 except Exception as e:
