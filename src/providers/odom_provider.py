@@ -1,13 +1,21 @@
 import logging
 import math
+import multiprocessing as mp
+import threading
+import time
 from enum import Enum
 from typing import Optional, Union
 
 import zenoh
 
+from runtime.logging import LoggingConfig, get_logging_config, setup_logging
+
 try:
     # Needed for Unitree but not TurtleBot4
-    from unitree.unitree_sdk2py.core.channel import ChannelSubscriber
+    from unitree.unitree_sdk2py.core.channel import (
+        ChannelFactoryInitialize,
+        ChannelSubscriber,
+    )
     from unitree.unitree_sdk2py.idl.geometry_msgs.msg.dds_ import PoseStamped_
 except ImportError:
     logging.warning(
@@ -26,6 +34,82 @@ rad_to_deg = 57.2958
 class RobotState(Enum):
     STANDING = "standing"
     SITTING = "sitting"
+
+
+def odom_processor(
+    channel: str,
+    data_queue: mp.Queue,
+    URID: str = "",
+    use_zenoh: bool = False,
+    logging_config: Optional[LoggingConfig] = None,
+) -> None:
+    """
+    Process function for the Odom Provider.
+    This function runs in a separate process to periodically retrieve the odometry
+    and pose data from the robot and put it into a multiprocessing queue.
+
+    Parameters
+    ----------
+    channel : str
+        The channel to connect to the robot.
+    data_queue : mp.Queue
+        Queue for sending the retrieved odometry and pose data.
+    URID : str, optional
+        The URID needed to connect to the Zenoh publisher in the local network.
+        This is typically used for TurtleBot4.
+    use_zenoh : bool, optional
+        If True, get odom/pose data from Zenoh (typically used by TurtleBot4).
+        Otherwise, use CycloneDDS (e.g., for Unitree Go2).
+    logging_config : LoggingConfig, optional
+        Optional logging configuration. If provided, it will override the default logging settings.
+    """
+    setup_logging("odom_processor", logging_config=logging_config)
+
+    def zenoh_odom_handler(data: zenoh.Sample):
+        odom: Odometry = nav_msgs.Odometry.deserialize(data.payload.to_bytes())
+        logging.debug(f"Odom listener: {odom}")
+
+        p = odom.pose.pose
+        data_queue.put(p)
+
+    def pose_message_handler(data: PoseStamped_):
+        odom = data
+        logging.debug(f"Pose listener: {odom}")
+        p = odom.pose
+        data_queue.put(p)
+
+    if use_zenoh:
+        # typically, TurtleBot4
+        if URID is None:
+            logging.warning("Aborting TurtleBot4 Navigation system, no URID provided")
+            return None
+        else:
+            logging.info(f"TurtleBot4 Navigation system is using URID: {URID}")
+
+        try:
+            session = zenoh.open(zenoh.Config())
+            logging.info(f"Zenoh navigation provider opened {session}")
+            logging.info(f"TurtleBot4 navigation listeners starting with URID: {URID}")
+            session.declare_subscriber(f"{URID}/c3/odom", zenoh_odom_handler)
+        except Exception as e:
+            logging.error(f"Error opening Zenoh client: {e}")
+            return None
+
+    if not use_zenoh:
+        # we are using CycloneDDS e.g. for the Unitree Go2
+        try:
+            ChannelFactoryInitialize(0, channel)
+        except Exception as e:
+            logging.error(f"Error initializing  Unitree Go2 odom channel : {e}")
+            return
+
+        try:
+            pose_subscriber = ChannelSubscriber("rt/utlidar/robot_pose", PoseStamped_)
+            pose_subscriber.Init(pose_message_handler, 10)
+            logging.info("CycloneDDS pose subscriber initialized successfully")
+        except Exception as e:
+            logging.error(f"Error opening CycloneDDS client: {e}")
+            return None
 
 
 @singleton
@@ -54,37 +138,11 @@ class OdomProvider:
 
         self.use_zenoh = use_zenoh
         self.URID = URID
+        self.channel = None
 
-        if self.use_zenoh:
-            # typically, TurtleBot4
-            if URID is None:
-                logging.warning(
-                    "Aborting TurtleBot4 Navigation system, no URID provided"
-                )
-                return
-            else:
-                logging.info(f"TurtleBot4 Navigation system is using URID: {URID}")
-
-            try:
-                self.session = zenoh.open(zenoh.Config())
-                logging.info(f"Zenoh navigation provider opened {self.session}")
-                logging.info(
-                    f"TurtleBot4 navigation listeners starting with URID: {URID}"
-                )
-                self.session.declare_subscriber(
-                    f"{URID}/c3/odom", self.zenoh_odom_handler
-                )
-            except Exception as e:
-                logging.error(f"Error opening Zenoh client: {e}")
-        else:
-            # we are using CycloneDDS e.g. for the Unitree Go2
-            try:
-                self.pose_subscriber = ChannelSubscriber(
-                    "rt/utlidar/robot_pose", PoseStamped_
-                )
-                self.pose_subscriber.Init(self.pose_message_handler, 10)
-            except Exception as e:
-                logging.error(f"Error opening CycloneDDS client: {e}")
+        self.data_queue: mp.Queue[PoseWithCovariance] = mp.Queue()
+        self._odom_reader_thread: Optional[mp.Process] = None
+        self._odom_processor_thread: Optional[threading.Thread] = None
 
         self.body_height_cm = 0
         self.body_attitude: Optional[RobotState] = None
@@ -103,6 +161,49 @@ class OdomProvider:
 
         self.yaw_odom_0_360 = 0.0
         self.yaw_odom_m180_p180 = 0.0
+
+    def start(self, channel: str) -> None:
+        """
+        Start the Odom Provider.
+
+        Parameters
+        ----------
+        channel : str
+            The channel to connect to the robot.
+        """
+        if self._odom_reader_thread and self._odom_reader_thread.is_alive():
+            logging.warning("Odom Provider is already running.")
+            return
+        else:
+            if not channel and not self.use_zenoh:
+                logging.error("Channel must be specified to start the Odom Provider.")
+                return
+
+            self.channel = channel
+            logging.info(f"Starting Unitree Go2 Odom Provider on channel: {channel}")
+
+            self._odom_reader_thread = mp.Process(
+                target=odom_processor,
+                args=(
+                    self.channel,
+                    self.data_queue,
+                    self.URID,
+                    self.use_zenoh,
+                    get_logging_config(),
+                ),
+                daemon=True,
+            )
+            self._odom_reader_thread.start()
+
+        if self._odom_processor_thread and self._odom_processor_thread.is_alive():
+            logging.warning("Odom processor thread is already running.")
+            return
+        else:
+            logging.info("Starting Odom processor thread")
+            self._odom_processor_thread = threading.Thread(
+                target=self.process_odom, daemon=True
+            )
+            self._odom_processor_thread.start()
 
     def zenoh_odom_handler(self, data: zenoh.Sample):
         """
@@ -181,7 +282,7 @@ class OdomProvider:
 
         return roll_x, pitch_y, yaw_z  # in radians
 
-    def process_odom(self, pose: PoseWithCovariance):
+    def process_odom(self):
         """
         Process the odom data and update the internal state.
 
@@ -190,62 +291,65 @@ class OdomProvider:
         pose : PoseWithCovariance
             The pose data containing position and orientation.
         """
-        logging.debug(f"pose: {pose}")
+        while True:
+            try:
+                pose = self.data_queue.get()
+            except Exception as e:
+                logging.error(f"Error getting pose from queue: {e}")
+                time.sleep(1)
+                continue
 
-        x = pose.orientation.x
-        y = pose.orientation.y
-        z = pose.orientation.z
-        w = pose.orientation.w
+            self.body_height_cm = round(pose.position.z * 100.0)
 
-        dx = (pose.position.x - self.previous_x) ** 2
-        dy = (pose.position.y - self.previous_y) ** 2
-        dz = (pose.position.z - self.previous_z) ** 2
+            if self.channel and not self.use_zenoh:
+                # only relevant to Unitree Go2
+                if self.body_height_cm > 24:
+                    self.body_attitude = RobotState.STANDING
+                elif self.body_height_cm > 3:
+                    self.body_attitude = RobotState.SITTING
 
-        self.previous_x = pose.position.x
-        self.previous_y = pose.position.y
-        self.previous_z = pose.position.z
+            x = pose.orientation.x
+            y = pose.orientation.y
+            z = pose.orientation.z
+            w = pose.orientation.w
 
-        delta = math.sqrt(dx + dy + dz)
+            dx = (pose.position.x - self.previous_x) ** 2
+            dy = (pose.position.y - self.previous_y) ** 2
+            dz = (pose.position.z - self.previous_z) ** 2
 
-        # moving? Use a decay kernal
-        self.move_history = 0.7 * delta + 0.3 * self.move_history
+            self.previous_x = pose.position.x
+            self.previous_y = pose.position.y
+            self.previous_z = pose.position.z
 
-        if delta > 0.01 or self.move_history > 0.01:
-            self.moving = True
-            logging.info(
-                f"delta moving (m): {round(delta,3)} {round(self.move_history,3)}"
-            )
-        else:
-            # logging.info(
-            #     f"delta moving (m): {round(delta,3)} {round(self.move_history,3)}"
-            # )
-            self.moving = False
+            delta = math.sqrt(dx + dy + dz)
 
-        angles = self.euler_from_quaternion(x, y, z, w)
+            # moving? Use a decay kernal
+            self.move_history = 0.7 * delta + 0.3 * self.move_history
 
-        self.yaw_odom_m180_p180 = angles[2] * rad_to_deg * -1.0
-        # the * -1.0 changes the heading to sane convention
-        # turn right (CW) to INCREASE your heading
-        # runs from -180 to + 180, where 0 is the "nose" of the robot
+            if delta > 0.01 or self.move_history > 0.01:
+                self.moving = True
+                logging.info(
+                    f"delta moving (m): {round(delta,3)} {round(self.move_history,3)}"
+                )
+            else:
+                # logging.info(
+                #     f"delta moving (m): {round(delta,3)} {round(self.move_history,3)}"
+                # )
+                self.moving = False
 
-        # runs from 0 to 360
-        self.yaw_odom_0_360 = round(self.yaw_odom_m180_p180 + 180.0, 2)
+            angles = self.euler_from_quaternion(x, y, z, w)
 
-        # current position in world frame
-        self.x = round(pose.position.x, 2)
-        self.y = round(pose.position.y, 2)
+            self.yaw_odom_m180_p180 = angles[2] * rad_to_deg * -1.0
+            # the * -1.0 changes the heading to sane convention
+            # turn right (CW) to INCREASE your heading
+            # runs from -180 to + 180, where 0 is the "nose" of the robot
 
-    # this should all be handled via the "position" property
-    # @property
-    # def odom(self) -> Optional[Union[Odometry, PoseStamped_]]:
-    #     """
-    #     Get the current odometry data.
-    #     Returns
-    #     -------
-    #     Optional[Union[Odometry, PoseStamped_]]
-    #         The current odometry data if available, otherwise None.
-    #     """
-    #     return self._odom
+            # runs from 0 to 360
+            self.yaw_odom_0_360 = round(self.yaw_odom_m180_p180 + 180.0, 2)
+
+            # current position in world frame
+            self.x = round(pose.position.x, 2)
+            self.y = round(pose.position.y, 2)
 
     @property
     def position(self) -> dict:
