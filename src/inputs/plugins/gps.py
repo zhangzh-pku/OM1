@@ -88,7 +88,11 @@ class Gps(FuserInput[str]):
             lon = d["gps_lon"]
             alt = d["gps_alt"]
             sat = d["gps_sat"]
+            qua = d["gps_qua"]
             cardinal = d["yaw_mag_cardinal"]
+
+            logging.info(f"fix quality: {qua}")
+
             if sat > 0:
                 msg = f"Your current GPS location is {lat}, {lon} at {alt}m altitude. "
                 if cardinal:

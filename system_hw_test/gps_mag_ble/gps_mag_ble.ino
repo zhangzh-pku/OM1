@@ -497,7 +497,9 @@ void loop()
       Serial.print(":"); 
       Serial.print(GPS.seconds);
       Serial.print(":"); 
-      Serial.println(GPS.milliseconds);
+      Serial.print(GPS.milliseconds);
+      Serial.print(",FIX:"); 
+      Serial.println((int)GPS.fixquality);
     } else {
       Serial.print("SAT: Waiting for GPS fix. SAT_IN_VIEW:");
       Serial.println((int)GPS.satellites);
