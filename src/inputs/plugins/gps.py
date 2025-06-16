@@ -87,7 +87,6 @@ class Gps(FuserInput[str]):
             lat = d["gps_lat"]
             lon = d["gps_lon"]
             alt = d["gps_alt"]
-            sat = d["gps_sat"]
             qua = d["gps_qua"]
             cardinal = d["yaw_mag_cardinal"]
 
