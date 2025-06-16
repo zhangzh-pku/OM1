@@ -87,11 +87,7 @@ class RtkProvider:
             elif msg.msgID == "RMC":
                 try:
                     self.date_utc = msg.date.strftime("%Y-%m-%d")
-                    logging.debug(
-                        (
-                            f"The UTC date is {self.date_utc}."
-                        )
-                    )
+                    logging.debug((f"The UTC date is {self.date_utc}."))
                 except Exception as e:
                     logging.warning(f"Failed to parse RMC message: {msg} ({e})")
         except Exception as e:
