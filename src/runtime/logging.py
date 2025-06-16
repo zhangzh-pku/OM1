@@ -18,8 +18,6 @@ class LoggingConfig:
         Can be "DEBUG", "INFO", "WARNING", "ERROR", or "CRITICAL".
     log_to_file : bool
         If True, log messages will also be written to a file. Defaults to False.
-    log_config : LoggingConfig, optional
-        An optional LoggingConfig instance to use for logging configuration.
     """
 
     log_level: str = "INFO"
