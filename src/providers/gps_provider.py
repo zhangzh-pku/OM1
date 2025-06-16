@@ -50,6 +50,7 @@ class GpsProvider:
         self.lon = ""
         self.alt = 0.0
         self.sat = 0
+        self.qua = 0
         self.time_utc = ""
 
         self.yaw_mag_0_360 = 0.0
@@ -94,6 +95,7 @@ class GpsProvider:
                     sat     = parts[5].split(":")[1]
                     time    = parts[6][5:]
                     qua     = 0
+                    logging.info(f"len({len(parts)})")
                     if len(parts) > 6:
                         qua = parts[7].split(":")[1]
                     self.lat = lat
