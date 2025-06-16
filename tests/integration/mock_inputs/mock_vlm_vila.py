@@ -13,7 +13,9 @@ from inputs.base.loop import FuserInput
 from inputs.plugins.vlm_vila import Message, VLMVila
 from providers.io_provider import IOProvider
 from providers.vlm_vila_provider import VLMVilaProvider
-from tests.integration.mock_inputs.data_providers.mock_image_provider import get_next_opencv_image
+from tests.integration.mock_inputs.data_providers.mock_image_provider import (
+    get_next_opencv_image,
+)
 
 
 class MockVideoStream:
