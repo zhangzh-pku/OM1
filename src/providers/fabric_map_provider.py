@@ -108,7 +108,7 @@ class FabricData:
     gps_lat: str
     gps_lon: str
     gps_alt: float
-    gps_qua: int 
+    gps_qua: int
     rtk_time_utc: str
     rtk_lat: float
     rtk_lon: float
