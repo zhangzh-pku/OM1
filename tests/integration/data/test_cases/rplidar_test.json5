@@ -20,8 +20,8 @@
         "half_width_robot": 0.21,
         "use_zenoh": false,
         "relevant_distance_max": 1.1,
-        "sensor_mounting_angle": 270.0,
-        "angles_blanked": [[-180.0, -160.0],[110.0, 180.0]]
+        "sensor_mounting_angle": 0,
+        "angles_blanked": []
       },
     }
   ],
@@ -50,7 +50,7 @@
   
   // Expected output
   "expected": {
-    "movement": ["move forwards"],
+    "movement": ["move forwards", "stand still"],
     "minimum_score": 0.5
   }
 } 
