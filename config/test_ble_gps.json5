@@ -13,7 +13,13 @@
       config: {
         "serial_port": "/dev/cu.usbmodem101"
       }
-    }
+    },
+    {
+      "type": "Rtk",
+      config: {
+        "serial_port": "/dev/cu.usbmodem21201",
+      }
+    },
   ],
   "cortex_llm": {
     "type": "OpenAILLM",

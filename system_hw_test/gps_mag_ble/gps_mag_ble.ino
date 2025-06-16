@@ -490,7 +490,13 @@ void loop()
       Serial.print(GPS.altitude);
       Serial.print(",SAT:"); 
       Serial.print((int)GPS.satellites);
-      Serial.print(",TIME:"); 
+      Serial.print(",TIME:");
+      Serial.print(GPS.year);
+      Serial.print(":"); 
+      Serial.print(GPS.month);
+      Serial.print(":"); 
+      Serial.print(GPS.day);
+      Serial.print(":"); 
       Serial.print(GPS.hour);
       Serial.print(":"); 
       Serial.print(GPS.minute);
