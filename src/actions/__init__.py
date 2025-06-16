@@ -3,12 +3,7 @@ import typing as T
 from enum import Enum
 from typing import Optional
 
-from actions.base import (
-    ActionConfig,
-    ActionConnector,
-    AgentAction,
-    Interface,
-)
+from actions.base import ActionConfig, ActionConnector, AgentAction, Interface
 
 
 def describe_action(
