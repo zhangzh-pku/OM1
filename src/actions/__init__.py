@@ -6,7 +6,6 @@ from typing import Optional
 from actions.base import (
     ActionConfig,
     ActionConnector,
-    ActionImplementation,
     AgentAction,
     Interface,
 )
@@ -65,27 +64,13 @@ def load_action(
             interface = obj
     if interface is None:
         raise ValueError(f"No interface found for action {action_config['name']}")
-    if action_config["implementation"] == "passthrough":
-        implementation = importlib.import_module("actions.passthrough")
-    else:
-        implementation = importlib.import_module(
-            f"actions.{action_config['name']}.implementation.{action_config['implementation']}"
-        )
     connector = importlib.import_module(
         f"actions.{action_config['name']}.connector.{action_config['connector']}"
     )
-    implementation_class = None
     connector_class = None
-    for _, obj in implementation.__dict__.items():
-        if isinstance(obj, type) and issubclass(obj, ActionImplementation):
-            implementation_class = obj
     for _, obj in connector.__dict__.items():
         if isinstance(obj, type) and issubclass(obj, ActionConnector):
             connector_class = obj
-    if implementation_class is None:
-        raise ValueError(
-            f"No implementation found for action {action_config['name']} implementation {action_config['implementation']}"
-        )
     if connector_class is None:
         raise ValueError(
             f"No connector found for action {action_config['name']} connector {action_config['connector']}"
@@ -100,7 +85,6 @@ def load_action(
         name=action_config["name"],
         llm_label=action_config["llm_label"],
         interface=interface,
-        implementation=implementation_class(config),
         connector=connector_class(config),
         exclude_from_prompt=exclude_from_prompt,
     )
