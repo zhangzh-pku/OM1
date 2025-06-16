@@ -210,19 +210,8 @@ class RFmapper(Background):
 
                             if g["gps_time_utc"] != "":
                                 self.gps_time_utc = g["gps_time_utc"]
-
-                                lat = g["gps_lat"]
-                                if lat and lat[-1] == "N":
-                                    self.gps_lat = float(lat[:-1])
-                                else:
-                                    self.gps_lat = -1.0 * float(lat[:-1])
-
-                                lon = g["gps_lon"]
-                                if lon and lon[-1] == "E":
-                                    self.gps_lon = float(lon[:-1])
-                                else:
-                                    self.gps_lon = -1.0 * float(lon[:-1])
-
+                                self.lat = g["gps_lat"]
+                                self.lon = g["gps_lon"]
                                 self.gps_alt = g["gps_alt"]
                                 self.yaw_mag_0_360 = g["yaw_mag_0_360"]
                                 self.gps_qua = g["gps_qua"]
@@ -230,6 +219,9 @@ class RFmapper(Background):
                             if g["ble_scan"] is not None:
                                 self.ble_scan = g["ble_scan"]
                                 logging.debug(f"RF scan results {self.ble_scan}")
+                            else:
+                                logging.warn(f"No nRF52 scan results")
+
 
                     except Exception as e:
                         logging.error(f"Error parsing GPS: {e}")
