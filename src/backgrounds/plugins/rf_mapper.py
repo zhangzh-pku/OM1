@@ -17,6 +17,7 @@ from providers.gps_provider import GpsProvider
 from providers.odom_provider import OdomProvider
 from providers.rtk_provider import RtkProvider
 
+
 class RFmapper(Background):
     """
     Assemble location and BLE data.
@@ -34,12 +35,12 @@ class RFmapper(Background):
         super().__init__(config)
 
         logging.info(f"Mapper config: {config}")
-        
+
         self.name = getattr(config, "name", "RFmapper")
         self.api_key = getattr(config, "api_key", None)
         self.URID = getattr(config, "URID", None)
         self.unitree_ethernet = getattr(config, "unitree_ethernet", None)
-        
+
         self.loop = asyncio.new_event_loop()
         self.thread = threading.Thread(target=self._scan_task)
         self.running = False
