@@ -102,7 +102,7 @@ class GpsProvider:
                     self.alt = float(alt)
                     self.sat = int(sat)
                     self.time_utc = time
-                    self.qua = qua
+                    self.qua = int(qua)
                     logging.debug(
                         (
                             f"Current location is {lat}, {lon} at {alt}m altitude. "
