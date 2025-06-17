@@ -27,7 +27,7 @@ class UnitreeGo2State:
     This class holds the state data for the Unitree Go2 robot.
     """
 
-    state: str
+    state: str  # lieDown, damping, locomotion, balanceStand, jointLock
     body_height: float
     foot_raise_height: float
     speed_level: int
