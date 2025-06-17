@@ -64,12 +64,12 @@
       "connector": "go2_game_controller",
       "exclude_from_prompt": true
     },
-    {
-      "name": "move_go2_autonomy",
-      "llm_label": "move",
-      "implementation": "passthrough",
-      "connector": "unitree_sdk"
-    },
+    //{
+    //  "name": "move_go2_autonomy",
+    //  "llm_label": "move",
+    //  "implementation": "passthrough",
+    //  "connector": "unitree_sdk"
+    //},
     //{
     // "name": "speak",
     //  "llm_label": "speak",
