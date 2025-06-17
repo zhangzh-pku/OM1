@@ -129,6 +129,7 @@ def odom_processor(
     while True:
         time.sleep(0.1)
 
+
 @singleton
 class OdomProvider:
     """
@@ -196,7 +197,9 @@ class OdomProvider:
                 logging.error("Channel must be specified to start the Odom Provider.")
                 return
 
-            logging.info(f"Starting Unitree Go2 Odom Provider on channel: {self.channel}")
+            logging.info(
+                f"Starting Unitree Go2 Odom Provider on channel: {self.channel}"
+            )
 
             self._odom_reader_thread = mp.Process(
                 target=odom_processor,
