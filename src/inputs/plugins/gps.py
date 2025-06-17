@@ -88,7 +88,6 @@ class Gps(FuserInput[str]):
             lon = d["gps_lon"]
             alt = d["gps_alt"]
             qua = d["gps_qua"]
-            cardinal = d["yaw_mag_cardinal"]
 
             lat_string = "South"
             if lat > 0:

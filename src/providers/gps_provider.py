@@ -119,7 +119,7 @@ class GpsProvider:
 
                     # turn 25 into full year -> 2025
                     self.time_utc = "20" + time
-                    
+
                     logging.debug(
                         (
                             f"Current location is {self.lat}, {self.lon} at {alt}m altitude. "
