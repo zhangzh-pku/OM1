@@ -109,10 +109,17 @@ class GpsProvider:
                     else:
                         self.lon = float(lon.replace("E", ""))
 
-                    self.alt = float(alt)
+                    # round to 10 cm localisation in x,y, and 1 cm in z
+                    self.lon = round(self.lon, 6)
+                    self.lat = round(self.lat, 6)
+                    self.alt = round(float(alt), 2)
+
                     self.sat = int(sat)
-                    self.time_utc = time
                     self.qua = int(qua)
+
+                    # turn 25 into full year -> 2025
+                    self.time_utc = "20" + time
+                    
                     logging.debug(
                         (
                             f"Current location is {self.lat}, {self.lon} at {alt}m altitude. "

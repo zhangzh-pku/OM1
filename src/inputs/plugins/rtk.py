@@ -42,7 +42,7 @@ class Rtk(FuserInput[str]):
         self.rtk = RtkProvider(serial_port=port)
         self.io_provider = IOProvider()
         self.messages: list[Message] = []
-        self.descriptor_for_LLM = "Precision Location and Orientation"
+        self.descriptor_for_LLM = "Precision Location"
 
     async def _poll(self) -> Optional[dict]:
         """
@@ -103,7 +103,7 @@ class Rtk(FuserInput[str]):
                 lon *= -1.0
 
             if qua > 0:
-                msg = f"Your current GPS location is {lat} {lat_string}, {lon} {lon_string} at {alt}m altitude. "
+                msg = f"Your precise location is {lat} {lat_string}, {lon} {lon_string} at {alt}m altitude. "
                 return Message(timestamp=time.time(), message=msg)
             else:
                 return None
