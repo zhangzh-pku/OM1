@@ -13,13 +13,18 @@ from PIL import Image
 
 from runtime.config import build_runtime_config_from_test_case
 from runtime.cortex import CortexRuntime
+from tests.integration.mock_inputs.data_providers.mock_image_provider import (
+    get_image_provider,
+    load_test_images,
+)
+from tests.integration.mock_inputs.data_providers.mock_lidar_scan_provider import (
+    clear_lidar_provider,
+    get_lidar_provider,
+    load_test_scans_from_files,
+)
 from tests.integration.mock_inputs.input_registry import (
     register_mock_inputs,
     unregister_mock_inputs,
-)
-from tests.integration.mock_inputs.mock_image_provider import (
-    get_image_provider,
-    load_test_images,
 )
 
 # Register mock inputs with the input loading system
@@ -34,7 +39,7 @@ TEST_CASES_DIR = DATA_DIR / "test_cases"
 _llm_client = None
 
 # Movement types that should be considered movement commands
-MOVEMENT_ACTION_TYPES = {
+VLM_MOVE_TYPES = {
     "stand still",
     "sit",
     "dance",
@@ -45,6 +50,8 @@ MOVEMENT_ACTION_TYPES = {
     "jump",
     "wag tail",
 }
+
+LIDAR_MOVE_TYPES = {"turn left", "turn right", "move forwards", "stand still"}
 
 EMOTION_TYPES = {"cry", "smile", "frown", "think", "joy"}
 
@@ -182,18 +189,31 @@ async def run_test_case(config: Dict[str, Any]) -> Dict[str, Any]:
     Dict[str, Any]
         Test results
     """
-    # Load test images
-    images = load_test_images_from_config(config)
-    if not images:
-        raise ValueError("No valid test images found in configuration")
+    # Check what types of inputs are configured
+    inputs = config.get("input", {})
+    has_image_inputs = "images" in inputs
+    has_lidar_inputs = "lidar" in inputs
 
-    logging.info(f"Loaded {len(images)} test images for test case")
+    # Load image data only if the test case uses image-based inputs
+    if has_image_inputs:
+        # Load test images
+        images = load_test_images_from_config(config)
+        if not images:
+            raise ValueError(
+                "No valid test images found in configuration for image-based inputs"
+            )
 
-    # Load test images into the central mock provider
-    load_test_images(images)
-    logging.info(
-        f"Images loaded into mock provider, provider now has {len(get_image_provider().test_images)} images"
-    )
+        logging.info(f"Loaded {len(images)} test images for test case")
+
+        # Load test images into the central mock provider
+        load_test_images(images)
+        logging.info(
+            f"Images loaded into mock provider, provider now has {len(get_image_provider().test_images)} images"
+        )
+
+    # Load lidar data if the test case uses RPLidar inputs
+    if has_lidar_inputs:
+        await load_test_lidar_data(config)
 
     # No need to modify config - the input_registry will handle mapping
     # the real input types to their mock equivalents
@@ -243,6 +263,11 @@ async def run_test_case(config: Dict[str, Any]) -> Dict[str, Any]:
     # This step is needed because we're not starting the full runtime
     await initialize_mock_inputs(cortex.config.agent_inputs)
 
+    # Set cortex runtime reference for MockRPLidar cleanup
+    for input_obj in cortex.config.agent_inputs:
+        if hasattr(input_obj, "set_cortex_runtime"):
+            input_obj.set_cortex_runtime(cortex)
+
     # Run a single tick of the cortex loop
     await cortex._tick()
 
@@ -251,6 +276,32 @@ async def run_test_case(config: Dict[str, Any]) -> Dict[str, Any]:
 
     # The output includes detection results and commands
     return output_results
+
+
+async def load_test_lidar_data(config: Dict[str, Any]):
+    """
+    Load test lidar data specified in the configuration.
+
+    Parameters
+    ----------
+    config : Dict[str, Any]
+        Test case configuration containing lidar data paths
+    """
+    lidar_files = config.get("input", {}).get("lidar", [])
+    if not lidar_files:
+        logging.info("No lidar data files specified in test configuration")
+        return
+
+    base_dir = TEST_CASES_DIR
+
+    # Clear any existing lidar data
+    clear_lidar_provider()
+
+    # Load the lidar data using the mock lidar provider
+    load_test_scans_from_files(lidar_files, base_dir)
+
+    lidar_provider = get_lidar_provider()
+    logging.info(f"Loaded {lidar_provider.scan_count} lidar scans for test case")
 
 
 async def initialize_mock_inputs(inputs):
@@ -302,30 +353,35 @@ async def cleanup_mock_inputs(inputs):
     inputs : List
         List of input objects from the runtime config
     """
-    for input_obj in inputs:
+    logging.info(f"cleanup_mock_inputs: Starting cleanup of {len(inputs)} inputs")
+
+    for i, input_obj in enumerate(inputs):
+        input_name = type(input_obj).__name__
+
         try:
-            # Try async stop method first
-            if hasattr(input_obj, "stop") and asyncio.iscoroutinefunction(
+            # Try MockRPLidar's comprehensive async cleanup first
+            if hasattr(input_obj, "async_cleanup"):
+                await input_obj.async_cleanup()
+            # Try async stop method
+            elif hasattr(input_obj, "stop") and asyncio.iscoroutinefunction(
                 input_obj.stop
             ):
                 await input_obj.stop()
-                logging.info(
-                    f"Cleaned up mock input (async): {type(input_obj).__name__}"
-                )
             # Try synchronous cleanup method
             elif hasattr(input_obj, "cleanup"):
                 input_obj.cleanup()
-                logging.info(
-                    f"Cleaned up mock input (sync): {type(input_obj).__name__}"
-                )
             # Try synchronous stop method
             elif hasattr(input_obj, "stop"):
                 input_obj.stop()
-                logging.info(
-                    f"Cleaned up mock input (stop): {type(input_obj).__name__}"
+            else:
+                logging.warning(
+                    f"cleanup_mock_inputs: No cleanup method found for {input_name}"
                 )
+
         except Exception as e:
-            logging.error(f"Error cleaning up {type(input_obj).__name__}: {e}")
+            logging.error(f"cleanup_mock_inputs: Error cleaning up {input_name}: {e}")
+
+    logging.info("cleanup_mock_inputs: Finished cleaning up all inputs")
 
 
 def _build_llm_evaluation_prompts(
@@ -538,7 +594,10 @@ def _build_llm_evaluation_prompts(
 
 
 async def evaluate_with_llm(
-    actual_output: Dict[str, Any], expected_output: Dict[str, Any], api_key: str
+    actual_output: Dict[str, Any],
+    expected_output: Dict[str, Any],
+    api_key: str,
+    config: Dict[str, Any] = None,
 ) -> Tuple[float, str]:
     """
     Evaluate test results using LLM-based comparison.
@@ -551,6 +610,8 @@ async def evaluate_with_llm(
         Expected output defined in test configuration
     api_key : str
         API key for the LLM evaluation
+    config : Dict[str, Any], optional
+        Test case configuration for context-aware evaluation
 
     Returns
     -------
@@ -591,23 +652,24 @@ async def evaluate_with_llm(
     if not has_movement and not has_keywords and not has_emotion:
         return 1.0, "No specific evaluation criteria specified - test passes by default"
 
+    # Get appropriate movement types for this test case
+    movement_types = get_movement_types_for_config(config) if config else VLM_MOVE_TYPES
+
+    # Log which movement types are being used for debugging
+    input_type = "unknown"
+    if config:
+        input_section = config.get("input", {})
+        if "lidar" in input_section:
+            input_type = "LIDAR"
+        elif "images" in input_section:
+            input_type = "VLM/Image"
+
+    logging.info(f"Using {input_type} movement types: {movement_types}")
+
     # Format actual and expected results for evaluation
     formatted_actual = {
-        "movement": next(
-            (
-                cmd.type if cmd.type in MOVEMENT_ACTION_TYPES else cmd.value
-                for cmd in actual_output.get("actions", [])
-                if hasattr(cmd, "type")
-                and (
-                    cmd.type in MOVEMENT_ACTION_TYPES
-                    or (
-                        cmd.type == "move"
-                        and hasattr(cmd, "value")
-                        and cmd.value in MOVEMENT_ACTION_TYPES
-                    )
-                )
-            ),
-            "unknown",
+        "movement": extract_movement_from_actions(
+            actual_output.get("actions", []), movement_types
         ),
         "keywords_found": [
             kw
@@ -688,7 +750,10 @@ async def evaluate_with_llm(
 
 
 async def evaluate_test_results(
-    results: Dict[str, Any], expected: Dict[str, Any], api_key: str
+    results: Dict[str, Any],
+    expected: Dict[str, Any],
+    api_key: str,
+    config: Dict[str, Any] = None,
 ) -> Tuple[bool, float, str]:
     """
     Evaluate test results against expected output using both heuristic and LLM-based evaluation.
@@ -701,6 +766,8 @@ async def evaluate_test_results(
         Expected outputs defined in the test configuration
     api_key : str
         API key for the LLM evaluation
+    config : Dict[str, Any], optional
+        Test case configuration for context-aware evaluation
 
     Returns
     -------
@@ -724,6 +791,22 @@ async def evaluate_test_results(
             "No specific evaluation criteria specified - test passes by default",
         )
 
+    # Get appropriate movement types for this test case
+    movement_types = get_movement_types_for_config(config) if config else VLM_MOVE_TYPES
+
+    # Log which movement types are being used for debugging
+    input_type = "unknown"
+    if config:
+        input_section = config.get("input", {})
+        if "lidar" in input_section:
+            input_type = "LIDAR"
+        elif "images" in input_section:
+            input_type = "VLM/Image"
+
+    logging.info(
+        f"Heuristic evaluation using {input_type} movement types: {movement_types}"
+    )
+
     # Normalize expected values to always be lists for consistent handling
     def normalize_expected_value(value):
         if value is None:
@@ -733,24 +816,8 @@ async def evaluate_test_results(
         else:
             return [value]
 
-    # Extract movement from commands if available
-    movement = None
-    logging.info(f"Actions: {results['actions']}")
-    if "actions" in results and results["actions"]:
-        for command in results["actions"]:
-            if hasattr(command, "type"):
-                if command.type in MOVEMENT_ACTION_TYPES:
-                    movement = command.type
-                    break
-                elif command.type == "move" and hasattr(command, "value"):
-                    # Check if the value is a valid movement action
-                    if command.value in MOVEMENT_ACTION_TYPES:
-                        movement = command.value
-                        break
-
-    # Assign a default if still not found
-    if not movement:
-        movement = "unknown"
+    # Extract movement from commands using context-aware movement types
+    movement = extract_movement_from_actions(results.get("actions", []), movement_types)
 
     # Perform heuristic evaluation with adaptive scoring
     heuristic_score = 0.0
@@ -823,8 +890,10 @@ async def evaluate_test_results(
         if has_emotion:
             heuristic_score += component_weight if emotion_match else 0.0
 
-    # Get LLM-based evaluation
-    llm_score, llm_reasoning = await evaluate_with_llm(results, expected, api_key)
+    # Get LLM-based evaluation with config context
+    llm_score, llm_reasoning = await evaluate_with_llm(
+        results, expected, api_key, config
+    )
 
     # Combine scores (equal weighting)
     final_score = (heuristic_score + llm_score) / 2.0
@@ -1009,11 +1078,15 @@ async def test_from_config(test_case_path: Path):
     test_case_path : Path
         Path to the test case configuration file
     """
-    # Reset mock image provider to ensure test isolation
-    provider = get_image_provider()
-    provider.reset()
+    # Reset mock providers to ensure test isolation
+    image_provider = get_image_provider()
+    image_provider.reset()
     # Clear any existing images to ensure clean state
-    provider.test_images = []
+    image_provider.test_images = []
+
+    # Reset lidar data as well
+    lidar_provider = get_lidar_provider()
+    lidar_provider.clear()
 
     # Add a small delay to reduce race conditions between parallel tests
     await asyncio.sleep(0.1)
@@ -1028,16 +1101,22 @@ async def test_from_config(test_case_path: Path):
             f"Running test case: {config['name']} ({config.get('category', 'uncategorized')})"
         )
         logging.info(f"Description: {config['description']}")
-        logging.info(
-            f"Expected images for test: {len(config.get('input', {}).get('images', []))}"
-        )
+
+        # Log expected inputs based on type
+        input_section = config.get("input", {})
+        if "images" in input_section:
+            logging.info(f"Expected images for test: {len(input_section['images'])}")
+        if "lidar" in input_section:
+            logging.info(
+                f"Expected lidar files for test: {len(input_section['lidar'])}"
+            )
 
         # Run the test case
         results = await run_test_case(config)
 
         # Evaluate results
         passed, score, message = await evaluate_test_results(
-            results, config["expected"], config["api_key"]
+            results, config["expected"], config["api_key"], config
         )
 
         # Log detailed results
@@ -1048,8 +1127,16 @@ async def test_from_config(test_case_path: Path):
             passed
         ), f"Test case failed: {config['name']} (Score: {score:.2f})\n{message}"
 
+        logging.info(f"test_from_config: Test {config['name']} completed successfully")
+
     except Exception as e:
         logging.error(f"Error running test case {test_case_path}: {e}")
+        # Even on error, try to clean up
+        try:
+            # Cleanup is now handled by MockRPLidar's async_cleanup method
+            pass
+        except Exception as cleanup_error:
+            logging.error(f"Error during cleanup after exception: {cleanup_error}")
         raise
 
 
@@ -1083,3 +1170,58 @@ async def test_specific_case():
 def pytest_sessionfinish(session, exitstatus):
     """Clean up after all tests have run."""
     unregister_mock_inputs()
+
+
+def get_movement_types_for_config(config: Dict[str, Any]) -> set:
+    """
+    Determine which movement types to use based on the test configuration input types.
+
+    Parameters
+    ----------
+    config : Dict[str, Any]
+        Test case configuration
+
+    Returns
+    -------
+    set
+        The appropriate movement types set for this test case
+    """
+    input_section = config.get("input", {})
+
+    # Check if this is a LIDAR-based test
+    if "lidar" in input_section:
+        return LIDAR_MOVE_TYPES
+
+    # Check if this is an image/VLM-based test
+    if "images" in input_section:
+        return VLM_MOVE_TYPES
+
+    # Default to VLM types if unclear
+    return VLM_MOVE_TYPES
+
+
+def extract_movement_from_actions(actions: List, movement_types: set) -> str:
+    """
+    Extract movement command from actions using the appropriate movement types.
+
+    Parameters
+    ----------
+    actions : List
+        List of action commands
+    movement_types : set
+        Set of valid movement types for this test case
+
+    Returns
+    -------
+    str
+        The extracted movement command or "unknown"
+    """
+    for command in actions:
+        if hasattr(command, "type"):
+            if command.type in movement_types:
+                return command.type
+            elif command.type == "move" and hasattr(command, "value"):
+                if command.value in movement_types:
+                    return command.value
+
+    return "unknown"
