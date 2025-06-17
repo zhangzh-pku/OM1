@@ -101,7 +101,7 @@ class Rtk(FuserInput[str]):
                 lon_string = "East"
             else:
                 lon *= -1.0
-                
+
             if qua > 0:
                 msg = f"Your current GPS location is {lat} {lat_string}, {lon} {lon_string} at {alt}m altitude. "
                 return Message(timestamp=time.time(), message=msg)

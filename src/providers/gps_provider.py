@@ -98,7 +98,7 @@ class GpsProvider:
                     qua = 0
                     if len(parts) > 7:
                         qua = parts[7].split(":")[1]
-                    
+
                     if "N" in lat:
                         self.lat = float(lat.replace("N", ""))
                     else:
