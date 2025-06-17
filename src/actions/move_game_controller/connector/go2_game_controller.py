@@ -239,6 +239,9 @@ class Go2GameControllerConnector(ActionConnector[IDLEInput]):
             logging.info("self.sport_client.Move blocked - dog is sitting")
             return
 
+        if self.unitree_state_provider.state == "jointLock":
+            self.sport_client.BalanceStand()
+
         try:
             logging.info(f"self.sport_client.Move: vx={vx}, vy={vy}, vturn={vturn}")
             self.sport_client.Move(vx, vy, vturn)
