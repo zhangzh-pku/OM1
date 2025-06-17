@@ -30,7 +30,7 @@ class GpsProvider:
         Robot and sensor configuration
         """
 
-        logging.info("Booting GPS Provider")
+        logging.info(f"GPS_Provider booting GPS Provider at serial: {serial_port}")
 
         baudrate = 115200
         timeout = 1

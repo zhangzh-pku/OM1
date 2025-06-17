@@ -17,13 +17,12 @@ from providers.gps_provider import GpsProvider
 from providers.odom_provider import OdomProvider
 from providers.rtk_provider import RtkProvider
 
-
 class RFmapper(Background):
     """
     Assemble location and BLE data.
     """
 
-    def __init__(self, config: BackgroundConfig):
+    def __init__(self, config: BackgroundConfig = BackgroundConfig()):
         """
         Initialize the RFmapper with configuration.
 
@@ -33,10 +32,14 @@ class RFmapper(Background):
             Configuration object for the background.
         """
         super().__init__(config)
+
+        logging.info(f"Mapper config: {config}")
+        
         self.name = getattr(config, "name", "RFmapper")
         self.api_key = getattr(config, "api_key", None)
         self.URID = getattr(config, "URID", None)
         self.unitree_ethernet = getattr(config, "unitree_ethernet", None)
+        
         self.loop = asyncio.new_event_loop()
         self.thread = threading.Thread(target=self._scan_task)
         self.running = False
@@ -68,7 +71,7 @@ class RFmapper(Background):
         self.rtk_on = self.rtk.running
         logging.info(f"Mapper Rtk Provider: {self.rtk}")
 
-        self.odom = OdomProvider(channel=self.unitree_ethernet)
+        self.odom = OdomProvider()
         logging.info(f"Mapper Odom Provider: {self.odom}")
 
         self.fds = FabricDataSubmitter(api_key=self.api_key, write_to_local_file=True)

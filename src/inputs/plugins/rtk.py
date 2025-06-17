@@ -36,10 +36,7 @@ class Rtk(FuserInput[str]):
     def __init__(self, config: SensorConfig = SensorConfig()):
         super().__init__(config)
 
-        port = getattr(config, "serial_port", None)
-        logging.info(f"RTK Provider: {port}")
-
-        self.rtk = RtkProvider(serial_port=port)
+        self.rtk = RtkProvider()
         self.io_provider = IOProvider()
         self.messages: list[Message] = []
         self.descriptor_for_LLM = "Precision Location"
