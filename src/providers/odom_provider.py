@@ -66,16 +66,31 @@ def odom_processor(
     setup_logging("odom_processor", logging_config=logging_config)
 
     def zenoh_odom_handler(data: zenoh.Sample):
+        """
+        Zenoh handler for odometry data.
+
+        Parameters
+        ----------
+        data : zenoh.Sample
+            The Zenoh sample containing the odometry data.
+        """
         odom: Odometry = nav_msgs.Odometry.deserialize(data.payload.to_bytes())
-        logging.debug(f"Odom listener: {odom}")
+        logging.debug(f"Zenoh odom handler: {odom}")
 
         p = odom.pose.pose
         data_queue.put(p)
 
     def pose_message_handler(data: PoseStamped_):
-        odom = data
-        logging.debug(f"Pose listener: {odom}")
-        p = odom.pose
+        """
+        Handler for pose messages from CycloneDDS.
+
+        Parameters
+        ----------
+        data : PoseStamped_
+            The PoseStamped message containing the pose data.
+        """
+        logging.debug(f"Pose message handler: {data}")
+        p = data.pose
         data_queue.put(p)
 
     if use_zenoh:
@@ -111,6 +126,8 @@ def odom_processor(
             logging.error(f"Error opening CycloneDDS client: {e}")
             return None
 
+    while True:
+        time.sleep(0.1)
 
 @singleton
 class OdomProvider:
@@ -127,9 +144,12 @@ class OdomProvider:
     use_zenoh: bool = False
         If true, get odom/pose data from Zenoh - typically used by TurtleBot4
         Otherwise, use CycloneDDS
+    channel: str = ""
+        The channel to connect to the robot, used for CycloneDDS (e.g., Unitree Go2).
+        If not specified, it will raise an error when starting the provider.
     """
 
-    def __init__(self, URID: str = "", use_zenoh: bool = False):
+    def __init__(self, URID: str = "", use_zenoh: bool = False, channel: str = ""):
         """
         Robot and sensor configuration
         """
@@ -138,7 +158,7 @@ class OdomProvider:
 
         self.use_zenoh = use_zenoh
         self.URID = URID
-        self.channel = None
+        self.channel = channel
 
         self.data_queue: mp.Queue[PoseWithCovariance] = mp.Queue()
         self._odom_reader_thread: Optional[mp.Process] = None
@@ -162,25 +182,21 @@ class OdomProvider:
         self.yaw_odom_0_360 = 0.0
         self.yaw_odom_m180_p180 = 0.0
 
-    def start(self, channel: str) -> None:
+        self.start()
+
+    def start(self) -> None:
         """
         Start the Odom Provider.
-
-        Parameters
-        ----------
-        channel : str
-            The channel to connect to the robot.
         """
         if self._odom_reader_thread and self._odom_reader_thread.is_alive():
             logging.warning("Odom Provider is already running.")
             return
         else:
-            if not channel and not self.use_zenoh:
+            if not self.channel and not self.use_zenoh:
                 logging.error("Channel must be specified to start the Odom Provider.")
                 return
 
-            self.channel = channel
-            logging.info(f"Starting Unitree Go2 Odom Provider on channel: {channel}")
+            logging.info(f"Starting Unitree Go2 Odom Provider on channel: {self.channel}")
 
             self._odom_reader_thread = mp.Process(
                 target=odom_processor,

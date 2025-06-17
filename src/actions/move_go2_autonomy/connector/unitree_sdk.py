@@ -45,7 +45,8 @@ class MoveUnitreeSDKConnector(ActionConnector[MoveInput]):
         except Exception as e:
             logging.error(f"Error initializing Unitree sport client: {e}")
 
-        self.odom = OdomProvider()
+        unitree_ethernet = getattr(config, "unitree_ethernet", None)
+        self.odom = OdomProvider(channel=unitree_ethernet)
         logging.info(f"Autonomy Odom Provider: {self.odom}")
 
     async def connect(self, output_interface: MoveInput) -> None:
