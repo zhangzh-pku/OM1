@@ -22,31 +22,28 @@
     {
       "name": "move",
       "llm_label": "move",
-      "implementation": "passthrough",
       "connector": "ros2"
     },
     {
       "name": "speak",
       "llm_label": "speak",
-      "implementation": "passthrough",
       "connector": "ros2"
     },
     {
       "name": "face",
       "llm_label": "emotion",
-      "implementation": "passthrough",
       "connector": "ros2"
     }
   ],
   "api_key": "openmind_free",
 
-  
+
   // Input data
   // vila takes 5 images to trigger processing
   "input": {
     "images": ["../images/indoor_2.jpg","../images/indoor_2.jpg","../images/indoor_2.jpg","../images/indoor_2.jpg","../images/indoor_2.jpg"]
   },
-  
+
   // Expected output
   "expected": {
     "movement": ["sit", "wag tail"],
@@ -54,4 +51,4 @@
     "emotion": ["joy", "smile", "think"],
     "minimum_score": 0.5
   }
-} 
+}
