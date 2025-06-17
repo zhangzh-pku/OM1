@@ -63,7 +63,7 @@ def unitree_go2_state_processor(
     try:
         ChannelFactoryInitialize(0, channel)
     except Exception as e:
-        logging.error(f"Error initializing Unitree Go2 channel: {e}")
+        logging.error(f"Error initializing Unitree Go2 state channel: {e}")
         return
 
     try:

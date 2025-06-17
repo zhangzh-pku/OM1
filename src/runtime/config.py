@@ -242,6 +242,14 @@ def build_runtime_config_from_test_case(config: dict) -> RuntimeConfig:
     g_ut_eth = config.get("unitree_ethernet")
     g_URID = config.get("URID")
 
+    backgrounds = [
+        load_background(bg["type"])(
+            config=BackgroundConfig(
+                **add_meta(bg.get("config", {}), api_key, g_ut_eth, g_URID)
+            )
+        )
+        for bg in config.get("backgrounds", [])
+    ]
     agent_inputs = [
         load_input(inp["type"])(
             config=SensorConfig(
@@ -275,14 +283,6 @@ def build_runtime_config_from_test_case(config: dict) -> RuntimeConfig:
             }
         )
         for action in config.get("agent_actions", [])
-    ]
-    backgrounds = [
-        load_background(bg["type"])(
-            config=BackgroundConfig(
-                **add_meta(bg.get("config", {}), api_key, g_ut_eth, g_URID)
-            )
-        )
-        for bg in config.get("backgrounds", [])
     ]
     return RuntimeConfig(
         hertz=config.get("hertz", 1),

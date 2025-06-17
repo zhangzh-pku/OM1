@@ -36,6 +36,7 @@ class RFmapper(Background):
         self.name = getattr(config, "name", "RFmapper")
         self.api_key = getattr(config, "api_key", None)
         self.URID = getattr(config, "URID", None)
+        self.unitree_ethernet = getattr(config, "unitree_ethernet", None)
         self.loop = asyncio.new_event_loop()
         self.thread = threading.Thread(target=self._scan_task)
         self.running = False
@@ -68,7 +69,7 @@ class RFmapper(Background):
         self.rtk_on = self.rtk.running
         logging.info(f"Mapper Rtk Provider: {self.rtk}")
 
-        self.odom = OdomProvider()
+        self.odom = OdomProvider(channel=self.unitree_ethernet)
         logging.info(f"Mapper Odom Provider: {self.odom}")
 
         self.fds = FabricDataSubmitter(api_key=self.api_key, write_to_local_file=True)
