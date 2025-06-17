@@ -48,8 +48,10 @@ class RPLidar(FuserInput[str]):
         # Buffer for storing messages
         self.message_buffer: Queue[str] = Queue()
 
-        # Initialize RPLidar Provider
+        # Build lidar configuration from config
         lidar_config = self._extract_lidar_config(config)
+
+        # Initialize RPLidar Provider
         self.lidar: RPLidarProvider = RPLidarProvider(**lidar_config)
         self.lidar.start()
 
