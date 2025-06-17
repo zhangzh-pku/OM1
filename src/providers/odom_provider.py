@@ -205,44 +205,6 @@ class OdomProvider:
             )
             self._odom_processor_thread.start()
 
-    def zenoh_odom_handler(self, data: zenoh.Sample):
-        """
-        Zenoh odom handler.
-
-        Parameters
-        ----------
-        data : zenoh.Sample
-            The data received from the Zenoh subscriber.
-        """
-        self._odom: Odometry = nav_msgs.Odometry.deserialize(data.payload.to_bytes())
-        logging.debug(f"Odom listener: {self._odom}")
-
-        p = self._odom.pose.pose
-        self.process_odom(p)
-
-    def pose_message_handler(self, msg: PoseStamped_):
-        """
-        Unitree pose message handler.
-
-        Parameters
-        ----------
-        msg : PoseStamped_
-            The message containing the pose data.
-        """
-        self._odom = msg
-        logging.debug(f"Pose listener: {self._odom}")
-
-        p = self._odom.pose
-        self.body_height_cm = round(p.position.z * 100.0)
-
-        # only relevant to dog
-        if self.body_height_cm > 24:
-            self.body_attitude = RobotState.STANDING
-        elif self.body_height_cm > 3:
-            self.body_attitude = RobotState.SITTING
-
-        self.process_odom(p)
-
     def euler_from_quaternion(self, x: float, y: float, z: float, w: float) -> tuple:
         """
         https://automaticaddison.com/how-to-convert-a-quaternion-into-euler-angles-in-python/
@@ -299,10 +261,9 @@ class OdomProvider:
                 time.sleep(1)
                 continue
 
-            self.body_height_cm = round(pose.position.z * 100.0)
-
             if self.channel and not self.use_zenoh:
                 # only relevant to Unitree Go2
+                self.body_height_cm = round(pose.position.z * 100.0)
                 if self.body_height_cm > 24:
                     self.body_attitude = RobotState.STANDING
                 elif self.body_height_cm > 3:
