@@ -168,9 +168,14 @@ class Go2GameControllerConnector(ActionConnector[IDLEInput]):
 
             if self.unitree_state_provider.state == "jointLock":
                 self.sport_client.BalanceStand()
+                self.sport_client.Move(0.05, 0, 0)
 
             code = getattr(self.sport_client, command)()
             logging.info(f"Unitree command {command} executed with code {code}")
+
+            if self.unitree_state_provider.state == "jointLock":
+                self.sport_client.BalanceStand()
+                self.sport_client.Move(0.05, 0, 0)
 
         except Exception as e:
             logging.error(f"Error in command thread {command}: {e}")
@@ -241,6 +246,7 @@ class Go2GameControllerConnector(ActionConnector[IDLEInput]):
 
         if self.unitree_state_provider.state == "jointLock":
             self.sport_client.BalanceStand()
+            self.sport_client.Move(0.05, 0, 0)
 
         try:
             logging.info(f"self.sport_client.Move: vx={vx}, vy={vy}, vturn={vturn}")
