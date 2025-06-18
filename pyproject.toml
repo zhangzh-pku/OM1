@@ -58,6 +58,7 @@ dev = [
     "pre-commit>=4.1.0",
     "pytest>=8.3.4",
     "pytest-asyncio>=0.25.2",
+    "pytest-timeout>=2.3.1",
     "ruff>=0.9.3",
 ]
 
@@ -65,7 +66,7 @@ dev = [
 pythonpath = ["src"]
 asyncio_mode = "auto"
 addopts = "-m \"not integration\""
-timeout = 600
+timeout = 300
 timeout_method = "thread"
 norecursedirs = ["src/unitree", "system_hw_test", "gazebo"]
 markers = [
