@@ -65,6 +65,8 @@ dev = [
 pythonpath = ["src"]
 asyncio_mode = "auto"
 addopts = "-m \"not integration\""
+timeout = 600
+timeout_method = "thread"
 norecursedirs = ["src/unitree", "system_hw_test", "gazebo"]
 markers = [
     "integration: marks tests as integration tests",
