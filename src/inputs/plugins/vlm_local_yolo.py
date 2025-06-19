@@ -4,19 +4,36 @@ import logging
 import time
 from dataclasses import dataclass
 from typing import Optional
+import datetime
+from ultralytics import YOLO
 
 import cv2
+import json
 import numpy as np
-import torch
-from PIL import Image
-from torchvision.models import detection as detection_model
+# import torch
+# from PIL import Image
+# from torchvision.models import detection as detection_model
 
 from inputs.base import SensorConfig
 from inputs.base.loop import FuserInput
 from providers.io_provider import IOProvider
 
-Detection = collections.namedtuple("Detection", "label, bbox, score")
+# Detection = collections.namedtuple("Detection", "label, bbox, score")
 
+
+
+
+
+# Common resolutions to test (width, height), ordered high to low
+RESOLUTIONS = [
+    (3840, 2160),  # 4K
+    (2560, 1440),  # QHD
+    (1920, 1080),  # Full HD
+    (1280, 720),   # HD
+    (1024, 576),
+    (800, 600),
+    (640, 480)     # VGA fallback
+]
 
 @dataclass
 class Message:
@@ -34,28 +51,42 @@ class Message:
     timestamp: float
     message: str
 
+def set_best_resolution(cap, resolutions):
+    for width, height in resolutions:
+        cap.set(cv2.CAP_PROP_FRAME_WIDTH, width)
+        cap.set(cv2.CAP_PROP_FRAME_HEIGHT, height)
+
+        # Give it a moment to settle
+        time.sleep(0.1)
+
+        actual_width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
+        actual_height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
+
+        if actual_width == width and actual_height == height:
+            logging.info(f"✅ Resolution set to: {width}x{height}")
+            return width, height
+
+    logging.info("⚠️ Could not set preferred resolution. Using default.")
+    return int(cap.get(cv2.CAP_PROP_FRAME_WIDTH)), int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
 
 # if working on Mac, please disable continuity camera on your iphone
-# Settings > General > AirPlay & Continuity, and tunr off Continuity
-
-
+# Settings > General > AirPlay & Continuity, and turn off Continuity
 def check_webcam(index_to_check):
     """
     Checks if a webcam is available and returns True if found, False otherwise.
     """
-    cap = cv2.VideoCapture(index_to_check)  # 0 is the default camera index
+    cap = cv2.VideoCapture(index_to_check)
     if not cap.isOpened():
-        logging.info(f"ERROR: COCO did not find cam: {index_to_check}")
-        return False
-    logging.info(f"COCO found cam: {index_to_check}")
-    return True
+        logging.error(f"YOLO did not find cam: {index_to_check}")
+        return 0,0
+    
+    # Set the best available resolution
+    width, height = set_best_resolution(cap, RESOLUTIONS)
+    logging.info(f"YOLO found cam: {index_to_check} set to {width}{height}")
+    return width, height
 
-
-class VLM_Local_YOLO(FuserInput[Image.Image]):
+class VLM_Local_YOLO(FuserInput[str]):
     """
-    Detects COCO objects in image and publishes messages.
-    Uses PyTorch and FasterRCNN_MobileNet model from torchvision.
-    Bounding Boxes use image convention, ie center.y = 0 means top of image.
     """
 
     def __init__(self, config: SensorConfig = SensorConfig()):
@@ -64,8 +95,8 @@ class VLM_Local_YOLO(FuserInput[Image.Image]):
         """
         super().__init__(config)
 
-        self.device = "cpu"
-        self.detection_threshold = 0.2
+        # self.device = "cpu"
+        # self.detection_threshold = 0.2
 
         self.camera_index = 0  # default to default webcam unless specified otherwsie
         if self.config.camera_index:
@@ -78,34 +109,53 @@ class VLM_Local_YOLO(FuserInput[Image.Image]):
         self.messages: list[Message] = []
 
         # Simple description of sensor output to help LLM understand its importance and utility
-        self.descriptor_for_LLM = "Object Detector"
+        self.descriptor_for_LLM = "YOLO Object Detector"
 
-        # Low resolution Faster R-CNN model with a MobileNetV3-Large backbone tuned for mobile use cases.
-        self.model = detection_model.fasterrcnn_mobilenet_v3_large_320_fpn(
-            weights="FasterRCNN_MobileNet_V3_Large_320_FPN_Weights.COCO_V1",
-            progress=True,
-            weights_backbone="MobileNet_V3_Large_Weights.IMAGENET1K_V1",
-        ).to(self.device)
-        self.class_labels = (
-            detection_model.FasterRCNN_MobileNet_V3_Large_320_FPN_Weights.DEFAULT.meta[
-                "categories"
-            ]
-        )
-        self.model.eval()
-        logging.info("COCO Object Detector Started")
+        # Load model
+        self.model = YOLO("yolov8n.pt")
 
-        self.have_cam = check_webcam(self.camera_index)
+        # Create timestamped log filename
+        self.start_time = datetime.datetime.now(datetime.UTC)
+        self.log_filename = f"detections_log_{self.start_time.isoformat(timespec='seconds').replace(':', '-')}Z.jsonl"
+        self.log_file = open(self.log_filename, "a")
+        logging.info(f"YOLO Logging to {self.log_filename}")
+
+        self.width, self.height = check_webcam(self.camera_index)
+
+        self.have_cam = False
+
+        if self.width > 0:
+            self.have_cam = True
+
+        self.frame_index = 0
 
         # Start capturing video, if we have a webcam
         self.cap = None
         if self.have_cam:
             self.cap = cv2.VideoCapture(self.camera_index)
-            self.width = int(self.cap.get(3))  # float `width`
-            self.height = int(self.cap.get(4))  # float `height`
+            self.cap.set(cv2.CAP_PROP_FRAME_WIDTH, self.width)
+            self.cap.set(cv2.CAP_PROP_FRAME_HEIGHT, self.height)
             self.cam_third = int(self.width / 3)
             logging.info(
-                f"Webcam pixel dimensions for COCO: {self.width}, {self.height}"
+                f"Webcam pixel dimensions for YOLO: {self.width}, {self.height}"
             )
+
+    def get_top_detection(self, detections):
+        """
+        Returns the class label and bbox of the detection with the highest confidence.
+
+        Parameters:
+            detections (list): List of detection dictionaries, each with 'class', 'confidence', 'bbox'.
+
+        Returns:
+            tuple: (label, bbox) of the top detection, or (None, None) if list is empty.
+        """
+        if not detections:
+            return None, None
+
+        top = max(detections, key=lambda d: d['confidence'])
+        return top['class'], top['bbox']
+
 
     async def _poll(self) -> np.ndarray:
         """
@@ -119,23 +169,20 @@ class VLM_Local_YOLO(FuserInput[Image.Image]):
         np.ndarray
             Generated or captured image as a numpy array
         """
-        await asyncio.sleep(0.5)
-
-        # Capture a frame every 500 ms
-        # logging.info(f"VLM_COCO_Local poll")
+        await asyncio.sleep(0.3)
 
         if self.have_cam:
             ret, frame = self.cap.read()
-            # logging.info(f"VLM_COCO_Local frame: {frame}")
+            #logging.debug(f"VLM_YOLO_Local frame: {frame}")
             return frame
 
-    async def _raw_to_text(self, raw_input: Optional[np.ndarray]) -> Optional[Message]:
+    async def _raw_to_text(self, frame: Optional[np.ndarray]) -> Optional[Message]:
         """
         Process raw image input to generate text description.
 
         Parameters
         ----------
-        raw_input : np.ndarray
+        frame : np.ndarray
             Input numpy array image to process
 
         Returns
@@ -144,67 +191,57 @@ class VLM_Local_YOLO(FuserInput[Image.Image]):
             Timestamped message containing description
         """
 
-        filtered_detections = None
-
-        if raw_input is not None:
-            image = raw_input.copy().transpose((2, 0, 1))
-
-            batch_image = np.expand_dims(image, axis=0)
-            tensor_image = torch.tensor(
-                batch_image / 255.0, dtype=torch.float, device=self.device
-            )
-            mobilenet_detections = self.model(tensor_image)[
-                0
-            ]  # pylint: disable=E1102 disable not callable warning
-
-            # logging.info(f"VLM_COCO_Local detections: {mobilenet_detections}")
-            filtered_detections = [
-                Detection(label_id, box, score)
-                for label_id, box, score in zip(
-                    mobilenet_detections["labels"],
-                    mobilenet_detections["boxes"],
-                    mobilenet_detections["scores"],
-                )
-                if score >= self.detection_threshold
-            ]
-            logging.debug(f"COCO filtered_detections {filtered_detections}")
+        self.frame_index += 1
 
         sentence = None
+        timestamp = time.time()
+        datetime_str = datetime.datetime.fromtimestamp(timestamp, datetime.UTC).isoformat()
 
-        if filtered_detections and len(filtered_detections) > 0:
+        results = self.model.predict(source=frame, save=False, stream=True, verbose=False)
 
-            pred_boxes = torch.stack(
-                [detection.bbox for detection in filtered_detections]
-            )
-            pred_scores = torch.stack(
-                [detection.score for detection in filtered_detections]
-            )
-            pred_labels = [
-                self.class_labels[detection.label] for detection in filtered_detections
-            ]
-            logging.debug(f"COCO labels {pred_labels} scores {pred_scores}")
+        detections = []
+        for r in results:
+            for box in r.boxes:
+                x1, y1, x2, y2 = map(float, box.xyxy[0])
+                cls = int(box.cls[0])
+                conf = float(box.conf[0])
+                label = self.model.names[cls]
 
-            # we have a least one detection, and that will have the highest score
-            thing = pred_labels[0]
-            x1 = pred_boxes[0, 0]
-            x2 = pred_boxes[0, 2]
+                detections.append({
+                    "class": label,
+                    "confidence": round(conf, 4),
+                    "bbox": [round(x1), round(y1), round(x2), round(y2)]
+                })
+
+        # Print to terminal
+        logging.debug(f"\nFrame {self.frame_index} @ {datetime_str} — {len(detections)} objects:")
+
+        # Write to log
+        json_line = json.dumps({
+            "frame": self.frame_index,
+            "timestamp": timestamp,
+            "datetime": datetime_str,
+            "detections": detections
+        })
+        self.log_file.write(json_line + "\n")
+        self.log_file.flush()
+
+        for det in detections:
+            logging.debug(f"  {det['class']} ({det['confidence']:.2f}) -> {det['bbox']}")
+
+        if detections:
+            thing, bbox = self.get_top_detection(detections)
+            x1 = bbox[0]
+            x2 = bbox[2]
             center_x = (x1 + x2) / 2  # center of the bbox
 
             direction = "in front of you"
-            # so if the width is 1920, then the left third runs between 0 and 639
-            # middle is 640 - 1279
-            # right is > 1280
             if center_x < self.cam_third:
                 direction = "on your left"
             elif center_x > 2 * self.cam_third:
                 direction = "on your right"
 
             sentence = f"You see a {thing} {direction}."
-
-            # add at most one more object
-            if len(pred_labels) > 1:
-                other_thing = pred_labels[1]
-                sentence = sentence + f" You also see a {other_thing}."
 
         if sentence is not None:
             return Message(timestamp=time.time(), message=sentence)
@@ -240,14 +277,12 @@ class VLM_Local_YOLO(FuserInput[Image.Image]):
 
         latest_message = self.messages[-1]
 
-        logging.info(f"VLM_COCO_Local: {latest_message.message}")
+        logging.info(f"VLM_YOLO_Local: {latest_message.message}")
 
-        result = f"""
-INPUT: {self.descriptor_for_LLM} 
-// START
-{latest_message.message}
-// END
-"""
+        result = (
+            f"\nINPUT: {self.descriptor_for_LLM}\n// START\n"
+            f"{latest_message.message}\n// END\n"
+        )
 
         self.io_provider.add_input(
             self.descriptor_for_LLM, latest_message.message, latest_message.timestamp

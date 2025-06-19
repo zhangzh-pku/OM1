@@ -7,10 +7,40 @@ from ultralytics import YOLO
 # Load model
 model = YOLO("yolov8n.pt")
 
+# Common resolutions to test (width, height), ordered high to low
+RESOLUTIONS = [
+    (3840, 2160),  # 4K
+    (2560, 1440),  # QHD
+    (1920, 1080),  # Full HD
+    (1280, 720),   # HD
+    (1024, 576),
+    (800, 600),
+    (640, 480)     # VGA fallback
+]
+
+def set_best_resolution(cap, resolutions):
+    for width, height in resolutions:
+        cap.set(cv2.CAP_PROP_FRAME_WIDTH, width)
+        cap.set(cv2.CAP_PROP_FRAME_HEIGHT, height)
+
+        # Give it a moment to settle
+        time.sleep(0.1)
+
+        actual_width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
+        actual_height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
+
+        if actual_width == width and actual_height == height:
+            print(f"✅ Resolution set to: {width}x{height}")
+            return width, height
+
+    print("⚠️ Could not set preferred resolution. Using default.")
+    return int(cap.get(cv2.CAP_PROP_FRAME_WIDTH)), int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
+
 # Open webcam
 cap = cv2.VideoCapture(0)
-cap.set(cv2.CAP_PROP_FRAME_WIDTH, 640)
-cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 480)
+
+# Set the best available resolution
+best_width, best_height = set_best_resolution(cap, RESOLUTIONS)
 
 # Create timestamped log filename
 start_time = datetime.datetime.now(datetime.UTC)
