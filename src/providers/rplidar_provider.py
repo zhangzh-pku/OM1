@@ -36,8 +36,7 @@ class RPLidarConfig:
 
     max_buf_meas: int = 0
     min_len: int = 5
-    max_distance_mm: int = 1500
-
+    max_distance_mm: int = 5000
 
 def rplidar_processor(
     data_queue: mp.Queue,
@@ -334,7 +333,7 @@ class RPLidarProvider:
             if d_m > self.relevant_distance_max:
                 continue
 
-            # don't worry about distant objects
+            # don't worry about too close objects
             if d_m < self.relevant_distance_min:
                 continue
 
@@ -348,21 +347,11 @@ class RPLidarProvider:
             # convert the angle from [0 to 360] to [-180 to +180] range
             angle = angle - 180.0
 
-            reflection = False
             for b in self.angles_blanked:
                 if angle >= b[0] and angle <= b[1]:
                     # this is a permanent robot reflection
                     # disregard
-                    reflection = True
-                    break
-
-            if d_m < self.relevant_distance_min:
-                # this is a permanent robot reflection
-                # disregard
-                reflection = True
-
-            if reflection:
-                continue
+                    continue
 
             # Convert angle to radians for trigonometric calculations
             # Note: angle is adjusted to [0, 360] range
