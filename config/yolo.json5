@@ -9,7 +9,8 @@
     {
       "type": "VLM_Local_YOLO",
       "config": {
-        "camera_index": 0
+        "camera_index": 0,
+        "log_file": true
       }
     }
   ],

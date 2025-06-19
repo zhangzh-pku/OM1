@@ -3,6 +3,7 @@ import math
 import multiprocessing as mp
 import threading
 import time
+import datetime
 from dataclasses import dataclass
 from queue import Empty, Full
 from typing import Dict, List, Optional
@@ -165,6 +166,7 @@ class RPLidarProvider:
         rplidar_config: RPLidarConfig = RPLidarConfig(
             max_buf_meas=0, min_len=5, max_distance_mm=1500
         ),
+        log_file: bool = False,
     ):
         """
         Robot and sensor configuration
@@ -182,6 +184,7 @@ class RPLidarProvider:
         self.use_zenoh = use_zenoh
         self.simple_paths = simple_paths
         self.rplidar_config = rplidar_config
+        self.log_file = log_file
 
         self.running: bool = False
         self.lidar = None
@@ -194,6 +197,18 @@ class RPLidarProvider:
 
         self.angles = None
         self.angles_final = None
+
+        self.start_time = None
+        self.log_filename = None
+        self.log_file_opened = None
+
+        # Create timestamped log filename
+        if self.log_file:            
+            self.start_time = datetime.datetime.now(datetime.UTC)
+            self.log_filename = f"dump/lidar_{self.start_time.isoformat(timespec='seconds').replace(':', '-')}Z.jsonl"
+            self.log_file_opened = open(self.log_filename, "a")
+            logging.info(f"LIDAR Logging to {self.log_filename}")
+
 
         # Initialize paths for path planning
         # Define 9 straight line paths separated by 15 degrees
@@ -369,6 +384,11 @@ class RPLidarProvider:
             complexes.append([x, y, angle, d_m])
 
         array = np.array(complexes)
+
+        if self.log_file and self.log_file_opened:
+            timestamp = time.strftime("%Y-%m-%d %H:%M:%S")
+            self.log_file_opened.write(f"{timestamp} - {array.tolist()}\n")
+            self.log_file_opened.flush()
 
         # logging.info(f"final: {array.ndim}")
 

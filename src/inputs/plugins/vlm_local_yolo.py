@@ -85,12 +85,15 @@ class VLM_Local_YOLO(FuserInput[str]):
         """
         super().__init__(config)
 
-        # self.device = "cpu"
-        # self.detection_threshold = 0.2
-
         self.camera_index = 0  # default to default webcam unless specified otherwsie
         if self.config.camera_index:
             self.camera_index = self.config.camera_index
+
+        self.log_file = False
+        self.log_file_opened = None
+        
+        if self.config.log_file:
+            self.log_file = self.config.log_file
 
         # Track IO
         self.io_provider = IOProvider()
@@ -105,10 +108,11 @@ class VLM_Local_YOLO(FuserInput[str]):
         self.model = YOLO("yolov8n.pt")
 
         # Create timestamped log filename
-        self.start_time = datetime.datetime.now(datetime.UTC)
-        self.log_filename = f"detections_log_{self.start_time.isoformat(timespec='seconds').replace(':', '-')}Z.jsonl"
-        self.log_file = open(self.log_filename, "a")
-        logging.info(f"YOLO Logging to {self.log_filename}")
+        if self.log_file:            
+            start_time = datetime.datetime.now(datetime.UTC)
+            log_filename = f"dump/yolo_{start_time.isoformat(timespec='seconds').replace(':', '-')}Z.jsonl"
+            self.log_file_opened = open(log_filename, "a")
+            logging.info(f"YOLO Logging to {log_filename}")
 
         self.width, self.height = check_webcam(self.camera_index)
 
@@ -206,15 +210,15 @@ class VLM_Local_YOLO(FuserInput[str]):
         # Print to terminal
         logging.debug(f"\nFrame {self.frame_index} @ {datetime_str} — {len(detections)} objects:")
 
-        # Write to log
-        json_line = json.dumps({
-            "frame": self.frame_index,
-            "timestamp": timestamp,
-            "datetime": datetime_str,
-            "detections": detections
-        })
-        self.log_file.write(json_line + "\n")
-        self.log_file.flush()
+        if self.log_file and self.log_file_opened:
+            json_line = json.dumps({
+                "frame": self.frame_index,
+                "timestamp": timestamp,
+                "datetime": datetime_str,
+                "detections": detections
+            })
+            self.log_file_opened.write(json_line + "\n")
+            self.log_file_opened.flush()
 
         for det in detections:
             logging.debug(f"  {det['class']} ({det['confidence']:.2f}) -> {det['bbox']}")

@@ -183,7 +183,7 @@ class FabricDataSubmitter:
         self.api_key = api_key
         self.base_url = base_url
         self.write_to_local_file = write_to_local_file
-        self.filename_base = "fabric"
+        self.filename_base = "dump/fabric"
         self.filename_current = self.update_filename()
         self.max_file_size_bytes = 1024 * 1024
         self.executor = ThreadPoolExecutor(max_workers=1)
