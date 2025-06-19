@@ -6,23 +6,13 @@ from dataclasses import dataclass
 from typing import Optional
 import datetime
 from ultralytics import YOLO
-
 import cv2
 import json
 import numpy as np
-# import torch
-# from PIL import Image
-# from torchvision.models import detection as detection_model
 
 from inputs.base import SensorConfig
 from inputs.base.loop import FuserInput
 from providers.io_provider import IOProvider
-
-# Detection = collections.namedtuple("Detection", "label, bbox, score")
-
-
-
-
 
 # Common resolutions to test (width, height), ordered high to low
 RESOLUTIONS = [
