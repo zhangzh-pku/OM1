@@ -1,9 +1,9 @@
+import datetime
 import logging
 import math
 import multiprocessing as mp
 import threading
 import time
-import datetime
 from dataclasses import dataclass
 from queue import Empty, Full
 from typing import Dict, List, Optional
@@ -38,6 +38,7 @@ class RPLidarConfig:
     max_buf_meas: int = 0
     min_len: int = 5
     max_distance_mm: int = 5000
+
 
 def rplidar_processor(
     data_queue: mp.Queue,
@@ -203,12 +204,11 @@ class RPLidarProvider:
         self.log_file_opened = None
 
         # Create timestamped log filename
-        if self.log_file:            
+        if self.log_file:
             self.start_time = datetime.datetime.now(datetime.UTC)
             self.log_filename = f"dump/lidar_{self.start_time.isoformat(timespec='seconds').replace(':', '-')}Z.jsonl"
             self.log_file_opened = open(self.log_filename, "a")
             logging.info(f"LIDAR Logging to {self.log_filename}")
-
 
         # Initialize paths for path planning
         # Define 9 straight line paths separated by 15 degrees

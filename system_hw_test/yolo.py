@@ -1,7 +1,8 @@
-import cv2
+import datetime
 import json
 import time
-import datetime
+
+import cv2
 from ultralytics import YOLO
 
 # Load model
@@ -12,11 +13,12 @@ RESOLUTIONS = [
     (3840, 2160),  # 4K
     (2560, 1440),  # QHD
     (1920, 1080),  # Full HD
-    (1280, 720),   # HD
+    (1280, 720),  # HD
     (1024, 576),
     (800, 600),
-    (640, 480)     # VGA fallback
+    (640, 480),  # VGA fallback
 ]
+
 
 def set_best_resolution(cap, resolutions):
     for width, height in resolutions:
@@ -34,7 +36,10 @@ def set_best_resolution(cap, resolutions):
             return width, height
 
     print("⚠️ Could not set preferred resolution. Using default.")
-    return int(cap.get(cv2.CAP_PROP_FRAME_WIDTH)), int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
+    return int(cap.get(cv2.CAP_PROP_FRAME_WIDTH)), int(
+        cap.get(cv2.CAP_PROP_FRAME_HEIGHT)
+    )
+
 
 # Open webcam
 cap = cv2.VideoCapture(0)
@@ -69,15 +74,24 @@ while cap.isOpened():
             conf = float(box.conf[0])
             label = model.names[cls]
 
-            detections.append({
-                "class": label,
-                "confidence": round(conf, 4),
-                "bbox": [round(x1), round(y1), round(x2), round(y2)]
-            })
+            detections.append(
+                {
+                    "class": label,
+                    "confidence": round(conf, 4),
+                    "bbox": [round(x1), round(y1), round(x2), round(y2)],
+                }
+            )
 
             cv2.rectangle(frame, (int(x1), int(y1)), (int(x2), int(y2)), (0, 255, 0), 2)
-            cv2.putText(frame, f"{label} {conf:.2f}", (int(x1), int(y1) - 10),
-                        cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 1)
+            cv2.putText(
+                frame,
+                f"{label} {conf:.2f}",
+                (int(x1), int(y1) - 10),
+                cv2.FONT_HERSHEY_SIMPLEX,
+                0.5,
+                (0, 255, 0),
+                1,
+            )
 
     # Print to terminal
     print(f"\nFrame {frame_index} @ {datetime_str} — {len(detections)} objects:")
@@ -85,19 +99,21 @@ while cap.isOpened():
         print(f"  {det['class']} ({det['confidence']:.2f}) -> {det['bbox']}")
 
     # Write to log
-    json_line = json.dumps({
-        "frame": frame_index,
-        "timestamp": timestamp,
-        "datetime": datetime_str,
-        "detections": detections
-    })
+    json_line = json.dumps(
+        {
+            "frame": frame_index,
+            "timestamp": timestamp,
+            "datetime": datetime_str,
+            "detections": detections,
+        }
+    )
     log_file.write(json_line + "\n")
     log_file.flush()
 
     frame_index += 1
     cv2.imshow("YOLOv8n Object Detection", frame)
 
-    if cv2.waitKey(1) & 0xFF == ord('q'):
+    if cv2.waitKey(1) & 0xFF == ord("q"):
         break
 
 # Cleanup
@@ -105,5 +121,3 @@ log_file.close()
 cap.release()
 cv2.destroyAllWindows()
 print(f"\nDetection logging complete. Log saved to: {log_filename}")
-
-
