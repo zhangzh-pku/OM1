@@ -339,10 +339,20 @@ class RPLidarProvider:
             with angles and distances.
         """
         complexes = []
+        raw = []
 
         for angle, distance in data:
 
             d_m = distance
+
+            # first, correctly orient the sensor zero to the robot zero
+            angle = angle + self.sensor_mounting_angle
+            if angle >= 360.0:
+                angle = angle - 360.0
+            elif angle < 0.0:
+                angle = 360.0 + angle
+
+            raw.append([angle, d_m])    
 
             # don't worry about distant objects
             if d_m > self.relevant_distance_max:
@@ -351,13 +361,6 @@ class RPLidarProvider:
             # don't worry about too close objects
             if d_m < self.relevant_distance_min:
                 continue
-
-            # first, correctly orient the sensor zero to the robot zero
-            angle = angle + self.sensor_mounting_angle
-            if angle >= 360.0:
-                angle = angle - 360.0
-            elif angle < 0.0:
-                angle = 360.0 + angle
 
             # convert the angle from [0 to 360] to [-180 to +180] range
             angle = angle - 180.0
@@ -384,10 +387,11 @@ class RPLidarProvider:
             complexes.append([x, y, angle, d_m])
 
         array = np.array(complexes)
-
+        raw_array = np.array(raw)
+        
         if self.log_file and self.log_file_opened:
             timestamp = time.strftime("%Y-%m-%d %H:%M:%S")
-            self.log_file_opened.write(f"{timestamp} - {array.tolist()}\n")
+            self.log_file_opened.write(f"{timestamp} - {raw_array.tolist()}\n")
             self.log_file_opened.flush()
 
         # logging.info(f"final: {array.ndim}")
