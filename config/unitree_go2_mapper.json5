@@ -18,9 +18,9 @@
         "log_file": true
       }
     },
-    //{
-    //  "type": "UnitreeGo2Battery"
-    //},
+    {
+      "type": "UnitreeGo2Battery"
+    },
     //{
     //  "type": "GoogleASRInput"
     //},
@@ -30,9 +30,9 @@
     //{
     //  "type": "Rtk",
     //},
-    //{
-    //  "type": "Odom",
-    //},
+    {
+      "type": "Odom",
+    },
     //{
     //  "type": "RPLidar",
     //}
@@ -78,13 +78,13 @@
     //    "serial_port": "/dev/cu.usbmodem21201",
     //  }
     //},
-    //{
-    //  "type": "Odom",
-    //    "config": {
-    //      "use_zenoh": false,
-    //      "URID": "", // only needed for Zenoh
-    //    }
-    //},
+    {
+      "type": "Odom",
+        "config": {
+          "use_zenoh": false,
+          "URID": "", // only needed for Zenoh
+        }
+    },
     //{
     //  "type": "RPLidar",
     //  "config": {
@@ -100,8 +100,8 @@
     {
       "type": "RFmapper",
     },
-    //{
-    //  "type": "UnitreeGo2State",
-    //}
+    {
+      "type": "UnitreeGo2State",
+    }
   ]
 }
