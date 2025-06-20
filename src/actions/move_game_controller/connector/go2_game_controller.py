@@ -254,9 +254,9 @@ class Go2GameControllerConnector(ActionConnector[IDLEInput]):
 
         # Attempt reconnection if no gamepad is currently attached
         if self.gamepad is None and hid is not None:
-            logging.warning(f"Controller disconnected - will try to reconnect")
+            logging.warning("Controller disconnected - will try to reconnect")
             self._init_controller()
-        
+
         if self.gamepad:
             try:
                 # try to read USB data, and if there is nothing, timeout
@@ -278,16 +278,16 @@ class Go2GameControllerConnector(ActionConnector[IDLEInput]):
                 self.button_value = data[14]
             elif self.sony_dualsense or self.sony_edge:
                 logging.debug(f"Gamepad data Sony: {data}")
-                
+
                 multi = 0
-                
+
                 if len(data) > 10:
-                    logging.debug(f"Gamepad data Sony length > 10")
+                    logging.debug("Gamepad data Sony length > 10")
                     self.lt_value = data[5]  # Left Trigger
                     self.rt_value = data[6]  # Right Trigger
                     multi = data[8]
                 elif len(data) == 10:
-                    logging.debug(f"Gamepad data Sony length == 10")
+                    logging.debug("Gamepad data Sony length == 10")
                     self.lt_value = data[8]  # Left Trigger
                     self.rt_value = data[9]  # Right Trigger
                     multi = data[5]
@@ -325,8 +325,8 @@ class Go2GameControllerConnector(ActionConnector[IDLEInput]):
 
             # Trigger values range from 0 to 255
             # Check if the triggers have changed significantly
-            rt_changed = abs(self.rt_value - self.rt_previous) > 5
-            lt_changed = abs(self.lt_value - self.lt_previous) > 5
+            # rt_changed = abs(self.rt_value - self.rt_previous) > 5
+            # lt_changed = abs(self.lt_value - self.lt_previous) > 5
 
             # Normalize trigger values from 0-255 to 0-1.0
             rt = self.rt_value / 255.0
@@ -336,11 +336,11 @@ class Go2GameControllerConnector(ActionConnector[IDLEInput]):
 
             # Right Trigger - clockwise rotation
             if rt > 0.8 and rt > lt:
-                self.RTLT_moving = True
+                move_triggered_RTLT = True
                 self._move_robot(0.0, 0.0, -self.turn_speed)
             # Left Trigger - counter-clockwise rotation
             elif lt > 0.8 and lt > rt:
-                self.RTLT_moving = True
+                move_triggered_RTLT = True
                 self._move_robot(0.0, 0.0, self.turn_speed)
             # Both triggers released or below threshold
             elif (rt <= 0.8 and lt <= 0.8) and previous_RTLT > 0.8:
