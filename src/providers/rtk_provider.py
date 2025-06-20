@@ -100,9 +100,9 @@ class RtkProvider:
                     self.time_utc = (
                         self.date_utc + ":" + msg.time.strftime("%H:%M:%S") + ":" + ms
                     )
-                    logging.info(
+                    logging.debug(
                         (
-                            f"RTK:{self.lat},{self.lon}, ALT:{self.alt},"
+                            f"RTK:{self.lat},{self.lon},ALT:{self.alt},"
                             f"QUA:{self.qua},SAT:{self.sat},TIME:{self.time_utc}"
                         )
                     )
