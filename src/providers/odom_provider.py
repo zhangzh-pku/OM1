@@ -330,7 +330,7 @@ class OdomProvider:
             # current position in world frame
             self.x = round(pose.position.x, 3)
             self.y = round(pose.position.y, 3)
-            logging.info(f"odom:{self.x }x {self.y}y")
+            logging.debug(f"odom:{self.x }x {self.y}y")
 
     @property
     def position(self) -> dict:
