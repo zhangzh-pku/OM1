@@ -1,9 +1,9 @@
+import datetime
 import json
 import logging
 import os
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
-import datetime
 from typing import List
 
 import requests
