@@ -146,12 +146,13 @@ class RtkProvider:
 
             if self.serial_connection and self.nmr:
                 try:
-                    for i in range(20):
+                    for i in range(30):
                         (raw_data, msg) = self.nmr.read()
+                         logging.info(f"ETK buffer: {raw_data}")
                         if msg.msgID == "GGA" or msg.msgID == "RMC":
                             self.magRTKProcessor(msg)
-                        else:
-                            logging.info("clearing ETK buffer")
+                        # else:
+                        #     logging.info("clearing ETK buffer")
                 except Exception:
                     pass
 
