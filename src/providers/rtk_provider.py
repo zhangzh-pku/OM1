@@ -148,7 +148,7 @@ class RtkProvider:
                 try:
                     for i in range(30):
                         (raw_data, msg) = self.nmr.read()
-                         logging.info(f"ETK buffer: {raw_data}")
+                        logging.info(f"ETK buffer: {raw_data}")
                         if msg.msgID == "GGA" or msg.msgID == "RMC":
                             self.magRTKProcessor(msg)
                         # else:
