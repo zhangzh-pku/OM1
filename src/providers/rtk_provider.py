@@ -67,21 +67,21 @@ class RtkProvider:
         try:
             logging.debug(f"RTK:{msg}")
 
-# NMEA-GN-GLL
-# Description:
-# Standard NMEA: Geographic position latitude and longitude. Latitude and longitude of vessel position, time of position fix and status.
+            # NMEA-GN-GLL
+            # Description:
+            # Standard NMEA: Geographic position latitude and longitude. Latitude and longitude of vessel position, time of position fix and status.
 
-# NMEA-GN-RMC
-# Description:
-# Standard NMEA: Recommended minimum specific GNSS data. This message contains time, date, position (in LLH coordinates), 
-# positioning mode, course over ground (COG), and speed (SOG) data provided by the GNSS receiver. RMC is the 
-# recommended minimum navigation data to be provided by the selected source.
+            # NMEA-GN-RMC
+            # Description:
+            # Standard NMEA: Recommended minimum specific GNSS data. This message contains time, date, position (in LLH coordinates),
+            # positioning mode, course over ground (COG), and speed (SOG) data provided by the GNSS receiver. RMC is the
+            # recommended minimum navigation data to be provided by the selected source.
 
-# NMEA-GN-GGA
-# Description:
-# Standard NMEA: Global positioning system fix data. This message contains time, date, 
-# position (in LLH coordinates), fix quality, number of satellites, and horizontal dilution of 
-# precision (HDOP) data provided by the selected source.
+            # NMEA-GN-GGA
+            # Description:
+            # Standard NMEA: Global positioning system fix data. This message contains time, date,
+            # position (in LLH coordinates), fix quality, number of satellites, and horizontal dilution of
+            # precision (HDOP) data provided by the selected source.
 
             if msg.msgID == "GGA":
                 try:
@@ -147,10 +147,10 @@ class RtkProvider:
 
             if self.serial_connection and self.nmr:
                 try:
-                    raw_data = b'$GQGSV,1,1,00,0*64\r\n'
+                    raw_data = b"$GQGSV,1,1,00,0*64\r\n"
                     while raw_data:
                         (raw_data, msg) = self.nmr.read()
-                        #logging.info(f"ETK buffer: {raw_data}")
+                        # logging.info(f"ETK buffer: {raw_data}")
                         if msg.msgID == "GGA" or msg.msgID == "RMC":
                             self.magRTKProcessor(msg)
                         # else:
