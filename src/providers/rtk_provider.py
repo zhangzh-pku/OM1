@@ -37,6 +37,7 @@ class RtkProvider:
             self.serial_connection = serial.Serial(
                 serial_port, baudrate, timeout=timeout
             )
+            self.serial_connection.reset_input_buffer()
             logging.info(f"Connected to {serial_port} at {baudrate} baud")
         except serial.SerialException as e:
             logging.error(f"Error: {e}")
@@ -149,7 +150,7 @@ class RtkProvider:
                     raw_data = b'$GQGSV,1,1,00,0*64\r\n'
                     while raw_data:
                         (raw_data, msg) = self.nmr.read()
-                        logging.info(f"ETK buffer: {raw_data}")
+                        #logging.info(f"ETK buffer: {raw_data}")
                         if msg.msgID == "GGA" or msg.msgID == "RMC":
                             self.magRTKProcessor(msg)
                         # else:
