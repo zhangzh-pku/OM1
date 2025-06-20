@@ -24,18 +24,18 @@
     //{
     //  "type": "GoogleASRInput"
     //},
-    //{
-    //  "type": "Gps",
-    //},
-    //{
-    //  "type": "Rtk",
-    //},
+    {
+      "type": "Gps",
+    },
+    {
+      "type": "Rtk",
+    },
     {
       "type": "Odom",
     },
-    //{
-    //  "type": "RPLidar",
-    //}
+    {
+      "type": "RPLidar",
+    }
   ],
   "cortex_llm": {
     "type": "OpenAILLM",
@@ -66,18 +66,18 @@
     //}
   ],
   "backgrounds": [
-    //{
-    //  "type": "Gps",
-    //  config: {
-    //    "serial_port": "/dev/cu.usbmodem101",
-    //  }
-    //},
-    //{
-    //  "type": "Rtk",
-    //  config: {
-    //    "serial_port": "/dev/cu.usbmodem21201",
-    //  }
-    //},
+    {
+      "type": "Gps",
+      config: {
+        "serial_port": "/dev/cu.usbmodem101",
+      }
+    },
+    {
+      "type": "Rtk",
+      config: {
+        "serial_port": "/dev/cu.usbmodem21201",
+      }
+    },
     {
       "type": "Odom",
         "config": {
@@ -85,18 +85,18 @@
           "URID": "", // only needed for Zenoh
         }
     },
-    //{
-    //  "type": "RPLidar",
-    //  "config": {
-    //    "serial_port": "/dev/cu.usbserial-0001",
-    //    "half_width_robot": 0.21,
-    //    "relevant_distance_max": 1.1,
-    //    "relevant_distance_min": 0.20,
-    //    "sensor_mounting_angle": 172.0,
-    //    "angles_blanked": [],
-    //    "log_file": true,
-    //  }
-    //},
+    {
+      "type": "RPLidar",
+      "config": {
+        "serial_port": "/dev/cu.usbserial-0001",
+        "half_width_robot": 0.21,
+        "relevant_distance_max": 1.1,
+        "relevant_distance_min": 0.20,
+        "sensor_mounting_angle": 172.0,
+        "angles_blanked": [],
+        "log_file": true,
+      }
+    },
     {
       "type": "RFmapper",
     },

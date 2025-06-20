@@ -83,11 +83,10 @@ class RtkProvider:
                     self.time_utc = (
                         self.date_utc + ":" + msg.time.strftime("%H:%M:%S") + ":" + ms
                     )
-                    logging.debug(
+                    logging.info(
                         (
-                            f"Current precision location is {self.lat}, {self.lon} at {self.alt}m altitude. "
-                            f"Quality {self.qua} with {self.sat} satellites locked. "
-                            f"The date and time is {self.time_utc}."
+                            f"RTK:{self.lat},{self.lon}, ALT:{self.alt},"
+                            f"QUA:{self.qua},SAT:{self.sat},TIME:{self.time_utc}"
                         )
                     )
                 except Exception as e:

@@ -3,7 +3,7 @@ import logging
 import os
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
-from datetime import datetime
+import datetime
 from typing import List
 
 import requests
@@ -189,8 +189,8 @@ class FabricDataSubmitter:
         self.executor = ThreadPoolExecutor(max_workers=1)
 
     def update_filename(self):
-        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        filename = f"{self.filename_base}_{timestamp}.jsonl"
+        start_time = datetime.datetime.now(datetime.UTC)
+        filename = f"{self.filename_base}_{start_time.isoformat(timespec='seconds').replace(':', '-')}Z.jsonl"
         return filename
 
     def write_dict_to_file(self, data: dict):
@@ -215,6 +215,7 @@ class FabricDataSubmitter:
         with open(self.filename_current, "a", encoding="utf-8") as f:
             json_line = json.dumps(data)
             f.write(json_line + "\n")
+            f.flush()
 
     def _share_data_worker(self, data: FabricData):
         """

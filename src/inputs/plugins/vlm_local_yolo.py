@@ -107,7 +107,7 @@ class VLM_Local_YOLO(FuserInput[str]):
         self.messages: list[Message] = []
 
         # Simple description of sensor output to help LLM understand its importance and utility
-        self.descriptor_for_LLM = "YOLO Object Detector"
+        self.descriptor_for_LLM = "Eyes"
 
         # Load model
         self.model = YOLO("yolov8n.pt")
