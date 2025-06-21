@@ -80,7 +80,7 @@ class RtkProvider:
         # Sort by time and return the latest message
         most_recent = max(gngga_entries, key=lambda x: x[0])
 
-        # the list entry is a time and the message,
+        # "most_recent" is a time and the message,
         # the [1] just returns the message
         return most_recent[1]
 
