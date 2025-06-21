@@ -1,3 +1,4 @@
+import argparse
 import datetime
 import json
 import time
@@ -18,6 +19,14 @@ RESOLUTIONS = [
     (800, 600),
     (640, 480),  # VGA fallback
 ]
+
+
+parser = argparse.ArgumentParser()
+parser.add_argument(
+    "--cam", help="the index of the camera you want to use", type=int, default=0
+)
+print(parser.format_help())
+args = parser.parse_args()
 
 
 def set_best_resolution(cap, resolutions):
@@ -42,7 +51,7 @@ def set_best_resolution(cap, resolutions):
 
 
 # Open webcam
-cap = cv2.VideoCapture(0)
+cap = cv2.VideoCapture(args.cam)
 
 # Set the best available resolution
 best_width, best_height = set_best_resolution(cap, RESOLUTIONS)
