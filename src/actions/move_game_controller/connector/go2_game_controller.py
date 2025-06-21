@@ -263,7 +263,7 @@ class Go2GameControllerConnector(ActionConnector[IDLEInput]):
         -------
         None
         """
-        time.sleep(0.05)
+        time.sleep(0.1)
         logging.debug("Gamepad tick")
 
         data = None
@@ -413,7 +413,7 @@ class Go2GameControllerConnector(ActionConnector[IDLEInput]):
                 move_triggered_dpad = True
                 self._move_robot(0.0, -self.move_speed)
             elif self.d_pad_previous > 0 and self.d_pad_value == 0:
-                # Usewr just released DPAD
+                # User just released DPAD
                 logging.info("D-pad released - Stopping movement")
                 move_triggered_dpad = True
                 self._move_robot(0.0, 0.0)
