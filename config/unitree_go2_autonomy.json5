@@ -25,9 +25,11 @@
       "config": {
         "serial_port": "/dev/cu.usbserial-0001",
         "half_width_robot": 0.21,
-        "max_relevant_distance": 1.1,
+        "relevant_distance_max": 1.1,
+        "relevant_distance_min": 0.20,
         "sensor_mounting_angle": 172.0,
-        "angles_blanked": [[-180.0, -140.0], [140, 180]],
+        "angles_blanked": []
+        //"angles_blanked": [[-180.0, -140.0], [140, 180]]
       }
     },
     {
@@ -51,25 +53,27 @@
     {
       "name": "move_game_controller",
       "llm_label": "external movement controller",
-      "implementation": "passthrough",
       "connector": "go2_game_controller",
       "exclude_from_prompt": true
     },
     {
       "name": "move_go2_autonomy",
       "llm_label": "move",
-      "implementation": "passthrough",
       "connector": "unitree_sdk"
     },
     {
      "name": "speak",
       "llm_label": "speak",
-      "implementation": "passthrough",
       "connector": "elevenlabs_tts",
       "config": {
         "voice_id": "TbMNBJ27fH2U0VgpSNko",
         "silence_rate": 6, // vocalize every 6th speech output
       }
+    }
+  ],
+  "backgrounds": [
+    {
+      "type": "UnitreeGo2State",
     }
   ]
 }

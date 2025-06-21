@@ -48,14 +48,11 @@ class RPLidar(FuserInput[str]):
         # Buffer for storing messages
         self.message_buffer: Queue[str] = Queue()
 
-        logging.info(f"Config: {self.config}")
-
         # Build lidar configuration from config
         lidar_config = self._extract_lidar_config(config)
 
         # Initialize RPLidar Provider
         self.lidar: RPLidarProvider = RPLidarProvider(**lidar_config)
-
         self.lidar.start()
 
         self.descriptor_for_LLM = "Information about objects and walls around you, to plan your movements and avoid bumping into things."
@@ -157,7 +154,8 @@ class RPLidar(FuserInput[str]):
             "use_zenoh": getattr(config, "use_zenoh", False),
             "half_width_robot": getattr(config, "half_width_robot", 0.20),
             "angles_blanked": getattr(config, "angles_blanked", []),
-            "max_relevant_distance": getattr(config, "max_relevant_distance", 1.1),
+            "relevant_distance_max": getattr(config, "relevant_distance_max", 1.1),
+            "relevant_distance_min": getattr(config, "relevant_distance_min", 0.08),
             "sensor_mounting_angle": getattr(config, "sensor_mounting_angle", 180.0),
         }
 

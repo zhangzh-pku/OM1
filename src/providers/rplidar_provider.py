@@ -11,6 +11,7 @@ import numpy as np
 import zenoh
 from numpy.typing import NDArray
 
+from runtime.logging import LoggingConfig, get_logging_config, setup_logging
 from zenoh_idl import sensor_msgs
 from zenoh_idl.sensor_msgs import LaserScan
 
@@ -38,11 +39,12 @@ class RPLidarConfig:
     max_distance_mm: int = 1500
 
 
-def RPLidar_processor(
+def rplidar_processor(
     data_queue: mp.Queue,
     control_queue: mp.Queue,
     serial_port: str,
-    config: RPLidarConfig,
+    rplidar_config: RPLidarConfig,
+    logging_config: Optional[LoggingConfig] = None,
 ):
     """
     Dedicated RPLidar processor function for multiprocessing.
@@ -58,66 +60,65 @@ def RPLidar_processor(
         The name of the serial port in use by the RPLidar sensor.
     config : Dict
         Configuration dictionary containing parameters for the RPLidar.
+    logging_config : Optional[LoggingConfig]
+        Optional logging configuration. If provided, it will override the default logging settings.
     """
-    try:
-        lidar = RPDriver(serial_port)
+    setup_logging("rplidar_processor", logging_config=logging_config)
 
-        info = lidar.get_info()
-        logging.info(f"RPLidar Info: {info}")
+    running = True
 
-        health = lidar.get_health()
-        logging.info(f"RPLidar Health: {health[0]}")
+    while running:
+        lidar = None
+        try:
+            lidar = RPDriver(serial_port)
 
-        if health[0] != "Good":
-            logging.error(f"There is a problem with the LIDAR: {health[0]}")
+            info = lidar.get_info()
+            logging.info(f"RPLidar Info: {info}")
 
-        lidar.reset()
-        time.sleep(0.5)
+            health = lidar.get_health()
+            logging.info(f"RPLidar Health: {health[0]}")
 
-        running = True
-        while running:
-            try:
-                cmd = control_queue.get_nowait()
-                if cmd == "STOP":
-                    running = False
-                    break
-            except Empty:
-                pass
+            if health[0] != "Good":
+                logging.error(f"There is a problem with the LIDAR: {health[0]}")
+                time.sleep(0.5)
+                continue
 
-            try:
-                scan = lidar.iter_scans_local(
-                    scan_type="express",
-                    max_buf_meas=config.max_buf_meas,
-                    min_len=config.min_len,
-                    max_distance_mm=config.max_distance_mm,
-                )
-                for scan_data in scan:
+            lidar.reset()
+            time.sleep(0.5)
+
+            scan = lidar.iter_scans_local(
+                scan_type="express",
+                max_buf_meas=rplidar_config.max_buf_meas,
+                min_len=rplidar_config.min_len,
+                max_distance_mm=rplidar_config.max_distance_mm,
+            )
+
+            for scan_data in scan:
+                try:
+                    cmd = control_queue.get_nowait()
+                    if cmd == "STOP":
+                        running = False
+                        break
+                except Empty:
+                    pass
+
+                try:
+                    data_queue.put_nowait(scan_data)
+                except Full:
                     try:
-                        data_queue.put_nowait(scan_data)
-                    except Full:
                         data_queue.get_nowait()
                         data_queue.put_nowait(scan_data)
                     except Empty:
                         pass
 
-                    try:
-                        cmd = control_queue.get_nowait()
-                        if cmd == "STOP":
-                            running = False
-                            break
-                    except Empty:
-                        pass
-            except Exception:
-                time.sleep(0.5)
-    except Exception as e:
-        logging.error(f"Error in RPLidar processor: {e}")
-    finally:
-        try:
-            lidar.stop()
-            time.sleep(0.5)
-            lidar.disconnect()
         except Exception as e:
-            logging.error(f"Error stopping RPLidar: {e}")
+            logging.error(f"Error in RPLidar processor: {e}")
+            if lidar:
+                try:
+                    lidar.reset()
+                except Exception:
+                    pass
+            time.sleep(0.5)
 
 
 @singleton
@@ -135,7 +136,7 @@ class RPLidarProvider:
         The half width of the robot in m
     angles_blanked: list = []
         Regions of the scan to disregard, runs from -180 to +180 deg
-    max_relevant_distance: float = 1.1
+    relevant_distance_max: float = 1.1
         Only consider barriers within this range, in m
     sensor_mounting_angle: float = 180.0
         The angle of the sensor zero relative to the way in which it's mounted
@@ -144,7 +145,8 @@ class RPLidarProvider:
     # Constants
     DEFAULT_SERIAL_PORT = "/dev/cu.usbserial-0001"
     DEFAULT_HALF_WIDTH_ROBOT = 0.20
-    DEFAULT_MAX_RELEVANT_DISTANCE = 1.1
+    DEFAULT_RELEVANT_DISTANCE_MAX = 1.1
+    DEFAULT_RELEVANT_DISTANCE_MIN = 0.08
     DEFAULT_SENSOR_MOUNTING_ANGLE = 180.0
     NUM_BEZIER_POINTS = 10
     DEGREES_TO_RADIANS = math.pi / 180.0
@@ -155,7 +157,8 @@ class RPLidarProvider:
         serial_port: str = DEFAULT_SERIAL_PORT,
         half_width_robot: float = DEFAULT_HALF_WIDTH_ROBOT,
         angles_blanked: list = None,
-        max_relevant_distance: float = DEFAULT_MAX_RELEVANT_DISTANCE,
+        relevant_distance_max: float = DEFAULT_RELEVANT_DISTANCE_MAX,
+        relevant_distance_min: float = DEFAULT_RELEVANT_DISTANCE_MIN,
         sensor_mounting_angle: float = DEFAULT_SENSOR_MOUNTING_ANGLE,
         URID: str = "",
         use_zenoh: bool = False,
@@ -173,7 +176,8 @@ class RPLidarProvider:
         self.serial_port = serial_port
         self.half_width_robot = half_width_robot
         self.angles_blanked = angles_blanked if angles_blanked is not None else []
-        self.max_relevant_distance = max_relevant_distance
+        self.relevant_distance_max = relevant_distance_max
+        self.relevant_distance_min = relevant_distance_min
         self.sensor_mounting_angle = sensor_mounting_angle
         self.URID = URID
         self.use_zenoh = use_zenoh
@@ -252,12 +256,13 @@ class RPLidarProvider:
             or not self._rplidar_processor_thread.is_alive()
         ):
             self._rplidar_processor_thread = mp.Process(
-                target=RPLidar_processor,
+                target=rplidar_processor,
                 args=(
                     self.data_queue,
                     self.control_queue,
                     self.serial_port,
                     self.rplidar_config,
+                    get_logging_config(),
                 ),
                 daemon=True,
             )
@@ -326,7 +331,11 @@ class RPLidarProvider:
             d_m = distance
 
             # don't worry about distant objects
-            if d_m > self.max_relevant_distance:
+            if d_m > self.relevant_distance_max:
+                continue
+
+            # don't worry about distant objects
+            if d_m < self.relevant_distance_min:
                 continue
 
             # first, correctly orient the sensor zero to the robot zero
@@ -346,6 +355,11 @@ class RPLidarProvider:
                     # disregard
                     reflection = True
                     break
+
+            if d_m < self.relevant_distance_min:
+                # this is a permanent robot reflection
+                # disregard
+                reflection = True
 
             if reflection:
                 continue
