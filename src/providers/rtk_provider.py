@@ -158,7 +158,7 @@ class RtkProvider:
                 try:
                     # read 1000 bytes and find the GNGAA messages
                     data = self.serial_connection.read(size=1000)
-                    data = str(data)
+                    data = data.decode("utf-8", errors="ignore")
                     ### logging.info(f"RTK data: {data}")
                     latest_GNGGA = self.get_latest_gngga_message(data)
                     parsed_nema = NMEAReader.parse(latest_GNGGA)
