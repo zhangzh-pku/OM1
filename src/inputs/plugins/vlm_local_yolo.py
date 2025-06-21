@@ -174,13 +174,13 @@ class VLM_Local_YOLO(FuserInput[str]):
             # logging.debug(f"VLM_YOLO_Local frame: {frame}")
             return frame
 
-    async def _raw_to_text(self, frame: Optional[np.ndarray]) -> Optional[Message]:
+    async def _raw_to_text(self, raw_input: Optional[np.ndarray]) -> Optional[Message]:
         """
         Process raw image input to generate text description.
 
         Parameters
         ----------
-        frame : np.ndarray
+        raw_input : np.ndarray
             Input numpy array image to process
 
         Returns
@@ -198,7 +198,7 @@ class VLM_Local_YOLO(FuserInput[str]):
         ).isoformat()
 
         results = self.model.predict(
-            source=frame, save=False, stream=True, verbose=False
+            source=raw_input, save=False, stream=True, verbose=False
         )
 
         detections = []
