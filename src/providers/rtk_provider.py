@@ -78,11 +78,11 @@ class RtkProvider:
                 continue  # Skip if time field is malformed
 
         # Sort by time and return the latest message
-        most_recent = max(gngga_entries, key=lambda x: x[0])
-
-        # "most_recent" is a time and the message,
-        # the [1] just returns the message
-        return most_recent[1]
+        if gngga_entries:
+            most_recent = max(gngga_entries, key=lambda x: x[0])
+            # "most_recent" is a time and the message,
+            # the [1] just returns the message
+            return most_recent[1]
 
     def magRTKProcessor(self, msg):
 
