@@ -285,10 +285,14 @@ class Go2GameControllerConnector(ActionConnector[IDLEInput]):
             if self.d_pad_previous > 0:
                 if self.d_pad_previous == 1:  # Up
                     logging.info("D-pad UP - Moving forward")
-                    self._move_robot(self.move_speed, self.lateral_correction, self.yaw_correction)
+                    self._move_robot(
+                        self.move_speed, self.lateral_correction, self.yaw_correction
+                    )
                 elif self.d_pad_previous == 5:  # Down
                     logging.info("D-pad DOWN - Moving backward")
-                    self._move_robot(-self.move_speed, -self.lateral_correction, -self.yaw_correction)
+                    self._move_robot(
+                        -self.move_speed, -self.lateral_correction, -self.yaw_correction
+                    )
                 elif self.d_pad_previous == 7:  # Left
                     logging.info("D-pad LEFT - Moving left")
                     self._move_robot(0.0, self.move_speed)
@@ -397,11 +401,15 @@ class Go2GameControllerConnector(ActionConnector[IDLEInput]):
             if self.d_pad_value == 1:  # Up
                 logging.info("D-pad UP - Moving forward")
                 move_triggered_dpad = True
-                self._move_robot(self.move_speed, self.lateral_correction, self.yaw_correction)
+                self._move_robot(
+                    self.move_speed, self.lateral_correction, self.yaw_correction
+                )
             elif self.d_pad_value == 5:  # Down
                 logging.info("D-pad DOWN - Moving backward")
                 move_triggered_dpad = True
-                self._move_robot(-self.move_speed, -self.lateral_correction, -self.yaw_correction)
+                self._move_robot(
+                    -self.move_speed, -self.lateral_correction, -self.yaw_correction
+                )
             elif self.d_pad_value == 7:  # Left
                 logging.info("D-pad LEFT - Moving left")
                 move_triggered_dpad = True
