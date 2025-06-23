@@ -164,9 +164,7 @@ class RPLidarProvider:
         URID: str = "",
         use_zenoh: bool = False,
         simple_paths: bool = False,
-        rplidar_config: RPLidarConfig = RPLidarConfig(
-            max_buf_meas=0, min_len=5, max_distance_mm=1500
-        ),
+        rplidar_config: RPLidarConfig = RPLidarConfig(),
         log_file: bool = False,
     ):
         """
