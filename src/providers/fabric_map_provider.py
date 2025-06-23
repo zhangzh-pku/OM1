@@ -18,7 +18,7 @@ class RFData:
 
     Parameters
     ----------
-    timestamp : float
+    unix_ts : float
         Unix timestamp of the scan.
     address : str
         Bluetooth address of the device.
@@ -28,7 +28,7 @@ class RFData:
         Received Signal Strength Indicator of the device.
     """
 
-    timestamp: float
+    unix_ts: float
     address: str
     name: str | None
     rssi: int
@@ -47,7 +47,7 @@ class RFData:
             Dictionary representation of the RFData object.
         """
         return {
-            "timestamp": self.timestamp,
+            "unix_ts": self.unix_ts,
             "address": self.address,
             "name": self.name,
             "rssi": self.rssi,
@@ -65,7 +65,7 @@ class RFDataRaw:
 
     Parameters
     ----------
-    timestamp : float
+    unix_ts : float
         Unix timestamp of the scan.
     address : str
         Bluetooth address of the device.
@@ -75,7 +75,7 @@ class RFDataRaw:
         Received Signal Strength Indicator of the device.
     """
 
-    timestamp: str
+    unix_ts: str
     address: str
     rssi: int
     packet: str
@@ -90,7 +90,7 @@ class RFDataRaw:
             Dictionary representation of the RFData object.
         """
         return {
-            "timestamp": self.timestamp,
+            "unix_ts": self.unix_ts,
             "address": self.address,
             "rssi": self.rssi,
             "packet": self.packet,
@@ -104,18 +104,18 @@ class FabricData:
     """
 
     machine_id: str
-    gps_time_utc: str
+    rtk_unix_ts: float
     gps_lat: float
     gps_lon: float
     gps_alt: float
     gps_qua: int
-    rtk_time_utc: str
+    rtk_unix_ts: float
     rtk_lat: float
     rtk_lon: float
     rtk_alt: float
     rtk_qua: int
     mag: float
-    update_time_local: float
+    unix_ts: float
     odom_x: float
     odom_y: float
     yaw_odom_0_360: float
@@ -134,18 +134,18 @@ class FabricData:
         """
         return {
             "machine_id": self.machine_id,
-            "gps_time_utc": self.gps_time_utc,
+            "gps_unix_ts": self.gps_unix_ts,
             "gps_lat": self.gps_lat,
             "gps_lon": self.gps_lon,
             "gps_alt": self.gps_alt,
             "gps_qua": self.gps_qua,
-            "rtk_time_utc": self.rtk_time_utc,
+            "rtk_unix_ts": self.rtk_unix_ts,
             "rtk_lat": self.rtk_lat,
             "rtk_lon": self.rtk_lon,
             "rtk_alt": self.rtk_alt,
             "rtk_qua": self.rtk_qua,
             "mag": self.mag,
-            "update_time_local": self.update_time_local,
+            "unix_ts": self.unix_ts,
             "odom_x": self.odom_x,
             "odom_y": self.odom_y,
             "yaw_odom_0_360": self.yaw_odom_0_360,
