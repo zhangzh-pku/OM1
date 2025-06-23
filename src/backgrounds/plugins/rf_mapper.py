@@ -271,7 +271,9 @@ class RFmapper(Background):
                                 odom_x=self.x,
                                 odom_y=self.y,
                                 yaw_odom_0_360=self.yaw_odom_0_360,
-                                yaw_odom_m180_p180=round(self.yaw_odom_0_360 - 180.0,2),
+                                yaw_odom_m180_p180=round(
+                                    self.yaw_odom_0_360 - 180.0, 2
+                                ),
                                 rf_data=self.scan_results,
                                 rf_data_raw=self.ble_scan,
                             )
