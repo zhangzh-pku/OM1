@@ -152,7 +152,7 @@ class RFmapper(Background):
         scanner = BleakScanner(detection_callback)
 
         await scanner.start()
-        # scan for 5 xeconds, then return a new payload
+        # scan for 5 seconds, then return a new payload
         await asyncio.sleep(5.0)
         await scanner.stop()
 
