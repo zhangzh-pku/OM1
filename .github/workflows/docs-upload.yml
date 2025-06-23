@@ -13,7 +13,7 @@ on:
 
 env:
   API_ENDPOINT: 'https://api.openmind.org/api/core/upload'
-  INTERNAL_AUTH_TOKEN: ${{ secrets.INTERNAL_AUTH_TOKEN }}
+  INTERNAL_BEARER_TOKEN: ${{ secrets.INTERNAL_BEARER_TOKEN }}
 
 jobs:
   upload-docs:
@@ -122,10 +122,10 @@ def parse_mdx_to_text(content):
     return text
 
 upload_url = os.environ.get('API_ENDPOINT')
-auth_token = os.environ.get('INTERNAL_AUTH_TOKEN')
+auth_token = os.environ.get('INTERNAL_BEARER_TOKEN')
 
 if not auth_token:
-    print('Error: INTERNAL_AUTH_TOKEN not set in GitHub secrets')
+    print('Error: INTERNAL_BEARER_TOKEN not set in GitHub secrets')
     sys.exit(1)
 
 changed_files = '${{ steps.changed-files.outputs.all_changed_files }}'.split(',')
