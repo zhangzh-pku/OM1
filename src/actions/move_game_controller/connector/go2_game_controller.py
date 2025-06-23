@@ -38,7 +38,8 @@ class Go2GameControllerConnector(ActionConnector[IDLEInput]):
         # Movement speed m/s and rad/s
         self.move_speed = getattr(config, "speed_x", 0.9)
         self.turn_speed = getattr(config, "speed_yaw", 0.6)
-        self.yaw_correction = getattr(config, "yaw_correction", 0.1)
+        self.yaw_correction = getattr(config, "yaw_correction", 0.0)
+        self.lateral_correction = getattr(config, "lateral_correction", 0.0)
 
         self.gamepad = None
         self.sony_dualsense = False
@@ -75,8 +76,6 @@ class Go2GameControllerConnector(ActionConnector[IDLEInput]):
         self.button_value = None
 
         self.RTLT_moving = False
-
-
 
         unitree_ethernet = getattr(config, "unitree_ethernet", None)
         self.odom = OdomProvider(channel=unitree_ethernet)
@@ -286,10 +285,10 @@ class Go2GameControllerConnector(ActionConnector[IDLEInput]):
             if self.d_pad_previous > 0:
                 if self.d_pad_previous == 1:  # Up
                     logging.info("D-pad UP - Moving forward")
-                    self._move_robot(self.move_speed, self.yaw_correction)
+                    self._move_robot(self.move_speed, self.lateral_correction, self.yaw_correction)
                 elif self.d_pad_previous == 5:  # Down
                     logging.info("D-pad DOWN - Moving backward")
-                    self._move_robot(-self.move_speed, -self.yaw_correction)
+                    self._move_robot(-self.move_speed, -self.lateral_correction, -self.yaw_correction)
                 elif self.d_pad_previous == 7:  # Left
                     logging.info("D-pad LEFT - Moving left")
                     self._move_robot(0.0, self.move_speed)
@@ -398,11 +397,11 @@ class Go2GameControllerConnector(ActionConnector[IDLEInput]):
             if self.d_pad_value == 1:  # Up
                 logging.info("D-pad UP - Moving forward")
                 move_triggered_dpad = True
-                self._move_robot(self.move_speed, self.yaw_correction)
+                self._move_robot(self.move_speed, self.lateral_correction, self.yaw_correction)
             elif self.d_pad_value == 5:  # Down
                 logging.info("D-pad DOWN - Moving backward")
                 move_triggered_dpad = True
-                self._move_robot(-self.move_speed, -self.yaw_correction)
+                self._move_robot(-self.move_speed, -self.lateral_correction, -self.yaw_correction)
             elif self.d_pad_value == 7:  # Left
                 logging.info("D-pad LEFT - Moving left")
                 move_triggered_dpad = True
