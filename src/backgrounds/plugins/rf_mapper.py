@@ -161,7 +161,7 @@ class RFmapper(Background):
         scanner = BleakScanner(detection_callback)
 
         await scanner.start()
-        await asyncio.sleep(10.0)
+        await asyncio.sleep(5.0)
         await scanner.stop()
 
         logging.debug(f"ready to sort: {self.seen_devices.values()}")
@@ -271,7 +271,9 @@ class RFmapper(Background):
                                 odom_x=self.x,
                                 odom_y=self.y,
                                 yaw_odom_0_360=self.yaw_odom_0_360,
-                                yaw_odom_m180_p180=self.yaw_odom_0_360 - 180.0,
+                                yaw_odom_m180_p180=round(
+                                    self.yaw_odom_0_360 - 180.0, 2
+                                ),
                                 rf_data=self.scan_results,
                                 rf_data_raw=self.ble_scan,
                             )

@@ -95,7 +95,7 @@ class RtkProvider:
             # position (in LLH coordinates), fix quality, number of satellites, and horizontal dilution of
             # precision (HDOP) data provided by the selected source.
 
-            if msg.msgID == "GGA":
+            if msg and msg.msgID == "GGA":
                 try:
                     # round to 1 cm localisation in x,y, and 1 cm in z
                     logging.debug(f"RTK GGA:{msg}")
