@@ -117,7 +117,7 @@ class RtkProvider:
             if msg and msg.msgID == "GGA":
                 try:
                     # round to 1 cm localisation in x,y, and 1 cm in z
-                    logging.info(f"RTK GGA:{msg}")
+                    logging.debug(f"RTK GGA:{msg}")
 
                     self.lat = round(float(msg.lat), 7)
                     self.lon = round(float(msg.lon), 7)
@@ -166,20 +166,18 @@ class RtkProvider:
         """
         while self.running:
 
-            if self.serial_connection:  # and self.nmr:
-                try:
-                    # read 1000 bytes and find the GNGAA messages
-                    data = self.serial_connection.read(size=1000)
-                    data = data.decode("utf-8", errors="ignore")
-                    ### logging.info(f"RTK data: {data}")
-                    latest_GNGGA = self.get_latest_gngga_message(data)
-                    parsed_nema = NMEAReader.parse(latest_GNGGA)
-                    ### logging.info(f"GNGGA message: {parsed_nema}")
-                    self.magRTKProcessor(parsed_nema)
-                except Exception:
-                    pass
-
-            time.sleep(0.5)
+            if self.serial_connection:
+                bytes_waiting = self.serial_connection.in_waiting
+                while bytes_waiting > 0:
+                    data = self.serial_connection.read(size=bytes_waiting)
+                    if data:
+                        data = data.decode("utf-8", errors="ignore")
+                        latest_GNGGA = self.get_latest_gngga_message(data)
+                        if latest_GNGGA:
+                            parsed_nema = NMEAReader.parse(latest_GNGGA)
+                            self.magRTKProcessor(parsed_nema)
+                    bytes_waiting = self.serial_connection.in_waiting
+                time.sleep(0.1)
 
     def stop(self):
         """

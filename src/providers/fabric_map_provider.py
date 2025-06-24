@@ -240,10 +240,10 @@ class FabricDataSubmitter:
 
         if self.write_to_local_file:
             self.write_dict_to_file(json_dict)
-            logging.info(f"FDS wrote to this file: {self.filename_current}")
+            logging.info(f"FDS wrote to {self.filename_current}")
 
         if self.api_key is None or self.api_key == "":
-            logging.error("API key is missing. Cannot share data to FABRIC cloud.")
+            logging.error("API key missing. Cannot share data to FABRIC.")
             return
 
         try:
@@ -254,7 +254,7 @@ class FabricDataSubmitter:
             )
 
             if request.status_code == 201:
-                logging.debug(f"Data shared successfully: {request.json()}")
+                logging.debug(f"Data shared: {request.json()}")
             else:
                 logging.error(
                     f"Failed to share data: {request.status_code} - {request.text}"
