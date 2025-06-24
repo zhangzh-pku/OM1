@@ -69,7 +69,7 @@ class RtkProvider:
         local_date = datetime.date.today()
 
         # Combine local date with provided UTC time
-        dt = datetime.combine(local_date, utc_time_obj).replace(
+        dt = datetime.datetime.combine(local_date, utc_time_obj).replace(
             tzinfo=datetime.timezone.utc
         )
 
