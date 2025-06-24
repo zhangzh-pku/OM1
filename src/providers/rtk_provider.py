@@ -1,10 +1,8 @@
+import datetime as datetime
 import logging
 import re
 import threading
 import time
-from datetime import date, datetime
-from datetime import time as dt_time
-from datetime import timezone
 from typing import Optional
 
 import serial
@@ -64,14 +62,16 @@ class RtkProvider:
         Convert a UTC datetime.time object to a Unix timestamp by combining
         it with the local computer's current date.
         """
-        if not isinstance(utc_time_obj, dt_time):
+        if not isinstance(utc_time_obj, datetime.time):
             raise TypeError("Expected a datetime.time object")
 
         # Get the local date
-        local_date = date.today()
+        local_date = datetime.date.today()
 
         # Combine local date with provided UTC time
-        dt = datetime.combine(local_date, utc_time_obj).replace(tzinfo=timezone.utc)
+        dt = datetime.combine(local_date, utc_time_obj).replace(
+            tzinfo=datetime.timezone.utc
+        )
 
         # Convert to Unix timestamp
         return dt.timestamp()
