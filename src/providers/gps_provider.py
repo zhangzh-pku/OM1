@@ -3,6 +3,7 @@ import re
 import threading
 import time
 from typing import List, Optional
+from datetime import datetime, timezone
 
 import serial
 
@@ -53,7 +54,7 @@ class GpsProvider:
         self.sat = 0
         self.qua = 0
 
-        self.time_utc = ""
+        self.gps_unix_ts = 0.0
 
         self.yaw_mag_0_360 = 0.0
         self.yaw_mag_cardinal = ""
@@ -63,6 +64,15 @@ class GpsProvider:
         self.running = False
         self._thread: Optional[threading.Thread] = None
         self.start()
+
+    def string_to_unix_timestamp(self, time_str):
+        """
+        Convert a time string in the format 'YYYY:MM:DD:HH:MM:SS:ms'
+        to a Unix timestamp (UTC).
+        """
+        dt = datetime.strptime(time_str, "%Y:%m:%d:%H:%M:%S:%f")
+        dt = dt.replace(tzinfo=timezone.utc)
+        return dt.timestamp()
 
     def magGPSProcessor(self, data):
         # Used whenever there is a connected
@@ -96,6 +106,9 @@ class GpsProvider:
                     alt = parts[4].split(":")[1]
                     sat = parts[5].split(":")[1]
                     time = parts[6][5:]
+                    # turn 25 into full year -> 2025, for example
+                    self.gps_unix_ts = self.string_to_unix_timestamp("20" + time)
+
                     qua = 0
                     if len(parts) > 7:
                         qua = parts[7].split(":")[1]
@@ -118,14 +131,11 @@ class GpsProvider:
                     self.sat = int(sat)
                     self.qua = int(qua)
 
-                    # turn 25 into full year -> 2025
-                    self.time_utc = "20" + time
-
                     logging.debug(
                         (
                             f"Current location is {self.lat}, {self.lon} at {alt}m altitude. "
                             f"GPS Heading {heading}° with {sat} satellites locked. "
-                            f"The time is {self.time_utc}. "
+                            f"The unix timestamp is {self.gps_unix_ts}. "
                             f"The fix quality is {self.qua}."
                         )
                     )
@@ -148,7 +158,7 @@ class GpsProvider:
             "gps_alt": self.alt,
             "gps_sat": self.sat,
             "gps_qua": self.qua,
-            "gps_time_utc": self.time_utc,
+            "gps_unix_ts": self.gps_unix_ts,
             "ble_scan": self.ble_scan,
         }
 
@@ -174,7 +184,7 @@ class GpsProvider:
         data = input_string[4:].strip()
         pattern = r"([0-9A-Fa-f]{12}):([+-]?\d+):([0-9A-Fa-f]{2,})"
         matches = re.findall(pattern, data)
-        timestamp = str(int(time.time()))
+        unix_ts = time.time()
 
         devices: List[RFDataRaw] = []
 
@@ -184,7 +194,7 @@ class GpsProvider:
             packet = match[2].lower()
             devices.append(
                 RFDataRaw(
-                    timestamp=timestamp, address=address, rssi=rssi, packet=packet
+                    unix_ts=unix_ts, address=address, rssi=rssi, packet=packet
                 )
             )
 

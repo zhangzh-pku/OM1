@@ -1,8 +1,10 @@
 import asyncio
 import datetime
+import time
 import json
 import logging
 import time
+import os
 from dataclasses import dataclass
 from typing import Optional
 
@@ -94,12 +96,6 @@ class VLM_Local_YOLO(FuserInput[str]):
         if self.config.camera_index:
             self.camera_index = self.config.camera_index
 
-        self.log_file = False
-        self.log_file_opened = None
-
-        if self.config.log_file:
-            self.log_file = self.config.log_file
-
         # Track IO
         self.io_provider = IOProvider()
 
@@ -112,12 +108,17 @@ class VLM_Local_YOLO(FuserInput[str]):
         # Load model
         self.model = YOLO("yolov8n.pt")
 
+        self.write_to_local_file = False
+        if self.config.log_file:
+            self.write_to_local_file = self.config.log_file
+
+        self.filename_current = None
+        self.max_file_size_bytes = 1024 * 1024
+
         # Create timestamped log filename
-        if self.log_file:
-            start_time = datetime.datetime.now(datetime.UTC)
-            log_filename = f"dump/yolo_{start_time.isoformat(timespec='seconds').replace(':', '-')}Z.jsonl"
-            self.log_file_opened = open(log_filename, "a")
-            logging.info(f"YOLO Logging to {log_filename}")
+        if self.write_to_local_file:
+            self.filename_current = self.update_filename()
+            logging.info(f"YOLO Logging to {self.filename_current}")
 
         self.width, self.height = check_webcam(self.camera_index)
 
@@ -138,6 +139,13 @@ class VLM_Local_YOLO(FuserInput[str]):
             logging.info(
                 f"Webcam pixel dimensions for YOLO: {self.width}, {self.height}"
             )
+
+    def update_filename(self):
+        unix_ts = time.time()
+        logging.info(f"Yolo time: {unix_ts}")
+        unix_ts = str(unix_ts).replace('.', '_')
+        filename = f"dump/yolo_{unix_ts}Z.jsonl"
+        return filename
 
     def get_top_detection(self, detections):
         """
@@ -174,6 +182,30 @@ class VLM_Local_YOLO(FuserInput[str]):
             # logging.debug(f"VLM_YOLO_Local frame: {frame}")
             return frame
 
+
+    def write_str_to_file(self, json_line: str):
+        """
+        Writes a dictionary to a file in JSON lines format. If the file exceeds max_file_size_bytes,
+        creates a new file with a timestamp.
+
+        Parameters:
+        - data: Dictionary to write
+        """
+
+        if not isinstance(json_line, str):
+            raise ValueError("Provided json_line must be a json string.")
+
+        if (
+            os.path.exists(self.filename_current)
+            and os.path.getsize(self.filename_current) > self.max_file_size_bytes
+        ):
+            self.filename_current = self.update_filename()
+            logging.info(f"New yolo file name: {self.filename_current}")
+
+        with open(self.filename_current, "a", encoding="utf-8") as f:
+            f.write(json_line + "\n")
+            f.flush()
+
     async def _raw_to_text(self, raw_input: Optional[np.ndarray]) -> Optional[Message]:
         """
         Process raw image input to generate text description.
@@ -192,11 +224,7 @@ class VLM_Local_YOLO(FuserInput[str]):
         self.frame_index += 1
 
         sentence = None
-        timestamp = time.time()
-        datetime_str = datetime.datetime.fromtimestamp(
-            timestamp, datetime.UTC
-        ).isoformat()
-
+        
         results = self.model.predict(
             source=raw_input, save=False, stream=True, verbose=False
         )
@@ -218,21 +246,25 @@ class VLM_Local_YOLO(FuserInput[str]):
                 )
 
         # Print to terminal
+        timestamp = time.time()
+
         logging.debug(
-            f"\nFrame {self.frame_index} @ {datetime_str} — {len(detections)} objects:"
+            f"\nFrame {self.frame_index} @ {timestamp} — {len(detections)} objects:"
         )
 
-        if self.log_file and self.log_file_opened:
-            json_line = json.dumps(
-                {
-                    "frame": self.frame_index,
-                    "timestamp": timestamp,
-                    "datetime": datetime_str,
-                    "detections": detections,
-                }
-            )
-            self.log_file_opened.write(json_line + "\n")
-            self.log_file_opened.flush()
+        if self.write_to_local_file:
+            try:
+                json_line = json.dumps(
+                    {
+                        "frame": self.frame_index,
+                        "timestamp": timestamp,
+                        "detections": detections,
+                    }
+                )
+                self.write_str_to_file(json_line)
+                logging.info(f"yolo wrote to this file: {self.filename_current}")
+            except Exception as e:
+                logging.error(f"Error saving yolo to file: {str(e)}")
 
         for det in detections:
             logging.debug(

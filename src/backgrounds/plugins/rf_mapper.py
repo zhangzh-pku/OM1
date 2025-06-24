@@ -203,12 +203,6 @@ class RFmapper(Background):
 
                 logging.info(f"Sending to fabric: payload {self.payload_idx}")
 
-                # if self.scan_results:
-                #     logging.debug(
-                #         f"RF scan results available, processing... {self.scan_results}"
-                #     )
-
-
                 # add scan results if they are new
                 logging.info(f"RF scan index: {self.scan_idx}")
                 logging.info(f"RF scan last sent: {self.scan_last_sent}")
@@ -225,7 +219,7 @@ class RFmapper(Background):
                     logging.debug(f"GPS data: {g}")
                     if g:
 
-                        if g["gps_unix_ts"] != "":
+                        if g["gps_unix_ts"]:
                             self.gps_unix_ts = g["gps_unix_ts"]
                             self.gps_lat = g["gps_lat"]
                             self.gps_lon = g["gps_lon"]

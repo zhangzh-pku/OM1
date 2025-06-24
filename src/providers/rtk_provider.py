@@ -1,4 +1,4 @@
-import datetime
+from datetime import datetime, timezone, date, time as dt_time
 import logging
 import re
 import threading
@@ -51,11 +51,28 @@ class RtkProvider:
         self.alt = 0.0
         self.sat = 0
         self.qua = 0
-        self.time_utc = ""
+        self.unix_ts = 0.0
 
         self.running = False
         self._thread: Optional[threading.Thread] = None
         self.start()
+
+    def utc_time_obj_to_unix(self, utc_time_obj):
+        """
+        Convert a UTC datetime.time object to a Unix timestamp by combining
+        it with the local computer's current date.
+        """
+        if not isinstance(utc_time_obj, dt_time):
+            raise TypeError("Expected a datetime.time object")
+
+        # Get the local date
+        local_date = date.today()
+
+        # Combine local date with provided UTC time
+        dt = datetime.combine(local_date, utc_time_obj).replace(tzinfo=timezone.utc)
+
+        # Convert to Unix timestamp
+        return dt.timestamp()
 
     def get_latest_gngga_message(self, nmea_data):
 
@@ -98,7 +115,7 @@ class RtkProvider:
             if msg and msg.msgID == "GGA":
                 try:
                     # round to 1 cm localisation in x,y, and 1 cm in z
-                    logging.debug(f"RTK GGA:{msg}")
+                    logging.info(f"RTK GGA:{msg}")
 
                     self.lat = round(float(msg.lat), 7)
                     self.lon = round(float(msg.lon), 7)
@@ -107,19 +124,12 @@ class RtkProvider:
                     self.sat = int(msg.numSV)
                     self.qua = int(msg.quality)
 
-                    ms = msg.time.strftime("%f")[:3]
-                    time_with_ms = msg.time.strftime("%H:%M:%S") + ":" + ms
-
-                    timestamp = time.time()
-                    datetime_utc_str = datetime.datetime.fromtimestamp(
-                        timestamp, datetime.UTC
-                    ).strftime("%Y:%m:%d")
-
-                    self.time_utc = datetime_utc_str + ":" + time_with_ms
+                    # the data look something like this: 23:12:25.300000
+                    self.unix_ts = self.utc_time_obj_to_unix(msg.time)
                     logging.info(
                         (
                             f"RTK:{self.lat},{self.lon},ALT:{self.alt},"
-                            f"QUA:{self.qua},SAT:{self.sat},TIME:{self.time_utc}"
+                            f"QUA:{self.qua},SAT:{self.sat},TIME:{self.unix_ts}"
                         )
                     )
                 except Exception as e:
@@ -133,7 +143,7 @@ class RtkProvider:
             "rtk_alt": self.alt,
             "rtk_sat": self.sat,
             "rtk_qua": self.qua,
-            "rtk_time_utc": self.time_utc,
+            "rtk_unix_ts": self.unix_ts,
         }
 
     def start(self):

@@ -1,9 +1,11 @@
 import datetime
+import time
 import logging
 import math
+import json
 import multiprocessing as mp
 import threading
-import time
+import os
 from dataclasses import dataclass
 from queue import Empty, Full
 from typing import Dict, List, Optional
@@ -197,17 +199,18 @@ class RPLidarProvider:
         self.angles = None
         self.angles_final = None
 
-        self.start_time = None
-        self.log_filename = None
-        self.log_file_opened = None
+        self.write_to_local_file = False
+        if log_file:
+            self.write_to_local_file = log_file
+
+        self.filename_current = None
+        self.max_file_size_bytes = 1024 * 1024
 
         # Create timestamped log filename
-        if self.log_file:
-            self.start_time = datetime.datetime.now(datetime.UTC)
-            self.log_filename = f"dump/lidar_{self.start_time.isoformat(timespec='seconds').replace(':', '-')}Z.jsonl"
-            self.log_file_opened = open(self.log_filename, "a")
-            logging.info(f"LIDAR Logging to {self.log_filename}")
-
+        if self.write_to_local_file:
+            self.filename_current = self.update_filename()
+            logging.info(f"RPSCAN Logging to {self.filename_current}")
+        
         # Initialize paths for path planning
         # Define 9 straight line paths separated by 15 degrees
         # Center path is 0° (straight forward), then ±15°, ±30°, ±45°, ±60°, 180° (backwards)
@@ -241,6 +244,36 @@ class RPLidarProvider:
                 self.zen.declare_subscriber(f"{self.URID}/pi/scan", self.listen_scan)
             except Exception as e:
                 logging.error(f"Error opening Zenoh client: {e}")
+
+    def update_filename(self):
+        unix_ts = time.time()
+        logging.info(f"RPSCAN time: {unix_ts}")
+        unix_ts = str(unix_ts).replace('.', '_')
+        filename = f"dump/lidar_{unix_ts}Z.jsonl"
+        return filename
+
+    def write_str_to_file(self, json_line: str):
+        """
+        Writes a dictionary to a file in JSON lines format. If the file exceeds max_file_size_bytes,
+        creates a new file with a timestamp.
+
+        Parameters:
+        - data: Dictionary to write
+        """
+
+        if not isinstance(json_line, str):
+            raise ValueError("Provided json_line must be a json string.")
+
+        if (
+            os.path.exists(self.filename_current)
+            and os.path.getsize(self.filename_current) > self.max_file_size_bytes
+        ):
+            self.filename_current = self.update_filename()
+            logging.info(f"New rpscan file name: {self.filename_current}")
+
+        with open(self.filename_current, "a", encoding="utf-8") as f:
+            f.write(json_line + "\n")
+            f.flush()
 
     def listen_scan(self, data: zenoh.Sample):
         """
@@ -350,7 +383,7 @@ class RPLidarProvider:
             elif angle < 0.0:
                 angle = 360.0 + angle
 
-            raw.append([angle, d_m])
+            raw.append([round(angle,2), d_m])
 
             # don't worry about distant objects
             if d_m > self.relevant_distance_max:
@@ -387,12 +420,19 @@ class RPLidarProvider:
         array = np.array(complexes)
         raw_array = np.array(raw)
 
-        if self.log_file and self.log_file_opened:
-            timestamp = time.strftime("%Y-%m-%d %H:%M:%S")
-            self.log_file_opened.write(f"{timestamp} - {raw_array.tolist()}\n")
-            self.log_file_opened.flush()
-
-        # logging.info(f"final: {array.ndim}")
+        timestamp = time.time()
+        if self.write_to_local_file:
+            try:
+                json_line = json.dumps(
+                    {
+                        "frame": raw_array.tolist(),
+                        "timestamp": timestamp,
+                    }
+                )
+                self.write_str_to_file(json_line)
+                logging.debug(f"rplidar wrote to this file: {self.filename_current}")
+            except Exception as e:
+                logging.error(f"Error saving rplidar to file: {str(e)}")
 
         # sort data into strictly increasing angles to deal with sensor issues
         # the sensor sometimes reports part of the previous scan and part of the next scan

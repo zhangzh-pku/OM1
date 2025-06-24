@@ -1,4 +1,5 @@
 import datetime
+import time
 import json
 import logging
 import os
@@ -75,7 +76,7 @@ class RFDataRaw:
         Received Signal Strength Indicator of the device.
     """
 
-    unix_ts: str
+    unix_ts: float
     address: str
     rssi: int
     packet: str
@@ -96,7 +97,6 @@ class RFDataRaw:
             "packet": self.packet,
         }
 
-
 @dataclass
 class FabricData:
     """
@@ -104,7 +104,8 @@ class FabricData:
     """
 
     machine_id: str
-    rtk_unix_ts: float
+    payload_idx: int
+    gps_unix_ts: float
     gps_lat: float
     gps_lon: float
     gps_alt: float
@@ -134,6 +135,7 @@ class FabricData:
         """
         return {
             "machine_id": self.machine_id,
+            "payload_idx": self.payload_idx,
             "gps_unix_ts": self.gps_unix_ts,
             "gps_lat": self.gps_lat,
             "gps_lon": self.gps_lon,
@@ -189,8 +191,10 @@ class FabricDataSubmitter:
         self.executor = ThreadPoolExecutor(max_workers=1)
 
     def update_filename(self):
-        start_time = datetime.datetime.now(datetime.UTC)
-        filename = f"{self.filename_base}_{start_time.isoformat(timespec='seconds').replace(':', '-')}Z.jsonl"
+        unix_ts = time.time()
+        logging.info(f"fabric time: {unix_ts}")
+        unix_ts = str(unix_ts).replace('.', '_')
+        filename = f"{self.filename_base}_{unix_ts}Z.jsonl"
         return filename
 
     def write_dict_to_file(self, data: dict):
