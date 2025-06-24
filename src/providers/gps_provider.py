@@ -2,8 +2,8 @@ import logging
 import re
 import threading
 import time
-from typing import List, Optional
 from datetime import datetime, timezone
+from typing import List, Optional
 
 import serial
 
@@ -193,9 +193,7 @@ class GpsProvider:
             rssi = int(match[1])
             packet = match[2].lower()
             devices.append(
-                RFDataRaw(
-                    unix_ts=unix_ts, address=address, rssi=rssi, packet=packet
-                )
+                RFDataRaw(unix_ts=unix_ts, address=address, rssi=rssi, packet=packet)
             )
 
         return devices

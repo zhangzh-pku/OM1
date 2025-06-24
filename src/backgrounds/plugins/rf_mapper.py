@@ -44,7 +44,7 @@ class RFmapper(Background):
         self.loop = asyncio.new_event_loop()
         self.thread = threading.Thread(target=self._scan_task)
         self.running = False
-        
+
         self.scan_results: List[RFData] = []
         self.scan_idx = 0
         self.scan_last_sent = 0
@@ -213,7 +213,7 @@ class RFmapper(Background):
                     self.scan_results = []
                     logging.info(f"RF scan sending new payload: {self.scan_last_sent}")
 
-                # basic gps data and occasional scan results 
+                # basic gps data and occasional scan results
                 try:
                     g = self.gps.data
                     logging.debug(f"GPS data: {g}")
@@ -279,9 +279,7 @@ class RFmapper(Background):
                             odom_x=self.x,
                             odom_y=self.y,
                             yaw_odom_0_360=self.yaw_odom_0_360,
-                            yaw_odom_m180_p180=round(
-                                self.yaw_odom_0_360 - 180.0, 2
-                            ),
+                            yaw_odom_m180_p180=round(self.yaw_odom_0_360 - 180.0, 2),
                             rf_data=fresh_scan_results,
                             rf_data_raw=self.ble_scan,
                         )
@@ -290,7 +288,7 @@ class RFmapper(Background):
                 except Exception as e:
                     logging.error(f"Error sharing to Fabric: {e}")
 
-                time.sleep(1) # we should send a payload every second
+                time.sleep(1)  # we should send a payload every second
 
         except KeyboardInterrupt:
             logging.info("Stopping RF scanner...")

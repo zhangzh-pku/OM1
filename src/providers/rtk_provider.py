@@ -1,8 +1,10 @@
-from datetime import datetime, timezone, date, time as dt_time
 import logging
 import re
 import threading
 import time
+from datetime import date, datetime
+from datetime import time as dt_time
+from datetime import timezone
 from typing import Optional
 
 import serial

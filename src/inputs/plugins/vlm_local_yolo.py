@@ -1,10 +1,8 @@
 import asyncio
-import datetime
-import time
 import json
 import logging
-import time
 import os
+import time
 from dataclasses import dataclass
 from typing import Optional
 
@@ -143,7 +141,7 @@ class VLM_Local_YOLO(FuserInput[str]):
     def update_filename(self):
         unix_ts = time.time()
         logging.info(f"Yolo time: {unix_ts}")
-        unix_ts = str(unix_ts).replace('.', '_')
+        unix_ts = str(unix_ts).replace(".", "_")
         filename = f"dump/yolo_{unix_ts}Z.jsonl"
         return filename
 
@@ -181,7 +179,6 @@ class VLM_Local_YOLO(FuserInput[str]):
             ret, frame = self.cap.read()
             # logging.debug(f"VLM_YOLO_Local frame: {frame}")
             return frame
-
 
     def write_str_to_file(self, json_line: str):
         """
@@ -224,7 +221,7 @@ class VLM_Local_YOLO(FuserInput[str]):
         self.frame_index += 1
 
         sentence = None
-        
+
         results = self.model.predict(
             source=raw_input, save=False, stream=True, verbose=False
         )

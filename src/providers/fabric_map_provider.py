@@ -1,8 +1,7 @@
-import datetime
-import time
 import json
 import logging
 import os
+import time
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
 from typing import List
@@ -96,6 +95,7 @@ class RFDataRaw:
             "rssi": self.rssi,
             "packet": self.packet,
         }
+
 
 @dataclass
 class FabricData:
@@ -193,7 +193,7 @@ class FabricDataSubmitter:
     def update_filename(self):
         unix_ts = time.time()
         logging.info(f"fabric time: {unix_ts}")
-        unix_ts = str(unix_ts).replace('.', '_')
+        unix_ts = str(unix_ts).replace(".", "_")
         filename = f"{self.filename_base}_{unix_ts}Z.jsonl"
         return filename
 

@@ -1,11 +1,10 @@
-import datetime
-import time
+import json
 import logging
 import math
-import json
 import multiprocessing as mp
-import threading
 import os
+import threading
+import time
 from dataclasses import dataclass
 from queue import Empty, Full
 from typing import Dict, List, Optional
@@ -210,7 +209,7 @@ class RPLidarProvider:
         if self.write_to_local_file:
             self.filename_current = self.update_filename()
             logging.info(f"RPSCAN Logging to {self.filename_current}")
-        
+
         # Initialize paths for path planning
         # Define 9 straight line paths separated by 15 degrees
         # Center path is 0° (straight forward), then ±15°, ±30°, ±45°, ±60°, 180° (backwards)
@@ -248,7 +247,7 @@ class RPLidarProvider:
     def update_filename(self):
         unix_ts = time.time()
         logging.info(f"RPSCAN time: {unix_ts}")
-        unix_ts = str(unix_ts).replace('.', '_')
+        unix_ts = str(unix_ts).replace(".", "_")
         filename = f"dump/lidar_{unix_ts}Z.jsonl"
         return filename
 
@@ -383,7 +382,7 @@ class RPLidarProvider:
             elif angle < 0.0:
                 angle = 360.0 + angle
 
-            raw.append([round(angle,2), d_m])
+            raw.append([round(angle, 2), d_m])
 
             # don't worry about distant objects
             if d_m > self.relevant_distance_max:
