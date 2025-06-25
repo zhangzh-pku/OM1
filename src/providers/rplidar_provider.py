@@ -20,6 +20,7 @@ from zenoh_idl.sensor_msgs import LaserScan
 from .rplidar_driver import RPDriver
 from .singleton import singleton
 
+from providers.odom_provider import OdomProvider
 
 @dataclass
 class RPLidarConfig:
@@ -197,6 +198,12 @@ class RPLidarProvider:
 
         self.angles = None
         self.angles_final = None
+
+        self.x = 0.0
+        self.y = 0.0
+        self.yaw_odom_0_360 = 0.0
+        self.odom = OdomProvider()
+        logging.info(f"Mapper Odom Provider: {self.odom}")
 
         self.write_to_local_file = False
         if log_file:
@@ -419,17 +426,20 @@ class RPLidarProvider:
         array = np.array(complexes)
         raw_array = np.array(raw)
 
-        timestamp = time.time()
+        save_timestamp = time.time()
         if self.write_to_local_file:
             try:
                 json_line = json.dumps(
                     {
-                        "frame": raw_array.tolist(),
-                        "timestamp": timestamp,
+                        "timestamp": save_timestamp,
+                        "odom_x": self.x,
+                        "odom_y": self.y,
+                        "yaw_odom_0_360": self.yaw_odom_0_360,
+                        "frame": raw_array.tolist(), 
                     }
                 )
                 self.write_str_to_file(json_line)
-                logging.debug(f"rplidar wrote to this file: {self.filename_current}")
+                logging.debug(f"rplidar wrote to: {self.filename_current}")
             except Exception as e:
                 logging.error(f"Error saving rplidar to file: {str(e)}")
 
@@ -539,6 +549,17 @@ class RPLidarProvider:
                 logging.debug(f"_serial_processor: {data}")
                 array_ready = np.array(data)
                 self._path_processor(array_ready)
+
+                try:
+                    o = self.odom.position
+                    logging.debug(f"Odom data: {o}")
+                    if o:
+                        self.x = o["x"]
+                        self.y = o["y"]
+                        self.yaw_odom_0_360 = o["yaw_odom_0_360"]
+                except Exception as e:
+                    logging.error(f"Error parsing Odom: {e}")
+
             except Empty:
                 time.sleep(0.1)
                 continue
