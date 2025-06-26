@@ -325,17 +325,17 @@ class OdomProvider:
             angles = self.euler_from_quaternion(x, y, z, w)
 
             # this is in the standard robot convention
-            # yaw increases when you turn LEFT 
+            # yaw increases when you turn LEFT
             # (counter-clockwise rotation about the vertical axis
             self.odom_yaw_m180_p180 = angles[2] * rad_to_deg
 
             # we also provide a second data product, where
             # * yaw increases when you turn RIGHT (CW), and
-            # * the range runs from 0 to 360 Deg 
+            # * the range runs from 0 to 360 Deg
             flip = -1.0 * self.odom_yaw_m180_p180
             if flip < 0.0:
                 flip = flip + 360.0
-            
+
             self.odom_yaw_0_360 = round(flip, 2)
 
             # current position in world frame
