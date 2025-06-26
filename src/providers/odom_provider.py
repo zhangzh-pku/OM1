@@ -179,11 +179,9 @@ class OdomProvider:
         self.x = 0.0
         self.y = 0.0
         self.z = 0.0
-
-        self.yaw_odom_0_360 = 0.0
-        self.yaw_odom_m180_p180 = 0.0
-
-        self.timestamp = 0.0
+        self.odom_yaw_0_360 = 0.0
+        self.odom_yaw_m180_p180 = 0.0
+        self.odom_unix_ts = 0.0
 
         self.start()
 
@@ -284,7 +282,8 @@ class OdomProvider:
 
             pose = pose_data.pose
             header = pose_data.header
-            self.timestamp = header.stamp.sec + header.stamp.nanosec * 1e-9
+
+            self.odom_unix_ts = header.stamp.sec + header.stamp.nanosec * 1e-9
 
             if self.channel and not self.use_zenoh:
                 # only relevant to Unitree Go2
@@ -325,24 +324,32 @@ class OdomProvider:
 
             angles = self.euler_from_quaternion(x, y, z, w)
 
-            self.yaw_odom_m180_p180 = angles[2] * rad_to_deg * -1.0
-            # the * -1.0 changes the heading to sane convention
-            # turn right (CW) to INCREASE your heading
-            # runs from -180 to + 180, where 0 is the "nose" of the robot
+            # this is in the standard robot convention
+            # yaw increases when you turn LEFT
+            # (counter-clockwise rotation about the vertical axis
+            self.odom_yaw_m180_p180 = round(angles[2] * rad_to_deg, 4)
 
-            # runs from 0 to 360
-            self.yaw_odom_0_360 = round(self.yaw_odom_m180_p180 + 180.0, 2)
+            # we also provide a second data product, where
+            # * yaw increases when you turn RIGHT (CW), and
+            # * the range runs from 0 to 360 Deg
+            flip = -1.0 * self.odom_yaw_m180_p180
+            if flip < 0.0:
+                flip = flip + 360.0
+
+            self.odom_yaw_0_360 = round(flip, 4)
 
             # current position in world frame
-            self.x = round(pose.position.x, 3)
-            self.y = round(pose.position.y, 3)
-            logging.debug(f"odom:{self.x }x {self.y}y")
+            self.x = round(pose.position.x, 4)
+            self.y = round(pose.position.y, 4)
+            logging.debug(
+                f"odom: X:{self.x} Y:{self.y} W:{self.odom_yaw_m180_p180} H:{self.odom_yaw_0_360} T:{self.odom_unix_ts}"
+            )
 
     @property
     def position(self) -> dict:
         """
         Get the current robot position in world frame.
-        Returns a dictionary with x, y, and yaw_odom_0_360.
+        Returns a dictionary with x, y, and odom_yaw_0_360.
 
         Returns
         -------
@@ -352,18 +359,18 @@ class OdomProvider:
             - x: The x coordinate of the robot in the world frame.
             - y: The y coordinate of the robot in the world frame.
             - moving: A boolean indicating if the robot is currently moving.
-            - yaw_odom_0_360: The yaw angle of the robot in degrees, ranging from 0 to 360.
+            - odom_yaw_0_360: The yaw angle of the robot in degrees, ranging from 0 to 360.
             - body_height_cm: The height of the robot's body in centimeters.
             - body_attitude: The current attitude of the robot (e.g., sitting or standing).
-            - timestamp: The timestamp of the last odometry update.
+            - odom_unix_ts: The unix timestamp of the last odometry update.
         """
         return {
-            "x": self.x,
-            "y": self.y,
+            "odom_x": self.x,
+            "odom_y": self.y,
             "moving": self.moving,
-            "yaw_odom_0_360": self.yaw_odom_0_360,
-            "yaw_odom_m180_p180": self.yaw_odom_m180_p180,
+            "odom_yaw_0_360": self.odom_yaw_0_360,
+            "odom_yaw_m180_p180": self.odom_yaw_m180_p180,
             "body_height_cm": self.body_height_cm,
             "body_attitude": self.body_attitude,
-            "timestamp": self.timestamp,
+            "odom_unix_ts": self.odom_unix_ts,
         }
