@@ -128,7 +128,7 @@ class RtkProvider:
 
                     # the data look something like this: 23:12:25.300000
                     self.unix_ts = self.utc_time_obj_to_unix(msg.time)
-                    logging.info(
+                    logging.debug(
                         (
                             f"RTK:{self.lat},{self.lon},ALT:{self.alt},"
                             f"QUA:{self.qua},SAT:{self.sat},TIME:{self.unix_ts}"
