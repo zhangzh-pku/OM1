@@ -327,7 +327,7 @@ class OdomProvider:
             # this is in the standard robot convention
             # yaw increases when you turn LEFT
             # (counter-clockwise rotation about the vertical axis
-            self.odom_yaw_m180_p180 = angles[2] * rad_to_deg
+            self.odom_yaw_m180_p180 = round(angles[2] * rad_to_deg, 4)
 
             # we also provide a second data product, where
             # * yaw increases when you turn RIGHT (CW), and
@@ -336,12 +336,14 @@ class OdomProvider:
             if flip < 0.0:
                 flip = flip + 360.0
 
-            self.odom_yaw_0_360 = round(flip, 2)
+            self.odom_yaw_0_360 = round(flip, 4)
 
             # current position in world frame
-            self.x = round(pose.position.x, 3)
-            self.y = round(pose.position.y, 3)
-            logging.debug(f"odom:{self.x}x {self.y}y")
+            self.x = round(pose.position.x, 4)
+            self.y = round(pose.position.y, 4)
+            logging.info(
+                f"odom: X:{self.x} Y:{self.y} W:{self.odom_yaw_m180_p180} H:{self.odom_yaw_0_360} T:{self.odom_unix_ts}"
+            )
 
     @property
     def position(self) -> dict:
