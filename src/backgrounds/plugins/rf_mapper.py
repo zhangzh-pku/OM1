@@ -55,6 +55,7 @@ class RFmapper(Background):
         self.odom_x = 0.0
         self.odom_y = 0.0
         self.odom_yaw_0_360 = 0.0
+        self.odom_yaw_m180_p180 = 0.0
 
         self.gps_unix_ts = 0.0
         self.gps_lat = 0.0
@@ -244,6 +245,7 @@ class RFmapper(Background):
                         self.odom_y = o["odom_y"]
                         self.odom_unix_ts = o["odom_unix_ts"]
                         self.odom_yaw_0_360 = o["odom_yaw_0_360"]
+                        self.odom_yaw_m180_p180 = o["odom_yaw_m180_p180"]
                 except Exception as e:
                     logging.error(f"Error parsing Odom: {e}")
 
@@ -281,7 +283,7 @@ class RFmapper(Background):
                             odom_x=self.odom_x,
                             odom_y=self.odom_y,
                             odom_yaw_0_360=self.odom_yaw_0_360,
-                            odom_yaw_m180_p180=round(self.odom_yaw_0_360 - 180.0, 2),
+                            odom_yaw_m180_p180=self.odom_yaw_m180_p180,
                             rf_data=fresh_scan_results,
                             rf_data_raw=self.ble_scan,
                         )
