@@ -39,7 +39,7 @@ class RPLidarConfig:
 
     max_buf_meas: int = 0
     min_len: int = 5
-    max_distance_mm: int = 5000
+    max_distance_mm: int = 10000
 
 
 def rplidar_processor(
@@ -202,6 +202,7 @@ class RPLidarProvider:
         self.odom_unix_ts = 0.0
         self.odom_x = 0.0
         self.odom_y = 0.0
+        self.odom_yaw_m180_p180 = 0.0
         self.odom_yaw_0_360 = 0.0
         self.odom = OdomProvider()
         logging.info(f"Mapper Odom Provider: {self.odom}")
@@ -410,7 +411,7 @@ class RPLidarProvider:
                     continue
 
             # Convert angle to radians for trigonometric calculations
-            # Note: angle is adjusted to [0, 360] range
+            # Note: angle is adjusted back to [0, 360] range
             a_rad = (angle + 180.0) * self.DEGREES_TO_RADIANS
 
             v1 = d_m * math.cos(a_rad)
@@ -435,6 +436,7 @@ class RPLidarProvider:
                         "odom_unix_ts": self.odom_unix_ts,
                         "odom_x": self.odom_x,
                         "odom_y": self.odom_y,
+                        "odom_yaw_m180_p180": self.odom_yaw_m180_p180,
                         "odom_yaw_0_360": self.odom_yaw_0_360,
                         "frame": raw_array.tolist(),
                     }
@@ -558,6 +560,7 @@ class RPLidarProvider:
                         self.odom_x = o["odom_x"]
                         self.odom_y = o["odom_y"]
                         self.odom_unix_ts = o["odom_unix_ts"]
+                        self.odom_yaw_m180_p180 = o["odom_yaw_m180_p180"]
                         self.odom_yaw_0_360 = o["odom_yaw_0_360"]
                 except Exception as e:
                     logging.error(f"Error parsing Odom: {e}")

@@ -98,17 +98,7 @@ class Odom(FuserInput[str]):
         """
         logging.debug(f"odom: {raw_input}")
 
-        # {
-        #     "x": self.x,
-        #     "y": self.y,
-        #     "moving": self.moving,
-        #     "odom_yaw_0_360": self.odom_yaw_0_360,
-        #     "body_height_cm": self.body_height_cm,
-        #     "body_attitude": self.body_attitude,
-        # }
-
         res = ""
-
         moving = raw_input["moving"]
         attitude = raw_input["body_attitude"]
 

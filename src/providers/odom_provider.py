@@ -341,7 +341,7 @@ class OdomProvider:
             # current position in world frame
             self.x = round(pose.position.x, 4)
             self.y = round(pose.position.y, 4)
-            logging.info(
+            logging.debug(
                 f"odom: X:{self.x} Y:{self.y} W:{self.odom_yaw_m180_p180} H:{self.odom_yaw_0_360} T:{self.odom_unix_ts}"
             )
 
