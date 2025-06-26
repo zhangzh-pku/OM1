@@ -199,9 +199,10 @@ class RPLidarProvider:
         self.angles = None
         self.angles_final = None
 
-        self.x = 0.0
-        self.y = 0.0
-        self.yaw_odom_0_360 = 0.0
+        self.odom_x = 0.0
+        self.odom_y = 0.0
+        self.odom_unix_ts = 0.0
+        self.odom_yaw_0_360 = 0.0
         self.odom = OdomProvider()
         logging.info(f"Mapper Odom Provider: {self.odom}")
 
@@ -426,15 +427,15 @@ class RPLidarProvider:
         array = np.array(complexes)
         raw_array = np.array(raw)
 
-        save_timestamp = time.time()
+        # save_timestamp = time.time()
         if self.write_to_local_file:
             try:
                 json_line = json.dumps(
                     {
-                        "timestamp": save_timestamp,
-                        "odom_x": self.x,
-                        "odom_y": self.y,
-                        "yaw_odom_0_360": self.yaw_odom_0_360,
+                        "odom_unix_ts": self.odom_unix_ts,
+                        "odom_x": self.odom_x,
+                        "odom_y": self.odom_y,
+                        "odom_yaw_0_360": self.odom_yaw_0_360,
                         "frame": raw_array.tolist(),
                     }
                 )
@@ -554,9 +555,10 @@ class RPLidarProvider:
                     o = self.odom.position
                     logging.debug(f"Odom data: {o}")
                     if o:
-                        self.x = o["x"]
-                        self.y = o["y"]
-                        self.yaw_odom_0_360 = o["yaw_odom_0_360"]
+                        self.odom_x = o["odom_x"]
+                        self.odom_y = o["odom_y"]
+                        self.odom_unix_ts = o["odom_unix_ts"]
+                        self.odom_yaw_0_360 = o["odom_yaw_0_360"]
                 except Exception as e:
                     logging.error(f"Error parsing Odom: {e}")
 

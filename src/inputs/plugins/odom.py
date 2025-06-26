@@ -102,7 +102,7 @@ class Odom(FuserInput[str]):
         #     "x": self.x,
         #     "y": self.y,
         #     "moving": self.moving,
-        #     "yaw_odom_0_360": self.yaw_odom_0_360,
+        #     "odom_yaw_0_360": self.odom_yaw_0_360,
         #     "body_height_cm": self.body_height_cm,
         #     "body_attitude": self.body_attitude,
         # }
