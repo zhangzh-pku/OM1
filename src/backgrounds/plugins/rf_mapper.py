@@ -219,7 +219,6 @@ class RFmapper(Background):
                     g = self.gps.data
                     logging.debug(f"GPS data: {g}")
                     if g:
-
                         if g["gps_unix_ts"]:
                             self.gps_unix_ts = g["gps_unix_ts"]
                             self.gps_lat = g["gps_lat"]
@@ -241,8 +240,8 @@ class RFmapper(Background):
                     o = self.odom.position
                     logging.debug(f"Odom data: {o}")
                     if o:
-                        self.odom_x = o["x"]
-                        self.odom_y = o["y"]
+                        self.odom_x = o["odom_x"]
+                        self.odom_y = o["odom_y"]
                         self.odom_unix_ts = o["odom_unix_ts"]
                         self.odom_yaw_0_360 = o["odom_yaw_0_360"]
                 except Exception as e:

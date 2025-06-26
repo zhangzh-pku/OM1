@@ -199,9 +199,9 @@ class RPLidarProvider:
         self.angles = None
         self.angles_final = None
 
+        self.odom_unix_ts = 0.0
         self.odom_x = 0.0
         self.odom_y = 0.0
-        self.odom_unix_ts = 0.0
         self.odom_yaw_0_360 = 0.0
         self.odom = OdomProvider()
         logging.info(f"Mapper Odom Provider: {self.odom}")
