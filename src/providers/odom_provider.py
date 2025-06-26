@@ -23,7 +23,7 @@ except ImportError:
     )
 
 from zenoh_idl import nav_msgs
-from zenoh_idl.geometry_msgs import PoseWithCovariance
+from zenoh_idl.geometry_msgs import PoseWithCovarianceStamped
 from zenoh_idl.nav_msgs import Odometry
 
 from .singleton import singleton
@@ -77,8 +77,9 @@ def odom_processor(
         odom: Odometry = nav_msgs.Odometry.deserialize(data.payload.to_bytes())
         logging.debug(f"Zenoh odom handler: {odom}")
 
-        p = odom.pose.pose
-        data_queue.put(p)
+        data_queue.put(
+            PoseWithCovarianceStamped(header=odom.header, pose=odom.pose.pose)
+        )
 
     def pose_message_handler(data: PoseStamped_):
         """
@@ -90,8 +91,7 @@ def odom_processor(
             The PoseStamped message containing the pose data.
         """
         logging.debug(f"Pose message handler: {data}")
-        p = data.pose
-        data_queue.put(p)
+        data_queue.put(data)
 
     if use_zenoh:
         # typically, TurtleBot4
@@ -161,7 +161,7 @@ class OdomProvider:
         self.URID = URID
         self.channel = channel
 
-        self.data_queue: mp.Queue[PoseWithCovariance] = mp.Queue()
+        self.data_queue: mp.Queue[PoseWithCovarianceStamped] = mp.Queue()
         self._odom_reader_thread: Optional[mp.Process] = None
         self._odom_processor_thread: Optional[threading.Thread] = None
 
@@ -182,6 +182,8 @@ class OdomProvider:
 
         self.yaw_odom_0_360 = 0.0
         self.yaw_odom_m180_p180 = 0.0
+
+        self.timestamp = 0.0
 
         self.start()
 
@@ -274,11 +276,15 @@ class OdomProvider:
         """
         while True:
             try:
-                pose = self.data_queue.get()
+                pose_data = self.data_queue.get()
             except Exception as e:
                 logging.error(f"Error getting pose from queue: {e}")
                 time.sleep(1)
                 continue
+
+            pose = pose_data.pose
+            header = pose_data.header
+            self.timestamp = header.stamp.sec + header.stamp.nanosec * 1e-9
 
             if self.channel and not self.use_zenoh:
                 # only relevant to Unitree Go2
@@ -349,6 +355,7 @@ class OdomProvider:
             - yaw_odom_0_360: The yaw angle of the robot in degrees, ranging from 0 to 360.
             - body_height_cm: The height of the robot's body in centimeters.
             - body_attitude: The current attitude of the robot (e.g., sitting or standing).
+            - timestamp: The timestamp of the last odometry update.
         """
         return {
             "x": self.x,
@@ -358,4 +365,5 @@ class OdomProvider:
             "yaw_odom_m180_p180": self.yaw_odom_m180_p180,
             "body_height_cm": self.body_height_cm,
             "body_attitude": self.body_attitude,
+            "timestamp": self.timestamp,
         }
