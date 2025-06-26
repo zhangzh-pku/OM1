@@ -13,6 +13,7 @@ import numpy as np
 import zenoh
 from numpy.typing import NDArray
 
+from providers.odom_provider import OdomProvider
 from runtime.logging import LoggingConfig, get_logging_config, setup_logging
 from zenoh_idl import sensor_msgs
 from zenoh_idl.sensor_msgs import LaserScan
@@ -20,7 +21,6 @@ from zenoh_idl.sensor_msgs import LaserScan
 from .rplidar_driver import RPDriver
 from .singleton import singleton
 
-from providers.odom_provider import OdomProvider
 
 @dataclass
 class RPLidarConfig:
@@ -435,7 +435,7 @@ class RPLidarProvider:
                         "odom_x": self.x,
                         "odom_y": self.y,
                         "yaw_odom_0_360": self.yaw_odom_0_360,
-                        "frame": raw_array.tolist(), 
+                        "frame": raw_array.tolist(),
                     }
                 )
                 self.write_str_to_file(json_line)
