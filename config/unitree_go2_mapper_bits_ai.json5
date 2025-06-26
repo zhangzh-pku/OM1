@@ -58,9 +58,9 @@
       }
     },
     {
-      "name": "move_go2_autonomy",
-      "llm_label": "move",
-      "connector": "unitree_sdk"
+      name: "move_go2_autonomy",
+      llm_label: "move",
+      connector: "unitree_sdk"
     },
     //{
     // "name": "speak",
