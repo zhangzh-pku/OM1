@@ -17,7 +17,7 @@ except ImportError:
     hid = None
 
 from actions.base import ActionConfig, ActionConnector
-from actions.move_safe.interface import MoveInput
+from actions.move_ub.interface import MoveInput
 from ubtechapi import YanAPI
 
 @dataclass

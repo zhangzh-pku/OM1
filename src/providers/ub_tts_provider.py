@@ -23,7 +23,7 @@ class UbTtsProvider:
             logging.error(f"Failed to send TTS command: {e}")
             return False
 
-    # <-- NEW METHOD ADDED HERE ---
+ 
     def get_tts_status(self, timestamp: int) -> str:
         """
         Gets the status of a specific TTS task.
