@@ -57,11 +57,11 @@
         yaw_correction: -0.05
       }
     },
-    {
-      "name": "move_go2_autonomy",
-      "llm_label": "move",
-      "connector": "unitree_sdk"
-    },
+    //{
+    //  "name": "move_go2_autonomy",
+    //  "llm_label": "move",
+    //  "connector": "unitree_sdk"
+    //},
     //{
     // "name": "speak",
     //  "llm_label": "speak",
