@@ -73,7 +73,7 @@ class MoveUnitreeSDKConnector(ActionConnector[MoveInput]):
             logging.info("Movement in progress: disregarding new AI command")
             return
 
-        if self.odom.position["x"] == 0.0:
+        if self.odom.position["odom_x"] == 0.0:
             # this value is never precisely zero EXCEPT while
             # booting and waiting for data to arrive
             logging.info("Waiting for location data")
@@ -164,7 +164,7 @@ class MoveUnitreeSDKConnector(ActionConnector[MoveInput]):
             time.sleep(0.5)
             return
 
-        if self.odom.position["x"] == 0.0:
+        if self.odom.position["odom_x"] == 0.0:
             # this value is never precisely zero except while
             # booting and waiting for data to arrive
             logging.info("Waiting for odom data, x == 0.0")
@@ -241,8 +241,8 @@ class MoveUnitreeSDKConnector(ActionConnector[MoveInput]):
                 s_x = current_target.start_x
                 s_y = current_target.start_y
                 distance_traveled = math.sqrt(
-                    (self.odom.position["x"] - s_x) ** 2
-                    + (self.odom.position["y"] - s_y) ** 2
+                    (self.odom.position["odom_x"] - s_x) ** 2
+                    + (self.odom.position["odom_y"] - s_y) ** 2
                 )
                 gap = round(abs(goal_dx - distance_traveled), 2)
                 progress = round(abs(self.gap_previous - gap), 2)
@@ -301,8 +301,8 @@ class MoveUnitreeSDKConnector(ActionConnector[MoveInput]):
             MoveCommand(
                 dx=0.5,
                 yaw=round(target_yaw, 2),
-                start_x=round(self.odom.position["x"], 2),
-                start_y=round(self.odom.position["y"], 2),
+                start_x=round(self.odom.position["odom_x"], 2),
+                start_y=round(self.odom.position["odom_y"], 2),
                 turn_complete=False,
             )
         )
@@ -325,8 +325,8 @@ class MoveUnitreeSDKConnector(ActionConnector[MoveInput]):
             MoveCommand(
                 dx=0.5,
                 yaw=round(target_yaw, 2),
-                start_x=round(self.odom.position["x"], 2),
-                start_y=round(self.odom.position["y"], 2),
+                start_x=round(self.odom.position["odom_x"], 2),
+                start_y=round(self.odom.position["odom_y"], 2),
                 turn_complete=False,
             )
         )
@@ -349,8 +349,8 @@ class MoveUnitreeSDKConnector(ActionConnector[MoveInput]):
             MoveCommand(
                 dx=0.5,
                 yaw=target_yaw,
-                start_x=round(self.odom.position["x"], 2),
-                start_y=round(self.odom.position["y"], 2),
+                start_x=round(self.odom.position["odom_x"], 2),
+                start_y=round(self.odom.position["odom_y"], 2),
                 turn_complete=True if path_angle == 0 else False,
             )
         )
@@ -368,8 +368,8 @@ class MoveUnitreeSDKConnector(ActionConnector[MoveInput]):
             MoveCommand(
                 dx=-0.5,
                 yaw=0.0,
-                start_x=round(self.odom.position["x"], 2),
-                start_y=round(self.odom.position["y"], 2),
+                start_x=round(self.odom.position["odom_x"], 2),
+                start_y=round(self.odom.position["odom_y"], 2),
                 turn_complete=True,
             )
         )
