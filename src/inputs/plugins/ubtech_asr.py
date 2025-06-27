@@ -1,15 +1,14 @@
 import asyncio
-import json
 import logging
 import time
 from queue import Empty, Queue
-from typing import Dict, List, Optional
+from typing import List, Optional
 
 from inputs.base import SensorConfig
 from inputs.base.loop import FuserInput
 from providers.io_provider import IOProvider
 from providers.sleep_ticker_provider import SleepTickerProvider
-from providers.ubtech_asr_provider import UbtechASRProvider 
+from providers.ubtech_asr_provider import UbtechASRProvider
 
 LANGUAGE_CODE_MAP: dict = {
     "english": "en",

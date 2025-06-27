@@ -2,8 +2,9 @@ import logging
 from typing import Callable, Optional, Tuple
 
 from om1_utils import ws
-from .ubtech_video_stream import UbtechCameraVideoStream
+
 from .singleton import singleton
+from .ubtech_video_stream import UbtechCameraVideoStream
 
 
 @singleton

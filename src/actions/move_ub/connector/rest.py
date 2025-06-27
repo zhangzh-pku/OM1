@@ -1,12 +1,8 @@
+import concurrent.futures
 import logging
 import threading
 import time
-import socket
-import struct
-import concurrent.futures
-
-from enum import Enum
-from dataclasses import dataclass, asdict, field
+from dataclasses import asdict, dataclass, field
 
 try:
     import hid
@@ -16,9 +12,11 @@ except ImportError:
     )
     hid = None
 
+from ubtechapi import YanAPI
+
 from actions.base import ActionConfig, ActionConnector
 from actions.move_ub.interface import MoveInput
-from ubtechapi import YanAPI
+
 
 @dataclass
 class Motion:

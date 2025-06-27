@@ -6,9 +6,8 @@ from typing import Callable, List, Optional, Tuple
 import cv2
 import numpy as np
 from mjpeg.client import MJPEGClient
-from ubtechapi import YanAPI
-
 from om1_vlm import VideoStream
+from ubtechapi import YanAPI
 
 
 class UbtechCameraVideoStream(VideoStream):

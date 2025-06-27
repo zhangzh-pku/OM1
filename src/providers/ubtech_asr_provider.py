@@ -1,9 +1,11 @@
+import json
 import logging
 import threading
 import time
+from typing import Callable, Dict, Optional
+
 import requests
-import json
-from typing import Callable, Optional, Dict
+
 from .singleton import singleton
 
 
@@ -16,7 +18,10 @@ class UbtechASRProvider:
         """Returns the singleton instance of the provider."""
         return UbtechASRProvider._instance
 
-    def __init__(self, robot_ip: str, language_code: str = 'en'):
+    def __init__(
+            self, 
+            robot_ip: str, 
+            language_code: str = 'en'):
         UbtechASRProvider._instance = self
         
         self.robot_ip = robot_ip
@@ -38,18 +43,21 @@ class UbtechASRProvider:
         self._message_callback = cb
 
     def start(self):
-        if self.running: return
+        if self.running: 
+            return
         logging.info("Starting UbtechASRProvider background thread...")
         self.running = True
         self._thread = threading.Thread(target=self._run, daemon=True)
         self._thread.start()
 
     def stop(self):
-        if not self.running: return
+        if not self.running: 
+            return
         logging.info("Stopping UbtechASRProvider background thread...")
         self.running = False
         self._stop_voice_iat()
-        if self._thread: self._thread.join(timeout=3)
+        if self._thread: 
+            self._thread.join(timeout=3)
         logging.info("UbtechASRProvider stopped.")
 
     def pause(self):
