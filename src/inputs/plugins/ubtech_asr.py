@@ -16,6 +16,7 @@ LANGUAGE_CODE_MAP: dict = {
     "korean": "ko",
 }
 
+
 class UbtechASRInput(FuserInput[str]):
     """
     Ubtech Robot ASR input handler that uses the UbtechASRProvider.
@@ -31,7 +32,7 @@ class UbtechASRInput(FuserInput[str]):
         # MODIFIED: Tracks the last time ASR resume was triggered
         self.last_asr_resume_trigger_time = time.time()
         # MODIFIED: Cooldown in seconds after triggering ASR resume before it can be triggered again
-        self.asr_resume_cooldown = 10.0  
+        self.asr_resume_cooldown = 10.0
 
         # Get config for the provider
         self.robot_ip = getattr(self.config, "robot_ip", None)
@@ -39,15 +40,16 @@ class UbtechASRInput(FuserInput[str]):
         self.language_code = LANGUAGE_CODE_MAP.get(self.language, "en")
 
         # Initialize and start the provider
-        self.asr = UbtechASRProvider(robot_ip=self.robot_ip, language_code=self.language_code)
+        self.asr = UbtechASRProvider(
+            robot_ip=self.robot_ip, language_code=self.language_code
+        )
         self.asr.start()
         # Register our internal method as the callback for the provider
         self.asr.register_message_callback(self._handle_asr_message)
 
-
     def _handle_asr_message(self, message: Optional[str]):
         """Callback function to handle ASR messages from the provider."""
-        if message and len(message.split()) >= 1:  
+        if message and len(message.split()) >= 1:
             logging.info("Detected ASR message: %s", message)
             self.message_buffer.put(message)
         else:
@@ -63,20 +65,32 @@ class UbtechASRInput(FuserInput[str]):
             # by setting last_asr_resume_trigger_time to a value that would allow immediate resume if buffer becomes empty.
             # This makes the system more responsive after successful speech.
             if message:
-                 self.last_asr_resume_trigger_time = time.time() - self.asr_resume_cooldown - 1 
+                self.last_asr_resume_trigger_time = (
+                    time.time() - self.asr_resume_cooldown - 1
+                )
             return message
         except Empty:
             # The buffer is empty.
             # Only resume ASR if it's paused AND the cooldown period has elapsed since the last resume trigger.
             if self.asr.paused:
                 current_time = time.time()
-                if (current_time - self.last_asr_resume_trigger_time) > self.asr_resume_cooldown:
-                    logging.info(f"UbtechASRInput: Cooldown ({self.asr_resume_cooldown}s) passed since last ASR resume trigger. Resuming ASR.")
+                if (
+                    current_time - self.last_asr_resume_trigger_time
+                ) > self.asr_resume_cooldown:
+                    logging.info(
+                        f"UbtechASRInput: Cooldown ({self.asr_resume_cooldown}s) passed since last ASR resume trigger. Resuming ASR."
+                    )
                     self.asr.resume()
-                    self.last_asr_resume_trigger_time = current_time # MODIFIED: Update time when resume is triggered
+                    self.last_asr_resume_trigger_time = (
+                        current_time  # MODIFIED: Update time when resume is triggered
+                    )
                 else:
-                    elapsed_since_last_resume_trigger = current_time - self.last_asr_resume_trigger_time
-                    logging.debug(f"UbtechASRInput: Cooldown active. Waiting to resume ASR. Time since last ASR resume trigger: {elapsed_since_last_resume_trigger:.2f}s / {self.asr_resume_cooldown}s")
+                    elapsed_since_last_resume_trigger = (
+                        current_time - self.last_asr_resume_trigger_time
+                    )
+                    logging.debug(
+                        f"UbtechASRInput: Cooldown active. Waiting to resume ASR. Time since last ASR resume trigger: {elapsed_since_last_resume_trigger:.2f}s / {self.asr_resume_cooldown}s"
+                    )
             return None
 
     async def _raw_to_text(self, raw_input: str) -> str:

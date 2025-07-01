@@ -18,13 +18,13 @@ class UbTtsConnector(ActionConnector[SpeakInput]):
         """
         super().__init__(config)
 
-        robot_ip=getattr(self.config, "robot_ip",None)
-        base_url = getattr(self.config, "ub_tts_base_url", f"http://{robot_ip}:9090/v1/")
-        
-        # Instantiate the provider with the correct URL
-        self.tts = UbTtsProvider(
-            url=f"{base_url}voice/tts"
+        robot_ip = getattr(self.config, "robot_ip", None)
+        base_url = getattr(
+            self.config, "ub_tts_base_url", f"http://{robot_ip}:9090/v1/"
         )
+
+        # Instantiate the provider with the correct URL
+        self.tts = UbTtsProvider(url=f"{base_url}voice/tts")
 
     async def connect(self, output_interface: SpeakInput) -> None:
         """
@@ -38,6 +38,6 @@ class UbTtsConnector(ActionConnector[SpeakInput]):
         # 'interrupt' and 'timestamp' use default values since they are not in SpeakInput.
         self.tts.speak(
             tts=output_interface.action,
-            interrupt=True, 
-            timestamp=int(time.time()) # Use current time as a sensible default
+            interrupt=True,
+            timestamp=int(time.time()),  # Use current time as a sensible default
         )

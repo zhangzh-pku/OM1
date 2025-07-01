@@ -17,12 +17,12 @@ class UbtechCameraVideoStream(VideoStream):
 
     def __init__(
         self,
-        robot_ip:str,
+        robot_ip: str,
         frame_callback: Optional[Callable[[str], None]] = None,
         frame_callbacks: Optional[List[Callable[[str], None]]] = None,
         fps: Optional[int] = 30,
         resolution: Optional[Tuple[int, int]] = (640, 480),
-        jpeg_quality: int = 70
+        jpeg_quality: int = 70,
     ):
         super().__init__(
             frame_callback=frame_callback,
@@ -42,7 +42,9 @@ class UbtechCameraVideoStream(VideoStream):
         logging.info("Starting Ubtech MJPEG video stream")
 
         try:
-            YanAPI.open_vision_stream(resolution=f"{self.resolution[0]}x{self.resolution[1]}")
+            YanAPI.open_vision_stream(
+                resolution=f"{self.resolution[0]}x{self.resolution[1]}"
+            )
             time.sleep(2)
 
             self.stream_client = MJPEGClient(self.url)
@@ -65,13 +67,13 @@ class UbtechCameraVideoStream(VideoStream):
                         height, width = frame.shape[:2]
                         ratio = width / height
                         new_width, new_height = (
-                            self.resolution[0],
-                            int(self.resolution[0] / ratio)
-                        ) if width > height else (
-                            int(self.resolution[1] * ratio),
-                            self.resolution[1]
+                            (self.resolution[0], int(self.resolution[0] / ratio))
+                            if width > height
+                            else (int(self.resolution[1] * ratio), self.resolution[1])
                         )
-                        resized = cv2.resize(frame, (new_width, new_height), interpolation=cv2.INTER_AREA)
+                        resized = cv2.resize(
+                            frame, (new_width, new_height), interpolation=cv2.INTER_AREA
+                        )
                         _, buffer = cv2.imencode(".jpg", resized, self.encode_quality)
                         frame_data = base64.b64encode(buffer).decode("utf-8")
 

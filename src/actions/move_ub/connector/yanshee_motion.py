@@ -4,14 +4,6 @@ import threading
 import time
 from dataclasses import asdict, dataclass, field
 
-try:
-    import hid
-except ImportError:
-    logging.warning(
-        "HID library not found. Please install the HIDAPI library to use this plugin."
-    )
-    hid = None
-
 from ubtechapi import YanAPI
 
 from actions.base import ActionConfig, ActionConnector
@@ -20,22 +12,44 @@ from actions.move_ub.interface import MoveInput
 
 @dataclass
 class Motion:
-    name:      str
+    name: str
     direction: str = field(default=None)
-    speed:     str = field(default=None)
-    repeat:    int = field(default=None)
-    version:   str = field(default=None)
+    speed: str = field(default=None)
+    repeat: int = field(default=None)
+    version: str = field(default=None)
 
     # map name → defaults
     _defaults = {
-      "reset": {"direction": "", "speed": "normal", "repeat": 1, "version": "v1"},
-      "wave": {"direction": "both", "speed": "normal", "repeat": 1, "version": "v1"},
-      "bow": {"direction": "", "speed": "normal", "repeat": 1, "version": "v1"},
-      "crouch": {"direction": "", "speed": "normal", "repeat": 1, "version": "v1"},
-      "come on": {"direction": "", "speed": "normal", "repeat": 1, "version": "v1"},
-      "walk": {"direction": "forward", "speed": "normal", "repeat": 1, "version": "v1"},
-      "head": {"direction": "forward", "speed": "normal", "repeat": 1, "version": "v1"},
-      "turn around": {"direction": "left", "speed": "normal", "repeat": 1, "version": "v1"},
+        "reset": {"direction": "", "speed": "normal", "repeat": 1, "version": "v1"},
+        "wave": {"direction": "both", "speed": "normal", "repeat": 1, "version": "v1"},
+        "bow": {"direction": "", "speed": "normal", "repeat": 1, "version": "v1"},
+        "crouch": {"direction": "", "speed": "normal", "repeat": 1, "version": "v1"},
+        "come on": {"direction": "", "speed": "normal", "repeat": 1, "version": "v1"},
+        "walk": {
+            "direction": "forward",
+            "speed": "normal",
+            "repeat": 1,
+            "version": "v1",
+        },
+        "head": {
+            "direction": "forward",
+            "speed": "normal",
+            "repeat": 1,
+            "version": "v1",
+        },
+        "turn around": {
+            "direction": "left",
+            "speed": "normal",
+            "repeat": 1,
+            "version": "v1",
+        },
+        "WakaWaka": {
+            "direction": "both",
+            "speed": "normal",
+            "repeat": 1,
+            "version": "v1",
+        },
+        "Hug": {"direction": "", "speed": "", "repeat": 1, "version": "v1"},
     }
 
     def __post_init__(self):
@@ -45,6 +59,7 @@ class Motion:
         for field_name, default_val in defaults.items():
             if getattr(self, field_name) is None:
                 setattr(self, field_name, default_val)
+
 
 class MoveRos2Connector(ActionConnector[MoveInput]):
 
@@ -65,18 +80,6 @@ class MoveRos2Connector(ActionConnector[MoveInput]):
         self.turn_speed = 0.6
         self.timeout = 8.0
 
-        if hid is not None:
-            for device in hid.enumerate():
-                logging.debug(f"device {device['product_string']}")
-                if "Xbox Wireless Controller" in device["product_string"]:
-                    self.vendor_id = device["vendor_id"]
-                    self.product_id = device["product_id"]
-                    self.gamepad = hid.Device(self.vendor_id, self.product_id)
-                    logging.info(
-                        f"Connected {device['product_string']} {self.vendor_id} {self.product_id}"
-                    )
-                    break
-
         try:
             robot_ip = getattr(self.config, "robot_ip", "127.0.0.1")
             YanAPI.yan_api_init(robot_ip)
@@ -95,7 +98,7 @@ class MoveRos2Connector(ActionConnector[MoveInput]):
     def _send_command(self, motion: Motion):
         try:
             with concurrent.futures.ThreadPoolExecutor(max_workers=1) as executor:
-                future = executor.submit(YanAPI.sync_play_motion,**asdict(motion))
+                future = executor.submit(YanAPI.sync_play_motion, **asdict(motion))
                 result = future.result(timeout=self.timeout)
             logging.info("Sent Command %r", asdict(motion))
             if motion.name != "reset":
@@ -106,7 +109,8 @@ class MoveRos2Connector(ActionConnector[MoveInput]):
         except concurrent.futures.TimeoutError:
             logging.error(
                 "Timeout when sending command %r (>%s seconds)",
-                asdict(motion), self.timeout
+                asdict(motion),
+                self.timeout,
             )
             return False
 
@@ -115,7 +119,9 @@ class MoveRos2Connector(ActionConnector[MoveInput]):
             return False
 
         except Exception as err:
-            logging.error("Unexpected error sending command %r: %s", asdict(motion), err)
+            logging.error(
+                "Unexpected error sending command %r: %s", asdict(motion), err
+            )
             return False
 
     def _execute_command_thread(self, motion: Motion) -> None:
@@ -166,28 +172,36 @@ class MoveRos2Connector(ActionConnector[MoveInput]):
             await self._execute_sport_command(Motion("wave"))
         elif output_interface.action == "walk forward":
             logging.info("UB command: walk forward")
-            await self._execute_sport_command(Motion("walk",direction="forward", repeat=2))
+            await self._execute_sport_command(
+                Motion("walk", direction="forward", repeat=2)
+            )
         elif output_interface.action == "walk backward":
             logging.info("UB command: walk backward")
-            await self._execute_sport_command(Motion("walk",direction="backward", repeat=2))
+            await self._execute_sport_command(
+                Motion("walk", direction="backward", repeat=2)
+            )
         elif output_interface.action == "walk left":
             logging.info("UB command: walk left")
-            await self._execute_sport_command(Motion("walk",direction="left", repeat=2))
+            await self._execute_sport_command(
+                Motion("walk", direction="left", repeat=2)
+            )
         elif output_interface.action == "walk right":
             logging.info("UB command: walk right")
-            await self._execute_sport_command(Motion("walk",direction="right", repeat=2))
+            await self._execute_sport_command(
+                Motion("walk", direction="right", repeat=2)
+            )
         elif output_interface.action == "turn left":
             logging.info("UB command: turn left")
-            await self._execute_sport_command(Motion("turn around",direction="left"))
+            await self._execute_sport_command(Motion("turn around", direction="left"))
         elif output_interface.action == "turn right":
             logging.info("UB command: turn right")
-            await self._execute_sport_command(Motion("turn around",direction="right"))
+            await self._execute_sport_command(Motion("turn around", direction="right"))
         elif output_interface.action == "look left":
             logging.info("UB command: look left")
-            await self._execute_sport_command(Motion("head",direction="left"))
+            await self._execute_sport_command(Motion("head", direction="left"))
         elif output_interface.action == "look right":
             logging.info("UB command: look right")
-            await self._execute_sport_command(Motion("head",direction="right"))
+            await self._execute_sport_command(Motion("head", direction="right"))
         elif output_interface.action == "bow":
             logging.info("UB command: bow")
             await self._execute_sport_command(Motion("bow"))
@@ -197,6 +211,12 @@ class MoveRos2Connector(ActionConnector[MoveInput]):
         elif output_interface.action == "come on":
             logging.info("UB command: come on")
             await self._execute_sport_command(Motion("come on"))
+        elif output_interface.action == "WakaWaka":
+            logging.info("UB command: waka waka")
+            await self._execute_sport_command(Motion("WakaWaka"))
+        elif output_interface.action == "hug":
+            logging.info("UB command: hug")
+            await self._execute_sport_command(Motion("Hug"))
         elif output_interface.action == "reset":
             logging.info("UB command: stand still")
             await self._execute_sport_command("reset")

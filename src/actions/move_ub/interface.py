@@ -19,6 +19,9 @@ class MovementAction(str, Enum):
     LOOK_RIGHT = "look right"
     WALK_LEFT = "walk left"
     WALK_RIGHT = "walk right"
+    WAKAWAKA = "waka waka"
+    HUG = "hug"
+
 
 @dataclass
 class MoveInput:

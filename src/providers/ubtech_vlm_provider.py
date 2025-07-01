@@ -16,12 +16,11 @@ class UbtechVLMProvider:
     def __init__(
         self,
         ws_url: str,
-        robot_ip:str,
+        robot_ip: str,
         fps: int = 30,
         resolution: Tuple[int, int] = (640, 480),
         jpeg_quality: int = 70,
         stream_url: Optional[str] = None,
-        
     ):
         self.robot_ip = robot_ip
         self.running = False
@@ -50,7 +49,9 @@ class UbtechVLMProvider:
 
         if self.stream_ws_client:
             self.stream_ws_client.start()
-            self.video_stream.register_frame_callback(self.stream_ws_client.send_message)
+            self.video_stream.register_frame_callback(
+                self.stream_ws_client.send_message
+            )
 
         logging.info("Ubtech VLM provider started")
 
