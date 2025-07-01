@@ -66,7 +66,7 @@ dev = [
 pythonpath = ["src"]
 asyncio_mode = "auto"
 addopts = "-m \"not integration\""
-norecursedirs = ["src/unitree", "system_hw_test", "gazebo", "ubtech"]
+norecursedirs = ["src/unitree", "system_hw_test", "gazebo", "src/ubtech"]
 markers = [
     "integration: marks tests as integration tests",
 ]
@@ -81,13 +81,13 @@ profile = "black"
 multi_line_output = 3
 line_length = 88
 sources = ["src", "tests"]
-skip_glob = [".venv*", "/src/unitree", "/gazebo", "/ubtech"]
+skip_glob = [".venv*", "/src/unitree", "/gazebo", "/src/ubtech"]
 
 [tool.ruff]
 line-length = 88
 indent-width = 4
 src = ["src"]
-exclude = ["src/unitree","gazebo", "ubtech"]
+exclude = ["src/unitree","gazebo", "src/ubtech"]
 
 [tool.ruff.lint]
 select = ["E", "F", "I"]
