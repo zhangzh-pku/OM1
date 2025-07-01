@@ -55,7 +55,7 @@ class Odom(FuserInput[str]):
         unitree_ethernet = getattr(config, "unitree_ethernet", None)
         if use_zenoh:
             # probably a turtlebot
-            logging.info(f"RPLidar using Zenoh and URID: {self.URID}")
+            logging.info(f"Odom using Zenoh and URID: {self.URID}")
 
         self.odom = OdomProvider(self.URID, use_zenoh, unitree_ethernet)
         self.descriptor_for_LLM = "Information about your location and body pose, to help plan your movements."
@@ -98,17 +98,7 @@ class Odom(FuserInput[str]):
         """
         logging.debug(f"odom: {raw_input}")
 
-        # {
-        #     "x": self.x,
-        #     "y": self.y,
-        #     "moving": self.moving,
-        #     "yaw_odom_0_360": self.yaw_odom_0_360,
-        #     "body_height_cm": self.body_height_cm,
-        #     "body_attitude": self.body_attitude,
-        # }
-
         res = ""
-
         moving = raw_input["moving"]
         attitude = raw_input["body_attitude"]
 
