@@ -1,6 +1,8 @@
+import json
 import logging
 import math
 import multiprocessing as mp
+import os
 import threading
 import time
 from dataclasses import dataclass
@@ -11,6 +13,7 @@ import numpy as np
 import zenoh
 from numpy.typing import NDArray
 
+from providers.odom_provider import OdomProvider
 from runtime.logging import LoggingConfig, get_logging_config, setup_logging
 from zenoh_idl import sensor_msgs
 from zenoh_idl.sensor_msgs import LaserScan
@@ -36,7 +39,7 @@ class RPLidarConfig:
 
     max_buf_meas: int = 0
     min_len: int = 5
-    max_distance_mm: int = 1500
+    max_distance_mm: int = 10000
 
 
 def rplidar_processor(
@@ -163,9 +166,8 @@ class RPLidarProvider:
         URID: str = "",
         use_zenoh: bool = False,
         simple_paths: bool = False,
-        rplidar_config: RPLidarConfig = RPLidarConfig(
-            max_buf_meas=0, min_len=5, max_distance_mm=1500
-        ),
+        rplidar_config: RPLidarConfig = RPLidarConfig(),
+        log_file: bool = False,
     ):
         """
         Robot and sensor configuration
@@ -183,6 +185,7 @@ class RPLidarProvider:
         self.use_zenoh = use_zenoh
         self.simple_paths = simple_paths
         self.rplidar_config = rplidar_config
+        self.log_file = log_file
 
         self.running: bool = False
         self.lidar = None
@@ -195,6 +198,26 @@ class RPLidarProvider:
 
         self.angles = None
         self.angles_final = None
+
+        self.odom_unix_ts = 0.0
+        self.odom_x = 0.0
+        self.odom_y = 0.0
+        self.odom_yaw_m180_p180 = 0.0
+        self.odom_yaw_0_360 = 0.0
+        self.odom = OdomProvider()
+        logging.info(f"Mapper Odom Provider: {self.odom}")
+
+        self.write_to_local_file = False
+        if log_file:
+            self.write_to_local_file = log_file
+
+        self.filename_current = None
+        self.max_file_size_bytes = 1024 * 1024
+
+        # Create timestamped log filename
+        if self.write_to_local_file:
+            self.filename_current = self.update_filename()
+            logging.info(f"RPSCAN Logging to {self.filename_current}")
 
         # Initialize paths for path planning
         # Define 9 straight line paths separated by 15 degrees
@@ -229,6 +252,36 @@ class RPLidarProvider:
                 self.zen.declare_subscriber(f"{self.URID}/pi/scan", self.listen_scan)
             except Exception as e:
                 logging.error(f"Error opening Zenoh client: {e}")
+
+    def update_filename(self):
+        unix_ts = time.time()
+        logging.info(f"RPSCAN time: {unix_ts}")
+        unix_ts = str(unix_ts).replace(".", "_")
+        filename = f"dump/lidar_{unix_ts}Z.jsonl"
+        return filename
+
+    def write_str_to_file(self, json_line: str):
+        """
+        Writes a dictionary to a file in JSON lines format. If the file exceeds max_file_size_bytes,
+        creates a new file with a timestamp.
+
+        Parameters:
+        - data: Dictionary to write
+        """
+
+        if not isinstance(json_line, str):
+            raise ValueError("Provided json_line must be a json string.")
+
+        if (
+            os.path.exists(self.filename_current)
+            and os.path.getsize(self.filename_current) > self.max_file_size_bytes
+        ):
+            self.filename_current = self.update_filename()
+            logging.info(f"New rpscan file name: {self.filename_current}")
+
+        with open(self.filename_current, "a", encoding="utf-8") as f:
+            f.write(json_line + "\n")
+            f.flush()
 
     def listen_scan(self, data: zenoh.Sample):
         """
@@ -325,18 +378,11 @@ class RPLidarProvider:
             with angles and distances.
         """
         complexes = []
+        raw = []
 
         for angle, distance in data:
 
             d_m = distance
-
-            # don't worry about distant objects
-            if d_m > self.relevant_distance_max:
-                continue
-
-            # don't worry about distant objects
-            if d_m < self.relevant_distance_min:
-                continue
 
             # first, correctly orient the sensor zero to the robot zero
             angle = angle + self.sensor_mounting_angle
@@ -345,27 +391,27 @@ class RPLidarProvider:
             elif angle < 0.0:
                 angle = 360.0 + angle
 
+            raw.append([round(angle, 2), d_m])
+
+            # don't worry about distant objects
+            if d_m > self.relevant_distance_max:
+                continue
+
+            # don't worry about too close objects
+            if d_m < self.relevant_distance_min:
+                continue
+
             # convert the angle from [0 to 360] to [-180 to +180] range
             angle = angle - 180.0
 
-            reflection = False
             for b in self.angles_blanked:
                 if angle >= b[0] and angle <= b[1]:
                     # this is a permanent robot reflection
                     # disregard
-                    reflection = True
-                    break
-
-            if d_m < self.relevant_distance_min:
-                # this is a permanent robot reflection
-                # disregard
-                reflection = True
-
-            if reflection:
-                continue
+                    continue
 
             # Convert angle to radians for trigonometric calculations
-            # Note: angle is adjusted to [0, 360] range
+            # Note: angle is adjusted back to [0, 360] range
             a_rad = (angle + 180.0) * self.DEGREES_TO_RADIANS
 
             v1 = d_m * math.cos(a_rad)
@@ -380,8 +426,25 @@ class RPLidarProvider:
             complexes.append([x, y, angle, d_m])
 
         array = np.array(complexes)
+        raw_array = np.array(raw)
 
-        # logging.info(f"final: {array.ndim}")
+        # save_timestamp = time.time()
+        if self.write_to_local_file:
+            try:
+                json_line = json.dumps(
+                    {
+                        "odom_unix_ts": self.odom_unix_ts,
+                        "odom_x": self.odom_x,
+                        "odom_y": self.odom_y,
+                        "odom_yaw_m180_p180": self.odom_yaw_m180_p180,
+                        "odom_yaw_0_360": self.odom_yaw_0_360,
+                        "frame": raw_array.tolist(),
+                    }
+                )
+                self.write_str_to_file(json_line)
+                logging.debug(f"rplidar wrote to: {self.filename_current}")
+            except Exception as e:
+                logging.error(f"Error saving rplidar to file: {str(e)}")
 
         # sort data into strictly increasing angles to deal with sensor issues
         # the sensor sometimes reports part of the previous scan and part of the next scan
@@ -432,7 +495,7 @@ class RPLidarProvider:
                         logging.debug(f"remaining paths: {possible_paths}")
                         break  # no need to check other paths
 
-        logging.info(f"possible_paths RP Lidar: {possible_paths}")
+        logging.debug(f"possible_paths RP Lidar: {possible_paths}")
 
         self.turn_left = []
         self.turn_right = []
@@ -489,6 +552,19 @@ class RPLidarProvider:
                 logging.debug(f"_serial_processor: {data}")
                 array_ready = np.array(data)
                 self._path_processor(array_ready)
+
+                try:
+                    o = self.odom.position
+                    logging.debug(f"Odom data: {o}")
+                    if o:
+                        self.odom_x = o["odom_x"]
+                        self.odom_y = o["odom_y"]
+                        self.odom_unix_ts = o["odom_unix_ts"]
+                        self.odom_yaw_m180_p180 = o["odom_yaw_m180_p180"]
+                        self.odom_yaw_0_360 = o["odom_yaw_0_360"]
+                except Exception as e:
+                    logging.error(f"Error parsing Odom: {e}")
+
             except Empty:
                 time.sleep(0.1)
                 continue

@@ -33,10 +33,17 @@ class Go2GameControllerConnector(ActionConnector[IDLEInput]):
         """
         super().__init__(config)
 
-        self.config = config  # never used?
+        self.config = config
+
+        # Movement speed m/s and rad/s
+        self.move_speed = getattr(config, "speed_x", 0.9)
+        self.turn_speed = getattr(config, "speed_yaw", 0.6)
+        self.yaw_correction = getattr(config, "yaw_correction", 0.0)
+        self.lateral_correction = getattr(config, "lateral_correction", 0.0)
 
         self.gamepad = None
         self.sony_dualsense = False
+        self.sony_edge = False
         self.xbox = False
         self._init_controller()
 
@@ -70,10 +77,6 @@ class Go2GameControllerConnector(ActionConnector[IDLEInput]):
 
         self.RTLT_moving = False
 
-        # Movement speed m/s and rad/s (?)
-        self.move_speed = 0.3
-        self.turn_speed = 0.4
-
         unitree_ethernet = getattr(config, "unitree_ethernet", None)
         self.odom = OdomProvider(channel=unitree_ethernet)
         self.unitree_state_provider = UnitreeGo2StateProvider()
@@ -81,30 +84,13 @@ class Go2GameControllerConnector(ActionConnector[IDLEInput]):
         self.thread_lock = threading.Lock()
 
     def _init_controller(self) -> None:
-        """Initialize or reinitialize the game controller."""
-        if self.gamepad:
-            try:
-                self.gamepad.close()
-            except Exception:
-                pass
-            self.gamepad = None
+        """
+        Initialize or reinitialize the game controller.
+        """
 
         self.sony_dualsense = False
         self.xbox = False
-
-        # # Reset state if explicitly requested
-        # if reset_state:
-        #     self.rt_previous = 0
-        #     self.lt_previous = 0
-        #     self.d_pad_previous = 0
-        #     self.button_previous = 0
-
-        #     self.lt_value = None
-        #     self.rt_value = None
-        #     self.d_pad_value = None
-        #     self.button_value = None
-
-        #     self.RTLT_moving = False
+        self.sony_edge = False
 
         if hid is not None:
             for device in hid.enumerate():
@@ -143,7 +129,7 @@ class Go2GameControllerConnector(ActionConnector[IDLEInput]):
                         logging.info(
                             f"Connected {device['product_string']} {vendor_id} {product_id}"
                         )
-                        self.sony_dualsense = True
+                        self.sony_edge = True
                         break
                     except Exception as e:
                         logging.error(
@@ -270,21 +256,18 @@ class Go2GameControllerConnector(ActionConnector[IDLEInput]):
 
         # Attempt reconnection if no gamepad is currently attached
         if self.gamepad is None and hid is not None:
+            logging.warning("Controller disconnected - will try to reconnect")
             self._init_controller()
 
         if self.gamepad:
             try:
                 # try to read USB data, and if there is nothing, timeout
                 data = list(self.gamepad.read(64, timeout=50))
-            except OSError as e:
+            except Exception as e:
                 logging.warning(f"Controller disconnected: {e}")
                 self.gamepad = None
-                self._init_controller()
-                if self.gamepad:
-                    logging.info("Controller reconnected successfully")
-                return
 
-        # special case for no data if the p-pad or LT and RT is kept pressed
+        # special case for no data if the D-pad or LT and RT is kept pressed
         if data is None or len(data) == 0:
             if self.rt_previous > 0 or self.lt_previous > 0:
                 # we always excute the left turn first
@@ -302,10 +285,14 @@ class Go2GameControllerConnector(ActionConnector[IDLEInput]):
             if self.d_pad_previous > 0:
                 if self.d_pad_previous == 1:  # Up
                     logging.info("D-pad UP - Moving forward")
-                    self._move_robot(self.move_speed, 0.0)
+                    self._move_robot(
+                        self.move_speed, self.lateral_correction, self.yaw_correction
+                    )
                 elif self.d_pad_previous == 5:  # Down
                     logging.info("D-pad DOWN - Moving backward")
-                    self._move_robot(-self.move_speed, 0.0)
+                    self._move_robot(
+                        -self.move_speed, -self.lateral_correction, -self.yaw_correction
+                    )
                 elif self.d_pad_previous == 7:  # Left
                     logging.info("D-pad LEFT - Moving left")
                     self._move_robot(0.0, self.move_speed)
@@ -326,11 +313,22 @@ class Go2GameControllerConnector(ActionConnector[IDLEInput]):
                 self.rt_value = data[11]  # Right Trigger
                 self.d_pad_value = data[13]
                 self.button_value = data[14]
-            elif self.sony_dualsense:
+            elif self.sony_dualsense or self.sony_edge:
                 logging.debug(f"Gamepad data Sony: {data}")
-                self.lt_value = data[8]  # Left Trigger
-                self.rt_value = data[9]  # Right Trigger
-                multi = data[5]
+
+                multi = 0
+
+                if len(data) > 10:
+                    logging.debug("Gamepad data Sony length > 10")
+                    self.lt_value = data[5]  # Left Trigger
+                    self.rt_value = data[6]  # Right Trigger
+                    multi = data[8]
+                elif len(data) == 10:
+                    logging.debug("Gamepad data Sony length == 10")
+                    self.lt_value = data[8]  # Left Trigger
+                    self.rt_value = data[9]  # Right Trigger
+                    multi = data[5]
+
                 if multi == 8:
                     self.d_pad_value = 0
                     self.button_value = 0
@@ -355,13 +353,17 @@ class Go2GameControllerConnector(ActionConnector[IDLEInput]):
                     self.d_pad_value = 0
                     self.button_value = 2
 
+                logging.debug(f"Gamepad data lt: {self.lt_value}")
+                logging.debug(f"Gamepad data rt: {self.rt_value}")
+                logging.debug(f"Gamepad data multi: {multi}")
+
             move_triggered_RTLT = False
             move_triggered_dpad = False
 
             # Trigger values range from 0 to 255
             # Check if the triggers have changed significantly
-            # rt_changed = abs(rt_value - self.rt_previous) > 5
-            # lt_changed = abs(lt_value - self.lt_previous) > 5
+            # rt_changed = abs(self.rt_value - self.rt_previous) > 5
+            # lt_changed = abs(self.lt_value - self.lt_previous) > 5
 
             # Normalize trigger values from 0-255 to 0-1.0
             rt = self.rt_value / 255.0
@@ -371,11 +373,11 @@ class Go2GameControllerConnector(ActionConnector[IDLEInput]):
 
             # Right Trigger - clockwise rotation
             if rt > 0.8 and rt > lt:
-                self.RTLT_moving = True
+                move_triggered_RTLT = True
                 self._move_robot(0.0, 0.0, -self.turn_speed)
             # Left Trigger - counter-clockwise rotation
             elif lt > 0.8 and lt > rt:
-                self.RTLT_moving = True
+                move_triggered_RTLT = True
                 self._move_robot(0.0, 0.0, self.turn_speed)
             # Both triggers released or below threshold
             elif (rt <= 0.8 and lt <= 0.8) and previous_RTLT > 0.8:
@@ -399,11 +401,15 @@ class Go2GameControllerConnector(ActionConnector[IDLEInput]):
             if self.d_pad_value == 1:  # Up
                 logging.info("D-pad UP - Moving forward")
                 move_triggered_dpad = True
-                self._move_robot(self.move_speed, 0.0)
+                self._move_robot(
+                    self.move_speed, self.lateral_correction, self.yaw_correction
+                )
             elif self.d_pad_value == 5:  # Down
                 logging.info("D-pad DOWN - Moving backward")
                 move_triggered_dpad = True
-                self._move_robot(-self.move_speed, 0.0)
+                self._move_robot(
+                    -self.move_speed, -self.lateral_correction, -self.yaw_correction
+                )
             elif self.d_pad_value == 7:  # Left
                 logging.info("D-pad LEFT - Moving left")
                 move_triggered_dpad = True
@@ -448,7 +454,6 @@ class Go2GameControllerConnector(ActionConnector[IDLEInput]):
                 elif self.button_value == 2:
                     logging.info("Controller unitree: lay_down")
                     self._execute_sport_command_sync("StandDown")
-
                 # # X button
                 # elif button_value == 8:
                 #     self._execute_sport_command_sync("Hello")
@@ -462,5 +467,3 @@ class Go2GameControllerConnector(ActionConnector[IDLEInput]):
 
             # update the value of button_previous
             self.button_previous = self.button_value
-
-        # no need to return
