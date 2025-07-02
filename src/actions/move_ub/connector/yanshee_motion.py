@@ -50,7 +50,12 @@ class Motion:
             "version": "v1",
         },
         "hug": {"direction": "", "speed": "normal", "repeat": 1, "version": "v1"},
-        "raise right hand": {"direction": "", "speed": "normal", "repeat": 1, "version": "v1"},
+        "raise right hand": {
+            "direction": "",
+            "speed": "normal",
+            "repeat": 1,
+            "version": "v1",
+        },
     }
 
     def __post_init__(self):
