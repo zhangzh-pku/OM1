@@ -49,7 +49,8 @@ class Motion:
             "repeat": 1,
             "version": "v1",
         },
-        "Hug": {"direction": "", "speed": "", "repeat": 1, "version": "v1"},
+        "hug": {"direction": "", "speed": "normal", "repeat": 1, "version": "v1"},
+        "raise right hand": {"direction": "", "speed": "normal", "repeat": 1, "version": "v1"},
     }
 
     def __post_init__(self):
@@ -216,7 +217,10 @@ class MoveRos2Connector(ActionConnector[MoveInput]):
             await self._execute_sport_command(Motion("WakaWaka"))
         elif output_interface.action == "hug":
             logging.info("UB command: hug")
-            await self._execute_sport_command(Motion("Hug"))
+            await self._execute_sport_command(Motion("hug"))
+        elif output_interface.action == "raise right hand":
+            logging.info("UB command: raise right hand")
+            await self._execute_sport_command(Motion("raise right hand"))
         elif output_interface.action == "reset":
             logging.info("UB command: stand still")
             await self._execute_sport_command("reset")
