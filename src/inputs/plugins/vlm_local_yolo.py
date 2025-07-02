@@ -103,7 +103,7 @@ class VLM_Local_YOLO(FuserInput[str]):
         self.descriptor_for_LLM = "Eyes"
 
         # Load model
-        self.model = YOLO("yolov8n.pt")
+        self.model = YOLO("yolov8n_aug.pt")
 
         self.write_to_local_file = False
         if self.config.log_file:
