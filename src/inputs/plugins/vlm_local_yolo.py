@@ -197,7 +197,6 @@ class VLM_Local_YOLO(FuserInput[str]):
                     self.odom_yaw_m180_p180 = o["odom_yaw_m180_p180"]
             except Exception as e:
                 logging.error(f"Error parsing Odom: {e}")
-            # ------------------------------------------------
 
             results = self.model.predict(
                 source=frame, save=False, stream=True, verbose=False
