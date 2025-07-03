@@ -284,10 +284,10 @@ class OdomProvider:
             pose = pose_data.pose
             header = pose_data.header
 
-            # this is the time according to the RockChip. It may be off by several seconds from 
+            # this is the time according to the RockChip. It may be off by several seconds from
             # UTC
             self.odom_rockchip_ts = header.stamp.sec + header.stamp.nanosec * 1e-9
-            
+
             # The local timestamp
             self.odom_subscriber_ts = time.time()
 
@@ -380,5 +380,5 @@ class OdomProvider:
             "body_height_cm": self.body_height_cm,
             "body_attitude": self.body_attitude,
             "odom_rockchip_ts": self.odom_rockchip_ts,
-            "odom_subscriber_ts": self.odom_subscriber_ts
+            "odom_subscriber_ts": self.odom_subscriber_ts,
         }
