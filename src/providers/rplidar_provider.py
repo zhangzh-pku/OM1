@@ -199,7 +199,8 @@ class RPLidarProvider:
         self.angles = None
         self.angles_final = None
 
-        self.odom_unix_ts = 0.0
+        self.odom_rockchip_ts = 0.0
+        self.odom_subscriber_ts = 0.0
         self.odom_x = 0.0
         self.odom_y = 0.0
         self.odom_yaw_m180_p180 = 0.0
@@ -433,7 +434,8 @@ class RPLidarProvider:
             try:
                 json_line = json.dumps(
                     {
-                        "odom_unix_ts": self.odom_unix_ts,
+                        "odom_rockchip_ts": self.odom_rockchip_ts,
+                        "odom_subscriber_ts": self.odom_subscriber_ts,
                         "odom_x": self.odom_x,
                         "odom_y": self.odom_y,
                         "odom_yaw_m180_p180": self.odom_yaw_m180_p180,
@@ -559,7 +561,8 @@ class RPLidarProvider:
                     if o:
                         self.odom_x = o["odom_x"]
                         self.odom_y = o["odom_y"]
-                        self.odom_unix_ts = o["odom_unix_ts"]
+                        self.odom_rockchip_ts = o["odom_rockchip_ts"]
+                        self.odom_subscriber_ts = o["odom_subscriber_ts"]
                         self.odom_yaw_m180_p180 = o["odom_yaw_m180_p180"]
                         self.odom_yaw_0_360 = o["odom_yaw_0_360"]
                 except Exception as e:
