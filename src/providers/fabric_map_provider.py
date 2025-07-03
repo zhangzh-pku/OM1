@@ -119,7 +119,8 @@ class FabricData:
     unix_ts: float
     odom_x: float
     odom_y: float
-    odom_unix_ts: float
+    odom_rockchip_ts: float
+    odom_subscriber_ts: float
     odom_yaw_0_360: float
     odom_yaw_m180_p180: float
     rf_data: List[RFData]
@@ -153,7 +154,8 @@ class FabricData:
             "odom_y": self.odom_y,
             "odom_yaw_0_360": self.odom_yaw_0_360,
             "odom_yaw_m180_p180": self.odom_yaw_m180_p180,
-            "odom_unix_ts": self.odom_unix_ts,
+            "odom_rockchip_ts": self.odom_rockchip_ts,
+            "odom_subscriber_ts": self.odom_subscriber_ts,
             "rf_data": [rf.to_dict() for rf in self.rf_data] if self.rf_data else [],
             "rf_data_raw": (
                 [rf.to_dict() for rf in self.rf_data_raw] if self.rf_data_raw else []
