@@ -12,6 +12,7 @@ from ultralytics import YOLO
 from inputs.base import SensorConfig
 from inputs.base.loop import FuserInput
 from providers.io_provider import IOProvider
+from providers.odom_provider import OdomProvider
 
 # Common resolutions to test (width, height), ordered high to low
 RESOLUTIONS = [
@@ -89,7 +90,7 @@ class VLM_Local_YOLO(FuserInput[str]):
         """
         super().__init__(config)
 
-        self.camera_index = 0  # default to default webcam unless specified otherwsie
+        self.camera_index = 0  # default to default webcam unless specified otherwise
         if self.config.camera_index:
             self.camera_index = self.config.camera_index
 
@@ -137,6 +138,15 @@ class VLM_Local_YOLO(FuserInput[str]):
                 f"Webcam pixel dimensions for YOLO: {self.width}, {self.height}"
             )
 
+        self.odom = OdomProvider()
+        logging.info(f"YOLO Odom Provider: {self.odom}")
+        self.odom_rockchip_ts = 0.0
+        self.odom_subscriber_ts = 0.0
+        self.odom_x = 0.0
+        self.odom_y = 0.0
+        self.odom_yaw_0_360 = 0.0
+        self.odom_yaw_m180_p180 = 0.0
+
     def update_filename(self):
         unix_ts = round(time.time(), 6)
         logging.info(f"YOLO time: {unix_ts}")
@@ -177,6 +187,19 @@ class VLM_Local_YOLO(FuserInput[str]):
             self.frame_index += 1
             timestamp = time.time()
 
+            try:
+                o = self.odom.position
+                logging.debug(f"Odom data: {o}")
+                if o:
+                    self.odom_x = o["odom_x"]
+                    self.odom_y = o["odom_y"]
+                    self.odom_rockchip_ts = o["odom_rockchip_ts"]
+                    self.odom_subscriber_ts = o["odom_subscriber_ts"]
+                    self.odom_yaw_0_360 = o["odom_yaw_0_360"]
+                    self.odom_yaw_m180_p180 = o["odom_yaw_m180_p180"]
+            except Exception as e:
+                logging.error(f"Error parsing Odom: {e}")
+
             results = self.model.predict(
                 source=frame, save=False, stream=True, verbose=False
             )
@@ -207,6 +230,12 @@ class VLM_Local_YOLO(FuserInput[str]):
                             "frame": self.frame_index,
                             "timestamp": timestamp,
                             "detections": detections,
+                            "odom_rockchip_ts": self.odom_rockchip_ts,
+                            "odom_subscriber_ts": self.odom_subscriber_ts,
+                            "odom_x": self.odom_x,
+                            "odom_y": self.odom_y,
+                            "odom_yaw_0_360": self.odom_yaw_0_360,
+                            "odom_yaw_m180_p180": self.odom_yaw_m180_p180,
                         }
                     )
                     self.write_str_to_file(json_line)
