@@ -4,7 +4,7 @@ import threading
 import time
 from dataclasses import asdict, dataclass, field
 
-from ubtechapi import YanAPI
+from ubtech.ubtechapi import YanAPI
 
 from actions.base import ActionConfig, ActionConnector
 from actions.move_ub.interface import MoveInput
