@@ -1,64 +1,83 @@
 import asyncio
+import json
+import logging
 import time
 from dataclasses import dataclass
 from queue import Empty, Queue
-from typing import List, Optional
+from typing import Dict, List, Optional
 
 from inputs.base import SensorConfig
 from inputs.base.loop import FuserInput
 from providers.io_provider import IOProvider
-from providers.rplidar_provider import RPLidarProvider
+from providers.ubtech_vlm_provider import UbtechVLMProvider
 
 
 @dataclass
 class Message:
-    """
-    Container for timestamped messages.
-
-    Parameters
-    ----------
-    timestamp : float
-        Unix timestamp of the message
-    message : str
-        Content of the message
-    """
-
     timestamp: float
     message: str
 
 
-class RPLidar(FuserInput[str]):
+class UbtechCameraVLMInput(FuserInput[str]):
     """
-    RPLidar input handler.
+    UbTech Camera VLM bridge.
 
-    A class that processes RPLidar inputs and generates text descriptions.
-    It maintains an internal buffer of processed messages.
+    Takes UbTech Camera images, sends them to a cloud VLM provider,
+    converts the responses to text strings, and sends them to the fuser.
     """
 
     def __init__(self, config: SensorConfig = SensorConfig()):
+        """
+        Initialize VLM input handler.
+
+        Sets up the required providers and buffers for handling VLM processing.
+        Initializes connection to the VLM service and registers message handlers.
+        """
         super().__init__(config)
 
         # Track IO
         self.io_provider = IOProvider()
 
+        self.descriptor_for_LLM = "Your Eyes"
+        self.robot_ip = getattr(self.config, "robot_ip", None)
         # Buffer for storing the final output
         self.messages: List[Message] = []
 
         # Buffer for storing messages
         self.message_buffer: Queue[str] = Queue()
 
-        # Build lidar configuration from config
-        lidar_config = self._extract_lidar_config(config)
+        # Initialize VLM provider
+        base_url = getattr(self.config, "base_url", "wss://api-vila.openmind.org")
+        self.vlm: UbtechVLMProvider = UbtechVLMProvider(
+            ws_url=base_url, robot_ip=self.robot_ip
+        )
+        self.vlm.start()
+        self.vlm.register_message_callback(self._handle_vlm_message)
 
-        # Initialize RPLidar Provider
-        self.lidar: RPLidarProvider = RPLidarProvider(**lidar_config)
-        self.lidar.start()
+    def _handle_vlm_message(self, raw_message: str):
+        """
+        Process incoming VLM messages.
 
-        self.descriptor_for_LLM = "Information about objects and walls around you, to plan your movements and avoid bumping into things."
+        Parses JSON messages from the VLM service and adds valid responses
+        to the message buffer for further processing.
+
+        Parameters
+        ----------
+        raw_message : str
+            Raw JSON message received from the VLM service
+        """
+        try:
+            json_message: Dict = json.loads(raw_message)
+            if "vlm_reply" in json_message:
+                vlm_reply = json_message["vlm_reply"]
+                self.message_buffer.put(vlm_reply)
+                logging.info("Detected VLM message: %s", vlm_reply)
+        except json.JSONDecodeError:
+            pass
 
     async def _poll(self) -> Optional[str]:
         """
-        Poll for new messages from the RPLidar Provider.
+        Poll for new messages from the VLM service.
 
         Checks the message buffer for new messages with a brief delay
         to prevent excessive CPU usage.
@@ -68,10 +87,10 @@ class RPLidar(FuserInput[str]):
         Optional[str]
             The next message from the buffer if available, None otherwise
         """
-        await asyncio.sleep(0.2)
-
+        await asyncio.sleep(0.5)
         try:
-            return self.lidar.lidar_string
+            message = self.message_buffer.get_nowait()
+            return message
         except Empty:
             return None
 
@@ -134,10 +153,12 @@ class RPLidar(FuserInput[str]):
 
         latest_message = self.messages[-1]
 
-        result = (
-            f"\nINPUT: {self.descriptor_for_LLM}\n// START\n"
-            f"{latest_message.message}\n// END\n"
-        )
+        result = f"""
+INPUT: {self.descriptor_for_LLM} 
+// START
+{latest_message.message}
+// END
+"""
 
         self.io_provider.add_input(
             self.descriptor_for_LLM, latest_message.message, latest_message.timestamp
@@ -145,21 +166,3 @@ class RPLidar(FuserInput[str]):
         self.messages = []
 
         return result
-
-    def _extract_lidar_config(self, config: SensorConfig) -> dict:
-        """Extract lidar configuration parameters from sensor config."""
-        lidar_config = {
-            "serial_port": getattr(config, "serial_port", None),
-            "use_zenoh": getattr(config, "use_zenoh", False),
-            "half_width_robot": getattr(config, "half_width_robot", 0.20),
-            "angles_blanked": getattr(config, "angles_blanked", []),
-            "relevant_distance_max": getattr(config, "relevant_distance_max", 1.1),
-            "relevant_distance_min": getattr(config, "relevant_distance_min", 0.08),
-            "sensor_mounting_angle": getattr(config, "sensor_mounting_angle", 180.0),
-            "URID": getattr(config, "URID", ""),
-            "multicast_address": getattr(config, "multicast_address", ""),
-            "machine_type": getattr(config, "machine_type", "go2"),
-            "log_file": getattr(config, "log_file", False),
-        }
-
-        return lidar_config

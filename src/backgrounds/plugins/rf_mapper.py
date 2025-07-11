@@ -51,7 +51,8 @@ class RFmapper(Background):
 
         self.payload_idx = 0
 
-        self.odom_unix_ts = 0.0
+        self.odom_rockchip_ts = 0.0
+        self.odom_subscriber_ts = 0.0
         self.odom_x = 0.0
         self.odom_y = 0.0
         self.odom_yaw_0_360 = 0.0
@@ -243,7 +244,8 @@ class RFmapper(Background):
                     if o:
                         self.odom_x = o["odom_x"]
                         self.odom_y = o["odom_y"]
-                        self.odom_unix_ts = o["odom_unix_ts"]
+                        self.odom_rockchip_ts = o["odom_rockchip_ts"]
+                        self.odom_subscriber_ts = o["odom_subscriber_ts"]
                         self.odom_yaw_0_360 = o["odom_yaw_0_360"]
                         self.odom_yaw_m180_p180 = o["odom_yaw_m180_p180"]
                 except Exception as e:
@@ -279,7 +281,8 @@ class RFmapper(Background):
                             rtk_qua=self.rtk_qua,
                             mag=self.yaw_mag_0_360,
                             unix_ts=time.time(),
-                            odom_unix_ts=self.odom_unix_ts,
+                            odom_rockchip_ts=self.odom_rockchip_ts,
+                            odom_subscriber_ts=self.odom_subscriber_ts,
                             odom_x=self.odom_x,
                             odom_y=self.odom_y,
                             odom_yaw_0_360=self.odom_yaw_0_360,

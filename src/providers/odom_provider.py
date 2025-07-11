@@ -115,7 +115,7 @@ def odom_processor(
         try:
             ChannelFactoryInitialize(0, channel)
         except Exception as e:
-            logging.error(f"Error initializing  Unitree Go2 odom channel : {e}")
+            logging.error(f"Error initializing Unitree Go2 odom channel: {e}")
             return
 
         try:
@@ -181,7 +181,8 @@ class OdomProvider:
         self.z = 0.0
         self.odom_yaw_0_360 = 0.0
         self.odom_yaw_m180_p180 = 0.0
-        self.odom_unix_ts = 0.0
+        self.odom_rockchip_ts = 0.0
+        self.odom_subscriber_ts = 0.0
 
         self.start()
 
@@ -283,7 +284,12 @@ class OdomProvider:
             pose = pose_data.pose
             header = pose_data.header
 
-            self.odom_unix_ts = header.stamp.sec + header.stamp.nanosec * 1e-9
+            # this is the time according to the RockChip. It may be off by several seconds from
+            # UTC
+            self.odom_rockchip_ts = header.stamp.sec + header.stamp.nanosec * 1e-9
+
+            # The local timestamp
+            self.odom_subscriber_ts = time.time()
 
             if self.channel and not self.use_zenoh:
                 # only relevant to Unitree Go2
@@ -342,7 +348,7 @@ class OdomProvider:
             self.x = round(pose.position.x, 4)
             self.y = round(pose.position.y, 4)
             logging.debug(
-                f"odom: X:{self.x} Y:{self.y} W:{self.odom_yaw_m180_p180} H:{self.odom_yaw_0_360} T:{self.odom_unix_ts}"
+                f"odom: X:{self.x} Y:{self.y} W:{self.odom_yaw_m180_p180} H:{self.odom_yaw_0_360} T:{self.odom_rockchip_ts}"
             )
 
     @property
@@ -362,7 +368,8 @@ class OdomProvider:
             - odom_yaw_0_360: The yaw angle of the robot in degrees, ranging from 0 to 360.
             - body_height_cm: The height of the robot's body in centimeters.
             - body_attitude: The current attitude of the robot (e.g., sitting or standing).
-            - odom_unix_ts: The unix timestamp of the last odometry update.
+            - odom_rockchip_ts: The unix timestamp of the last odometry update. Provided by the CycloneDDS publisher.
+            - odom_subscriber_ts: The unix timestamp of the last odometry update according to the subscriber.
         """
         return {
             "odom_x": self.x,
@@ -372,5 +379,6 @@ class OdomProvider:
             "odom_yaw_m180_p180": self.odom_yaw_m180_p180,
             "body_height_cm": self.body_height_cm,
             "body_attitude": self.body_attitude,
-            "odom_unix_ts": self.odom_unix_ts,
+            "odom_rockchip_ts": self.odom_rockchip_ts,
+            "odom_subscriber_ts": self.odom_subscriber_ts,
         }
