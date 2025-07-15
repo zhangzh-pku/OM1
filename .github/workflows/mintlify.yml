@@ -55,6 +55,7 @@ jobs:
           GH_TOKEN: ${{ secrets.MINT_PAT }}
         run: |
           BRANCH_NAME="auto/mintlify-update"
+          git ls-remote https://x-access-token:${GH_TOKEN}@github.com/${{ github.repository }}.git
           git remote remove origin
           git remote add origin https://x-access-token:${GH_TOKEN}@github.com/${{ github.repository }}.git
           git push -u origin $BRANCH_NAME
