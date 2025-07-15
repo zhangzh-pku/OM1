@@ -41,11 +41,11 @@ jobs:
       - name: Override Git remote and push
         if: env.SKIP_PR != 'true'
         env:
-          GH_PAT: ${{ secrets.MINT_PAT }}
+          GH_TOKEN: ${{ secrets.MINT_PAT }}
         run: |
           BRANCH_NAME="auto/mintlify-update"
           git remote remove origin
-          git remote add origin https://x-access-token:${MINT_PAT}@github.com/${{ github.repository }}.git
+          git remote add origin https://x-access-token:${GH_TOKEN}@github.com/${{ github.repository }}.git
           git push -u origin $BRANCH_NAME
 
       - name: Create pull request
