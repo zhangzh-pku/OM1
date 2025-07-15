@@ -27,9 +27,9 @@
                     {
                         "group": "Getting Started",
                         "pages": [
-                            "get-started/0_introduction",
-                            "get-started/1_get-started",
-                            "get-started/2_architecture"
+                            "developing/0_introduction",
+                            "developing/1_get-started",
+                            "v/2_architecture"
                         ]
                     },
                     {
@@ -50,13 +50,13 @@
                     {
                         "group": "LLM Integration",
                         "pages": [
-                            "get-started/5_llms"
+                            "developing/5_llms"
                         ]
                     },
                     {
                         "group": "Action Plugins",
                         "pages": [
-                            "get-started/6_actions"
+                            "developing/6_actions"
                         ]
                     },
                     {
