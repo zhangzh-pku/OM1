@@ -29,13 +29,13 @@
                         "pages": [
                             "developing/0_introduction",
                             "developing/1_get-started",
-                            "v/2_architecture"
+                            "developing/2_architecture"
                         ]
                     },
                     {
                         "group": "Input Plugins",
                         "pages": [
-                            "get-started/4_inputs",
+                            "developing/4_inputs",
                             "robotics/gps_compass",
                             {
                                 "group": "RPLidar",
@@ -98,10 +98,9 @@
                         "pages": [
                             "api-reference/endpoints/llm",
                             "api-reference/endpoints/elevenlabs_tts",
-                            "api-reference/endpoints/riva_tts",
+                            "api-reference/endpoints/riva",
                             "api-reference/endpoints/vila_vlm",
                             "api-reference/endpoints/google_asr",
-                            "api-reference/endpoints/riva_asr"
                         ]
                     }
                 ]
