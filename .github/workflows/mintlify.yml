@@ -1,38 +1,60 @@
-name: Copy Docs to Mintlify folder
+name: Copy Docs to Mintlify and Create PR
 
 on:
   push:
     branches:
-      - main
-  workflow_dispatch:  # Allow manual trigger
+      - main  # or your default branch
 
 jobs:
-  copy-and-replace:
+  update-mintlify:
     runs-on: ubuntu-latest
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
 
-      - name: Set up Git user
+      - name: Set up Git
         run: |
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
 
-
-      - name: Copy docs into mintlify
-        run: cp -r docs/* mintlify/
+      - name: Create mintlify folder and copy files
+        run: |
+          mkdir -p mintlify
+          cp -r docs/* mintlify/
 
       - name: Remove `.mdx` extensions from inside files
         run: |
           find mintlify -type f -exec sed -i 's/\.mdx//g' {} +
 
-      - name: Commit and push changes
+      - name: Create new branch
         run: |
+          BRANCH_NAME="auto/mintlify-update"
+          git checkout -b $BRANCH_NAME
           git add mintlify
           if git diff --cached --quiet; then
             echo "No changes to commit."
+            echo "should_skip=true" >> $GITHUB_ENV
           else
-            git commit -m "Update mintlify folder with copied docs and cleaned .mdx references"
-            git push
+            git commit -m "Automated update of mintlify folder"
           fi
+
+      - name: Push branch and create PR
+        if: env.should_skip != 'true'
+        env:
+          GH_PAT: ${{ secrets.GH_PAT }}
+        run: |
+          BRANCH_NAME="auto/mintlify-update"
+          git push -u https://x-access-token:${GH_PAT}@github.com/${{ github.repository }} $BRANCH_NAME
+
+          gh auth login --with-token <<< "${GH_PAT}"
+          gh pr create \
+            --title "Automated mintlify update" \
+            --body "This PR updates the mintlify folder based on docs, with .mdx extensions stripped from file contents." \
+            --head "$BRANCH_NAME" \
+            --base "main"
+        # Install GitHub CLI
+        shell: bash
+
+      - name: Install GitHub CLI
+        run: sudo apt-get install gh
