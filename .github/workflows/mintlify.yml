@@ -3,7 +3,7 @@ name: Copy Docs to Mintlify and Create PR
 on:
   push:
     branches:
-      - main  # or your default branch
+      - main
 
 jobs:
   update-mintlify:
@@ -13,48 +13,42 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v3
 
+      - name: Install GitHub CLI
+        run: sudo apt-get install -y gh
+
       - name: Set up Git
         run: |
-          git config --global user.name "github-actions[bot]"
-          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git config --global user.name "GitHub Action"
+          git config --global user.email "action@github.com"
 
-      - name: Create mintlify folder and copy files
+      - name: Copy and process docs
         run: |
           mkdir -p mintlify
           cp -r docs/* mintlify/
-
-      - name: Remove `.mdx` extensions from inside files
-        run: |
           find mintlify -type f -exec sed -i 's/\.mdx//g' {} +
 
-      - name: Create new branch
+      - name: Create new branch and commit
         run: |
           BRANCH_NAME="auto/mintlify-update"
           git checkout -b $BRANCH_NAME
           git add mintlify
           if git diff --cached --quiet; then
             echo "No changes to commit."
-            echo "should_skip=true" >> $GITHUB_ENV
+            echo "SKIP_PR=true" >> $GITHUB_ENV
           else
-            git commit -m "Automated update of mintlify folder"
+            git commit -m "Automated mintlify folder update"
           fi
 
       - name: Push branch and create PR
-        if: env.should_skip != 'true'
+        if: env.SKIP_PR != 'true'
         env:
-          GH_PAT: ${{ secrets.GH_PAT }}
+          GH_TOKEN: ${{ secrets.GH_PAT }}
         run: |
           BRANCH_NAME="auto/mintlify-update"
-          git push -u https://x-access-token:${GH_PAT}@github.com/${{ github.repository }} $BRANCH_NAME
+          git push -u https://x-access-token:${GH_TOKEN}@github.com/${{ github.repository }} $BRANCH_NAME
 
-          gh auth login --with-token <<< "${GH_PAT}"
           gh pr create \
             --title "Automated mintlify update" \
             --body "This PR updates the mintlify folder based on docs, with .mdx extensions stripped from file contents." \
             --head "$BRANCH_NAME" \
             --base "main"
-        # Install GitHub CLI
-        shell: bash
-
-      - name: Install GitHub CLI
-        run: sudo apt-get install gh
