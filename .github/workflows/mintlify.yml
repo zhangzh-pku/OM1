@@ -17,6 +17,8 @@ jobs:
         run: sudo apt-get update && sudo apt-get install -y gh
 
       - name: Set up Git
+        env:
+          GH_TOKEN: ${{ secrets.MINT_PAT }}
         run: |
           git config --global user.name "GitHub Action"
           git config --global user.email "action@github.com"
