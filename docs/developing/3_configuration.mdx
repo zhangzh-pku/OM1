@@ -7,7 +7,7 @@ description: "Configuration"
 
 Agents are configured via JSON5 files in the `/config` directory. The configuration file is used to define the LLM `system prompt`, agent's inputs, LLM configuration, and actions etc. Here is an example of the configuration file:
 
-```json Configuration
+```jsonl Configuration
 {
   "hertz": 0.5,
   "name": "agent_name",
@@ -67,24 +67,18 @@ Agents are configured via JSON5 files in the `/config` directory. The configurat
 ## Common Configuration Elements
 
 * **hertz** Defines the base tick rate of the agent. This rate can be adjusted to allow the agent to respond quickly to changing environments, but comes at the expense of reducing the time available for LLLms to finish generating tokens. Note: time critical tasks such as collision avoidance should be handled through low level control loops operating in parallel to the LLM-based logic, using event-triggered callbacks through real-time middleware. 
-
 * **name** A unique identifier for the agent.
-
 * **api_key** The API key for the agent. You can get your API key from the [OpenMind Portal](https://portal.openmind.org/).
-
 * **URID** The Universal Robot ID for the robot. Used to join a decentralized machine-to-machine coordination and communication system (FABRIC). 
-
 * **system_prompt_base** Defines the agent's personality and behavior.
-
 * **system_governance** The agent's laws and constitution.
-
 * **system_prompt_examples** The agent's example inputs/actions.
 
 ## Agent Inputs (`agent_inputs`)
 
 Example configuration for the agent_inputs section:
 
-```json
+```jsonl
   "agent_inputs": [
     {
       "type": "GovernanceEthereum"
@@ -120,7 +114,7 @@ The `cortex_llm` field allow you to configure the Large Language Model (LLM) use
 
 Here is an example configuration of the `cortex_llm` showing (deprecated) use of a single LLM to generate decisions:
 
-```json
+```jsonl
   "cortex_llm": {
     "type": "OpenAILLM",
     "config": {
@@ -147,7 +141,7 @@ You can implement your own LLM endpoints or use more sophisticated approaches su
 
 Lists the simulation modules used by the agent. Here is an example configuration for the `simulators` section:
 
-```json
+```jsonl
   "simulators": [
     {
       "type": "WebSim",
@@ -166,7 +160,7 @@ Lists the simulation modules used by the agent. Here is an example configuration
 
 Defines the agent's available capabilities, including action names, their implementation, and the connector used to execute them. Here is an example configuration for the `agent_actions` section:
 
-```json
+```jsonl
   "agent_actions": [
     {
       "name": "move",
