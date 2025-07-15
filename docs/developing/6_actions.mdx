@@ -7,13 +7,13 @@ description: "Actions"
 
 The Action Plugins are core components of OM1. These plugins map high-level decisions from one or more LLMs into concrete physical or digital actions (e.g. moving a robot or generating speech). This page covers the architecture of a typical Action Plugin, the available action types, and how actions are connected to different hardware and software platforms.
 
-[Code](https://github.com/OpenmindAGI/OM1/tree/main/src/actions)
+[**Code**](https://github.com/OpenmindAGI/OM1/tree/main/src/actions)
 
 ## Action Orchestrator
 
 The Action Orchestrator is the central component that orchestrates the execution of actions. It manages the states, promise queue, and threads for each action.
 
-[Code](https://github.com/OpenmindAGI/OM1/blob/main/src/actions/orchestrator.py)
+[**Code**](https://github.com/OpenmindAGI/OM1/blob/main/src/actions/orchestrator.py)
 
 ## Movement (Zenoh)
 
@@ -27,11 +27,11 @@ This plugin is an example of how to directly connect to the Unitree python SDK t
 
 The Speech and TTS action plugin allows agents to speak using with a text-to-speech (TTS) system.
 
-[Code](https://github.com/OpenmindAGI/OM1/blob/main/src/actions/speak/connector/elevenlabs_tts.py)
+[**Code**](https://github.com/OpenmindAGI/OM1/blob/main/src/actions/speak/connector/elevenlabs_tts.py)
 
 ### Configuration parameters
 
-```json
+```jsonl
 # Example usage
 config = ActionConfig(
     api_key="your_api_key",
