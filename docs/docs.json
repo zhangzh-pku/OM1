@@ -100,7 +100,7 @@
                             "api-reference/endpoints/elevenlabs_tts",
                             "api-reference/endpoints/riva",
                             "api-reference/endpoints/vila_vlm",
-                            "api-reference/endpoints/google_asr",
+                            "api-reference/endpoints/google_asr"
                         ]
                     }
                 ]
