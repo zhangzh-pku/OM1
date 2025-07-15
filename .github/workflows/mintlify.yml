@@ -18,7 +18,7 @@ jobs:
 
       - name: Set up Git
         env:
-          GH_TOKEN: ${{ secrets.MINT_PAT }}
+          MINT_PAT: ${{ secrets.MINT_PAT }}
         run: |
           git config --global user.name "GitHub Action"
           git config --global user.email "action@github.com"
@@ -27,9 +27,9 @@ jobs:
 
       - name: Test GitHub token access
         env:
-          GH_TOKEN: ${{ secrets.MINT_PAT }}
+          MINT_PAT: ${{ secrets.MINT_PAT }}
         run: |
-          git ls-remote https://x-access-token:${GH_TOKEN}@github.com/${{ github.repository }}.git
+          git ls-remote https://x-access-token:${MINT_PAT}@github.com/${{ github.repository }}.git
 
 
       - name: Copy docs and clean .mdx references
