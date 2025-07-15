@@ -57,6 +57,7 @@ jobs:
           BRANCH_NAME="auto/mintlify-update"
           git ls-remote https://x-access-token:${MINT_PAT}@github.com/${{ github.repository }}.git
           git remote remove origin || true
+          git log -1 --format='%an <%ae>'
           git remote add origin https://x-access-token:${MINT_PAT}@github.com/${{ github.repository }}.git
           git remote -v
           git push -u origin $BRANCH_NAME
