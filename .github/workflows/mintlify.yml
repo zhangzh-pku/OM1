@@ -56,8 +56,9 @@ jobs:
         run: |
           BRANCH_NAME="auto/mintlify-update"
           git ls-remote https://x-access-token:${GH_TOKEN}@github.com/${{ github.repository }}.git
-          git remote remove origin
+          git remote remove origin || true
           git remote add origin https://x-access-token:${GH_TOKEN}@github.com/${{ github.repository }}.git
+          git remote -v
           git push -u origin $BRANCH_NAME
 
       - name: Create pull request
