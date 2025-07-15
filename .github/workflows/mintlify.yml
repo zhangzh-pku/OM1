@@ -14,9 +14,25 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v3
 
+      - name: Set up Git user
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+
+
       - name: Copy docs into mintlify
         run: cp -r docs/* mintlify/
 
       - name: Remove `.mdx` extensions from inside files
         run: |
           find mintlify -type f -exec sed -i 's/\.mdx//g' {} +
+
+      - name: Commit and push changes
+        run: |
+          git add mintlify
+          if git diff --cached --quiet; then
+            echo "No changes to commit."
+          else
+            git commit -m "Update mintlify folder with copied docs and cleaned .mdx references"
+            git push
+          fi
