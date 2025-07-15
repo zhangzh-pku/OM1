@@ -14,9 +14,9 @@ jobs:
         uses: actions/checkout@v3
 
       - name: Install GitHub CLI
-        run: sudo apt-get install -y gh
+        run: sudo apt-get update && sudo apt-get install -y gh
 
-      - name: Set up Git config
+      - name: Set up Git
         run: |
           git config --global user.name "GitHub Action"
           git config --global user.email "action@github.com"
@@ -27,31 +27,36 @@ jobs:
           cp -r docs/* mintlify/
           find mintlify -type f -exec sed -i 's/\.mdx//g' {} +
 
-      - name: Commit changes on new branch
+      - name: Commit on new branch
         run: |
           BRANCH_NAME="auto/mintlify-update"
           git checkout -b $BRANCH_NAME
           git add mintlify
           if git diff --cached --quiet; then
-            echo "No changes to commit."
             echo "SKIP_PR=true" >> $GITHUB_ENV
           else
             git commit -m "Automated mintlify folder update"
           fi
 
-      - name: Push and create PR
+      - name: Override Git remote and push
         if: env.SKIP_PR != 'true'
+        env:
+          GH_PAT: ${{ secrets.GH_PAT }}
         run: |
           BRANCH_NAME="auto/mintlify-update"
-          REPO_URL="https://x-access-token:${{ secrets.GH_PAT }}@github.com/${{ github.repository }}"
-          git push -u "$REPO_URL" "$BRANCH_NAME"
+          git remote remove origin
+          git remote add origin https://x-access-token:${GH_PAT}@github.com/${{ github.repository }}
+          git push -u origin $BRANCH_NAME
 
-          gh auth status
+      - name: Create pull request
+        if: env.SKIP_PR != 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GH_PAT }}
+        run: |
           gh pr create \
             --title "Automated mintlify update" \
             --body "This PR updates the mintlify folder based on docs, with .mdx extensions stripped from file contents." \
-            --head "$BRANCH_NAME" \
+            --head "auto/mintlify-update" \
             --base "main"
-        env:
-          GH_TOKEN: ${{ secrets.GH_PAT }}
+
 
