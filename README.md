@@ -34,7 +34,7 @@ uv venv
 
 ### Install Dependencies
 
-For macOS  
+For MacOS  
 ```bash
 brew install portaudio
 brew install ffmpeg
@@ -49,12 +49,11 @@ sudo apt-get install ffmpeg
 
 ### Obtain an OpenMind API Key
 
-Obtain your OpenMind API Key [here]](https://portal.openmind.org/). Copy it to `config/spot.json5`, replacing the `openmind_free` placeholder with your API key. Or, `cp env.example .env` and add your key to the `.env`. 
+Obtain your API Key at [OpenMind Portal](https://portal.openmind.org/). Copy it to `config/spot.json5`, replacing the `openmind_free` placeholder. Or, `cp env.example .env` and add your key to the `.env`. 
 
 ### Launching OM1
 
 Run
-
 ```bash
 uv run src/run.py spot
 ```
