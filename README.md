@@ -26,7 +26,7 @@ You will need the [`uv` package manager](https://docs.astral.sh/uv/getting-start
 ### Clone the Repo
 
 ```bash
-git clone https://github.com/OpenmindAGI/OM1.git
+git clone https://github.com/Openmind/OM1.git
 cd OM1
 git submodule update --init
 uv venv
