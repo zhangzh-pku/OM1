@@ -15,7 +15,10 @@ services:
       - CYCLONEDDS_URI=file:///cyclonedds/cyclonedds.xml
       - CMAKE_PREFIX_PATH=/app/cyclonedds/install
       - OM_API_KEY=${OM_API_KEY}
+      - VIRTUAL_ENV=/app/OM1/.venv
+      - PATH=/app/OM1/.venv/bin:$PATH
     volumes:
+      - ./.venv:/app/OM1/.venv
       - ./cyclonedds:/cyclonedds
     logging:
       driver: "json-file"
