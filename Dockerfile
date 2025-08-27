@@ -12,11 +12,7 @@ RUN apt-get update && apt-get install -y \
     python3-dev \
     && rm -rf /var/lib/apt/lists/*
 
-RUN apt-get update && apt-get install -y curl pkg-config libssl-dev \
-&& curl https://sh.rustup.rs -sSf | sh -s -- -y \
-&& . "$HOME/.cargo/env" \
-&& echo 'export PATH="$HOME/.cargo/bin:$PATH"' >> /root/.bashrc
-ENV PATH="/root/.cargo/bin:${PATH}"
+RUN apt-get update && apt-get install -y curl pkg-config libssl-dev
 
 RUN python3 -m pip install --upgrade pip
 
@@ -29,9 +25,7 @@ RUN cmake .. -DCMAKE_INSTALL_PREFIX=../install -DBUILD_EXAMPLES=ON \
  && cmake --build . --target install
 
 ENV CYCLONEDDS_HOME=/app/cyclonedds/install \
-    CMAKE_PREFIX_PATH=/app/cyclonedds/install \
-    PYTHONPATH=/app/OM1:${PYTHONPATH} \
-    ROS_DOMAIN_ID=0
+    CMAKE_PREFIX_PATH=/app/cyclonedds/install
 
 WORKDIR /app/OM1
 COPY . .
