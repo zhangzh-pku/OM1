@@ -8,12 +8,12 @@ from typing import List, Optional
 from actions.base import ActionConfig, ActionConnector, MoveCommand
 from actions.move_go2_autonomy.interface import MoveInput
 from providers.odom_provider import OdomProvider, RobotState
-from providers.rplidar_provider import RPLidarProvider
+from providers.simple_paths_provider import SimplePathsProvider
 from providers.unitree_go2_state_provider import UnitreeGo2StateProvider
 from unitree.unitree_sdk2py.go2.sport.sport_client import SportClient
 
 
-class MoveUnitreeSDKConnector(ActionConnector[MoveInput]):
+class MoveUnitreeSDKAdvanceConnector(ActionConnector[MoveInput]):
 
     def __init__(self, config: ActionConfig):
         super().__init__(config)
@@ -21,6 +21,7 @@ class MoveUnitreeSDKConnector(ActionConnector[MoveInput]):
         self.dog_attitude = None
 
         # Movement parameters
+        self.move_speed = 0.5
         self.turn_speed = 0.8
         self.angle_tolerance = 5.0  # degrees
         self.distance_tolerance = 0.05  # meters
@@ -29,7 +30,7 @@ class MoveUnitreeSDKConnector(ActionConnector[MoveInput]):
         self.movement_attempt_limit = 15
         self.gap_previous = 0
 
-        self.lidar = RPLidarProvider()
+        self.path_provider = SimplePathsProvider()
         self.unitree_go2_state = UnitreeGo2StateProvider()
 
         # create sport client
@@ -256,14 +257,14 @@ class MoveUnitreeSDKConnector(ActionConnector[MoveInput]):
                     logging.info(f"Phase 2 - Forward/retreat GAP delta: {progress}m")
 
                 if goal_dx > 0:
-                    if 4 not in self.lidar.advance:
+                    if 4 not in self.path_provider.advance:
                         logging.warning("Cannot advance due to barrier")
                         self.clean_abort()
                         return
                     fb = 1
 
                 if goal_dx < 0:
-                    if not self.lidar.retreat:
+                    if not self.path_provider.retreat:
                         logging.warning("Cannot retreat due to barrier")
                         self.clean_abort()
                         return
@@ -291,12 +292,12 @@ class MoveUnitreeSDKConnector(ActionConnector[MoveInput]):
         """
         Process turn left command with safety check.
         """
-        if not self.lidar.turn_left:
+        if not self.path_provider.turn_left:
             logging.warning("Cannot turn left due to barrier")
             return
 
-        path = random.choice(self.lidar.turn_left)
-        path_angle = self.lidar.path_angles[path]
+        path = random.choice(self.path_provider.turn_left)
+        path_angle = self.path_provider.path_angles[path]
 
         target_yaw = self._normalize_angle(
             -1 * self.odom.position["odom_yaw_m180_p180"] + path_angle
@@ -315,12 +316,12 @@ class MoveUnitreeSDKConnector(ActionConnector[MoveInput]):
         """
         Process turn right command with safety check.
         """
-        if not self.lidar.turn_right:
+        if not self.path_provider.turn_right:
             logging.warning("Cannot turn right due to barrier")
             return
 
-        path = random.choice(self.lidar.turn_right)
-        path_angle = self.lidar.path_angles[path]
+        path = random.choice(self.path_provider.turn_right)
+        path_angle = self.path_provider.path_angles[path]
 
         target_yaw = self._normalize_angle(
             -1 * self.odom.position["odom_yaw_m180_p180"] + path_angle
@@ -339,12 +340,12 @@ class MoveUnitreeSDKConnector(ActionConnector[MoveInput]):
         """
         Process move forward command with safety check.
         """
-        if not self.lidar.advance:
+        if not self.path_provider.advance:
             logging.warning("Cannot advance due to barrier")
             return
 
-        path = random.choice(self.lidar.advance)
-        path_angle = self.lidar.path_angles[path]
+        path = random.choice(self.path_provider.advance)
+        path_angle = self.path_provider.path_angles[path]
 
         target_yaw = self._normalize_angle(
             -1 * self.odom.position["odom_yaw_m180_p180"] + path_angle
@@ -363,7 +364,7 @@ class MoveUnitreeSDKConnector(ActionConnector[MoveInput]):
         """
         Process move back command with safety check.
         """
-        if not self.lidar.retreat:
+        if not self.path_provider.retreat:
             logging.warning("Cannot retreat due to barrier")
             return
 
@@ -374,7 +375,7 @@ class MoveUnitreeSDKConnector(ActionConnector[MoveInput]):
                 start_x=round(self.odom.position["odom_x"], 2),
                 start_y=round(self.odom.position["odom_y"], 2),
                 turn_complete=True,
-                speed=0.3,
+                speed=0.2,
             )
         )
 
@@ -436,15 +437,15 @@ class MoveUnitreeSDKConnector(ActionConnector[MoveInput]):
             True if the turn was executed successfully, False if blocked by a barrier.
         """
         if gap > 0:  # Turn left
-            if not self.lidar.turn_left:
+            if not self.path_provider.turn_left:
                 logging.warning("Cannot turn left due to barrier")
                 return False
-            sharpness = min(self.lidar.turn_left)
+            sharpness = min(self.path_provider.turn_left)
             self._move_robot(sharpness * 0.15, 0, self.turn_speed)
         else:  # Turn right
-            if not self.lidar.turn_right:
+            if not self.path_provider.turn_right:
                 logging.warning("Cannot turn right due to barrier")
                 return False
-            sharpness = 8 - max(self.lidar.turn_right)
+            sharpness = 8 - max(self.path_provider.turn_right)
             self._move_robot(sharpness * 0.15, 0, -self.turn_speed)
         return True

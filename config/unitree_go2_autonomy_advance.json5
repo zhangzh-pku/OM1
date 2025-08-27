@@ -14,23 +14,7 @@
   6. If you sense something on your right, you might:\n Move: 'turn left'\n Speak: {{'I\\'m turning left to avoid the object on my right'}}",
   "agent_inputs": [
     {
-      "type": "Odom",
-        "config": {
-          "use_zenoh": false,
-          "URID": "",     // only needed for Zenoh
-        }
-    },
-    {
-      "type": "RPLidar",
-      "config": {
-        "use_zenoh": true,
-        "half_width_robot": 0.21,
-        "relevant_distance_max": 1.1,
-        "relevant_distance_min": 0.20,
-        "sensor_mounting_angle": 172.0,
-        "angles_blanked": [],
-        "multicast_address": "224.0.0.224:7003",
-      }
+      "type": "Odom"
     },
     {
       "type": "UnitreeGo2Battery"
@@ -40,6 +24,9 @@
     },
     {
       "type": "VLMVila"
+    },
+    {
+      "type": "SimplePaths"
     }
   ],
   "cortex_llm": {
@@ -50,10 +37,16 @@
     }
   },
   "agent_actions": [
+    //{
+    //  "name": "move_game_controller",
+    //  "llm_label": "external movement controller",
+    //  "connector": "go2_game_controller",
+    //  "exclude_from_prompt": true
+    //},
     {
       "name": "move_go2_autonomy",
       "llm_label": "move",
-      "connector": "unitree_sdk"
+      "connector": "unitree_sdk_advance"
     },
     {
      "name": "speak",
@@ -68,9 +61,6 @@
   "backgrounds": [
     {
       "type": "UnitreeGo2State",
-    },
-    {
-      type: "D435",
     }
   ]
 }
