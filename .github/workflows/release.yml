@@ -36,12 +36,12 @@ jobs:
         with:
           images: openmindagi/om1
           tags: |
-            type=semver,pattern={{version}},enable=${{ github.event_name == 'release' }}
-            type=semver,pattern={{major}}.{{minor}},enable=${{ github.event_name == 'release' }}
+            type=semver,pattern={{version}},prefix=v,prereleases=true
+            type=semver,pattern={{major}}.{{minor}},prereleases=true
             type=ref,event=tag,enable=${{ github.event_name == 'release' }}
             type=ref,event=branch
             type=sha
-            type=raw,value=latest,enable=${{ github.ref == 'refs/heads/main' }}
+            type=raw,value=latest,enable=${{ github.event_name == 'push' && github.ref == 'refs/heads/main' || (github.event_name == 'release' && !contains(github.ref, '-')) }}
 
       - name: Build and push AMD64 image by tag
         id: build
@@ -77,12 +77,12 @@ jobs:
         with:
           images: openmindagi/om1
           tags: |
-            type=semver,pattern={{version}},enable=${{ github.event_name == 'release' }}
-            type=semver,pattern={{major}}.{{minor}},enable=${{ github.event_name == 'release' }}
+            type=semver,pattern={{version}},,prefix=v,prereleases=true
+            type=semver,pattern={{major}}.{{minor}},prereleases=true
             type=ref,event=tag,enable=${{ github.event_name == 'release' }}
             type=ref,event=branch
             type=sha
-            type=raw,value=latest,enable=${{ github.ref == 'refs/heads/main' }}
+            type=raw,value=latest,enable=${{ github.event_name == 'push' && github.ref == 'refs/heads/main' || (github.event_name == 'release' && !contains(github.ref, '-')) }}
 
       - name: Build and push ARM64 image by tag
         id: build
