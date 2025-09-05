@@ -10,7 +10,7 @@
 * **Data Input**: Easily handles new data and sensors.
 * **Hardware Support via Plugins**: Supports new hardware through plugins for API endpoints and specific robot hardware connections to `ROS2`, `Zenoh`, and `CycloneDDS`. (We recommend `Zenoh` for all new development).
 * **Web-Based Debugging Display**: Monitor the system in action with WebSim (available at http://localhost:8000/) for easy visual debugging.
-* **Pre-configured Endpoints**: Supports Voice-to-Speech, OpenAI’s `gpt-4o`, DeepSeek, and multiple Visual Language Models (VLMs) with pre-configured endpoints for each service.
+* **Pre-configured Endpoints**: Supports Voice-to-Speech, OpenAI's `gpt-4o`, DeepSeek, Gemini, xAI (Grok), **Mistral AI**, **Meta Llama**, and multiple Visual Language Models (VLMs) with pre-configured endpoints for each service.
 
 ## Architecture Overview
   ![Artboard 1@4x 1 (1)](https://github.com/user-attachments/assets/14e9b916-4df7-4700-9336-2983c85be311)
@@ -59,6 +59,34 @@ uv run src/run.py spot
 ```
 
 After launching OM1, the Spot agent will interact with you and perform (simulated) actions. For more help connecting OM1 to your robot hardware, see [getting started](https://docs.openmind.org/getting-started).
+
+### Using Different LLM Providers
+
+OM1 supports multiple LLM providers. To use a different provider, update the `cortex_llm` section in your config file:
+
+**Mistral AI:**
+```json5
+"cortex_llm": {
+  "type": "MistralLLM",
+  "config": {
+    "api_key": "your-mistral-api-key",
+    "model": "mistral-large-latest"
+  }
+}
+```
+
+**Meta Llama:**
+```json5
+"cortex_llm": {
+  "type": "LlamaLLM", 
+  "config": {
+    "api_key": "your-llama-api-key",
+    "model": "llama-3.2-3b-instruct"
+  }
+}
+```
+
+For detailed configuration options and local deployment, see the [LLM Providers Guide](docs/LLM_PROVIDERS_GUIDE.md).
 
 ## What's Next?
 

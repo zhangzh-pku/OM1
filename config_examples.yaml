@@ -1,0 +1,89 @@
+# OM1 LLM Configuration Examples
+# This file demonstrates how to configure different LLM providers
+
+# Mistral AI Configuration
+mistral_config:
+  cortex_llm:
+    type: MistralLLM
+    api_key: ${MISTRAL_API_KEY}  # Set via environment variable
+    model: mistral-large-latest   # Options: mistral-small, mistral-medium, mistral-large-latest
+    timeout: 30
+    history_length: 10
+    extra_params:
+      temperature: 0.7
+      max_tokens: 4096
+
+# Mistral AI with Custom Endpoint (Self-hosted)
+mistral_custom:
+  cortex_llm:
+    type: MistralLLM
+    base_url: http://localhost:8080  # Your self-hosted Mistral endpoint
+    api_key: local-api-key
+    model: mistral-7b-instruct
+    timeout: 60
+
+# Meta Llama Configuration
+llama_config:
+  cortex_llm:
+    type: LlamaLLM
+    api_key: ${LLAMA_API_KEY}  # Set via environment variable
+    model: llama-3.2-3b-instruct  # Options: llama-3.2-1b, llama-3.2-3b-instruct, llama-3.1-8b
+    timeout: 30
+    history_length: 10
+    extra_params:
+      temperature: 0.8
+      max_tokens: 2048
+
+# Meta Llama with Local/Custom Endpoint
+llama_local:
+  cortex_llm:
+    type: LlamaLLM
+    base_url: http://localhost:11434  # For Ollama or other local runners
+    api_key: dummy-key  # Some local runners don't need real keys
+    model: llama3.2:latest
+    timeout: 60
+    extra_params:
+      temperature: 0.7
+      max_tokens: 4096
+
+# OpenAI Configuration (Existing - for reference)
+openai_config:
+  cortex_llm:
+    type: OpenAILLM
+    base_url: https://api.openai.com/v1
+    api_key: ${OPENAI_API_KEY}
+    model: gpt-4o-mini
+    timeout: 30
+
+# DeepSeek Configuration (Existing - for reference)
+deepseek_config:
+  cortex_llm:
+    type: DeepSeekLLM
+    api_key: ${DEEPSEEK_API_KEY}
+    model: deepseek-chat
+    timeout: 30
+
+# Multi-LLM Configuration (Load balancing between providers)
+multi_llm_config:
+  cortex_llm:
+    type: MultiLLM
+    providers:
+      - type: MistralLLM
+        api_key: ${MISTRAL_API_KEY}
+        model: mistral-large-latest
+        weight: 0.3
+      - type: LlamaLLM
+        api_key: ${LLAMA_API_KEY}
+        model: llama-3.2-3b-instruct
+        weight: 0.3
+      - type: OpenAILLM
+        api_key: ${OPENAI_API_KEY}
+        model: gpt-4o-mini
+        weight: 0.4
+
+# Environment Variables Setup Example
+# Create a .env file with:
+# MISTRAL_API_KEY=your-mistral-api-key
+# LLAMA_API_KEY=your-llama-api-key
+# OPENAI_API_KEY=your-openai-api-key
+# DEEPSEEK_API_KEY=your-deepseek-api-key

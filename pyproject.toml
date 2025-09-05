@@ -48,6 +48,9 @@ dependencies = [
     "pynput>=1.8.1",
     "dimo-python-sdk @ git+https://github.com/openminddev/dimo-python-sdk.git@6b47fcd28654a4145cedee649a0999a8eb08a2f6",
     "nest-asyncio>=1.6.0",
+    "mistralai>=1.0.0",
+    "google-generativeai>=0.8.0",
+    "llama-api-python>=0.1.0",
 ]
 
 [project.optional-dependencies]
