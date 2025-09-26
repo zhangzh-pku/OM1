@@ -3,7 +3,7 @@ title: LLMs
 description: "LLM Integration"
 ---
 
-OM1's LLM integration is intended to make it easy to (1) send `input` information to LLMs and then (2) route LLM responses to various system actions, such as `speak` and `move`. The system provides a standardized interface for communicating with many different LLM endpoints from all the major providers including Anthropic, Google, DeepSeek, and OpenAI. 
+OM1's LLM integration is intended to make it easy to (1) send `input` information to LLMs and then (2) route LLM responses to various system actions, such as `speak` and `move`. The system provides a standardized interface for communicating with many different LLM endpoints from all the major providers including OpenAI, DeepSeek, Google Gemini, xAI (Grok), **Mistral AI**, and **Meta Llama**. 
 
 The plugins handle authentication, API communication, prompt formatting, response parsing, and conversation history management. LLM plugin examples are located in `src/llm/plugins`: [**Code**](../../src/llm/plugins).
 
@@ -41,13 +41,83 @@ The standard `pydantic` output model is defined in `src/llm/output_model.py`.
 
 ### Single-Agent LLM Configuration
 
-```bash
+#### Supported LLM Providers
+
+| Provider | Class Name | Description |
+|----------|------------|-------------|
+| OpenAI | `OpenAILLM` | GPT-4, GPT-3.5, and other OpenAI models |
+| DeepSeek | `DeepSeekLLM` | DeepSeek Chat and Code models |
+| Google Gemini | `GeminiLLM` | Gemini Pro and other Google models |
+| xAI (Grok) | `XaiLLM` | Grok models from xAI |
+| **Mistral AI** | `MistralLLM` | 🆕 Mistral Large, Medium, and Small models |
+| **Meta Llama** | `LlamaLLM` | 🆕 Llama 3.2 and other Meta models |
+
+#### Configuration Examples
+
+**OpenAI (Default):**
+```json5
   "cortex_llm": {
     "type": "OpenAILLM",    // The class name of the LLM plugin you wish to use
     "config": {
+      "api_key": "${OPENAI_API_KEY}",
+      "model": "gpt-4o-mini",
       "base_url": "",       // Optional: URL of the LLM endpoint
       "agent_name": "Iris", // Optional: Name of the agent
       "history_length": 10  // The number of input->action cycles to provide to the LLM as historical context 
+    }
+  }
+```
+
+**Mistral AI:**
+```json5
+  "cortex_llm": {
+    "type": "MistralLLM",
+    "config": {
+      "api_key": "${MISTRAL_API_KEY}",
+      "model": "mistral-large-latest",  // Recommended model
+      "agent_name": "Iris",
+      "history_length": 10,
+      "timeout": 30,
+      "extra_params": {
+        "temperature": 0.7,
+        "max_tokens": 4096
+      }
+    }
+  }
+```
+
+**Meta Llama:**
+```json5
+  "cortex_llm": {
+    "type": "LlamaLLM",
+    "config": {
+      "api_key": "${LLAMA_API_KEY}",
+      "model": "llama-3.2-3b-instruct", // Recommended lightweight model
+      "agent_name": "Iris",
+      "history_length": 10,
+      "timeout": 30,
+      "extra_params": {
+        "temperature": 0.8,
+        "max_tokens": 2048
+      }
+    }
+  }
+```
+
+#### Local/Self-Hosted Deployment
+
+For local deployments using Ollama, vLLM, or LM Studio:
+
+```json5
+  "cortex_llm": {
+    "type": "OpenAILLM", // Most local servers support OpenAI-compatible API
+    "config": {
+      "base_url": "http://localhost:11434/v1", // Ollama default
+      "api_key": "dummy-key", // Local deployments often don't need real keys
+      "model": "mistral:latest",
+      "agent_name": "Iris",
+      "history_length": 10,
+      "timeout": 60 // Local inference may take longer
     }
   }
 ```
@@ -202,4 +272,85 @@ This endpoint uses two agents:
 - **Verifier Agent**: Validates medical information
 - **Questioner Agent**: Manages medical consultation flow
 
-When you wish to covert the doctor back to a playful dog, just change the system prompt and route queries back to the general `/agent` endpoint.   
+When you wish to covert the doctor back to a playful dog, just change the system prompt and route queries back to the general `/agent` endpoint.
+
+## Getting API Keys
+
+### Mistral AI
+1. Visit [console.mistral.ai](https://console.mistral.ai/)
+2. Register and create an API key
+3. Set environment variable: `MISTRAL_API_KEY=your-key-here`
+
+### Meta Llama
+1. Visit [llama-api.com](https://llama-api.com/) or similar services
+2. Register and obtain API access
+3. Set environment variable: `LLAMA_API_KEY=your-key-here`
+
+**Note**: Llama models are also available through:
+- Together AI
+- Replicate  
+- Hugging Face Inference API
+- Local deployment (Ollama, vLLM, LM Studio)
+
+## Testing Your Configuration
+
+### Quick Test
+Run the demo script to test your LLM configuration:
+
+```bash
+python demo_llm_providers.py
+```
+
+### Running with Different Providers
+```bash
+# Test with Mistral AI
+uv run src/run.py spot_mistral
+
+# Test with Meta Llama
+uv run src/run.py spot_llama  
+
+# Test with local deployment
+uv run src/run.py spot_local
+```
+
+## Troubleshooting
+
+### Common Issues
+
+**API Key Not Found:**
+- Ensure `.env` file is in the project root
+- Check environment variable names match configuration
+- Restart terminal after setting environment variables
+
+**Connection Timeout:**
+- Increase `timeout` value in configuration
+- For local deployments, ensure the server is running
+- Check network connectivity
+
+**JSON Parsing Errors:**
+- Some models need specific prompting for JSON output
+- Try adjusting `temperature` settings
+- Verify model supports structured output
+
+### Local Deployment Setup
+
+**Ollama:**
+```bash
+# Install Ollama
+curl -fsSL https://ollama.ai/install.sh | sh
+
+# Pull a model
+ollama pull mistral
+# or
+ollama pull llama3.2
+
+# The model will be available at http://localhost:11434
+```
+
+**LM Studio:**
+1. Download from [lmstudio.ai](https://lmstudio.ai/)
+2. Load a compatible model
+3. Start the local server
+4. Use `http://localhost:1234/v1` as base_url
+
+For detailed configuration options, see the [LLM Providers Guide](../docs/LLM_PROVIDERS_GUIDE.md).   

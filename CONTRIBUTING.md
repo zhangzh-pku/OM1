@@ -23,6 +23,13 @@ Before contributing, please take a moment to read through the following guidelin
 
 *   **Write Tests:**  OM1 aims for high test coverage.  If you're adding new code, please include corresponding tests. If you find areas with insufficient test coverage, adding tests is a great contribution.
 
+*   **Add LLM Providers:**  OM1 supports multiple LLM providers through a plugin system. If you want to add support for a new LLM provider:
+    1. Create a new plugin in `src/llm/plugins/` following the existing pattern
+    2. Implement the `LLM` base class with proper async `ask()` method
+    3. Add comprehensive tests in `tests/llm/plugins/`
+    4. Update documentation in `mintlify/developing/5_llms.mdx`
+    5. Add configuration examples and demo scripts
+
 *   **Code Review:** Reviewing pull requests is a valuable way to contribute.  It helps ensure code quality and maintainability.
 
 **Contribution Workflow (Pull Requests):**
