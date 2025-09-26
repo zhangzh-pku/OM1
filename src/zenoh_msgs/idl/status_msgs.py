@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 
 from pycdr2 import Enum, IdlStruct
-from pycdr2.types import int8, uint32
+from pycdr2.types import int8
 
 from .std_msgs import Header, String
 
@@ -24,7 +24,6 @@ class AudioStatus(IdlStruct, typename="AudioStatus"):
     status_mic: int8
     status_speaker: int8
     sentence_to_speak: String
-    sentence_counter: uint32
 
 
 @dataclass
@@ -38,22 +37,25 @@ class CameraStatus(IdlStruct, typename="CameraStatus"):
 
 
 @dataclass
-class MotionStatus(IdlStruct, typename="MotionStatus"):
-    class CONTROL(Enum):
+class AIStatusRequest(IdlStruct, typename="AIStatusRequest"):
+    class Code(Enum):
         DISABLED = 0
-        AI = 1
-        JOYSTICK = 2
-        TELEOPS = 3
-
-    class ATTITUDE(Enum):
-        SITTING = 0
-        STANDING = 1
-
-    class STATE(Enum):
-        STILL = 0
-        MOVING = 1
+        ENABLED = 1
+        STATUS = 2
 
     header: Header
-    control: int8
-    attitude: int8
-    state: int8
+    request_id: String
+    code: int8
+
+
+@dataclass
+class AIStatusResponse(IdlStruct, typename="AIStatusResponse"):
+    class Code(Enum):
+        DISABLED = 0
+        ENABLED = 1
+        UNKNOWN = 2
+
+    header: Header
+    request_id: String
+    code: int8
+    status: String

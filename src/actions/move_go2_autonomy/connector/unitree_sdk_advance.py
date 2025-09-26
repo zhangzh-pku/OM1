@@ -5,12 +5,22 @@ import time
 from queue import Queue
 from typing import List, Optional
 
+import zenoh
+
 from actions.base import ActionConfig, ActionConnector, MoveCommand
 from actions.move_go2_autonomy.interface import MoveInput
+from providers.io_provider import IOProvider
 from providers.odom_provider import OdomProvider, RobotState
 from providers.simple_paths_provider import SimplePathsProvider
 from providers.unitree_go2_state_provider import UnitreeGo2StateProvider
 from unitree.unitree_sdk2py.go2.sport.sport_client import SportClient
+from zenoh_msgs import (
+    AIStatusRequest,
+    AIStatusResponse,
+    String,
+    open_zenoh_session,
+    prepare_header,
+)
 
 
 class MoveUnitreeSDKAdvanceConnector(ActionConnector[MoveInput]):
@@ -47,12 +57,81 @@ class MoveUnitreeSDKAdvanceConnector(ActionConnector[MoveInput]):
 
         unitree_ethernet = getattr(config, "unitree_ethernet", None)
         self.odom = OdomProvider(channel=unitree_ethernet)
+
+        # Automation sleep mode configuration
+        self.io_provider = IOProvider()
+        self.last_voice_command_time = time.time()
+        self.sleep_mode_enabled = False
+        self.auto_sleep_mode = getattr(config, "auto_sleep_mode", True)
+        self.auto_sleep_time = getattr(config, "auto_sleep_time", 300)
+
+        # Zenoh topic for AI control status
+        self.ai_status_request = "om/ai/request"
+        self.ai_status_response = "om/ai/response"
+        self.session: Optional[zenoh.Session] = None
+        self.pub = None
+
+        try:
+            self.session = open_zenoh_session()
+            self.session.declare_subscriber(
+                self.ai_status_request, self._zenoh_ai_status_request
+            )
+            self._zenoh_ai_status_response_pub = self.session.declare_publisher(
+                self.ai_status_response
+            )
+        except Exception as e:
+            logging.error(f"Error opening Zenoh client: {e}")
+            self.session = None
+            self.pub = None
+
+        # AI control status
+        self.ai_control_enabled = True
+
         logging.info(f"Autonomy Odom Provider: {self.odom}")
 
     async def connect(self, output_interface: MoveInput) -> None:
+        if self.auto_sleep_mode:
+            voice_input = self.io_provider.inputs.get("Voice")
+            if voice_input:
+                self.last_voice_command_time = voice_input.timestamp
+
+            current_time = time.time()
+
+            # Check if the timestamp seems valid (after Aug 18, 2025)
+            # If Orin restarted, timestamp will be very small
+            if self.last_voice_command_time < 1755500000:
+                # Timestamp is invalid (Orin restarted), treat as very old
+                time_since_last_command = float("-inf")
+                # Try to updat the timestamp to the latest time
+                if current_time > self.last_voice_command_time:
+                    self.last_voice_command_time = current_time
+            else:
+                time_since_last_command = current_time - self.last_voice_command_time
+
+            if time_since_last_command > self.auto_sleep_time:
+                self.sleep_mode_enabled = True
+                if self.odom.position["body_attitude"] != RobotState.SITTING:
+                    logging.info("No voice command for 5 minutes - sit down")
+                    if self.sport_client:
+                        self.sport_client.StandDown()
+                return
+            else:
+                if (
+                    self.odom.position["body_attitude"] != RobotState.STANDING
+                    and self.sleep_mode_enabled
+                ):
+                    self.sleep_mode_enabled = False
+                    logging.info("Voice command received - stand up")
+                    if self.sport_client:
+                        self.sport_client.RecoveryStand()
 
         # this is used only by the LLM
         logging.info(f"AI command.connect: {output_interface.action}")
+
+        # Check if AI control is enabled
+        if not self.ai_control_enabled:
+            logging.info("AI Control is disabled - disregarding AI command")
+            return
 
         if self.unitree_go2_state.state_code == 1002:
             self.sport_client.BalanceStand()
@@ -188,7 +267,7 @@ class MoveUnitreeSDKAdvanceConnector(ActionConnector[MoveInput]):
             current_target = target[0]
 
             logging.info(
-                f"Target: {current_target} current yaw: {self.odom.position["odom_yaw_m180_p180"]}"
+                f"Target: {current_target} current yaw: {self.odom.position['odom_yaw_m180_p180']}"
             )
 
             if self.movement_attempts > self.movement_attempt_limit:
@@ -449,3 +528,66 @@ class MoveUnitreeSDKAdvanceConnector(ActionConnector[MoveInput]):
             sharpness = 8 - max(self.path_provider.turn_right)
             self._move_robot(sharpness * 0.15, 0, -self.turn_speed)
         return True
+
+    def _zenoh_ai_status_request(self, data: zenoh.Sample):
+        """
+        Process an incoming AI control status message.
+
+        Parameters
+        ----------
+        data : zenoh.Sample
+            The Zenoh sample received, which should have a 'payload' attribute.
+        """
+        ai_control_status = AIStatusRequest.deserialize(data.payload.to_bytes())
+        logging.info(f"Received AI Control Status message: {ai_control_status}")
+
+        code = ai_control_status.code
+        request_id = ai_control_status.request_id
+
+        # Read the current status
+        if code == 2:
+            ai_status_response = AIStatusResponse(
+                header=prepare_header(ai_control_status.header.frame_id),
+                request_id=request_id,
+                code=1 if self.ai_control_enabled else 0,
+                status=String(
+                    data=(
+                        "AI Control Enabled"
+                        if self.ai_control_enabled
+                        else "AI Control Disabled"
+                    )
+                ),
+            )
+            return self._zenoh_ai_status_response_pub.put(
+                ai_status_response.serialize()
+            )
+
+        # Enable the AI control
+        if code == 1:
+            self.ai_control_enabled = True
+            logging.info("AI Control Enabled")
+
+            ai_status_response = AIStatusResponse(
+                header=prepare_header(ai_control_status.header.frame_id),
+                request_id=request_id,
+                code=1,
+                status=String(data="AI Control Enabled"),
+            )
+            return self._zenoh_ai_status_response_pub.put(
+                ai_status_response.serialize()
+            )
+
+        # Disable the AI control
+        if code == 0:
+            self.ai_control_enabled = False
+            logging.info("AI Control Disabled")
+            ai_status_response = AIStatusResponse(
+                header=prepare_header(ai_control_status.header.frame_id),
+                request_id=request_id,
+                code=0,
+                status=String(data="AI Control Disabled"),
+            )
+
+            return self._zenoh_ai_status_response_pub.put(
+                ai_status_response.serialize()
+            )
